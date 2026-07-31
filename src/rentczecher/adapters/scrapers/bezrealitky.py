@@ -34,11 +34,11 @@ class BezrealitkyScraper(BaseScraper):
     def _build_url(self) -> str:
         cfg = self.scraper_cfg
         params = [
-            f"currency=CZK",
+            "currency=CZK",
             f"estateType={cfg.get('estate_type', 'BYT')}",
             f"offerType={cfg.get('offer_type', 'PRONAJEM')}",
             f"regionOsmIds={cfg.get('region_osm_id', 'R20000064250')}",
-            f"location=exact",
+            "location=exact",
         ]
         osm_value = cfg.get("osm_value")
         if osm_value:
@@ -157,7 +157,6 @@ class BezrealitkyScraper(BaseScraper):
                     image_url = _apollo_get(img_obj, "url")
 
                 # Build title
-                estate_type = cfg.get("estate_type", "BYT")
                 offer_label = "Pronajem" if cfg.get("offer_type") == "PRONAJEM" else "Prodej"
                 title_parts = [offer_label]
                 if disposition:
