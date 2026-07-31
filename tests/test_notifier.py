@@ -3,8 +3,8 @@
 Run: python3 -m pytest tests/test_notifier.py -v
 """
 
-from notifier import _render_card
-from scrapers.base import Listing
+from rentczecher.adapters.notifiers.smtp import _render_card
+from rentczecher.adapters.scrapers.base import Listing
 
 
 def _make_listing(**kwargs):

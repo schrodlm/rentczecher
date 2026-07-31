@@ -2,7 +2,7 @@ import re
 import time
 import requests
 from bs4 import BeautifulSoup
-from scrapers.base import BaseScraper, Listing
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 
 
 class RemaxScraper(BaseScraper):

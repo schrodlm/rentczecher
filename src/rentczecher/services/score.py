@@ -1,6 +1,6 @@
 """Smart scoring system for ranking listings."""
 
-from scrapers.base import Listing
+from rentczecher.adapters.scrapers.base import Listing
 
 
 def compute_score(listing: Listing, profile: dict) -> int:

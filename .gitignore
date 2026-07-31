@@ -7,3 +7,4 @@ data/cron.log
 config.yaml
 venv/
 .env
+.venv/

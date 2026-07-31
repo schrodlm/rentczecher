@@ -5,15 +5,16 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 
 import yaml
 
-import db
-from dedup import cross_source_dedup
-from metro import enrich_tram
-from notifier import send_email
-from scoring import compute_score
-from scrapers import ALL_SCRAPERS
+from rentczecher.adapters import legacy_json_db as db
+from rentczecher.services.dedup import cross_source_dedup
+from rentczecher.adapters.enrichment.metro import enrich_tram
+from rentczecher.adapters.notifiers.smtp import send_email
+from rentczecher.services.score import compute_score
+from rentczecher.adapters.scrapers import ALL_SCRAPERS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +23,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("byt_watchdog")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Resolves to the repo root only under an editable install.
+BASE_DIR = str(Path(__file__).resolve().parents[3])
 CONFIG_PATH = os.path.join(BASE_DIR, "config.yaml")
 PID_PATH = os.path.join(BASE_DIR, "data", "watchdog.pid")
 
@@ -238,7 +240,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
         _release_pidlock()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Byt Watchdog - Real estate monitor")
     parser.add_argument("--dry-run", action="store_true",
                         help="Scrape and show results without sending email or updating DB")
@@ -246,3 +248,7 @@ if __name__ == "__main__":
                         help="Run only a specific profile (by ID)")
     args = parser.parse_args()
     run(dry_run=args.dry_run, profile_filter=args.profile)
+
+
+if __name__ == "__main__":
+    main()

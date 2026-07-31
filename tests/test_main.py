@@ -5,9 +5,9 @@ Run: python3 -m pytest tests/test_main.py -v
 
 import os
 
-import db
-import main as main_module
-from scrapers.base import Listing
+from rentczecher.adapters import legacy_json_db as db
+from rentczecher.cli import main as main_module
+from rentczecher.adapters.scrapers.base import Listing
 
 
 def _make_listing(**kwargs):

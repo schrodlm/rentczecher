@@ -2,7 +2,7 @@
 
 import math
 import re
-from scrapers.base import Listing
+from rentczecher.adapters.scrapers.base import Listing
 
 SKIP_WORDS = {
     "praha", "prague", "pronajem", "pronájem", "prodej",

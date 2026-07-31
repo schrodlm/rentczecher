@@ -2,7 +2,7 @@ import json
 import re
 import time
 import requests
-from scrapers.base import BaseScraper, Listing
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
 

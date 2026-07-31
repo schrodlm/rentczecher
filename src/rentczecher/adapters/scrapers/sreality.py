@@ -2,7 +2,7 @@ import logging
 import re
 import time
 import requests
-from scrapers.base import BaseScraper, Listing
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 
 log = logging.getLogger("byt_watchdog")
 

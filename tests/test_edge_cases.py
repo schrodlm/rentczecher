@@ -5,7 +5,7 @@ Run with: python3 -m pytest tests/test_edge_cases.py -v
 import os
 import re
 import pytest
-from scrapers.base import Listing
+from rentczecher.adapters.scrapers.base import Listing
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -23,7 +23,7 @@ class TestDedupCrossSourceCorrectness:
     """After dedup, no listing should have its OWN source in cross_source."""
 
     def test_own_source_never_in_cross_source(self):
-        from dedup import cross_source_dedup
+        from rentczecher.services.dedup import cross_source_dedup
 
         listings = [
             _make_listing(id="sreality:1", source="sreality", price=20000,
@@ -44,7 +44,7 @@ class TestDedupCrossSourceCorrectness:
 
     def test_own_source_excluded_two_pairs(self):
         """Two separate dedup groups -- verify for each keeper."""
-        from dedup import cross_source_dedup
+        from rentczecher.services.dedup import cross_source_dedup
 
         # Group A: close GPS, same price
         a1 = _make_listing(id="sreality:a", source="sreality", price=18000,
@@ -70,7 +70,7 @@ class TestDedupThreeSources:
     """3 listings (sreality, bezrealitky, remax) for the same flat merge into 1."""
 
     def test_three_sources_merge_into_one(self):
-        from dedup import cross_source_dedup
+        from rentczecher.services.dedup import cross_source_dedup
 
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
@@ -88,7 +88,7 @@ class TestDedupThreeSources:
         assert len(result) == 1, f"Expected 1 merged listing, got {len(result)}"
 
     def test_three_sources_cross_source_has_two_entries(self):
-        from dedup import cross_source_dedup
+        from rentczecher.services.dedup import cross_source_dedup
 
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
@@ -135,13 +135,13 @@ class TestSrealityURLSpaces:
             url=detail_url, disposition=disp_label,
         )
 
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
         html = _render_card(listing, is_rent=False)
         assert html  # did not crash
 
     def test_listing_url_is_escapable(self):
         """Notifier _safe_url should still return a usable href even with spaces."""
-        from notifier import _safe_url
+        from rentczecher.adapters.notifiers.smtp import _safe_url
 
         url_with_space = "https://www.sreality.cz/detail/prodej/dum/rodinny dum/domazlice/12345"
         result = _safe_url(url_with_space)
@@ -153,7 +153,7 @@ class TestSrealityURLSpaces:
 
 class TestNotifierPriceZero:
     def test_render_card_price_zero_no_crash(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = _make_listing(price=0)
         html = _render_card(listing, is_rent=True)
@@ -161,7 +161,7 @@ class TestNotifierPriceZero:
         assert "0" in html
 
     def test_format_price_zero(self):
-        from notifier import _format_price
+        from rentczecher.adapters.notifiers.smtp import _format_price
 
         assert "0" in _format_price(0, is_rent=True)
         assert "0" in _format_price(0, is_rent=False)
@@ -172,7 +172,7 @@ class TestNotifierPriceZero:
 class TestNotifierAllNoneOptionals:
     def test_render_card_minimal_listing(self):
         """Only required fields set -- all optional fields are None/default."""
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = Listing(
             id="test:bare", source="test", title="Bare listing",
@@ -184,7 +184,7 @@ class TestNotifierAllNoneOptionals:
         assert "Bare listing" in html
 
     def test_render_card_no_image(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = Listing(
             id="test:noimg", source="test", title="No image",
@@ -194,7 +194,7 @@ class TestNotifierAllNoneOptionals:
         assert "<img" not in html
 
     def test_render_card_no_location_no_gps_no_map_link(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = Listing(
             id="test:nogps", source="test", title="No GPS",
@@ -204,7 +204,7 @@ class TestNotifierAllNoneOptionals:
         assert "maps.google.com" not in html
 
     def test_render_card_location_produces_map_link(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = Listing(
             id="test:loc", source="test", title="Test",
@@ -219,7 +219,7 @@ class TestNotifierAllNoneOptionals:
 
 class TestNotifierMapsLinkUniqueness:
     def test_different_locations_different_map_urls(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         locations = [
             "Umělecká, Praha - Holešovice",
@@ -240,7 +240,7 @@ class TestNotifierMapsLinkUniqueness:
         )
 
     def test_gps_fallback_when_no_location(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = _make_listing(location="", lat=50.10199, lon=14.42769)
         html = _render_card(listing, is_rent=True)
@@ -251,7 +251,7 @@ class TestNotifierMapsLinkUniqueness:
 
 class TestScoringAllZeroWeights:
     def test_all_zero_weights_returns_zero(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {
@@ -271,7 +271,7 @@ class TestScoringAllZeroWeights:
         assert score == 0, f"All-zero weights should yield 0, got {score}"
 
     def test_all_zero_weights_doesnt_crash(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {"scoring": {
             "price_per_m2_weight": 0,
@@ -290,13 +290,13 @@ class TestDBMarkSeenTwice:
     PROFILE = "test_edge_double_seen"
 
     def setup_method(self):
-        import db
+        from rentczecher.adapters import legacy_json_db as db
         path = db._db_path(self.PROFILE)
         if os.path.exists(path):
             os.unlink(path)
 
     def teardown_method(self):
-        import db
+        from rentczecher.adapters import legacy_json_db as db
         path = db._db_path(self.PROFILE)
         if os.path.exists(path):
             os.unlink(path)
@@ -305,7 +305,7 @@ class TestDBMarkSeenTwice:
             os.unlink(lock)
 
     def test_mark_seen_twice_no_duplicate(self):
-        import db
+        from rentczecher.adapters import legacy_json_db as db
 
         listing = _make_listing(id="test:dup1", price=20000)
         db.mark_seen(self.PROFILE, [listing])
@@ -317,7 +317,7 @@ class TestDBMarkSeenTwice:
         assert len(matching) == 1, f"Expected 1 entry, found {len(matching)}"
 
     def test_mark_seen_twice_updates_last_seen(self):
-        import db
+        from rentczecher.adapters import legacy_json_db as db
         import time
 
         listing = _make_listing(id="test:dup2", price=20000)
@@ -338,7 +338,7 @@ class TestDBMarkSeenTwice:
         )
 
     def test_mark_seen_twice_preserves_first_seen(self):
-        import db
+        from rentczecher.adapters import legacy_json_db as db
         import time
 
         listing = _make_listing(id="test:dup3", price=20000)
@@ -362,7 +362,7 @@ class TestDBMarkSeenTwice:
 
 class TestLargePriceFormatting:
     def test_sale_price_uses_nbsp_separator(self):
-        from notifier import _format_price
+        from rentczecher.adapters.notifiers.smtp import _format_price
 
         result = _format_price(4500000, is_rent=False)
         assert "," not in result, f"Should not contain comma: {result}"
@@ -371,7 +371,7 @@ class TestLargePriceFormatting:
         assert "Kč" in result, f"Sale price should contain 'Kč': {result}"
 
     def test_rent_price_uses_nbsp_separator(self):
-        from notifier import _format_price
+        from rentczecher.adapters.notifiers.smtp import _format_price
 
         result = _format_price(25000, is_rent=True)
         assert "," not in result, f"Should not contain comma: {result}"
@@ -379,7 +379,7 @@ class TestLargePriceFormatting:
         assert "měsíc" in result, f"Rent should mention 'měsíc': {result}"
 
     def test_format_in_rendered_card(self):
-        from notifier import _render_card
+        from rentczecher.adapters.notifiers.smtp import _render_card
 
         listing = _make_listing(price=4500000)
         html = _render_card(listing, is_rent=False)
@@ -394,7 +394,7 @@ class TestConfigMissingOptionalKeys:
     preferred_neighborhoods, etc. are missing from config."""
 
     def test_missing_preferred_dispositions(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {
@@ -409,7 +409,7 @@ class TestConfigMissingOptionalKeys:
         assert isinstance(score, int)
 
     def test_missing_preferred_neighborhoods(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {
@@ -424,7 +424,7 @@ class TestConfigMissingOptionalKeys:
         assert isinstance(score, int)
 
     def test_missing_ideal_size(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {
@@ -437,7 +437,7 @@ class TestConfigMissingOptionalKeys:
         assert isinstance(score, int)
 
     def test_missing_max_good_price(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {
@@ -450,7 +450,7 @@ class TestConfigMissingOptionalKeys:
         assert isinstance(score, int)
 
     def test_completely_empty_scoring_section(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         listing = _make_listing(
             price=20000, size_m2=50, disposition="2+kk",
@@ -462,7 +462,7 @@ class TestConfigMissingOptionalKeys:
         assert compute_score(listing, {}) == 0
 
     def test_missing_ideal_land(self):
-        from scoring import compute_score
+        from rentczecher.services.score import compute_score
 
         profile = {
             "scoring": {

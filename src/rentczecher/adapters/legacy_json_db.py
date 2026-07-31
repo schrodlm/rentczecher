@@ -4,10 +4,12 @@ import logging
 import os
 import tempfile
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 log = logging.getLogger("byt_watchdog")
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+# Resolves to the repo root only under an editable install.
+DATA_DIR = str(Path(__file__).resolve().parents[3] / "data")
 
 
 def _db_path(profile_id: str) -> str:

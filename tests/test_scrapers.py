@@ -3,9 +3,9 @@
 Run: python3 -m pytest tests/test_scrapers.py -v
 """
 
-from scrapers.bezrealitky import BezrealitkyScraper
-from scrapers.remax import RemaxScraper
-from scrapers.sreality import SrealityScraper
+from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+from rentczecher.adapters.scrapers.remax import RemaxScraper
+from rentczecher.adapters.scrapers.sreality import SrealityScraper
 
 
 class TestScraperEnabledFlag:

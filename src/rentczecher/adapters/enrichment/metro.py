@@ -4,7 +4,7 @@ Data from PID (Prague Integrated Transport) - data.pid.cz
 """
 
 import math
-from scrapers.base import Listing
+from rentczecher.adapters.scrapers.base import Listing
 
 # Praha 7 tram stops: (name, lat, lon, [daytime_lines])
 # Night lines (90+) excluded from display

@@ -1,5 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rentczecher"
+version = "0.1.0"
+description = "Multi-portal Czech real-estate watchdog: scrape, dedup, score, notify"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+rentczecher = "rentczecher.cli.main:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rentczecher"]
+
 [tool.pytest.ini_options]
 markers = [
     "live: hits real portals; excluded from the default run",
 ]
 addopts = "-m 'not live'"
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
