@@ -130,7 +130,7 @@ class TestBezrealitkyLive:
         from scrapers.bezrealitky import BezrealitkyScraper
         s = BezrealitkyScraper(_get_profile("praha7-byty"))
         listings = s.scrape()
-        valid = {"1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1", "6+", "atypicky"}
+        valid = {"1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1", "6+", "atypicky", "garsoniéra"}
         for l in listings:
             if l.disposition:
                 assert l.disposition in valid, f"Unknown disposition: {l.disposition}"

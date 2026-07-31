@@ -14,6 +14,7 @@ DISPOSITIONS = {
     "DISP_4_KK": "4+kk", "DISP_4_1": "4+1",
     "DISP_5_KK": "5+kk", "DISP_5_1": "5+1",
     "DISP_6": "6+", "DISP_OTHER": "atypicky",
+    "GARSONIERA": "garsoniéra",
 }
 
 DETAIL_BASE = "https://www.bezrealitky.cz/nemovitosti-byty-domy"
