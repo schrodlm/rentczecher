@@ -18,6 +18,26 @@ class TestScraperEnabledFlag:
             assert scraper_cls(profile).scrape() == [], scraper_cls.name
 
 
+class TestRemaxUrlBuilding:
+    """_build_url() substitutes min/max price into the config template."""
+
+    def test_url_building(self):
+        profile = {
+            "search": {"min_price": 17000, "max_price": 25000},
+            "scrapers": {"remax": {
+                "enabled": True,
+                "search_url": (
+                    "https://www.remax-czech.cz/reality/vyhledavani/"
+                    "?hledani=2&price_from={min_price}&price_to={max_price}"
+                ),
+            }},
+        }
+        url = RemaxScraper(profile)._build_url()
+        assert "price_from=17000" in url
+        assert "price_to=25000" in url
+        assert "{min_price}" not in url and "{max_price}" not in url
+
+
 class TestSrealityDistrictConfig:
     """A sreality profile without locality_district_id logs an error and yields
     no results instead of another region's listings."""
