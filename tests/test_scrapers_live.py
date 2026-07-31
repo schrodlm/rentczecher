@@ -184,10 +184,20 @@ class TestRemaxLive:
         assert isinstance(listings, list)
 
     def test_url_building(self):
+        """_build_url() substitutes min/max price into the config template."""
         from scrapers.remax import RemaxScraper
-        profile = _get_profile("praha7-byty")
+        profile = {
+            "search": {"min_price": 17000, "max_price": 25000},
+            "scrapers": {"remax": {
+                "enabled": True,
+                "search_url": (
+                    "https://www.remax-czech.cz/reality/vyhledavani/"
+                    "?hledani=2&price_from={min_price}&price_to={max_price}"
+                ),
+            }},
+        }
         s = RemaxScraper(profile)
         url = s._build_url()
         assert "price_from=17000" in url
         assert "price_to=25000" in url
-        assert "hledani=2" in url
+        assert "{min_price}" not in url and "{max_price}" not in url
