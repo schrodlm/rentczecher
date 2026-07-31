@@ -22,7 +22,7 @@ class RemaxScraper(BaseScraper):
 
     def scrape(self) -> list[Listing]:
         cfg = self.scraper_cfg
-        if not cfg.get("enabled", True):
+        if not cfg.get("enabled", False):
             return []
 
         listings = []
