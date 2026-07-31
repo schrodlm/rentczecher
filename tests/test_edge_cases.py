@@ -4,7 +4,6 @@ Run with: python3 -m pytest tests/test_edge_cases.py -v
 """
 import os
 import re
-import pytest
 from rentczecher.adapters.scrapers.base import Listing
 
 
@@ -383,8 +382,8 @@ class TestLargePriceFormatting:
 
         listing = _make_listing(price=4500000)
         html = _render_card(listing, is_rent=False)
-        assert "4\xa0500\xa0000" in html, f"Rendered card should contain nbsp-formatted price"
-        assert "4,500,000" not in html, f"Rendered card should NOT contain comma-separated price"
+        assert "4\xa0500\xa0000" in html, "Rendered card should contain nbsp-formatted price"
+        assert "4,500,000" not in html, "Rendered card should NOT contain comma-separated price"
 
 
 # ─── 10. Config missing optional keys ────────────────────────
