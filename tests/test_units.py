@@ -2,9 +2,7 @@
 
 Run with: python3 -m pytest tests/test_units.py -v
 """
-import json
 import os
-import pytest
 from rentczecher.adapters.scrapers.base import Listing
 
 
