@@ -1,11 +1,14 @@
 """Live integration tests for scrapers - hit real websites.
 
-Run with: python3 -m pytest tests/test_scrapers_live.py -v
+Excluded from the default pytest run. Run deliberately with:
+python3 -m pytest -m live tests/test_scrapers_live.py -v
 These tests hit real APIs so they may be slow and results change over time.
 """
 import pytest
 import yaml
 import os
+
+pytestmark = pytest.mark.live
 
 # Load config
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.yaml")

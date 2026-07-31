@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+markers = [
+    "live: hits real portals; excluded from the default run",
+]
+addopts = "-m 'not live'"
