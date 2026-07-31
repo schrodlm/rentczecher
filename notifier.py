@@ -132,7 +132,7 @@ def _render_card(listing: Listing, is_rent: bool) -> str:
     maps_html = ""
     if listing.location:
         from urllib.parse import quote as url_quote
-        maps_query = url_quote(f"{listing.location}, Praha, Česko")
+        maps_query = url_quote(f"{listing.location}, Česko")
         maps_url = f"https://maps.google.com/?q={maps_query}"
         maps_html = f' <a href="{escape(maps_url, quote=True)}" style="font-size:12px;color:#1a73e8;text-decoration:none;">[mapa]</a>'
     elif listing.lat is not None and listing.lon is not None:
