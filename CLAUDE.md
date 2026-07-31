@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Multi-profile Czech real-estate watchdog: scrapes portals (Sreality, Bezrealitky, RE/MAX), dedups across them, scores against per-profile preferences, emails new listings and price drops. The roadmap and binding architecture decisions live in `docs/plans/` — start with `00-roadmap.md` and `decisions.md` before any architectural work.
+Multi-profile Czech real-estate watchdog: scrapes portals (Sreality, Bezrealitky, RE/MAX), dedups across them, scores against per-profile preferences, emails new listings and price drops. The roadmap and binding architecture decisions live outside this repo in `~/dev/rentczecher-planning`, mirrored locally at `docs/plans/` (untracked via `.git/info/exclude`) — start with `00-roadmap.md` and `decisions.md` before any architectural work.
 
 Standard clean open-source development practices are the baseline everywhere; the rules below are hard stances on top of that.
 
