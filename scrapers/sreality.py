@@ -1,7 +1,10 @@
+import logging
 import re
 import time
 import requests
 from scrapers.base import BaseScraper, Listing
+
+log = logging.getLogger("byt_watchdog")
 
 # Disposition ID -> human-readable label
 DISPOSITIONS = {
@@ -28,7 +31,7 @@ class SrealityScraper(BaseScraper):
         params = {
             "category_main_cb": cfg.get("category_main_cb", 1),
             "category_type_cb": cfg.get("category_type_cb", 2),
-            "locality_district_id": cfg.get("locality_district_id", 5007),
+            "locality_district_id": cfg["locality_district_id"],
             "per_page": 500,
             "page": 1,
         }
@@ -45,6 +48,12 @@ class SrealityScraper(BaseScraper):
     def scrape(self) -> list[Listing]:
         cfg = self.scraper_cfg
         if not cfg.get("enabled", False):
+            return []
+        if cfg.get("locality_district_id") is None:
+            log.error(
+                "sreality: locality_district_id is not configured for this "
+                "profile - skipping scraper (refusing to silently search Praha 7)"
+            )
             return []
 
         # Sreality's API is load-balanced across servers with different indexes.
