@@ -101,6 +101,30 @@ class TestSrealityLive:
         with_domazlice = [l for l in listings if "Domažlice" in l.location or "domažlice" in l.location.lower()]
         assert len(with_domazlice) > 0, "No listings mention Domažlice in location"
 
+    def test_first_detail_url_resolves(self):
+        import requests
+        from rentczecher.adapters.scrapers.sreality import HEADERS, SrealityScraper
+        s = SrealityScraper(_get_profile("praha7-byty"))
+        listings = s.scrape()
+        if not listings:
+            pytest.skip("Sreality returned 0 listings (transient)")
+        resp = requests.get(listings[0].url, headers=HEADERS, timeout=30)
+        assert resp.status_code == 200, f"Constructed detail URL broken: {listings[0].url}"
+
+    def test_pagination_collects_beyond_one_page(self):
+        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        profile = {
+            "search": {"min_price": 0, "max_price": 0},
+            "scrapers": {"sreality": {
+                "enabled": True,
+                "category_main_cb": 1,
+                "category_type_cb": 2,
+                "locality_district_id": 5007,
+            }},
+        }
+        listings = SrealityScraper(profile).scrape()
+        assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"
+
 
 # ─── Bezrealitky ────────────────────────────────────────────
 
