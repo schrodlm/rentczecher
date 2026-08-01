@@ -21,27 +21,6 @@ _spec.loader.exec_module(harvest)
 FIXTURES = Path(__file__).parent / "fixtures" / "location"
 
 
-class TestNormalizeName:
-    """One join key across three portals' spellings of the same place."""
-
-    @pytest.mark.parametrize("variants, expected", [
-        (("Domažlice", "okres Domažlice"), "domazlice"),
-        (("Plzeňský kraj", "Plzeňský"), "plzensky"),
-        (("Hlavní město Praha", "Praha"), "praha"),
-        (("Kraj Vysočina", "Vysočina"), "vysocina"),
-        (("Praha 7",), "praha 7"),
-        (("Praha-východ", "okres Praha-východ"), "praha-vychod"),
-        (("Brno-město",), "brno-mesto"),
-    ])
-    def test_portal_spellings_normalize_identically(self, variants, expected):
-        for variant in variants:
-            assert harvest.normalize_name(variant) == expected, variant
-
-    def test_slugify_replaces_spaces(self):
-        assert harvest.slugify("Praha 7") == "praha-7"
-        assert harvest.slugify("Hlavní město Praha") == "praha"
-
-
 class TestSrealityFacetParsing:
     """The region and district facets embedded in the search page parse into
     id/name/region rows."""

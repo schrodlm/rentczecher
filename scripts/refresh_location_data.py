@@ -33,11 +33,12 @@ import json
 import re
 import sys
 import time
-import unicodedata
 from datetime import date
 from pathlib import Path
 
 import httpx
+
+from rentczecher.adapters.scrapers.location_resolver import normalize_name, slugify
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCATION_DATA_DIR = REPO_ROOT / "src" / "rentczecher" / "adapters" / "scrapers" / "location_data"
@@ -62,24 +63,6 @@ CZECH_REGIONS_QUERY = """{
     children { id name osmId }
   }
 }"""
-
-
-# Portals disagree on decoration: sreality "Hlavní město Praha" is remax
-# and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
-# Hyphenated names (Brno-město) stay single words, untouched by this.
-_NOISE_WORDS = {"okres", "kraj", "hlavni", "mesto"}
-
-
-def normalize_name(name: str) -> str:
-    """Join key across portals: casefold, strip diacritics, drop the
-    decoration words the portals disagree on."""
-    decomposed = unicodedata.normalize("NFD", name.casefold())
-    flat = "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
-    return " ".join(w for w in flat.split() if w not in _NOISE_WORDS)
-
-
-def slugify(name: str) -> str:
-    return normalize_name(name).replace(" ", "-")
 
 
 def parse_sreality_facets(html: str) -> tuple[list[dict], list[dict]]:
