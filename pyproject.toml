@@ -9,7 +9,6 @@ description = "Multi-portal Czech real-estate watchdog: scrape, dedup, score, no
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.27",
-    "requests>=2.31",
     "beautifulsoup4>=4.12",
     "lxml>=5.0",
     "pyyaml>=6.0",
