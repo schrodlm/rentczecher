@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from rentczecher.adapters.scrapers import bezrealitky, sreality
+from rentczecher.adapters.scrapers import bezrealitky, remax, sreality
 from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher.adapters.scrapers.client import build_client
@@ -376,3 +376,81 @@ class TestBezrealitkyParsing:
         client, _ = _serve_bez_pages(monkeypatch, {1: "<html><body>redesigned</body></html>"})
         with pytest.raises(ScraperBrokenError):
             BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+
+
+REMAX_PROFILE = {
+    "search": {"min_price": 0, "max_price": 5000000},
+    "scrapers": {"remax": {
+        "enabled": True,
+        "search_url": ("https://www.remax-czech.cz/reality/vyhledavani/"
+                       "?hledani=1&price_from={min_price}&price_to={max_price}"),
+    }},
+}
+
+
+def _remax_card(listing_id, price=3000000):
+    return f"""
+    <div class="pl-items__item" data-price="{price}" data-title="Prodej rodinného domu"
+         data-display-address="Domažlice - Týnské Předměstí">
+      <a href="/reality/detail/{listing_id}/prodej-domu">Prodej rodinného domu 4+kk 120 m², pozemek 800 m²</a>
+      <img src="/img/{listing_id}.jpg">
+      <span>4+kk 120 m² pozemek 800 m² 3 000 000 Kč</span>
+    </div>"""
+
+
+def _remax_page(cards, has_next=False):
+    next_html = '<a rel="next" href="?stranka=2">další</a>' if has_next else ""
+    return f"<html><body>{''.join(cards)}{next_html}</body></html>"
+
+
+def _serve_remax_pages(monkeypatch, pages):
+    """Serve canned search-page HTML keyed by stranka number through MockTransport."""
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        page = int(request.url.params.get("stranka", "1"))
+        return httpx.Response(200, text=pages[page])
+
+    monkeypatch.setattr(remax.time, "sleep", lambda _: None)
+    return build_client(transport=httpx.MockTransport(handler)), calls
+
+
+class TestRemaxParsing:
+    """Fixture-driven parsing of search result cards."""
+
+    def test_parses_card_fields(self, monkeypatch):
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([_remax_card(12345)])})
+        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        assert [l.id for l in listings] == ["remax:12345"]
+        l = listings[0]
+        assert l.source == "remax"
+        assert l.title == "Prodej rodinného domu"
+        assert l.price == 3000000
+        assert l.location == "Domažlice - Týnské Předměstí"
+        assert l.url == "https://www.remax-czech.cz/reality/detail/12345/prodej-domu"
+        assert l.image_url == "https://www.remax-czech.cz/img/12345.jpg"
+        assert l.size_m2 == 120
+        assert l.land_m2 == 800
+        assert l.disposition == "4+kk"
+
+    def test_paginates_while_next_link_exists(self, monkeypatch):
+        client, calls = _serve_remax_pages(monkeypatch, {
+            1: _remax_page([_remax_card(1)], has_next=True),
+            2: _remax_page([_remax_card(2)]),
+        })
+        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        assert sorted(l.id for l in listings) == ["remax:1", "remax:2"]
+        assert len(calls) == 2
+
+    def test_page_without_cards_yields_nothing(self, monkeypatch):
+        # A cardless page also means genuinely-zero results, so unlike the
+        # other portals it cannot raise ScraperBrokenError.
+        client, _ = _serve_remax_pages(monkeypatch, {1: "<html><body>žádné výsledky</body></html>"})
+        assert RemaxScraper(REMAX_PROFILE, client).scrape() == []
+
+    def test_out_of_range_price_is_filtered(self, monkeypatch):
+        cards = [_remax_card(1), _remax_card(2, price=99000000)]
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page(cards)})
+        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        assert [l.id for l in listings] == ["remax:1"]

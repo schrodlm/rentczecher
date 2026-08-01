@@ -1,7 +1,8 @@
 import re
 import time
-import requests
+
 from bs4 import BeautifulSoup
+
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 
 
@@ -21,49 +22,49 @@ class RemaxScraper(BaseScraper):
         return "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1"
 
     def scrape(self) -> list[Listing]:
-        cfg = self.scraper_cfg
-        if not cfg.get("enabled", False):
+        if not self.scraper_cfg.get("enabled", False):
             return []
 
-        listings = []
+        listings: list[Listing] = []
         page = 1
-
         while True:
-            url = self._build_url()
-            if page > 1:
-                url += f"&stranka={page}"
-
-            resp = requests.get(url, timeout=30, headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-            })
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, "lxml")
-
-            # Find listing cards
-            cards: list = soup.select("div.pl-items__item, article.property-card, div.card-property")
-            if not cards:
-                cards = self._find_listing_blocks(soup)
-            if not cards:
+            page_listings, has_next = self._parse_page(self._fetch_page(page))
+            listings.extend(page_listings)
+            if not page_listings or not has_next:
                 break
-
-            page_had_listings = False
-            for card in cards:
-                listing = self._parse_card(card)
-                if listing:
-                    page_had_listings = True
-                    listings.append(listing)
-
-            if not page_had_listings:
-                break
-
-            next_link = soup.select_one('a[rel="next"], a.pagination__next, li.next a')
-            if not next_link:
-                break
-
             page += 1
             time.sleep(1.5)
 
         return listings
+
+    def _fetch_page(self, page: int) -> str:
+        url = self._build_url()
+        if page > 1:
+            url += f"&stranka={page}"
+        resp = self._client.get(url)
+        resp.raise_for_status()
+        return resp.text
+
+    def _parse_page(self, html: str) -> tuple[list[Listing], bool]:
+        """Return (listings, whether a next-page link exists). A page without
+        cards is indistinguishable from a genuinely empty search result, so it
+        ends the crawl instead of raising."""
+        soup = BeautifulSoup(html, "lxml")
+
+        cards: list = soup.select("div.pl-items__item, article.property-card, div.card-property")
+        if not cards:
+            cards = self._find_listing_blocks(soup)
+        if not cards:
+            return [], False
+
+        listings = []
+        for card in cards:
+            listing = self._parse_card(card)
+            if listing:
+                listings.append(listing)
+
+        has_next = soup.select_one('a[rel="next"], a.pagination__next, li.next a') is not None
+        return listings, has_next
 
     def _find_listing_blocks(self, soup: BeautifulSoup) -> list:
         blocks = []
