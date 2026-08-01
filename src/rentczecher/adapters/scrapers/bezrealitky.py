@@ -1,10 +1,15 @@
 import json
 import re
 import time
-import requests
-from rentczecher.adapters.scrapers.base import BaseScraper, Listing
+
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
+
+NEXT_DATA_RE = re.compile(
+    r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
+    re.DOTALL,
+)
 
 # Disposition enum -> human-readable
 DISPOSITIONS = {
@@ -51,143 +56,148 @@ class BezrealitkyScraper(BaseScraper):
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
     def scrape(self) -> list[Listing]:
-        cfg = self.scraper_cfg
-        if not cfg.get("enabled", False):
+        if not self.scraper_cfg.get("enabled", False):
             return []
 
-        listings = []
+        listings: list[Listing] = []
         page = 1
-
         while True:
-            url = self._build_url()
-            if page > 1:
-                url += f"&page={page}"
-
-            resp = requests.get(url, timeout=30, headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-            })
-            resp.raise_for_status()
-
-            # Extract __NEXT_DATA__ JSON
-            match = re.search(
-                r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
-                resp.text, re.DOTALL
-            )
-            if not match:
-                break
-
-            next_data = json.loads(match.group(1))
-            cache = next_data.get("props", {}).get("pageProps", {}).get("apolloCache", {})
-            if not cache:
-                break
-
-            # Find the listAdverts result
-            advert_list = None
-            total_count = 0
-            for key, val in cache.items():
-                if key.startswith("listAdverts(") or (isinstance(val, dict) and val.get("__typename") == "AdvertList"):
-                    if isinstance(val, dict) and "list" in val:
-                        advert_list = val
-                        total_count = val.get("totalCount", 0)
-                        break
-
-            root = cache.get("ROOT_QUERY", {})
-            if not advert_list:
-                for key, val in root.items():
-                    if key.startswith("listAdverts(") and isinstance(val, dict):
-                        advert_list = val
-                        total_count = val.get("totalCount", 0)
-                        break
-
-            if not advert_list:
-                break
-
-            refs = advert_list.get("list", [])
-            page_had_listings = False
-
-            for ref in refs:
-                ref_key = ref.get("__ref", "") if isinstance(ref, dict) else ""
-                advert = cache.get(ref_key, {})
-                if not advert:
-                    continue
-
-                page_had_listings = True
-                advert_id = advert.get("id", "")
-                uri = advert.get("uri", "")
-                price = advert.get("price", 0)
-
-                if self.max_price > 0 and price > self.max_price:
-                    continue
-                if price < self.min_price:
-                    continue
-                if advert.get("reserved", False):
-                    continue
-
-                address = _apollo_get(advert, "address") or ""
-                # Dereference Apollo ref if needed
-                if isinstance(address, dict) and "__ref" in address:
-                    addr_obj = cache.get(address["__ref"], {})
-                    address = (_apollo_get(addr_obj, "presentationAddress")
-                               or _apollo_get(addr_obj, "streetAddress")
-                               or addr_obj.get("name", "") or "")
-                if isinstance(address, dict):
-                    address = ""
-
-                disposition_raw = advert.get("disposition", "")
-                disposition = DISPOSITIONS.get(disposition_raw, disposition_raw or None)
-                surface = advert.get("surface")
-                surface_land = advert.get("surfaceLand")
-                charges = advert.get("charges")
-
-                # GPS (bezrealitky uses "lng" not "lon") - dereference __ref
-                gps = advert.get("gps", {})
-                if isinstance(gps, dict) and "__ref" in gps:
-                    gps = cache.get(gps["__ref"], {})
-                lat = None
-                lon = None
-                if isinstance(gps, dict):
-                    lat = gps.get("lat")
-                    lon = gps.get("lng")
-
-                # Resolve main image
-                image_url = None
-                main_img_ref = advert.get("mainImage", {})
-                if isinstance(main_img_ref, dict) and "__ref" in main_img_ref:
-                    img_obj = cache.get(main_img_ref["__ref"], {})
-                    image_url = _apollo_get(img_obj, "url")
-
-                # Build title
-                offer_label = "Pronajem" if cfg.get("offer_type") == "PRONAJEM" else "Prodej"
-                title_parts = [offer_label]
-                if disposition:
-                    title_parts.append(disposition)
-                if surface:
-                    title_parts.append(f"{surface} m2")
-                if surface_land:
-                    title_parts.append(f"pozemek {surface_land} m2")
-                if address:
-                    title_parts.append(address)
-                title = " - ".join(title_parts)
-
-                listings.append(Listing.build(
-                    id=f"bezrealitky:{advert_id}",
-                    source="bezrealitky",
-                    title=title,
-                    price=price,
-                    location=address,
-                    url=f"{DETAIL_BASE}/{uri}",
-                    image_url=image_url,
-                    size_m2=int(float(surface)) if surface else None,
-                    disposition=disposition if disposition else None,
-                    lat=lat,
-                    lon=lon,
-                    charges=int(float(charges)) if charges else None,
-                    land_m2=int(float(surface_land)) if surface_land else None,
-                ))
-
-            if not page_had_listings or page * 15 >= total_count:
+            page_listings, total_count, page_had_adverts = self._parse_page(self._fetch_page(page))
+            listings.extend(page_listings)
+            if not page_had_adverts or page * 15 >= total_count:
                 break
             page += 1
             time.sleep(1.5)
 
         return listings
+
+    def _fetch_page(self, page: int) -> str:
+        url = self._build_url()
+        if page > 1:
+            url += f"&page={page}"
+        resp = self._client.get(url)
+        resp.raise_for_status()
+        return resp.text
+
+    def _parse_page(self, html: str) -> tuple[list[Listing], int, bool]:
+        """Return (listings, reported total count, whether the page carried any
+        adverts before filtering)."""
+        match = NEXT_DATA_RE.search(html)
+        if not match:
+            # Even an empty-result search page carries the Next.js hydration
+            # blob; its absence means the page shape changed.
+            raise ScraperBrokenError("bezrealitky: __NEXT_DATA__ payload missing from search page")
+
+        next_data = json.loads(match.group(1))
+        cache = next_data.get("props", {}).get("pageProps", {}).get("apolloCache", {})
+        if not cache:
+            return [], 0, False
+
+        # Find the listAdverts result
+        advert_list = None
+        total_count = 0
+        for key, val in cache.items():
+            if key.startswith("listAdverts(") or (isinstance(val, dict) and val.get("__typename") == "AdvertList"):
+                if isinstance(val, dict) and "list" in val:
+                    advert_list = val
+                    total_count = val.get("totalCount", 0)
+                    break
+
+        root = cache.get("ROOT_QUERY", {})
+        if not advert_list:
+            for key, val in root.items():
+                if key.startswith("listAdverts(") and isinstance(val, dict):
+                    advert_list = val
+                    total_count = val.get("totalCount", 0)
+                    break
+
+        if not advert_list:
+            return [], 0, False
+
+        listings = []
+        page_had_adverts = False
+        for ref in advert_list.get("list", []):
+            ref_key = ref.get("__ref", "") if isinstance(ref, dict) else ""
+            advert = cache.get(ref_key, {})
+            if not advert:
+                continue
+            page_had_adverts = True
+            listing = self._parse_advert(advert, cache)
+            if listing is not None:
+                listings.append(listing)
+
+        return listings, total_count, page_had_adverts
+
+    def _parse_advert(self, advert: dict, cache: dict) -> Listing | None:
+        advert_id = advert.get("id", "")
+        uri = advert.get("uri", "")
+        price = advert.get("price", 0)
+
+        if self.max_price > 0 and price > self.max_price:
+            return None
+        if price < self.min_price:
+            return None
+        if advert.get("reserved", False):
+            return None
+
+        address = _apollo_get(advert, "address") or ""
+        # Dereference Apollo ref if needed
+        if isinstance(address, dict) and "__ref" in address:
+            addr_obj = cache.get(address["__ref"], {})
+            address = (_apollo_get(addr_obj, "presentationAddress")
+                       or _apollo_get(addr_obj, "streetAddress")
+                       or addr_obj.get("name", "") or "")
+        if isinstance(address, dict):
+            address = ""
+
+        disposition_raw = advert.get("disposition", "")
+        disposition = DISPOSITIONS.get(disposition_raw, disposition_raw or None)
+        surface = advert.get("surface")
+        surface_land = advert.get("surfaceLand")
+        charges = advert.get("charges")
+
+        # GPS (bezrealitky uses "lng" not "lon") - dereference __ref
+        gps = advert.get("gps", {})
+        if isinstance(gps, dict) and "__ref" in gps:
+            gps = cache.get(gps["__ref"], {})
+        lat = None
+        lon = None
+        if isinstance(gps, dict):
+            lat = gps.get("lat")
+            lon = gps.get("lng")
+
+        # Resolve main image
+        image_url = None
+        main_img_ref = advert.get("mainImage", {})
+        if isinstance(main_img_ref, dict) and "__ref" in main_img_ref:
+            img_obj = cache.get(main_img_ref["__ref"], {})
+            image_url = _apollo_get(img_obj, "url")
+
+        # Build title
+        offer_label = "Pronajem" if self.scraper_cfg.get("offer_type") == "PRONAJEM" else "Prodej"
+        title_parts = [offer_label]
+        if disposition:
+            title_parts.append(disposition)
+        if surface:
+            title_parts.append(f"{surface} m2")
+        if surface_land:
+            title_parts.append(f"pozemek {surface_land} m2")
+        if address:
+            title_parts.append(address)
+        title = " - ".join(title_parts)
+
+        return Listing.build(
+            id=f"bezrealitky:{advert_id}",
+            source="bezrealitky",
+            title=title,
+            price=price,
+            location=address,
+            url=f"{DETAIL_BASE}/{uri}",
+            image_url=image_url,
+            size_m2=int(float(surface)) if surface else None,
+            disposition=disposition if disposition else None,
+            lat=lat,
+            lon=lon,
+            charges=int(float(charges)) if charges else None,
+            land_m2=int(float(surface_land)) if surface_land else None,
+        )

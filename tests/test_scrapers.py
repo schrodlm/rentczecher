@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from rentczecher.adapters.scrapers import sreality
+from rentczecher.adapters.scrapers import bezrealitky, sreality
 from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher.adapters.scrapers.client import build_client
@@ -262,3 +262,117 @@ class TestSrealityContract:
         client = build_client(transport=httpx.MockTransport(handler))
         with pytest.raises(ScraperBrokenError):
             SrealityScraper(FLATS_PROFILE, client).scrape()
+
+
+BEZ_PROFILE = {
+    "search": {"min_price": 0, "max_price": 25000},
+    "scrapers": {"bezrealitky": {
+        "enabled": True,
+        "estate_type": "BYT",
+        "offer_type": "PRONAJEM",
+        "region_osm_id": "R20000064250",
+    }},
+}
+
+
+def _bez_advert(advert_id, price=20000, **overrides):
+    advert = {
+        "id": str(advert_id),
+        "uri": f"byt-{advert_id}",
+        "price": price,
+        "reserved": False,
+        "address": "Veletržní, Praha 7",
+        "disposition": "DISP_2_KK",
+        "surface": 55,
+        "surfaceLand": None,
+        "charges": 3500,
+        "gps": {"lat": 50.1, "lng": 14.43},
+        "mainImage": {"__ref": f"Image:{advert_id}"},
+    }
+    advert.update(overrides)
+    return advert
+
+
+def _bez_page(adverts, total_count):
+    cache = {"listAdverts({})": {
+        "list": [{"__ref": f"Advert:{a['id']}"} for a in adverts],
+        "totalCount": total_count,
+    }}
+    for a in adverts:
+        cache[f"Advert:{a['id']}"] = a
+        cache[f"Image:{a['id']}"] = {"url": f"https://img.bezrealitky.cz/{a['id']}.jpg"}
+    next_data = json.dumps({"props": {"pageProps": {"apolloCache": cache}}})
+    return (f'<html><body><script id="__NEXT_DATA__" type="application/json">'
+            f'{next_data}</script></body></html>')
+
+
+def _serve_bez_pages(monkeypatch, pages):
+    """Serve canned search-page HTML keyed by page number through MockTransport."""
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        page = int(request.url.params.get("page", "1"))
+        return httpx.Response(200, text=pages[page])
+
+    monkeypatch.setattr(bezrealitky.time, "sleep", lambda _: None)
+    return build_client(transport=httpx.MockTransport(handler)), calls
+
+
+class TestBezrealitkyParsing:
+    """Fixture-driven parsing of the search page's __NEXT_DATA__ Apollo cache."""
+
+    def test_parses_advert_fields(self, monkeypatch):
+        client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([_bez_advert(1)], total_count=1)})
+        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        assert [l.id for l in listings] == ["bezrealitky:1"]
+        l = listings[0]
+        assert l.source == "bezrealitky"
+        assert l.title == "Pronajem - 2+kk - 55 m2 - Veletržní, Praha 7"
+        assert l.price == 20000
+        assert l.location == "Veletržní, Praha 7"
+        assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
+        assert l.image_url == "https://img.bezrealitky.cz/1.jpg"
+        assert l.size_m2 == 55
+        assert l.disposition == "2+kk"
+        assert l.charges == 3500
+        assert abs(l.lat - 50.1) < 1e-9
+        assert abs(l.lon - 14.43) < 1e-9
+
+    def test_reserved_and_out_of_range_adverts_are_skipped(self, monkeypatch):
+        adverts = [
+            _bez_advert(1),
+            _bez_advert(2, reserved=True),
+            _bez_advert(3, price=99999),
+        ]
+        client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page(adverts, total_count=3)})
+        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        assert [l.id for l in listings] == ["bezrealitky:1"]
+
+    def test_paginates_until_total_count(self, monkeypatch):
+        first = [_bez_advert(i) for i in range(1, 16)]
+        second = [_bez_advert(16)]
+        client, calls = _serve_bez_pages(monkeypatch, {
+            1: _bez_page(first, total_count=16),
+            2: _bez_page(second, total_count=16),
+        })
+        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        assert len(listings) == 16
+        assert len(calls) == 2
+
+    def test_page_of_only_filtered_adverts_still_advances_pagination(self, monkeypatch):
+        # Filtering must not be mistaken for an empty portal page: adverts
+        # were present, so the reported total still governs pagination.
+        first = [_bez_advert(i, price=99999) for i in range(1, 16)]
+        second = [_bez_advert(16)]
+        client, _ = _serve_bez_pages(monkeypatch, {
+            1: _bez_page(first, total_count=16),
+            2: _bez_page(second, total_count=16),
+        })
+        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        assert [l.id for l in listings] == ["bezrealitky:16"]
+
+    def test_missing_next_data_raises_scraper_broken(self, monkeypatch):
+        client, _ = _serve_bez_pages(monkeypatch, {1: "<html><body>redesigned</body></html>"})
+        with pytest.raises(ScraperBrokenError):
+            BezrealitkyScraper(BEZ_PROFILE, client).scrape()
