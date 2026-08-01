@@ -5,6 +5,7 @@ Run: python3 -m pytest tests/test_location_data.py -v
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 import httpx
@@ -290,3 +291,181 @@ class TestBuildPlaces:
         places = harvest.build_places(client)
         assert places["regions"][0]["bezrealitky_region_id"] == "R435541"
         assert places["districts"][0]["bezrealitky_region_id"] == "R20000064250"
+
+
+PLACES_PATH = (Path(__file__).parent.parent / "src" / "rentczecher" / "adapters"
+               / "scrapers" / "location_data" / "places.json")
+
+
+@pytest.fixture(scope="module")
+def places():
+    return json.loads(PLACES_PATH.read_text())
+
+
+# The Czech Republic's district-level division, unchanged since 2007, written
+# from geography rather than derived from places.json so a silent edit to the
+# table cannot satisfy it by construction.
+REFERENCE_DISTRICTS = {
+    "praha": ["praha-1", "praha-2", "praha-3", "praha-4", "praha-5",
+              "praha-6", "praha-7", "praha-8", "praha-9", "praha-10"],
+    "stredocesky": ["benesov", "beroun", "kladno", "kolin", "kutna-hora", "melnik",
+                    "mlada-boleslav", "nymburk", "praha-vychod", "praha-zapad",
+                    "pribram", "rakovnik"],
+    "jihocesky": ["ceske-budejovice", "cesky-krumlov", "jindrichuv-hradec", "pisek",
+                  "prachatice", "strakonice", "tabor"],
+    "plzensky": ["domazlice", "klatovy", "plzen-mesto", "plzen-jih", "plzen-sever",
+                 "rokycany", "tachov"],
+    "karlovarsky": ["cheb", "karlovy-vary", "sokolov"],
+    "ustecky": ["decin", "chomutov", "litomerice", "louny", "most", "teplice",
+                "usti-nad-labem"],
+    "liberecky": ["ceska-lipa", "jablonec-nad-nisou", "liberec", "semily"],
+    "kralovehradecky": ["hradec-kralove", "jicin", "nachod", "rychnov-nad-kneznou",
+                        "trutnov"],
+    "pardubicky": ["chrudim", "pardubice", "svitavy", "usti-nad-orlici"],
+    "vysocina": ["havlickuv-brod", "jihlava", "pelhrimov", "trebic",
+                 "zdar-nad-sazavou"],
+    "jihomoravsky": ["blansko", "brno-mesto", "brno-venkov", "breclav", "hodonin",
+                     "vyskov", "znojmo"],
+    "olomoucky": ["jesenik", "olomouc", "prostejov", "prerov", "sumperk"],
+    "zlinsky": ["kromeriz", "uherske-hradiste", "vsetin", "zlin"],
+    "moravskoslezsky": ["bruntal", "frydek-mistek", "karvina", "novy-jicin",
+                        "opava", "ostrava-mesto"],
+}
+
+
+class TestShippedPlaceTable:
+    """Structural invariants and production-proven anchors of the committed
+    places.json."""
+
+    def test_covers_all_czech_regions_and_districts(self, places):
+        # 14 kraje; 76 okresy + Praha 1-10 = 86 district-level rows.
+        assert len(places["regions"]) == 14
+        assert len(places["districts"]) == 86
+
+    def test_every_district_maps_to_its_real_region(self, places):
+        shipped = {d["slug"]: d["region_slug"] for d in places["districts"]}
+        reference = {district: region
+                     for region, districts in REFERENCE_DISTRICTS.items()
+                     for district in districts}
+        assert shipped == reference
+
+    def test_shipped_regions_are_the_real_kraje(self, places):
+        assert {r["slug"] for r in places["regions"]} == set(REFERENCE_DISTRICTS)
+
+    def test_every_row_has_ids_for_all_three_portals(self, places):
+        for row in places["regions"]:
+            assert row["sreality_region_id"] and row["remax_region_id"], row["slug"]
+            assert row["bezrealitky_region_id"], row["slug"]
+        for row in places["districts"]:
+            assert row["sreality_district_id"], row["slug"]
+            assert row["remax_region_id"] and row["remax_district_id"], row["slug"]
+            assert row["bezrealitky_region_id"], row["slug"]
+
+    def test_slugs_are_unique(self, places):
+        slugs = [r["slug"] for r in places["regions"]] + [d["slug"] for d in places["districts"]]
+        assert len(slugs) == len(set(slugs))
+
+    def test_portal_ids_are_unique(self, places):
+        districts = places["districts"]
+        for field in ("sreality_district_id", "bezrealitky_region_id"):
+            ids = [d[field] for d in districts]
+            assert len(ids) == len(set(ids)), field
+        remax_pairs = [(d["remax_region_id"], d["remax_district_id"]) for d in districts]
+        assert len(remax_pairs) == len(set(remax_pairs))
+
+    def test_every_district_belongs_to_a_shipped_region(self, places):
+        region_slugs = {r["slug"] for r in places["regions"]}
+        for district in places["districts"]:
+            assert district["region_slug"] in region_slugs, district["slug"]
+
+    def test_praha_7_anchor_matches_production_proven_values(self, places):
+        praha7 = next(d for d in places["districts"] if d["slug"] == "praha-7")
+        assert praha7["sreality_district_id"] == 5007
+        assert praha7["bezrealitky_region_id"] == "R20000064250"
+        assert praha7["remax_region_id"] == 19
+
+    def test_domazlice_anchor_matches_production_proven_values(self, places):
+        domazlice = next(d for d in places["districts"] if d["slug"] == "domazlice")
+        assert domazlice["sreality_district_id"] == 8
+        assert domazlice["bezrealitky_region_id"] == "R441864"
+        assert (domazlice["remax_region_id"], domazlice["remax_district_id"]) == (43, 3401)
+
+    def test_praha_region_anchor(self, places):
+        praha = next(r for r in places["regions"] if r["slug"] == "praha")
+        assert praha["sreality_region_id"] == 10
+        assert praha["remax_region_id"] == 19
+
+    def test_bezrealitky_ids_have_the_right_shape_per_namespace(self, places):
+        # Regular districts carry real OSM relation ids (6-7 digits); Prague
+        # districts carry the portal's synthetic bundle ids (11 digits,
+        # R2000...). A swapped or garbled id on an unanchored row breaks this
+        # even though no anchor pins that row directly.
+        for district in places["districts"]:
+            digits = district["bezrealitky_region_id"].removeprefix("R")
+            if district["region_slug"] == "praha":
+                assert len(digits) == 11 and digits.startswith("2000"), district["slug"]
+            else:
+                assert len(digits) <= 7, district["slug"]
+
+    def test_praha_1_anchor_pins_remax_global_id_numbering(self, places):
+        # RE/MAX ids come from one global sequence: Praha 1's district id 19
+        # equals the Praha region id itself. The pair is the key, not the
+        # district id alone, and this row pins that quirk as intentional.
+        praha1 = next(d for d in places["districts"] if d["slug"] == "praha-1")
+        assert praha1["sreality_district_id"] == 5001
+        assert (praha1["remax_region_id"], praha1["remax_district_id"]) == (19, 19)
+        assert praha1["bezrealitky_region_id"] == "R20000061612"
+
+
+@pytest.mark.live
+class TestShippedIdsLive:
+    """Sampled proof that shipped ids still work on the real portals - the
+    test that catches a portal renumbering its taxonomy (like RE/MAX retiring
+    district 3402)."""
+
+    @pytest.fixture(scope="class")
+    def client(self):
+        import httpx as _httpx
+        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"}
+        with _httpx.Client(timeout=30, follow_redirects=True, headers=headers) as c:
+            yield c
+
+    def _sample(self, places):
+        by_slug = {d["slug"]: d for d in places["districts"]}
+        return [by_slug["praha-1"], by_slug["praha-7"], by_slug["domazlice"], by_slug["olomouc"]]
+
+    def test_sreality_ids_filter_searches(self, places, client):
+        import time
+        for district in self._sample(places):
+            time.sleep(1)
+            resp = client.get("https://www.sreality.cz/api/v1/estates/search",
+                              params={"locality_district_id": district["sreality_district_id"],
+                                      "per_page": 1, "lang": "cs"},
+                              headers={"Accept": "application/json"})
+            assert resp.status_code == 200, district["slug"]
+            assert resp.json()["pagination"]["total"] > 0, district["slug"]
+
+    def test_bezrealitky_ids_resolve_to_their_names(self, places, client):
+        import time
+        for district in self._sample(places):
+            time.sleep(1)
+            resp = client.get("https://www.bezrealitky.cz/vyhledat",
+                              params={"regionOsmIds": district["bezrealitky_region_id"]})
+            assert resp.status_code == 200, district["slug"]
+            heading = re.search(r"<h1[^>]*>(.*?)</h1>", resp.text, re.DOTALL)
+            assert heading is not None, district["slug"]
+            assert harvest.normalize_name(district["name"]) in [
+                harvest.normalize_name(part)
+                for part in re.sub(r"<[^>]+>", "", heading.group(1)).split("•")
+            ], district["slug"]
+
+    def test_remax_ids_are_accepted_by_the_search_form(self, places, client):
+        import time
+        for district in self._sample(places):
+            time.sleep(1)
+            resp = client.get(
+                "https://www.remax-czech.cz/reality/vyhledavani/",
+                params={"hledani": 1,
+                        f"regions[{district['remax_region_id']}][{district['remax_district_id']}]": "on"},
+            )
+            assert resp.status_code == 200, district["slug"]

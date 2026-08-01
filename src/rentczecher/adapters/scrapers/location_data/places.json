@@ -1,0 +1,879 @@
+{
+ "generated_at": "2026-08-01",
+ "regions": [
+  {
+   "name": "Hlavní město Praha",
+   "slug": "praha",
+   "sreality_region_id": 10,
+   "remax_region_id": 19,
+   "bezrealitky_region_id": "R435541"
+  },
+  {
+   "name": "Jihomoravský kraj",
+   "slug": "jihomoravsky",
+   "sreality_region_id": 14,
+   "remax_region_id": 116,
+   "bezrealitky_region_id": "R442311"
+  },
+  {
+   "name": "Jihočeský kraj",
+   "slug": "jihocesky",
+   "sreality_region_id": 1,
+   "remax_region_id": 35,
+   "bezrealitky_region_id": "R442321"
+  },
+  {
+   "name": "Karlovarský kraj",
+   "slug": "karlovarsky",
+   "sreality_region_id": 3,
+   "remax_region_id": 51,
+   "bezrealitky_region_id": "R442314"
+  },
+  {
+   "name": "Kraj Vysočina",
+   "slug": "vysocina",
+   "sreality_region_id": 13,
+   "remax_region_id": 108,
+   "bezrealitky_region_id": "R442453"
+  },
+  {
+   "name": "Královéhradecký kraj",
+   "slug": "kralovehradecky",
+   "sreality_region_id": 6,
+   "remax_region_id": 86,
+   "bezrealitky_region_id": "R442463"
+  },
+  {
+   "name": "Liberecký kraj",
+   "slug": "liberecky",
+   "sreality_region_id": 5,
+   "remax_region_id": 78,
+   "bezrealitky_region_id": "R442455"
+  },
+  {
+   "name": "Moravskoslezský kraj",
+   "slug": "moravskoslezsky",
+   "sreality_region_id": 12,
+   "remax_region_id": 132,
+   "bezrealitky_region_id": "R442461"
+  },
+  {
+   "name": "Olomoucký kraj",
+   "slug": "olomoucky",
+   "sreality_region_id": 8,
+   "remax_region_id": 124,
+   "bezrealitky_region_id": "R442459"
+  },
+  {
+   "name": "Pardubický kraj",
+   "slug": "pardubicky",
+   "sreality_region_id": 7,
+   "remax_region_id": 94,
+   "bezrealitky_region_id": "R442460"
+  },
+  {
+   "name": "Plzeňský kraj",
+   "slug": "plzensky",
+   "sreality_region_id": 2,
+   "remax_region_id": 43,
+   "bezrealitky_region_id": "R442466"
+  },
+  {
+   "name": "Středočeský kraj",
+   "slug": "stredocesky",
+   "sreality_region_id": 11,
+   "remax_region_id": 27,
+   "bezrealitky_region_id": "R442397"
+  },
+  {
+   "name": "Zlínský kraj",
+   "slug": "zlinsky",
+   "sreality_region_id": 9,
+   "remax_region_id": 141,
+   "bezrealitky_region_id": "R442449"
+  },
+  {
+   "name": "Ústecký kraj",
+   "slug": "ustecky",
+   "sreality_region_id": 4,
+   "remax_region_id": 60,
+   "bezrealitky_region_id": "R442452"
+  }
+ ],
+ "districts": [
+  {
+   "name": "Benešov",
+   "slug": "benesov",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 48,
+   "remax_region_id": 27,
+   "remax_district_id": 3201,
+   "bezrealitky_region_id": "R441521"
+  },
+  {
+   "name": "Beroun",
+   "slug": "beroun",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 49,
+   "remax_region_id": 27,
+   "remax_district_id": 3202,
+   "bezrealitky_region_id": "R442335"
+  },
+  {
+   "name": "Blansko",
+   "slug": "blansko",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 71,
+   "remax_region_id": 116,
+   "remax_district_id": 3701,
+   "bezrealitky_region_id": "R441793"
+  },
+  {
+   "name": "Brno-město",
+   "slug": "brno-mesto",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 72,
+   "remax_region_id": 116,
+   "remax_district_id": 3702,
+   "bezrealitky_region_id": "R442273"
+  },
+  {
+   "name": "Brno-venkov",
+   "slug": "brno-venkov",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 73,
+   "remax_region_id": 116,
+   "remax_district_id": 3703,
+   "bezrealitky_region_id": "R442084"
+  },
+  {
+   "name": "Bruntál",
+   "slug": "bruntal",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 60,
+   "remax_region_id": 132,
+   "remax_district_id": 3801,
+   "bezrealitky_region_id": "R441193"
+  },
+  {
+   "name": "Břeclav",
+   "slug": "breclav",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 74,
+   "remax_region_id": 116,
+   "remax_district_id": 3704,
+   "bezrealitky_region_id": "R442309"
+  },
+  {
+   "name": "Cheb",
+   "slug": "cheb",
+   "region_slug": "karlovarsky",
+   "sreality_district_id": 9,
+   "remax_region_id": 51,
+   "remax_district_id": 3402,
+   "bezrealitky_region_id": "R441990"
+  },
+  {
+   "name": "Chomutov",
+   "slug": "chomutov",
+   "region_slug": "ustecky",
+   "sreality_district_id": 20,
+   "remax_region_id": 60,
+   "remax_district_id": 3503,
+   "bezrealitky_region_id": "R441437"
+  },
+  {
+   "name": "Chrudim",
+   "slug": "chrudim",
+   "region_slug": "pardubicky",
+   "sreality_district_id": 29,
+   "remax_region_id": 94,
+   "remax_district_id": 3603,
+   "bezrealitky_region_id": "R441441"
+  },
+  {
+   "name": "Domažlice",
+   "slug": "domazlice",
+   "region_slug": "plzensky",
+   "sreality_district_id": 8,
+   "remax_region_id": 43,
+   "remax_district_id": 3401,
+   "bezrealitky_region_id": "R441864"
+  },
+  {
+   "name": "Děčín",
+   "slug": "decin",
+   "region_slug": "ustecky",
+   "sreality_district_id": 19,
+   "remax_region_id": 60,
+   "remax_district_id": 3502,
+   "bezrealitky_region_id": "R441155"
+  },
+  {
+   "name": "Frýdek-Místek",
+   "slug": "frydek-mistek",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 61,
+   "remax_region_id": 132,
+   "remax_district_id": 3802,
+   "bezrealitky_region_id": "R442412"
+  },
+  {
+   "name": "Havlíčkův Brod",
+   "slug": "havlickuv-brod",
+   "region_slug": "vysocina",
+   "sreality_district_id": 66,
+   "remax_region_id": 108,
+   "remax_district_id": 3601,
+   "bezrealitky_region_id": "R441984"
+  },
+  {
+   "name": "Hodonín",
+   "slug": "hodonin",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 75,
+   "remax_region_id": 116,
+   "remax_district_id": 3706,
+   "bezrealitky_region_id": "R441151"
+  },
+  {
+   "name": "Hradec Králové",
+   "slug": "hradec-kralove",
+   "region_slug": "kralovehradecky",
+   "sreality_district_id": 28,
+   "remax_region_id": 86,
+   "remax_district_id": 3602,
+   "bezrealitky_region_id": "R441917"
+  },
+  {
+   "name": "Jablonec nad Nisou",
+   "slug": "jablonec-nad-nisou",
+   "region_slug": "liberecky",
+   "sreality_district_id": 21,
+   "remax_region_id": 78,
+   "remax_district_id": 3504,
+   "bezrealitky_region_id": "R441190"
+  },
+  {
+   "name": "Jeseník",
+   "slug": "jesenik",
+   "region_slug": "olomoucky",
+   "sreality_district_id": 46,
+   "remax_region_id": 124,
+   "remax_district_id": 3811,
+   "bezrealitky_region_id": "R440926"
+  },
+  {
+   "name": "Jihlava",
+   "slug": "jihlava",
+   "region_slug": "vysocina",
+   "sreality_district_id": 67,
+   "remax_region_id": 108,
+   "remax_district_id": 3707,
+   "bezrealitky_region_id": "R441185"
+  },
+  {
+   "name": "Jindřichův Hradec",
+   "slug": "jindrichuv-hradec",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 3,
+   "remax_region_id": 35,
+   "remax_district_id": 3303,
+   "bezrealitky_region_id": "R441869"
+  },
+  {
+   "name": "Jičín",
+   "slug": "jicin",
+   "region_slug": "kralovehradecky",
+   "sreality_district_id": 30,
+   "remax_region_id": 86,
+   "remax_district_id": 3604,
+   "bezrealitky_region_id": "R441987"
+  },
+  {
+   "name": "Karlovy Vary",
+   "slug": "karlovy-vary",
+   "region_slug": "karlovarsky",
+   "sreality_district_id": 10,
+   "remax_region_id": 51,
+   "remax_district_id": 3403,
+   "bezrealitky_region_id": "R440798"
+  },
+  {
+   "name": "Karviná",
+   "slug": "karvina",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 62,
+   "remax_region_id": 132,
+   "remax_district_id": 3803,
+   "bezrealitky_region_id": "R441200"
+  },
+  {
+   "name": "Kladno",
+   "slug": "kladno",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 50,
+   "remax_region_id": 27,
+   "remax_district_id": 3203,
+   "bezrealitky_region_id": "R441012"
+  },
+  {
+   "name": "Klatovy",
+   "slug": "klatovy",
+   "region_slug": "plzensky",
+   "sreality_district_id": 11,
+   "remax_region_id": 43,
+   "remax_district_id": 3404,
+   "bezrealitky_region_id": "R442419"
+  },
+  {
+   "name": "Kolín",
+   "slug": "kolin",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 51,
+   "remax_region_id": 27,
+   "remax_district_id": 3204,
+   "bezrealitky_region_id": "R441315"
+  },
+  {
+   "name": "Kroměříž",
+   "slug": "kromeriz",
+   "region_slug": "zlinsky",
+   "sreality_district_id": 39,
+   "remax_region_id": 141,
+   "remax_district_id": 3708,
+   "bezrealitky_region_id": "R442410"
+  },
+  {
+   "name": "Kutná Hora",
+   "slug": "kutna-hora",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 52,
+   "remax_region_id": 27,
+   "remax_district_id": 3205,
+   "bezrealitky_region_id": "R441861"
+  },
+  {
+   "name": "Liberec",
+   "slug": "liberec",
+   "region_slug": "liberecky",
+   "sreality_district_id": 22,
+   "remax_region_id": 78,
+   "remax_district_id": 3505,
+   "bezrealitky_region_id": "R441329"
+  },
+  {
+   "name": "Litoměřice",
+   "slug": "litomerice",
+   "region_slug": "ustecky",
+   "sreality_district_id": 23,
+   "remax_region_id": 60,
+   "remax_district_id": 3506,
+   "bezrealitky_region_id": "R442420"
+  },
+  {
+   "name": "Louny",
+   "slug": "louny",
+   "region_slug": "ustecky",
+   "sreality_district_id": 24,
+   "remax_region_id": 60,
+   "remax_district_id": 3507,
+   "bezrealitky_region_id": "R441333"
+  },
+  {
+   "name": "Mladá Boleslav",
+   "slug": "mlada-boleslav",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 53,
+   "remax_region_id": 27,
+   "remax_district_id": 3207,
+   "bezrealitky_region_id": "R441981"
+  },
+  {
+   "name": "Most",
+   "slug": "most",
+   "region_slug": "ustecky",
+   "sreality_district_id": 25,
+   "remax_region_id": 60,
+   "remax_district_id": 3508,
+   "bezrealitky_region_id": "R442417"
+  },
+  {
+   "name": "Mělník",
+   "slug": "melnik",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 54,
+   "remax_region_id": 27,
+   "remax_district_id": 3206,
+   "bezrealitky_region_id": "R442362"
+  },
+  {
+   "name": "Nový Jičín",
+   "slug": "novy-jicin",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 63,
+   "remax_region_id": 132,
+   "remax_district_id": 3804,
+   "bezrealitky_region_id": "R441188"
+  },
+  {
+   "name": "Nymburk",
+   "slug": "nymburk",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 55,
+   "remax_region_id": 27,
+   "remax_district_id": 3208,
+   "bezrealitky_region_id": "R441570"
+  },
+  {
+   "name": "Náchod",
+   "slug": "nachod",
+   "region_slug": "kralovehradecky",
+   "sreality_district_id": 31,
+   "remax_region_id": 86,
+   "remax_district_id": 3605,
+   "bezrealitky_region_id": "R441794"
+  },
+  {
+   "name": "Olomouc",
+   "slug": "olomouc",
+   "region_slug": "olomoucky",
+   "sreality_district_id": 42,
+   "remax_region_id": 124,
+   "remax_district_id": 3805,
+   "bezrealitky_region_id": "R441579"
+  },
+  {
+   "name": "Opava",
+   "slug": "opava",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 64,
+   "remax_region_id": 132,
+   "remax_district_id": 3806,
+   "bezrealitky_region_id": "R442422"
+  },
+  {
+   "name": "Ostrava-město",
+   "slug": "ostrava-mesto",
+   "region_slug": "moravskoslezsky",
+   "sreality_district_id": 65,
+   "remax_region_id": 132,
+   "remax_district_id": 3807,
+   "bezrealitky_region_id": "R435509"
+  },
+  {
+   "name": "Pardubice",
+   "slug": "pardubice",
+   "region_slug": "pardubicky",
+   "sreality_district_id": 32,
+   "remax_region_id": 94,
+   "remax_district_id": 3606,
+   "bezrealitky_region_id": "R441234"
+  },
+  {
+   "name": "Pelhřimov",
+   "slug": "pelhrimov",
+   "region_slug": "vysocina",
+   "sreality_district_id": 68,
+   "remax_region_id": 108,
+   "remax_district_id": 3304,
+   "bezrealitky_region_id": "R441102"
+  },
+  {
+   "name": "Plzeň-jih",
+   "slug": "plzen-jih",
+   "region_slug": "plzensky",
+   "sreality_district_id": 13,
+   "remax_region_id": 43,
+   "remax_district_id": 3406,
+   "bezrealitky_region_id": "R442271"
+  },
+  {
+   "name": "Plzeň-město",
+   "slug": "plzen-mesto",
+   "region_slug": "plzensky",
+   "sreality_district_id": 12,
+   "remax_region_id": 43,
+   "remax_district_id": 3405,
+   "bezrealitky_region_id": "R442399"
+  },
+  {
+   "name": "Plzeň-sever",
+   "slug": "plzen-sever",
+   "region_slug": "plzensky",
+   "sreality_district_id": 14,
+   "remax_region_id": 43,
+   "remax_district_id": 3407,
+   "bezrealitky_region_id": "R442415"
+  },
+  {
+   "name": "Prachatice",
+   "slug": "prachatice",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 5,
+   "remax_region_id": 35,
+   "remax_district_id": 3306,
+   "bezrealitky_region_id": "R441582"
+  },
+  {
+   "name": "Praha 1",
+   "slug": "praha-1",
+   "region_slug": "praha",
+   "sreality_district_id": 5001,
+   "remax_region_id": 19,
+   "remax_district_id": 19,
+   "bezrealitky_region_id": "R20000061612"
+  },
+  {
+   "name": "Praha 10",
+   "slug": "praha-10",
+   "region_slug": "praha",
+   "sreality_district_id": 5010,
+   "remax_region_id": 19,
+   "remax_district_id": 108,
+   "bezrealitky_region_id": "R20000061783"
+  },
+  {
+   "name": "Praha 2",
+   "slug": "praha-2",
+   "region_slug": "praha",
+   "sreality_district_id": 5002,
+   "remax_region_id": 19,
+   "remax_district_id": 27,
+   "bezrealitky_region_id": "R20000063928"
+  },
+  {
+   "name": "Praha 3",
+   "slug": "praha-3",
+   "region_slug": "praha",
+   "sreality_district_id": 5003,
+   "remax_region_id": 19,
+   "remax_district_id": 35,
+   "bezrealitky_region_id": "R20000063962"
+  },
+  {
+   "name": "Praha 4",
+   "slug": "praha-4",
+   "region_slug": "praha",
+   "sreality_district_id": 5004,
+   "remax_region_id": 19,
+   "remax_district_id": 43,
+   "bezrealitky_region_id": "R20000060519"
+  },
+  {
+   "name": "Praha 5",
+   "slug": "praha-5",
+   "region_slug": "praha",
+   "sreality_district_id": 5005,
+   "remax_region_id": 19,
+   "remax_district_id": 51,
+   "bezrealitky_region_id": "R20000046869"
+  },
+  {
+   "name": "Praha 6",
+   "slug": "praha-6",
+   "region_slug": "praha",
+   "sreality_district_id": 5006,
+   "remax_region_id": 19,
+   "remax_district_id": 60,
+   "bezrealitky_region_id": "R20000013899"
+  },
+  {
+   "name": "Praha 7",
+   "slug": "praha-7",
+   "region_slug": "praha",
+   "sreality_district_id": 5007,
+   "remax_region_id": 19,
+   "remax_district_id": 78,
+   "bezrealitky_region_id": "R20000064250"
+  },
+  {
+   "name": "Praha 8",
+   "slug": "praha-8",
+   "region_slug": "praha",
+   "sreality_district_id": 5008,
+   "remax_region_id": 19,
+   "remax_district_id": 86,
+   "bezrealitky_region_id": "R20000064370"
+  },
+  {
+   "name": "Praha 9",
+   "slug": "praha-9",
+   "region_slug": "praha",
+   "sreality_district_id": 5009,
+   "remax_region_id": 19,
+   "remax_district_id": 94,
+   "bezrealitky_region_id": "R20000065523"
+  },
+  {
+   "name": "Praha-východ",
+   "slug": "praha-vychod",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 56,
+   "remax_region_id": 27,
+   "remax_district_id": 3209,
+   "bezrealitky_region_id": "R441584"
+  },
+  {
+   "name": "Praha-západ",
+   "slug": "praha-zapad",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 57,
+   "remax_region_id": 27,
+   "remax_district_id": 3210,
+   "bezrealitky_region_id": "R442269"
+  },
+  {
+   "name": "Prostějov",
+   "slug": "prostejov",
+   "region_slug": "olomoucky",
+   "sreality_district_id": 40,
+   "remax_region_id": 124,
+   "remax_district_id": 3709,
+   "bezrealitky_region_id": "R441197"
+  },
+  {
+   "name": "Písek",
+   "slug": "pisek",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 4,
+   "remax_region_id": 35,
+   "remax_district_id": 3305,
+   "bezrealitky_region_id": "R441220"
+  },
+  {
+   "name": "Přerov",
+   "slug": "prerov",
+   "region_slug": "olomoucky",
+   "sreality_district_id": 43,
+   "remax_region_id": 124,
+   "remax_district_id": 3808,
+   "bezrealitky_region_id": "R441573"
+  },
+  {
+   "name": "Příbram",
+   "slug": "pribram",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 58,
+   "remax_region_id": 27,
+   "remax_district_id": 3211,
+   "bezrealitky_region_id": "R441434"
+  },
+  {
+   "name": "Rakovník",
+   "slug": "rakovnik",
+   "region_slug": "stredocesky",
+   "sreality_district_id": 59,
+   "remax_region_id": 27,
+   "remax_district_id": 3212,
+   "bezrealitky_region_id": "R442396"
+  },
+  {
+   "name": "Rokycany",
+   "slug": "rokycany",
+   "region_slug": "plzensky",
+   "sreality_district_id": 15,
+   "remax_region_id": 43,
+   "remax_district_id": 3408,
+   "bezrealitky_region_id": "R441451"
+  },
+  {
+   "name": "Rychnov nad Kněžnou",
+   "slug": "rychnov-nad-kneznou",
+   "region_slug": "kralovehradecky",
+   "sreality_district_id": 33,
+   "remax_region_id": 86,
+   "remax_district_id": 3607,
+   "bezrealitky_region_id": "R441223"
+  },
+  {
+   "name": "Semily",
+   "slug": "semily",
+   "region_slug": "liberecky",
+   "sreality_district_id": 34,
+   "remax_region_id": 78,
+   "remax_district_id": 3608,
+   "bezrealitky_region_id": "R442423"
+  },
+  {
+   "name": "Sokolov",
+   "slug": "sokolov",
+   "region_slug": "karlovarsky",
+   "sreality_district_id": 16,
+   "remax_region_id": 51,
+   "remax_district_id": 3409,
+   "bezrealitky_region_id": "R442313"
+  },
+  {
+   "name": "Strakonice",
+   "slug": "strakonice",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 6,
+   "remax_region_id": 35,
+   "remax_district_id": 3307,
+   "bezrealitky_region_id": "R442320"
+  },
+  {
+   "name": "Svitavy",
+   "slug": "svitavy",
+   "region_slug": "pardubicky",
+   "sreality_district_id": 35,
+   "remax_region_id": 94,
+   "remax_district_id": 3609,
+   "bezrealitky_region_id": "R441911"
+  },
+  {
+   "name": "Tachov",
+   "slug": "tachov",
+   "region_slug": "plzensky",
+   "sreality_district_id": 17,
+   "remax_region_id": 43,
+   "remax_district_id": 3410,
+   "bezrealitky_region_id": "R441448"
+  },
+  {
+   "name": "Teplice",
+   "slug": "teplice",
+   "region_slug": "ustecky",
+   "sreality_district_id": 26,
+   "remax_region_id": 60,
+   "remax_district_id": 3509,
+   "bezrealitky_region_id": "R441318"
+  },
+  {
+   "name": "Trutnov",
+   "slug": "trutnov",
+   "region_slug": "kralovehradecky",
+   "sreality_district_id": 36,
+   "remax_region_id": 86,
+   "remax_district_id": 3610,
+   "bezrealitky_region_id": "R442413"
+  },
+  {
+   "name": "Tábor",
+   "slug": "tabor",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 7,
+   "remax_region_id": 35,
+   "remax_district_id": 3308,
+   "bezrealitky_region_id": "R441914"
+  },
+  {
+   "name": "Třebíč",
+   "slug": "trebic",
+   "region_slug": "vysocina",
+   "sreality_district_id": 69,
+   "remax_region_id": 108,
+   "remax_district_id": 3710,
+   "bezrealitky_region_id": "R442210"
+  },
+  {
+   "name": "Uherské Hradiště",
+   "slug": "uherske-hradiste",
+   "region_slug": "zlinsky",
+   "sreality_district_id": 41,
+   "remax_region_id": 141,
+   "remax_district_id": 3711,
+   "bezrealitky_region_id": "R442087"
+  },
+  {
+   "name": "Vsetín",
+   "slug": "vsetin",
+   "region_slug": "zlinsky",
+   "sreality_district_id": 45,
+   "remax_region_id": 141,
+   "remax_district_id": 3810,
+   "bezrealitky_region_id": "R442448"
+  },
+  {
+   "name": "Vyškov",
+   "slug": "vyskov",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 76,
+   "remax_region_id": 116,
+   "remax_district_id": 3712,
+   "bezrealitky_region_id": "R442281"
+  },
+  {
+   "name": "Zlín",
+   "slug": "zlin",
+   "region_slug": "zlinsky",
+   "sreality_district_id": 38,
+   "remax_region_id": 141,
+   "remax_district_id": 3705,
+   "bezrealitky_region_id": "R440923"
+  },
+  {
+   "name": "Znojmo",
+   "slug": "znojmo",
+   "region_slug": "jihomoravsky",
+   "sreality_district_id": 77,
+   "remax_region_id": 116,
+   "remax_district_id": 3713,
+   "bezrealitky_region_id": "R441326"
+  },
+  {
+   "name": "Ústí nad Labem",
+   "slug": "usti-nad-labem",
+   "region_slug": "ustecky",
+   "sreality_district_id": 27,
+   "remax_region_id": 60,
+   "remax_district_id": 3510,
+   "bezrealitky_region_id": "R442324"
+  },
+  {
+   "name": "Ústí nad Orlicí",
+   "slug": "usti-nad-orlici",
+   "region_slug": "pardubicky",
+   "sreality_district_id": 37,
+   "remax_region_id": 94,
+   "remax_district_id": 3611,
+   "bezrealitky_region_id": "R441218"
+  },
+  {
+   "name": "Česká Lípa",
+   "slug": "ceska-lipa",
+   "region_slug": "liberecky",
+   "sreality_district_id": 18,
+   "remax_region_id": 78,
+   "remax_district_id": 3501,
+   "bezrealitky_region_id": "R441446"
+  },
+  {
+   "name": "České Budějovice",
+   "slug": "ceske-budejovice",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 1,
+   "remax_region_id": 35,
+   "remax_district_id": 3301,
+   "bezrealitky_region_id": "R441226"
+  },
+  {
+   "name": "Český Krumlov",
+   "slug": "cesky-krumlov",
+   "region_slug": "jihocesky",
+   "sreality_district_id": 2,
+   "remax_region_id": 35,
+   "remax_district_id": 3302,
+   "bezrealitky_region_id": "R441576"
+  },
+  {
+   "name": "Šumperk",
+   "slug": "sumperk",
+   "region_slug": "olomoucky",
+   "sreality_district_id": 44,
+   "remax_region_id": 124,
+   "remax_district_id": 3809,
+   "bezrealitky_region_id": "R442318"
+  },
+  {
+   "name": "Žďár nad Sázavou",
+   "slug": "zdar-nad-sazavou",
+   "region_slug": "vysocina",
+   "sreality_district_id": 70,
+   "remax_region_id": 108,
+   "remax_district_id": 3714,
+   "bezrealitky_region_id": "R441749"
+  }
+ ]
+}

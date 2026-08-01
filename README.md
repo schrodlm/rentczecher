@@ -44,6 +44,30 @@ uv run pytest                    # offline test suite
 uv run pytest -m live            # live portal tests (deliberate)
 ```
 
+## Location data
+
+`src/rentczecher/adapters/scrapers/location_data/places.json` maps every Czech
+district (14 kraje, 76 okresy, Praha 1–10) to each portal's search ids. It is
+**generated — never edit it by hand**. Regenerate it when a portal renumbers
+its taxonomy (symptoms: a place that used to return listings suddenly returns
+zero, or `pytest -m live` fails in `TestShippedIdsLive`):
+
+```bash
+uv run python scripts/refresh_location_data.py
+```
+
+The script harvests each portal's own taxonomy, joins the three by place name,
+live-verifies every Bezrealitky id against the portal, and refuses to write
+anything on a mismatch — expect it to take a few minutes (requests are paced).
+`overrides.json` in the same directory is the only hand-maintained part; its
+`why` key explains the Prague quirk it exists for. Review the `places.json`
+diff before committing a regeneration; on a no-op run the only line that
+changes is `generated_at`.
+
+Note: the table has no runtime consumer yet — profiles still carry raw portal
+ids in their scraper blocks, so regenerating the table does not fix a running
+config until the location resolver lands.
+
 ## Config
 
 The config has a shared `email` section and multiple `profiles`:
