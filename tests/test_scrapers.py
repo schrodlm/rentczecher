@@ -290,6 +290,12 @@ class TestBezrealitkyParsing:
         assert abs(l.lat - 50.1) < 1e-9
         assert abs(l.lon - 14.43) < 1e-9
 
+    def test_undefined_disposition_is_treated_as_absent(self, monkeypatch):
+        advert = _bez_advert(1, disposition="UNDEFINED")
+        client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([advert], total_count=1)})
+        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        assert listings[0].disposition is None
+
     def test_reserved_and_out_of_range_adverts_are_skipped(self, monkeypatch):
         adverts = [
             _bez_advert(1),
