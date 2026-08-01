@@ -2,8 +2,9 @@
 
 Run with: python3 -m pytest tests/test_edge_cases.py -v
 """
-import os
 import re
+
+import pytest
 from rentczecher.adapters.scrapers.base import Listing
 
 
@@ -288,20 +289,10 @@ class TestScoringAllZeroWeights:
 class TestDBMarkSeenTwice:
     PROFILE = "test_edge_double_seen"
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def _isolated_data_dir(self, tmp_path, monkeypatch):
         from rentczecher.adapters import legacy_json_db as db
-        path = db._db_path(self.PROFILE)
-        if os.path.exists(path):
-            os.unlink(path)
-
-    def teardown_method(self):
-        from rentczecher.adapters import legacy_json_db as db
-        path = db._db_path(self.PROFILE)
-        if os.path.exists(path):
-            os.unlink(path)
-        lock = db._lock_path(self.PROFILE)
-        if os.path.exists(lock):
-            os.unlink(lock)
+        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
 
     def test_mark_seen_twice_no_duplicate(self):
         from rentczecher.adapters import legacy_json_db as db
