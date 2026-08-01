@@ -139,7 +139,7 @@ def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
 
     sent = {}
 
-    def capture_email(listings, email_cfg, profile=None, disappeared=None):
+    def capture_email(listings, email_cfg, spec=None, profile=None, disappeared=None):
         sent["notable"] = listings
         sent["disappeared"] = disappeared or []
 

@@ -6,6 +6,7 @@ from email.utils import formatdate, make_msgid
 from html import escape
 
 from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.search import SearchSpec
 
 NBSP = "\u00a0"  # Non-breaking space (works in both HTML and plain text)
 
@@ -182,14 +183,15 @@ def _render_disappeared_section(disappeared: list[dict], is_rent: bool) -> str:
     </div>"""
 
 
-def send_email(listings: list[Listing], email_cfg: dict, profile: dict | None = None,
+def send_email(listings: list[Listing], email_cfg: dict, spec: SearchSpec,
+               profile: dict | None = None,
                disappeared: list[dict] | None = None) -> None:
     if not listings:
         return
 
     profile = profile or {}
     profile_name = profile.get("name", "Byt Watchdog")
-    is_rent = profile.get("search", {}).get("offer_type", "rent") == "rent"
+    is_rent = spec.offer_type == "rent"
 
     # Sort by score descending
     listings = sorted(listings, key=lambda l: l.score, reverse=True)
