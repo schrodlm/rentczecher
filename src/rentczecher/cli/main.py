@@ -57,16 +57,8 @@ def validate_config(path: Path | None = None) -> int:
         print(error, file=sys.stderr)
         return 1
     profiles = config["profiles"]
-    enabled = sum(
-        1 for profile in profiles.values()
-        for scraper in profile["scrapers"].values() if scraper["enabled"]
-    )
+    enabled = sum(len(profile["scrapers"]) for profile in profiles.values())
     print(f"OK - {len(profiles)} profile(s), {enabled} scraper(s) enabled")
-    for profile_id, profile in profiles.items():
-        if profile["scrapers"].get("remax", {}).get("search_url"):
-            print(f"WARNING: profiles.{profile_id}.scrapers.remax.search_url is "
-                  "deprecated; it will be replaced by resolver-based location "
-                  "parameters and later become an error")
     return 0
 
 
@@ -120,20 +112,18 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     # Scrape all sources for this profile
     all_listings = []
-    scraper_configs = profile.get("scrapers", {})
-    enabled_count = sum(1 for n in ALL_SCRAPERS if scraper_configs.get(n, {}).get("enabled", False))
-    if enabled_count == 0:
+    enabled_scrapers = profile.get("scrapers", [])
+    if not enabled_scrapers:
         log.warning("Profile %s has no enabled scrapers", profile_id)
         return
 
     for name, scraper_cls in ALL_SCRAPERS.items():
-        scraper_cfg = scraper_configs.get(name, {})
-        if not scraper_cfg.get("enabled", False):
+        if name not in enabled_scrapers:
             continue
 
         log.info("Running scraper: %s", name)
         try:
-            scraper = scraper_cls(spec, scraper_cfg, client)
+            scraper = scraper_cls(spec, client)
             listings = scraper.scrape()
             if len(listings) == 0:
                 log.warning("  %s: returned 0 results - site structure may have changed!", name)

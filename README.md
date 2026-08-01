@@ -8,7 +8,7 @@ Multi-profile real estate monitor for the Czech Republic. Scrapes major Czech re
 - **3 sources**: Sreality.cz (API), Bezrealitky.cz (SSR), RE/MAX Czech (HTML)
 - **Any property type**: Flats, houses, cottages, land, agricultural estates
 - **Any offer type**: Rent or sale
-- **Any location**: Configurable per profile via district IDs and OSM region IDs
+- **Any location**: Any Czech kraj or district by name (`place: praha-7`) - typos get suggestions
 - **Smart scoring**: 0-100 score with configurable weights (price/m2, disposition, size, land area, neighborhood, total price)
 - **Price drop alerts**: Detects when a listing's price decreases
 - **Disappeared listings**: Tracks when properties are removed
@@ -64,10 +64,6 @@ anything on a mismatch — expect it to take a few minutes (requests are paced).
 diff before committing a regeneration; on a no-op run the only line that
 changes is `generated_at`.
 
-Note: the table has no runtime consumer yet — profiles still carry raw portal
-ids in their scraper blocks, so regenerating the table does not fix a running
-config until the location resolver lands.
-
 ## Config
 
 The config has a shared `email` section and multiple `profiles`:
@@ -88,21 +84,9 @@ profiles:
     search:
       offer_type: rent
       estate_type: flat
+      place: praha-7
       max_price: 25000
-    scrapers:
-      sreality:
-        enabled: true
-        category_main_cb: 1       # 1=byty
-        category_type_cb: 2       # 2=pronajem
-        locality_district_id: 5007
-      bezrealitky:
-        enabled: true
-        estate_type: "BYT"
-        offer_type: "PRONAJEM"
-        region_osm_id: "R20000064250"
-      remax:
-        enabled: true
-        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=2&..."
+    scrapers: [sreality, bezrealitky, remax]
     scoring:
       price_per_m2_weight: 40
       disposition_weight: 30
@@ -120,23 +104,10 @@ profiles:
     search:
       offer_type: sale
       estate_type: house
+      place: domazlice
       max_price: 5000000
       min_land_m2: 500
-    scrapers:
-      sreality:
-        enabled: true
-        category_main_cb: 2       # 2=domy
-        category_type_cb: 1       # 1=prodej
-        locality_district_id: 8   # Domažlický okres
-        category_sub_cb: "37|43|44"
-      bezrealitky:
-        enabled: true
-        estate_type: "DUM"
-        offer_type: "PRODEJ"
-        region_osm_id: "R441864"
-      remax:
-        enabled: true
-        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1&types%5B6%5D=on&types%5B10%5D=on&regions%5B43%5D%5B3401%5D=on"
+    scrapers: [sreality, bezrealitky, remax]
     scoring:
       land_weight: 40
       ideal_land_m2: 2000
@@ -150,18 +121,23 @@ See `config.example.yaml` for a complete reference with all options. Check any
 config with `.venv/bin/rentczecher config validate` — typos and invalid values
 are reported with the exact offending key.
 
-**Deprecated:** `scrapers.remax.search_url` (the hand-built RE/MAX URL) still
-works but will be replaced by resolver-based location parameters and later
-becomes a validation error; `config validate` warns while it remains accepted.
+`place` accepts any Czech kraj or district as a slug or free text ("Praha 7",
+"okres Domažlice", "plzensky") and resolves it to each portal's search
+parameters; unknown places fail validation with did-you-mean suggestions.
+
+Configs from before the `place` key carried per-portal parameter blocks
+(`locality_district_id`, `region_osm_id`, `search_url`, ...); those are
+rejected outright — a profile's `scrapers` is a list of portal names and
+`search.place` carries the location.
 
 ## Adding a new profile
 
-1. Choose scraper parameters:
-   - **Sreality**: `category_main_cb` (1=byty, 2=domy, 3=pozemky), `category_type_cb` (1=prodej, 2=pronajem), `locality_district_id` (find via sreality.cz URL)
-   - **Bezrealitky**: `estate_type` (BYT/DUM/POZEMEK/REKREACNI_OBJEKT), `offer_type` (PRODEJ/PRONAJEM), `region_osm_id` (find via OpenStreetMap)
-   - **RE/MAX**: Build a `search_url` on remax-czech.cz and paste it
-2. Configure scoring weights for what matters (price/m2 for rentals, land_area for houses, etc.)
-3. Set the `to` recipients
+1. Describe the search: `offer_type`, `estate_type`, `place` (any Czech kraj
+   or district, e.g. `place: olomouc`), price bounds
+2. List the scrapers to run (`scrapers: [sreality, bezrealitky, remax]` -
+   no per-portal parameters needed)
+3. Configure scoring weights for what matters (price/m2 for rentals, land_area for houses, etc.)
+4. Set the `to` recipients
 
 ## CLI
 

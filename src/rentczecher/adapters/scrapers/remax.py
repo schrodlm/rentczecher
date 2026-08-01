@@ -1,30 +1,35 @@
 import re
 import time
+from urllib.parse import urlencode
 
 from bs4 import BeautifulSoup
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
+
+SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
+
+# Checkbox ids from the search form's types tree.
+ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
+OFFER_TYPE_ID = {"sale": 1, "rent": 2}
 
 
 class RemaxScraper(BaseScraper):
     name = "remax"
 
     def _build_url(self) -> str:
-        """Build search URL from profile config or use custom search_url."""
-        cfg = self.portal_cfg
-        custom_url = cfg.get("search_url")
-        if custom_url:
-            return custom_url.format(
-                min_price=self.spec.min_price,
-                max_price=self.spec.max_price,
-            )
-        # Fallback: should not happen if config is correct
-        return "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1"
+        query: list[tuple[str, object]] = [("hledani", OFFER_TYPE_ID[self.spec.offer_type])]
+        query += [(f"types[{type_id}]", "on")
+                  for type_id in ESTATE_TYPE_IDS[self.spec.estate_type]]
+        for region_id, district_ids in self.place.remax_regions.items():
+            query += [(f"regions[{region_id}][{district_id}]", "on")
+                      for district_id in district_ids]
+        if self.spec.min_price > 0:
+            query.append(("price_from", self.spec.min_price))
+        if self.spec.max_price > 0:
+            query.append(("price_to", self.spec.max_price))
+        return SEARCH_BASE_URL + "?" + urlencode(query)
 
     def scrape(self) -> list[Listing]:
-        if not self.portal_cfg.get("enabled", False):
-            return []
-
         listings: list[Listing] = []
         page = 1
         while True:

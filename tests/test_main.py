@@ -49,7 +49,25 @@ class TestOrphanedRepoDataWarning:
 
 
 class TestValidateConfig:
-    def test_deprecated_search_url_prints_a_warning(self, tmp_path, capsys):
+
+
+    def test_validate_reports_profile_and_scraper_counts(self, tmp_path, capsys):
+        import yaml
+        config = {
+            "email": {"smtp_host": "h", "smtp_user": "u",
+                      "smtp_password": "p", "from": "u@example.com"},
+            "profiles": {"p": {
+                "name": "P", "to": ["a@example.com"],
+                "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+                "scrapers": ["sreality", "bezrealitky", "remax"],
+            }},
+        }
+        path = tmp_path / "config.yaml"
+        path.write_text(yaml.safe_dump(config))
+        assert main_module.validate_config(path) == 0
+        assert capsys.readouterr().out == "OK - 1 profile(s), 3 scraper(s) enabled\n"
+
+    def test_validate_reports_error_for_a_legacy_config(self, tmp_path, capsys):
         import yaml
         config = {
             "email": {"smtp_host": "h", "smtp_user": "u",
@@ -57,15 +75,15 @@ class TestValidateConfig:
             "profiles": {"p": {
                 "name": "P", "to": ["a@example.com"],
                 "search": {"offer_type": "rent", "estate_type": "flat"},
-                "scrapers": {"remax": {"enabled": True, "search_url": "https://example.com/{min_price}{max_price}"}},
+                "scrapers": {"sreality": {"enabled": True, "locality_district_id": 5007}},
             }},
         }
         path = tmp_path / "config.yaml"
         path.write_text(yaml.safe_dump(config))
-        assert main_module.validate_config(path) == 0
-        out = capsys.readouterr().out
-        assert "OK - 1 profile(s)" in out
-        assert "search_url is deprecated" in out
+        assert main_module.validate_config(path) == 1
+        err = capsys.readouterr().err
+        assert "place" in err
+        assert "scrapers" in err
 
 
 class TestPidLock:
@@ -107,7 +125,7 @@ class TestBrokenScraperHandling:
         class WorkingScraper:
             name = "sreality"
 
-            def __init__(self, spec, portal_cfg, client):
+            def __init__(self, spec, client):
                 pass
 
             def scrape(self):
@@ -116,7 +134,7 @@ class TestBrokenScraperHandling:
         class BrokenScraper:
             name = "bezrealitky"
 
-            def __init__(self, spec, portal_cfg, client):
+            def __init__(self, spec, client):
                 pass
 
             def scrape(self):
@@ -126,8 +144,8 @@ class TestBrokenScraperHandling:
                             {"sreality": WorkingScraper, "bezrealitky": BrokenScraper})
         profile = {
             "name": "Broken-portal test",
-            "search": {"offer_type": "rent", "estate_type": "flat"},
-            "scrapers": {"sreality": {"enabled": True}, "bezrealitky": {"enabled": True}},
+            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+            "scrapers": ["sreality", "bezrealitky"],
         }
         with caplog.at_level("INFO", logger="rentczecher"):
             main_module.run_profile("broken-test", profile, email_cfg={}, client=None, dry_run=True)
@@ -149,7 +167,7 @@ class TestDryRunIsReadOnly:
         class FakeScraper:
             name = "sreality"
 
-            def __init__(self, spec, portal_cfg, client):
+            def __init__(self, spec, client):
                 pass
 
             def scrape(self):
@@ -158,8 +176,8 @@ class TestDryRunIsReadOnly:
         monkeypatch.setattr(main_module, "ALL_SCRAPERS", {"sreality": FakeScraper})
         profile = {
             "name": "Dry-run test",
-            "search": {"offer_type": "rent", "estate_type": "flat"},
-            "scrapers": {"sreality": {"enabled": True}},
+            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+            "scrapers": ["sreality"],
         }
         main_module.run_profile(profile_id, profile, email_cfg={}, client=None, dry_run=True)
 

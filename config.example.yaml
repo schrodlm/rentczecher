@@ -23,26 +23,13 @@ profiles:
     search:
       offer_type: rent          # rent | sale
       estate_type: flat         # flat | house | land | cottage
+      place: praha-7            # any Czech kraj or district; typos get suggestions
       min_price: 0
       max_price: 25000
       dispositions: []          # e.g. ["2+kk", "2+1"] - empty means all
       min_size_m2: 0
 
-    scrapers:
-      sreality:
-        enabled: true
-        category_main_cb: 1       # 1=byty
-        category_type_cb: 2       # 2=pronajem
-        locality_district_id: 5007  # Praha 7
-      bezrealitky:
-        enabled: true
-        estate_type: "BYT"
-        offer_type: "PRONAJEM"
-        region_osm_id: "R20000064250"  # Praha 7
-        osm_value: "Praha 7, obvod Praha 7, Hlavni mesto Praha, Praha, Cesko"
-      remax:
-        enabled: true
-        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=2&price_from={min_price}&price_to={max_price}&regions%5B19%5D%5B78%5D=on&types%5B4%5D=on"
+    scrapers: [sreality, bezrealitky, remax]
 
     scoring:
       price_per_m2_weight: 40
@@ -72,28 +59,14 @@ profiles:
     search:
       offer_type: sale
       estate_type: house        # house | cottage | land
+      place: domazlice          # okres Domazlice
       min_price: 0
       max_price: 5000000
       dispositions: []
       min_size_m2: 0
       min_land_m2: 500          # Minimum land/plot area
 
-    scrapers:
-      sreality:
-        enabled: true
-        category_main_cb: 2       # 2=domy
-        category_type_cb: 1       # 1=prodej
-        locality_district_id: 8   # Domazlicky okres
-        category_sub_cb: "37|43|44"  # rodinne domy + chalupy + zemedelske usedlosti
-      bezrealitky:
-        enabled: true
-        estate_type: "DUM"
-        offer_type: "PRODEJ"
-        region_osm_id: "R441864"   # Okres Domazlice
-        osm_value: "Domazlice"
-      remax:
-        enabled: true
-        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1&price_from={min_price}&price_to={max_price}&types%5B6%5D=on&types%5B10%5D=on&regions%5B43%5D%5B3401%5D=on"
+    scrapers: [sreality, bezrealitky, remax]
 
     scoring:
       price_per_m2_weight: 0      # Not relevant for houses

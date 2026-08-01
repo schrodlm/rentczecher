@@ -3,11 +3,10 @@ normalization. Everything downstream consumes the validated result."""
 
 import difflib
 
-from pydantic import (
-    BaseModel, ConfigDict, Field, SecretStr, ValidationError,
-    field_validator, model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from typing import Literal
+
+KNOWN_SCRAPERS = ("sreality", "bezrealitky", "remax")
 
 
 class StrictModel(BaseModel):
@@ -30,6 +29,7 @@ class ScheduleConfig(StrictModel):
 class SearchConfig(StrictModel):
     offer_type: Literal["rent", "sale"]
     estate_type: Literal["flat", "house", "land", "cottage"]
+    place: str
     min_price: int = 0
     max_price: int = 25000
     dispositions: list[str] = []
@@ -51,48 +51,12 @@ class ScoringConfig(StrictModel):
     max_good_price: int = 3000000
 
 
-class SrealityScraperConfig(StrictModel):
-    enabled: bool = False
-    category_main_cb: int = 1
-    category_type_cb: int = 2
-    locality_district_id: int | None = None
-    category_sub_cb: str | None = None
-
-    @model_validator(mode="after")
-    def _district_required_when_enabled(self):
-        if self.enabled and self.locality_district_id is None:
-            raise ValueError("locality_district_id is required when sreality is enabled")
-        return self
-
-
-class BezrealitkyScraperConfig(StrictModel):
-    enabled: bool = False
-    estate_type: str = "BYT"
-    offer_type: str = "PRONAJEM"
-    region_osm_id: str | None = None
-    osm_value: str | None = None
-
-
-class RemaxScraperConfig(StrictModel):
-    enabled: bool = False
-    search_url: str | None = None
-
-
-ScraperConfig = SrealityScraperConfig | BezrealitkyScraperConfig | RemaxScraperConfig
-
-SCRAPER_MODELS: dict[str, type[StrictModel]] = {
-    "sreality": SrealityScraperConfig,
-    "bezrealitky": BezrealitkyScraperConfig,
-    "remax": RemaxScraperConfig,
-}
-
-
 class ProfileConfig(StrictModel):
     name: str
     enabled: bool = True
     to: list[str]
     search: SearchConfig
-    scrapers: dict[str, ScraperConfig]
+    scrapers: list[str]
     scoring: ScoringConfig = ScoringConfig()
     tram_enrichment: bool = False
 
@@ -108,23 +72,17 @@ class ProfileConfig(StrictModel):
             raise ValueError("recipient addresses must not be empty")
         return value
 
-    @field_validator("scrapers", mode="before")
+    @field_validator("scrapers")
     @classmethod
-    def _dispatch_scraper_models(cls, value):
-        # Dispatching by dict key hides the scraper name from pydantic's
-        # error paths, so nested errors are reformatted to carry it.
-        if not isinstance(value, dict):
-            return value
-        dispatched = {}
-        for key, cfg in value.items():
-            model = SCRAPER_MODELS.get(key)
-            if model is None:
-                raise ValueError(f"unknown scraper '{key}' (known: {sorted(SCRAPER_MODELS)})")
-            try:
-                dispatched[key] = model.model_validate(cfg)
-            except ValidationError as error:
-                raise ValueError(_scraper_errors(key, model, error)) from error
-        return dispatched
+    def _known_scraper_names(cls, value):
+        for name in value:
+            if name not in KNOWN_SCRAPERS:
+                matches = difflib.get_close_matches(name, KNOWN_SCRAPERS, n=1, cutoff=0.6)
+                hint = f" (did you mean '{matches[0]}'?)" if matches else ""
+                raise ValueError(f"unknown scraper '{name}'{hint} (known: {sorted(KNOWN_SCRAPERS)})")
+        if len(set(value)) != len(value):
+            raise ValueError("scraper names must not repeat")
+        return value
 
 
 class Config(StrictModel):
@@ -136,15 +94,3 @@ class Config(StrictModel):
 def field_aliases(model: type[BaseModel]) -> list[str]:
     """The key names a user may actually write for a model (aliases win)."""
     return [field.alias or name for name, field in model.model_fields.items()]
-
-
-def _scraper_errors(key: str, model: type[BaseModel], error: ValidationError) -> str:
-    lines = []
-    for item in error.errors():
-        path = ".".join(str(part) for part in item["loc"])
-        message = item["msg"]
-        if item["type"] == "extra_forbidden":
-            matches = difflib.get_close_matches(str(item["loc"][-1]), field_aliases(model), n=1, cutoff=0.6)
-            message = f"unknown key (did you mean '{matches[0]}'?)" if matches else "unknown key"
-        lines.append(f"{key}.{path}: {message}" if path else f"{key}: {message}")
-    return "; ".join(lines)

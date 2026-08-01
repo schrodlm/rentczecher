@@ -22,6 +22,11 @@ API_HEADERS = {
 OFFER_SEO = {1: "prodej", 2: "pronajem"}
 CATEGORY_SEO = {1: "byt", 2: "dum", 3: "pozemek", 4: "komercni", 5: "ostatni"}
 
+# Sreality has no separate top-level category for cottages; the portal
+# lists them under houses.
+ESTATE_TYPE_CB = {"flat": 1, "house": 2, "cottage": 2, "land": 3}
+OFFER_TYPE_CB = {"sale": 1, "rent": 2}
+
 
 def _slugify(text: str) -> str:
     decomposed = unicodedata.normalize("NFD", text.lower())
@@ -31,12 +36,20 @@ def _slugify(text: str) -> str:
 class SrealityScraper(BaseScraper):
     name = "sreality"
 
+    def _category_cbs(self) -> tuple[int, int]:
+        return ESTATE_TYPE_CB[self.spec.estate_type], OFFER_TYPE_CB[self.spec.offer_type]
+
+    def _location_params(self) -> dict:
+        if self.place.sreality_district_id is not None:
+            return {"locality_district_id": self.place.sreality_district_id}
+        return {"locality_region_id": self.place.sreality_region_id}
+
     def _build_params(self, offset: int) -> dict:
-        cfg = self.portal_cfg
+        main_cb, type_cb = self._category_cbs()
         params = {
-            "category_main_cb": cfg.get("category_main_cb", 1),
-            "category_type_cb": cfg.get("category_type_cb", 2),
-            "locality_district_id": cfg["locality_district_id"],
+            "category_main_cb": main_cb,
+            "category_type_cb": type_cb,
+            **self._location_params(),
             "per_page": PER_PAGE,
             "offset": offset,
             "lang": "cs",
@@ -46,26 +59,11 @@ class SrealityScraper(BaseScraper):
             # ignored by this API; price filtering happens client-side too.
             params["price_from"] = self.spec.min_price
             params["price_to"] = self.spec.max_price
-        sub_cb = cfg.get("category_sub_cb")
-        if sub_cb:
-            # The API rejects the pipe syntax with HTTP 422; it wants the
-            # parameter repeated, which requests produces from a list.
-            params["category_sub_cb"] = [int(v) for v in str(sub_cb).split("|")]
         if self.spec.min_land_m2 > 0:
             params["estate_area_from"] = self.spec.min_land_m2
         return params
 
     def scrape(self) -> list[Listing]:
-        cfg = self.portal_cfg
-        if not cfg.get("enabled", False):
-            return []
-        if cfg.get("locality_district_id") is None:
-            log.error(
-                "sreality: locality_district_id is not configured for this "
-                "profile - skipping scraper (refusing to silently search Praha 7)"
-            )
-            return []
-
         estates: dict[int, dict] = {}
         offset = 0
         for _ in range(MAX_PAGES):
@@ -165,9 +163,9 @@ class SrealityScraper(BaseScraper):
         return ", ".join(p for p in parts if p)
 
     def _build_detail_url(self, estate: dict, hash_id: int, disposition: str | None, locality: dict) -> str:
-        cfg = self.portal_cfg
-        main_cb = (estate.get("category_main_cb") or {}).get("value") or cfg.get("category_main_cb", 1)
-        type_cb = (estate.get("category_type_cb") or {}).get("value") or cfg.get("category_type_cb", 2)
+        default_main_cb, default_type_cb = self._category_cbs()
+        main_cb = (estate.get("category_main_cb") or {}).get("value") or default_main_cb
+        type_cb = (estate.get("category_type_cb") or {}).get("value") or default_type_cb
         offer_seo = OFFER_SEO.get(type_cb, "prodej")
         category_seo = CATEGORY_SEO.get(main_cb, "byt")
         sub_seo = _slugify(disposition) if disposition else ""

@@ -25,8 +25,9 @@ VALID = {
         "p": {
             "name": "P",
             "to": ["a@example.com"],
-            "search": {"offer_type": "rent", "estate_type": "flat", "max_price": 25000},
-            "scrapers": {"sreality": {"enabled": True, "locality_district_id": 5007}},
+            "search": {"offer_type": "rent", "estate_type": "flat",
+                       "place": "praha-7", "max_price": 25000},
+            "scrapers": ["sreality"],
         }
     },
 }
@@ -63,6 +64,51 @@ class TestSchemaShape:
         assert "secret" not in repr(config)
 
 
+class TestPlaceRequired:
+    """search.place is the only location source: it is required, must
+    resolve, and no portal parameters exist to configure."""
+
+    def test_missing_place_is_rejected(self):
+        profile = {
+            "name": "P", "to": ["a@example.com"],
+            "search": {"offer_type": "rent", "estate_type": "flat"},
+            "scrapers": ["sreality"],
+        }
+        with pytest.raises(Exception, match="place"):
+            ProfileConfig.model_validate(profile)
+
+    def test_unknown_place_fails_at_load_with_suggestions(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(place="domzlice"))
+        with pytest.raises(ConfigError, match="did you mean.*domazlice"):
+            load_config(_write(tmp_path, broken))
+
+
+class TestScrapersList:
+    """A profile's scrapers is a list of known portal names."""
+
+    def test_unknown_scraper_name_gets_a_suggestion(self):
+        profile = {**VALID["profiles"]["p"], "scrapers": ["srealty"]}
+        with pytest.raises(Exception, match="did you mean 'sreality'"):
+            ProfileConfig.model_validate(profile)
+
+    def test_repeated_scraper_name_is_rejected(self):
+        profile = {**VALID["profiles"]["p"], "scrapers": ["sreality", "sreality"]}
+        with pytest.raises(Exception, match="must not repeat"):
+            ProfileConfig.model_validate(profile)
+
+    def test_old_style_parameter_blocks_are_rejected(self):
+        # Configs from before place carried per-scraper parameter dicts.
+        profile = {**VALID["profiles"]["p"],
+                   "scrapers": {"sreality": {"enabled": True, "locality_district_id": 5007}}}
+        with pytest.raises(Exception, match="list"):
+            ProfileConfig.model_validate(profile)
+
+    def test_known_names_match_the_shipped_scrapers(self):
+        from rentczecher.adapters.scrapers import ALL_SCRAPERS
+        from rentczecher.adapters.config.schema import KNOWN_SCRAPERS
+        assert set(KNOWN_SCRAPERS) == set(ALL_SCRAPERS)
+
+
 class TestLoader:
     def test_valid_config_loads_as_plain_dict(self, tmp_path):
         config = load_config(_write(tmp_path, VALID))
@@ -70,7 +116,7 @@ class TestLoader:
         assert config["email"]["smtp_password"] == "secret"
         assert config["email"]["smtp_port"] == 587
         assert config["profiles"]["p"]["search"]["min_price"] == 0
-        assert config["profiles"]["p"]["scrapers"]["sreality"]["enabled"] is True
+        assert config["profiles"]["p"]["scrapers"] == ["sreality"]
 
     def test_wrong_type_names_the_exact_key(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(max_price="five milion"))
@@ -89,19 +135,11 @@ class TestLoader:
             load_config(_write(tmp_path, broken))
 
     def test_unknown_scraper_name_is_an_error(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["scrapers"].update(idnes={"enabled": True}))
+        broken = _broken(lambda c: c["profiles"]["p"]["scrapers"].append("idnes"))
         with pytest.raises(ConfigError, match="unknown scraper 'idnes'"):
             load_config(_write(tmp_path, broken))
 
-    def test_enabled_sreality_requires_district_id(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["scrapers"]["sreality"].pop("locality_district_id"))
-        with pytest.raises(ConfigError, match="locality_district_id is required when sreality is enabled"):
-            load_config(_write(tmp_path, broken))
 
-    def test_disabled_sreality_needs_no_district_id(self, tmp_path):
-        config = _broken(lambda c: c["profiles"]["p"]["scrapers"].update(
-            sreality={"enabled": False}))
-        load_config(_write(tmp_path, config))
 
     def test_missing_email_section_fails_at_load(self, tmp_path):
         broken = _broken(lambda c: c.pop("email"))
@@ -113,20 +151,7 @@ class TestLoader:
         with pytest.raises(ConfigError, match=r"profiles\.p\.search\.offer_type"):
             load_config(_write(tmp_path, broken))
 
-    def test_scraper_block_typo_names_scraper_and_suggests(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["scrapers"]["sreality"].update(
-            locality_distrct_id=5007))
-        with pytest.raises(
-            ConfigError,
-            match=r"sreality\.locality_distrct_id: unknown key \(did you mean 'locality_district_id'\?\)",
-        ):
-            load_config(_write(tmp_path, broken))
 
-    def test_scraper_block_wrong_type_names_scraper_and_field(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["scrapers"]["sreality"].update(
-            locality_district_id="praha"))
-        with pytest.raises(ConfigError, match=r"sreality\.locality_district_id"):
-            load_config(_write(tmp_path, broken))
 
     def test_aliased_field_suggestion_offers_the_yaml_key(self, tmp_path):
         broken = _broken(lambda c: (c["email"].pop("from"), c["email"].update(form="u@example.com")))

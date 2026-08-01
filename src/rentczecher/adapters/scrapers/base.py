@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import httpx
 
+from rentczecher.adapters.scrapers.location_resolver import resolve
 from rentczecher.domain.listing import Listing
 from rentczecher.domain.search import SearchSpec
 
@@ -15,9 +16,9 @@ class ScraperBrokenError(Exception):
 class BaseScraper(ABC):
     name: str = "base"
 
-    def __init__(self, spec: SearchSpec, portal_cfg: dict, client: httpx.Client):
+    def __init__(self, spec: SearchSpec, client: httpx.Client):
         self.spec = spec
-        self.portal_cfg = portal_cfg
+        self.place = resolve(spec.place)
         self._client = client
 
     @abstractmethod

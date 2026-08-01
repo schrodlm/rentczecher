@@ -33,9 +33,8 @@ def _get_profile(profile_id: str) -> dict:
 
 
 def _scraper(cls, profile_id: str, client):
-    profile = _get_profile(profile_id)
-    spec = SearchSpec.from_search_config(profile["search"])
-    return cls(spec, profile["scrapers"].get(cls.name, {}), client)
+    spec = SearchSpec.from_search_config(_get_profile(profile_id)["search"])
+    return cls(spec, client)
 
 
 # ─── Sreality ───────────────────────────────────────────────
@@ -128,14 +127,9 @@ class TestSrealityLive:
 
     def test_pagination_collects_beyond_one_page(self, client):
         from rentczecher.adapters.scrapers.sreality import SrealityScraper
-        spec = SearchSpec(offer_type="rent", estate_type="flat", min_price=0, max_price=0)
-        cfg = {
-            "enabled": True,
-            "category_main_cb": 1,
-            "category_type_cb": 2,
-            "locality_district_id": 5007,
-        }
-        listings = SrealityScraper(spec, cfg, client).scrape()
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+                          min_price=0, max_price=0)
+        listings = SrealityScraper(spec, client).scrape()
         assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"
 
 

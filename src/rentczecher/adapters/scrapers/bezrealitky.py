@@ -6,6 +6,9 @@ from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrok
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
 
+ESTATE_TYPE_PARAM = {"flat": "BYT", "house": "DUM", "land": "POZEMEK", "cottage": "REKREACNI_OBJEKT"}
+OFFER_TYPE_PARAM = {"sale": "PRODEJ", "rent": "PRONAJEM"}
+
 NEXT_DATA_RE = re.compile(
     r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
     re.DOTALL,
@@ -37,18 +40,16 @@ class BezrealitkyScraper(BaseScraper):
     name = "bezrealitky"
 
     def _build_url(self) -> str:
-        cfg = self.portal_cfg
         params = [
             "currency=CZK",
-            f"estateType={cfg.get('estate_type', 'BYT')}",
-            f"offerType={cfg.get('offer_type', 'PRONAJEM')}",
-            f"regionOsmIds={cfg.get('region_osm_id', 'R20000064250')}",
+            f"estateType={ESTATE_TYPE_PARAM[self.spec.estate_type]}",
+            f"offerType={OFFER_TYPE_PARAM[self.spec.offer_type]}",
+            f"regionOsmIds={self.place.bezrealitky_region_id}",
+            # The server applies search filters only when this param is
+            # present; without it the page renders the place name but
+            # serves unfiltered countrywide results.
             "location=exact",
         ]
-        osm_value = cfg.get("osm_value")
-        if osm_value:
-            from urllib.parse import quote
-            params.append(f"osm_value={quote(osm_value)}")
         if self.spec.min_price > 0:
             params.append(f"priceFrom={self.spec.min_price}")
         if self.spec.max_price > 0:
@@ -56,9 +57,6 @@ class BezrealitkyScraper(BaseScraper):
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
     def scrape(self) -> list[Listing]:
-        if not self.portal_cfg.get("enabled", False):
-            return []
-
         listings: list[Listing] = []
         page = 1
         while True:
@@ -174,7 +172,7 @@ class BezrealitkyScraper(BaseScraper):
             image_url = _apollo_get(img_obj, "url")
 
         # Build title
-        offer_label = "Pronajem" if self.portal_cfg.get("offer_type") == "PRONAJEM" else "Prodej"
+        offer_label = "Pronajem" if OFFER_TYPE_PARAM[self.spec.offer_type] == "PRONAJEM" else "Prodej"
         title_parts = [offer_label]
         if disposition:
             title_parts.append(disposition)

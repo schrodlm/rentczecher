@@ -8,6 +8,7 @@ import yaml
 from pydantic import ValidationError
 
 from rentczecher.adapters.config.schema import Config, StrictModel, field_aliases
+from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError, resolve
 from rentczecher.domain.errors import ConfigError
 
 
@@ -19,6 +20,14 @@ def load_config(path: Path) -> dict:
         config = Config.model_validate(raw)
     except ValidationError as error:
         raise ConfigError(_readable(path.name, error)) from error
+
+    for profile_id, profile in config.profiles.items():
+        try:
+            resolve(profile.search.place)
+        except PlaceNotFoundError as error:
+            raise ConfigError(
+                f"{path.name}: profiles.{profile_id}.search.place: {error}"
+            ) from error
 
     dumped = config.model_dump(by_alias=True)
     # SecretStr survives model_dump; the pipeline needs the plain value and

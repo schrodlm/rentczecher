@@ -29,16 +29,13 @@ PROFILE = {
     "search": {
         "offer_type": "rent",
         "estate_type": "flat",
+        "place": "praha-7",
         "min_price": 0,
         "max_price": 25000,
         "dispositions": ["2+kk", "1+1"],
         "min_size_m2": 30,
     },
-    "scrapers": {
-        "sreality": {"enabled": True, "locality_district_id": 5007},
-        "bezrealitky": {"enabled": True},
-        "remax": {"enabled": True},
-    },
+    "scrapers": ["sreality", "bezrealitky", "remax"],
     "scoring": {
         "price_per_m2_weight": 40,
         "disposition_weight": 30,
@@ -58,7 +55,7 @@ def _fake_scrapers(listing_data):
         class FakeScraper:
             _records = records
 
-            def __init__(self, spec, portal_cfg, client):
+            def __init__(self, spec, client):
                 pass
 
             def scrape(self):

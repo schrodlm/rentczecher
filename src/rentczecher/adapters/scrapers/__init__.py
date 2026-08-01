@@ -8,7 +8,7 @@ from rentczecher.adapters.scrapers.remax import RemaxScraper
 from rentczecher.adapters.scrapers.sreality import SrealityScraper
 from rentczecher.domain.search import SearchSpec
 
-ALL_SCRAPERS: dict[str, Callable[[SearchSpec, dict, httpx.Client], BaseScraper]] = {
+ALL_SCRAPERS: dict[str, Callable[[SearchSpec, httpx.Client], BaseScraper]] = {
     "sreality": SrealityScraper,
     "bezrealitky": BezrealitkyScraper,
     "remax": RemaxScraper,

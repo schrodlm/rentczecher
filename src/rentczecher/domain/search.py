@@ -8,6 +8,7 @@ class SearchSpec:
 
     offer_type: str
     estate_type: str
+    place: str
     min_price: int = 0
     max_price: int = 0
     min_size_m2: int = 0
@@ -19,6 +20,7 @@ class SearchSpec:
         return cls(
             offer_type=search["offer_type"],
             estate_type=search["estate_type"],
+            place=search["place"],
             min_price=search.get("min_price", 0),
             max_price=search.get("max_price", 0),
             min_size_m2=search.get("min_size_m2", 0),
