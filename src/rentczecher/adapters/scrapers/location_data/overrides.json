@@ -1,0 +1,28 @@
+{
+ "why": [
+  "Bezrealitky's czechRegions API serves no Prague districts, and its id for",
+  "Prague itself (R435514) is not the one their search recognizes. These ids",
+  "are the ones the portal's own frontend ships hardcoded in its JS bundle;",
+  "they are not OSM relations and cannot be harvested from any API. The",
+  "harvest script still live-verifies every one of them before writing.",
+  "The praha region override triggers the harvest NOTICE on every run by",
+  "design: their API keeps serving R435514 while their search only knows",
+  "R435541 - that NOTICE is the standing record of the disagreement, not",
+  "a problem to fix. Re-derivation recipe: the harvest script's docstring."
+ ],
+ "regions": {
+  "praha": {"bezrealitky_region_id": "R435541"}
+ },
+ "districts": {
+  "praha-1": {"bezrealitky_region_id": "R20000061612"},
+  "praha-2": {"bezrealitky_region_id": "R20000063928"},
+  "praha-3": {"bezrealitky_region_id": "R20000063962"},
+  "praha-4": {"bezrealitky_region_id": "R20000060519"},
+  "praha-5": {"bezrealitky_region_id": "R20000046869"},
+  "praha-6": {"bezrealitky_region_id": "R20000013899"},
+  "praha-7": {"bezrealitky_region_id": "R20000064250"},
+  "praha-8": {"bezrealitky_region_id": "R20000064370"},
+  "praha-9": {"bezrealitky_region_id": "R20000065523"},
+  "praha-10": {"bezrealitky_region_id": "R20000061783"}
+ }
+}
