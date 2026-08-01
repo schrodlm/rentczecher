@@ -58,7 +58,7 @@ def _fake_scrapers(listing_data):
         class FakeScraper:
             _records = records
 
-            def __init__(self, profile):
+            def __init__(self, profile, client):
                 pass
 
             def scrape(self):
@@ -148,7 +148,7 @@ def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
 
     monkeypatch.setattr(main_module, "send_email", capture_email)
 
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, dry_run=False)
+    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None, dry_run=False)
 
     snapshot = {
         "notable": [_listing_snapshot(l) for l in sent["notable"]],

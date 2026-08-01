@@ -7,6 +7,8 @@ import os
 import sys
 from pathlib import Path
 
+import httpx
+
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config as load_validated_config
@@ -16,6 +18,8 @@ from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
 from rentczecher.services.score import compute_score
 from rentczecher.adapters.scrapers import ALL_SCRAPERS
+from rentczecher.adapters.scrapers.base import ScraperBrokenError
+from rentczecher.adapters.scrapers.client import build_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -110,7 +114,8 @@ def _apply_filters(listings: list, profile: dict) -> list:
     return result
 
 
-def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool = False):
+def run_profile(profile_id: str, profile: dict, email_cfg: dict,
+                client: httpx.Client, dry_run: bool = False):
     """Run a single profile: scrape, filter, score, notify."""
     profile_name = profile.get("name", profile_id)
     log.info("=== Profile: %s ===", profile_name)
@@ -130,13 +135,15 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool =
 
         log.info("Running scraper: %s", name)
         try:
-            scraper = scraper_cls(profile)
+            scraper = scraper_cls(profile, client)
             listings = scraper.scrape()
             if len(listings) == 0:
                 log.warning("  %s: returned 0 results - site structure may have changed!", name)
             else:
                 log.info("  %s: found %d listings", name, len(listings))
             all_listings.extend(listings)
+        except ScraperBrokenError as error:
+            log.error("  %s: portal changed its contract - scraper needs updating: %s", name, error)
         except Exception:
             log.exception("  %s: scraper failed", name)
 
@@ -268,20 +275,21 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
             log.error("No profiles defined in config.yaml")
             return
 
-        for profile_id, profile in profiles.items():
-            if profile_filter and profile_id != profile_filter:
-                continue
-            if not profile.get("enabled", True):
-                log.info("Profile %s is disabled, skipping", profile_id)
-                continue
+        with build_client() as client:
+            for profile_id, profile in profiles.items():
+                if profile_filter and profile_id != profile_filter:
+                    continue
+                if not profile.get("enabled", True):
+                    log.info("Profile %s is disabled, skipping", profile_id)
+                    continue
 
-            if dry_run:
-                log.info("DRY RUN - no emails, no DB updates")
+                if dry_run:
+                    log.info("DRY RUN - no emails, no DB updates")
 
-            try:
-                run_profile(profile_id, profile, email_cfg, dry_run)
-            except Exception:
-                log.exception("Profile %s failed", profile_id)
+                try:
+                    run_profile(profile_id, profile, email_cfg, client, dry_run)
+                except Exception:
+                    log.exception("Profile %s failed", profile_id)
     finally:
         _release_pidlock()
 

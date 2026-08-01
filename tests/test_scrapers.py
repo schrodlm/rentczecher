@@ -6,12 +6,22 @@ Run: python3 -m pytest tests/test_scrapers.py -v
 import json
 from pathlib import Path
 
+import httpx
+
 from rentczecher.adapters.scrapers import sreality
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.adapters.scrapers.remax import RemaxScraper
 from rentczecher.adapters.scrapers.sreality import SrealityScraper
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
+
+
+def _refusing_client() -> httpx.Client:
+    def refuse(request):
+        raise AssertionError(f"unexpected network request: {request.url}")
+
+    return build_client(transport=httpx.MockTransport(refuse))
 
 FLATS_PROFILE = {
     "search": {"min_price": 0, "max_price": 25000},
@@ -66,7 +76,7 @@ class TestScraperEnabledFlag:
     def test_scrapers_are_disabled_by_default(self):
         profile = {"search": {"max_price": 25000}, "scrapers": {}}
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
-            assert scraper_cls(profile).scrape() == [], scraper_cls.name
+            assert scraper_cls(profile, _refusing_client()).scrape() == [], scraper_cls.name
 
 
 class TestRemaxUrlBuilding:
@@ -83,7 +93,7 @@ class TestRemaxUrlBuilding:
                 ),
             }},
         }
-        url = RemaxScraper(profile)._build_url()
+        url = RemaxScraper(profile, _refusing_client())._build_url()
         assert "price_from=17000" in url
         assert "price_to=25000" in url
         assert "{min_price}" not in url and "{max_price}" not in url
@@ -103,7 +113,7 @@ class TestSrealityDistrictConfig:
             }},
         }
         with caplog.at_level("ERROR", logger="rentczecher"):
-            listings = SrealityScraper(profile).scrape()
+            listings = SrealityScraper(profile, _refusing_client()).scrape()
         assert listings == []
         assert any("locality_district_id" in r.message for r in caplog.records)
 
@@ -112,7 +122,7 @@ class TestSrealitySearchParams:
     """Query params match the /api/v1/estates/search contract."""
 
     def test_flats_params(self):
-        params = SrealityScraper(FLATS_PROFILE)._build_params(offset=100)
+        params = SrealityScraper(FLATS_PROFILE, _refusing_client())._build_params(offset=100)
         assert params["category_main_cb"] == 1
         assert params["category_type_cb"] == 2
         assert params["locality_district_id"] == 5007
@@ -126,11 +136,11 @@ class TestSrealitySearchParams:
         assert "estate_area_from" not in params
 
     def test_sub_cb_is_repeated_param_not_pipe_string(self):
-        params = SrealityScraper(HOUSES_PROFILE)._build_params(offset=0)
+        params = SrealityScraper(HOUSES_PROFILE, _refusing_client())._build_params(offset=0)
         assert params["category_sub_cb"] == [37, 43, 44]
 
     def test_min_land_becomes_estate_area_from(self):
-        params = SrealityScraper(HOUSES_PROFILE)._build_params(offset=0)
+        params = SrealityScraper(HOUSES_PROFILE, _refusing_client())._build_params(offset=0)
         assert params["estate_area_from"] == 500
 
 
@@ -140,7 +150,7 @@ class TestSrealityParsing:
     def _scrape_fixture(self, monkeypatch, fixture_name, profile):
         payload = json.loads((FIXTURES / fixture_name).read_text())
         calls = _serve_pages(monkeypatch, {0: payload})
-        listings = SrealityScraper(profile).scrape()
+        listings = SrealityScraper(profile, _refusing_client()).scrape()
         return listings, calls, payload
 
     def test_flats_fixture_parses_all_fields(self, monkeypatch):
@@ -210,14 +220,14 @@ class TestSrealityPagination:
             100: {"results": [self._estate(2), self._estate(3)], "pagination": {"total": 3}},
         }
         calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE).scrape()
+        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
         assert sorted(l.id for l in listings) == ["sreality:1", "sreality:2", "sreality:3"]
         assert [c["params"]["offset"] for c in calls] == [0, 100]
 
     def test_stops_on_empty_page(self, monkeypatch):
         pages = {0: {"results": [self._estate(1)], "pagination": {"total": 99}}}
         calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE).scrape()
+        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
         assert len(listings) == 1
         assert [c["params"]["offset"] for c in calls] == [0, 100]
 
@@ -227,7 +237,7 @@ class TestSrealityPagination:
         same = [self._estate(1), self._estate(2)]
         pages = {o: {"results": same, "pagination": {"total": 500}} for o in (0, 100, 200, 300)}
         calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE).scrape()
+        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
         assert len(listings) == 2
         assert len(calls) == 2
 
@@ -235,7 +245,7 @@ class TestSrealityPagination:
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=99999)],
                      "pagination": {"total": 2}}}
         _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE).scrape()
+        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
     def test_missing_disposition_never_produces_double_slash_url(self, monkeypatch):
@@ -243,7 +253,7 @@ class TestSrealityPagination:
         estate["category_sub_cb"] = None
         pages = {0: {"results": [estate], "pagination": {"total": 1}}}
         _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE).scrape()
+        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
         url = listings[0].url
         assert "//" not in url.removeprefix("https://")
         assert url.endswith("/praha-holesovice/7")

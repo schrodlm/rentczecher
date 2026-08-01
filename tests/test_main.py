@@ -7,7 +7,7 @@ import os
 
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.cli import main as main_module
-from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.adapters.scrapers.base import Listing, ScraperBrokenError
 
 
 class TestOrphanedRepoDataWarning:
@@ -95,6 +95,51 @@ def _make_listing(**kwargs):
     return Listing.build(**defaults)
 
 
+class TestBrokenScraperHandling:
+    """A scraper raising ScraperBrokenError is reported as a distinct ERROR
+    and does not abort the profile: the remaining scrapers' listings still
+    flow through the pipeline."""
+
+    def test_broken_scraper_is_reported_and_run_continues(self, tmp_path, monkeypatch, caplog):
+        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+        healthy_listing = _make_listing(id="sreality:good", title="Good listing")
+
+        class WorkingScraper:
+            name = "sreality"
+
+            def __init__(self, profile, client):
+                pass
+
+            def scrape(self):
+                return [healthy_listing]
+
+        class BrokenScraper:
+            name = "bezrealitky"
+
+            def __init__(self, profile, client):
+                pass
+
+            def scrape(self):
+                raise ScraperBrokenError("bezrealitky: __NEXT_DATA__ payload missing from search page")
+
+        monkeypatch.setattr(main_module, "ALL_SCRAPERS",
+                            {"sreality": WorkingScraper, "bezrealitky": BrokenScraper})
+        profile = {
+            "name": "Broken-portal test",
+            "search": {},
+            "scrapers": {"sreality": {"enabled": True}, "bezrealitky": {"enabled": True}},
+        }
+        with caplog.at_level("INFO", logger="rentczecher"):
+            main_module.run_profile("broken-test", profile, email_cfg={}, client=None, dry_run=True)
+
+        contract_errors = [r for r in caplog.records if "portal changed its contract" in r.getMessage()]
+        assert len(contract_errors) == 1
+        assert contract_errors[0].levelname == "ERROR"
+        assert "__NEXT_DATA__" in contract_errors[0].getMessage()
+        assert not any(r.exc_info for r in caplog.records), "broken portal must not dump a stack trace"
+        assert any("Total: 1 listings, 1 new" in r.getMessage() for r in caplog.records)
+
+
 class TestDryRunIsReadOnly:
     """--dry-run writes no state; miss counters advance only on real runs."""
 
@@ -104,7 +149,7 @@ class TestDryRunIsReadOnly:
         class FakeScraper:
             name = "sreality"
 
-            def __init__(self, profile):
+            def __init__(self, profile, client):
                 pass
 
             def scrape(self):
@@ -116,7 +161,7 @@ class TestDryRunIsReadOnly:
             "search": {},
             "scrapers": {"sreality": {"enabled": True}},
         }
-        main_module.run_profile(profile_id, profile, email_cfg={}, dry_run=True)
+        main_module.run_profile(profile_id, profile, email_cfg={}, client=None, dry_run=True)
 
     def test_dry_run_leaves_seen_file_byte_identical(self, tmp_path, monkeypatch):
         monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
