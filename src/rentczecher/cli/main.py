@@ -13,6 +13,7 @@ from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config as load_validated_config
 from rentczecher.domain.errors import ConfigError
+from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -91,25 +92,20 @@ def _release_pidlock():
         pass
 
 
-def _apply_filters(listings: list, profile: dict) -> list:
-    search = profile.get("search", {})
-    dispositions = search.get("dispositions", [])
-    min_size = search.get("min_size_m2", 0)
-    min_land = search.get("min_land_m2", 0)
-
+def _apply_filters(listings: list, spec: SearchSpec) -> list:
     result = listings
-    if dispositions:
-        disp_lower = {d.lower() for d in dispositions}
+    if spec.dispositions:
+        disp_lower = {d.lower() for d in spec.dispositions}
         result = [
             l for l in result
             if l.disposition is None or l.disposition.lower() in disp_lower
         ]
 
-    if min_size > 0:
-        result = [l for l in result if l.size_m2 is None or l.size_m2 >= min_size]
+    if spec.min_size_m2 > 0:
+        result = [l for l in result if l.size_m2 is None or l.size_m2 >= spec.min_size_m2]
 
-    if min_land > 0:
-        result = [l for l in result if l.land_m2 is None or l.land_m2 >= min_land]
+    if spec.min_land_m2 > 0:
+        result = [l for l in result if l.land_m2 is None or l.land_m2 >= spec.min_land_m2]
 
     return result
 
@@ -119,6 +115,8 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     """Run a single profile: scrape, filter, score, notify."""
     profile_name = profile.get("name", profile_id)
     log.info("=== Profile: %s ===", profile_name)
+
+    spec = SearchSpec.from_search_config(profile["search"])
 
     # Scrape all sources for this profile
     all_listings = []
@@ -135,7 +133,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
         log.info("Running scraper: %s", name)
         try:
-            scraper = scraper_cls(profile, client)
+            scraper = scraper_cls(spec, scraper_cfg, client)
             listings = scraper.scrape()
             if len(listings) == 0:
                 log.warning("  %s: returned 0 results - site structure may have changed!", name)
@@ -152,7 +150,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
         return
 
     # Apply filters
-    filtered = _apply_filters(all_listings, profile)
+    filtered = _apply_filters(all_listings, spec)
     if len(filtered) < len(all_listings):
         log.info("Filtered: %d -> %d listings", len(all_listings), len(filtered))
     all_listings = filtered

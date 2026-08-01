@@ -32,7 +32,7 @@ class SrealityScraper(BaseScraper):
     name = "sreality"
 
     def _build_params(self, offset: int) -> dict:
-        cfg = self.scraper_cfg
+        cfg = self.portal_cfg
         params = {
             "category_main_cb": cfg.get("category_main_cb", 1),
             "category_type_cb": cfg.get("category_type_cb", 2),
@@ -41,23 +41,22 @@ class SrealityScraper(BaseScraper):
             "offset": offset,
             "lang": "cs",
         }
-        if self.max_price > 0:
+        if self.spec.max_price > 0:
             # The old czk_price_summary_order2=min|max param is silently
             # ignored by this API; price filtering happens client-side too.
-            params["price_from"] = self.min_price
-            params["price_to"] = self.max_price
+            params["price_from"] = self.spec.min_price
+            params["price_to"] = self.spec.max_price
         sub_cb = cfg.get("category_sub_cb")
         if sub_cb:
             # The API rejects the pipe syntax with HTTP 422; it wants the
             # parameter repeated, which requests produces from a list.
             params["category_sub_cb"] = [int(v) for v in str(sub_cb).split("|")]
-        min_land = self.profile.get("search", {}).get("min_land_m2", 0)
-        if min_land > 0:
-            params["estate_area_from"] = min_land
+        if self.spec.min_land_m2 > 0:
+            params["estate_area_from"] = self.spec.min_land_m2
         return params
 
     def scrape(self) -> list[Listing]:
-        cfg = self.scraper_cfg
+        cfg = self.portal_cfg
         if not cfg.get("enabled", False):
             return []
         if cfg.get("locality_district_id") is None:
@@ -107,7 +106,7 @@ class SrealityScraper(BaseScraper):
             return None
 
         price = int(estate.get("price_czk") or estate.get("price") or 0)
-        if self.max_price > 0 and (price > self.max_price or price < self.min_price):
+        if self.spec.max_price > 0 and (price > self.spec.max_price or price < self.spec.min_price):
             return None
 
         name = estate.get("advert_name", "")
@@ -166,7 +165,7 @@ class SrealityScraper(BaseScraper):
         return ", ".join(p for p in parts if p)
 
     def _build_detail_url(self, estate: dict, hash_id: int, disposition: str | None, locality: dict) -> str:
-        cfg = self.scraper_cfg
+        cfg = self.portal_cfg
         main_cb = (estate.get("category_main_cb") or {}).get("value") or cfg.get("category_main_cb", 1)
         type_cb = (estate.get("category_type_cb") or {}).get("value") or cfg.get("category_type_cb", 2)
         offer_seo = OFFER_SEO.get(type_cb, "prodej")

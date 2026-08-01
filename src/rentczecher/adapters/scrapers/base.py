@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import httpx
 
 from rentczecher.domain.listing import Listing
+from rentczecher.domain.search import SearchSpec
 
 __all__ = ["BaseScraper", "Listing", "ScraperBrokenError"]
 
@@ -14,13 +15,10 @@ class ScraperBrokenError(Exception):
 class BaseScraper(ABC):
     name: str = "base"
 
-    def __init__(self, profile: dict, client: httpx.Client):
-        self.profile = profile
+    def __init__(self, spec: SearchSpec, portal_cfg: dict, client: httpx.Client):
+        self.spec = spec
+        self.portal_cfg = portal_cfg
         self._client = client
-        search = profile.get("search", {})
-        self.min_price = search.get("min_price", 0)
-        self.max_price = search.get("max_price", 25000)
-        self.scraper_cfg = profile.get("scrapers", {}).get(self.name, {})
 
     @abstractmethod
     def scrape(self) -> list[Listing]:

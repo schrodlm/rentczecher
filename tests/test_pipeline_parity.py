@@ -58,7 +58,7 @@ def _fake_scrapers(listing_data):
         class FakeScraper:
             _records = records
 
-            def __init__(self, profile, client):
+            def __init__(self, spec, portal_cfg, client):
                 pass
 
             def scrape(self):

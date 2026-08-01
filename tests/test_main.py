@@ -107,7 +107,7 @@ class TestBrokenScraperHandling:
         class WorkingScraper:
             name = "sreality"
 
-            def __init__(self, profile, client):
+            def __init__(self, spec, portal_cfg, client):
                 pass
 
             def scrape(self):
@@ -116,7 +116,7 @@ class TestBrokenScraperHandling:
         class BrokenScraper:
             name = "bezrealitky"
 
-            def __init__(self, profile, client):
+            def __init__(self, spec, portal_cfg, client):
                 pass
 
             def scrape(self):
@@ -126,7 +126,7 @@ class TestBrokenScraperHandling:
                             {"sreality": WorkingScraper, "bezrealitky": BrokenScraper})
         profile = {
             "name": "Broken-portal test",
-            "search": {},
+            "search": {"offer_type": "rent", "estate_type": "flat"},
             "scrapers": {"sreality": {"enabled": True}, "bezrealitky": {"enabled": True}},
         }
         with caplog.at_level("INFO", logger="rentczecher"):
@@ -149,7 +149,7 @@ class TestDryRunIsReadOnly:
         class FakeScraper:
             name = "sreality"
 
-            def __init__(self, profile, client):
+            def __init__(self, spec, portal_cfg, client):
                 pass
 
             def scrape(self):
@@ -158,7 +158,7 @@ class TestDryRunIsReadOnly:
         monkeypatch.setattr(main_module, "ALL_SCRAPERS", {"sreality": FakeScraper})
         profile = {
             "name": "Dry-run test",
-            "search": {},
+            "search": {"offer_type": "rent", "estate_type": "flat"},
             "scrapers": {"sreality": {"enabled": True}},
         }
         main_module.run_profile(profile_id, profile, email_cfg={}, client=None, dry_run=True)

@@ -11,18 +11,18 @@ class RemaxScraper(BaseScraper):
 
     def _build_url(self) -> str:
         """Build search URL from profile config or use custom search_url."""
-        cfg = self.scraper_cfg
+        cfg = self.portal_cfg
         custom_url = cfg.get("search_url")
         if custom_url:
             return custom_url.format(
-                min_price=self.min_price,
-                max_price=self.max_price,
+                min_price=self.spec.min_price,
+                max_price=self.spec.max_price,
             )
         # Fallback: should not happen if config is correct
         return "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1"
 
     def scrape(self) -> list[Listing]:
-        if not self.scraper_cfg.get("enabled", False):
+        if not self.portal_cfg.get("enabled", False):
             return []
 
         listings: list[Listing] = []
@@ -133,9 +133,9 @@ class RemaxScraper(BaseScraper):
                 except ValueError:
                     pass
 
-        if self.max_price > 0 and price > self.max_price:
+        if self.spec.max_price > 0 and price > self.spec.max_price:
             return None
-        if price < self.min_price or price == 0:
+        if price < self.spec.min_price or price == 0:
             return None
 
         card_text = " ".join(card.get_text().split())  # Normalize whitespace

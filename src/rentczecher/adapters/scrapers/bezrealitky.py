@@ -37,7 +37,7 @@ class BezrealitkyScraper(BaseScraper):
     name = "bezrealitky"
 
     def _build_url(self) -> str:
-        cfg = self.scraper_cfg
+        cfg = self.portal_cfg
         params = [
             "currency=CZK",
             f"estateType={cfg.get('estate_type', 'BYT')}",
@@ -49,14 +49,14 @@ class BezrealitkyScraper(BaseScraper):
         if osm_value:
             from urllib.parse import quote
             params.append(f"osm_value={quote(osm_value)}")
-        if self.min_price > 0:
-            params.append(f"priceFrom={self.min_price}")
-        if self.max_price > 0:
-            params.append(f"priceTo={self.max_price}")
+        if self.spec.min_price > 0:
+            params.append(f"priceFrom={self.spec.min_price}")
+        if self.spec.max_price > 0:
+            params.append(f"priceTo={self.spec.max_price}")
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
     def scrape(self) -> list[Listing]:
-        if not self.scraper_cfg.get("enabled", False):
+        if not self.portal_cfg.get("enabled", False):
             return []
 
         listings: list[Listing] = []
@@ -133,9 +133,9 @@ class BezrealitkyScraper(BaseScraper):
         uri = advert.get("uri", "")
         price = advert.get("price", 0)
 
-        if self.max_price > 0 and price > self.max_price:
+        if self.spec.max_price > 0 and price > self.spec.max_price:
             return None
-        if price < self.min_price:
+        if price < self.spec.min_price:
             return None
         if advert.get("reserved", False):
             return None
@@ -174,7 +174,7 @@ class BezrealitkyScraper(BaseScraper):
             image_url = _apollo_get(img_obj, "url")
 
         # Build title
-        offer_label = "Pronajem" if self.scraper_cfg.get("offer_type") == "PRONAJEM" else "Prodej"
+        offer_label = "Pronajem" if self.portal_cfg.get("offer_type") == "PRONAJEM" else "Prodej"
         title_parts = [offer_label]
         if disposition:
             title_parts.append(disposition)

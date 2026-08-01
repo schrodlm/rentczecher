@@ -15,6 +15,7 @@ from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.adapters.scrapers.remax import RemaxScraper
 from rentczecher.adapters.scrapers.sreality import SrealityScraper
+from rentczecher.domain.search import SearchSpec
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
 
@@ -25,25 +26,22 @@ def _refusing_client() -> httpx.Client:
 
     return build_client(transport=httpx.MockTransport(refuse))
 
-FLATS_PROFILE = {
-    "search": {"min_price": 0, "max_price": 25000},
-    "scrapers": {"sreality": {
-        "enabled": True,
-        "category_main_cb": 1,
-        "category_type_cb": 2,
-        "locality_district_id": 5007,
-    }},
+FLATS_SPEC = SearchSpec(offer_type="rent", estate_type="flat", min_price=0, max_price=25000)
+FLATS_CFG = {
+    "enabled": True,
+    "category_main_cb": 1,
+    "category_type_cb": 2,
+    "locality_district_id": 5007,
 }
 
-HOUSES_PROFILE = {
-    "search": {"min_price": 0, "max_price": 5000000, "min_land_m2": 500},
-    "scrapers": {"sreality": {
-        "enabled": True,
-        "category_main_cb": 2,
-        "category_type_cb": 1,
-        "locality_district_id": 8,
-        "category_sub_cb": "37|43|44",
-    }},
+HOUSES_SPEC = SearchSpec(offer_type="sale", estate_type="house",
+                         min_price=0, max_price=5000000, min_land_m2=500)
+HOUSES_CFG = {
+    "enabled": True,
+    "category_main_cb": 2,
+    "category_type_cb": 1,
+    "locality_district_id": 8,
+    "category_sub_cb": "37|43|44",
 }
 
 
@@ -66,26 +64,24 @@ class TestScraperEnabledFlag:
     even when instantiated directly."""
 
     def test_scrapers_are_disabled_by_default(self):
-        profile = {"search": {"max_price": 25000}, "scrapers": {}}
+        spec = SearchSpec(offer_type="rent", estate_type="flat", max_price=25000)
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
-            assert scraper_cls(profile, _refusing_client()).scrape() == [], scraper_cls.name
+            assert scraper_cls(spec, {}, _refusing_client()).scrape() == [], scraper_cls.name
 
 
 class TestRemaxUrlBuilding:
     """_build_url() substitutes min/max price into the config template."""
 
     def test_url_building(self):
-        profile = {
-            "search": {"min_price": 17000, "max_price": 25000},
-            "scrapers": {"remax": {
-                "enabled": True,
-                "search_url": (
-                    "https://www.remax-czech.cz/reality/vyhledavani/"
-                    "?hledani=2&price_from={min_price}&price_to={max_price}"
-                ),
-            }},
+        spec = SearchSpec(offer_type="rent", estate_type="flat", min_price=17000, max_price=25000)
+        cfg = {
+            "enabled": True,
+            "search_url": (
+                "https://www.remax-czech.cz/reality/vyhledavani/"
+                "?hledani=2&price_from={min_price}&price_to={max_price}"
+            ),
         }
-        url = RemaxScraper(profile, _refusing_client())._build_url()
+        url = RemaxScraper(spec, cfg, _refusing_client())._build_url()
         assert "price_from=17000" in url
         assert "price_to=25000" in url
         assert "{min_price}" not in url and "{max_price}" not in url
@@ -96,16 +92,9 @@ class TestSrealityDistrictConfig:
     no results instead of another region's listings."""
 
     def test_missing_district_id_logs_error_and_returns_nothing(self, caplog):
-        profile = {
-            "search": {"max_price": 25000},
-            "scrapers": {"sreality": {
-                "enabled": True,
-                "category_main_cb": 1,
-                "category_type_cb": 2,
-            }},
-        }
+        cfg = {"enabled": True, "category_main_cb": 1, "category_type_cb": 2}
         with caplog.at_level("ERROR", logger="rentczecher"):
-            listings = SrealityScraper(profile, _refusing_client()).scrape()
+            listings = SrealityScraper(FLATS_SPEC, cfg, _refusing_client()).scrape()
         assert listings == []
         assert any("locality_district_id" in r.message for r in caplog.records)
 
@@ -114,7 +103,7 @@ class TestSrealitySearchParams:
     """Query params match the /api/v1/estates/search contract."""
 
     def test_flats_params(self):
-        params = SrealityScraper(FLATS_PROFILE, _refusing_client())._build_params(offset=100)
+        params = SrealityScraper(FLATS_SPEC, FLATS_CFG, _refusing_client())._build_params(offset=100)
         assert params["category_main_cb"] == 1
         assert params["category_type_cb"] == 2
         assert params["locality_district_id"] == 5007
@@ -128,27 +117,27 @@ class TestSrealitySearchParams:
         assert "estate_area_from" not in params
 
     def test_sub_cb_is_repeated_param_not_pipe_string(self):
-        params = SrealityScraper(HOUSES_PROFILE, _refusing_client())._build_params(offset=0)
+        params = SrealityScraper(HOUSES_SPEC, HOUSES_CFG, _refusing_client())._build_params(offset=0)
         assert params["category_sub_cb"] == [37, 43, 44]
 
     def test_min_land_becomes_estate_area_from(self):
-        params = SrealityScraper(HOUSES_PROFILE, _refusing_client())._build_params(offset=0)
+        params = SrealityScraper(HOUSES_SPEC, HOUSES_CFG, _refusing_client())._build_params(offset=0)
         assert params["estate_area_from"] == 500
 
 
 class TestSrealityParsing:
     """Fixture-driven parsing of recorded /api/v1/estates/search responses."""
 
-    def _scrape_fixture(self, monkeypatch, fixture_name, profile):
+    def _scrape_fixture(self, monkeypatch, fixture_name, spec, cfg):
         payload = json.loads((FIXTURES / fixture_name).read_text())
         client, calls = _serve_pages(monkeypatch, {0: payload})
-        listings = SrealityScraper(profile, client).scrape()
+        listings = SrealityScraper(spec, cfg, client).scrape()
         return listings, calls, payload
 
     def test_flats_fixture_parses_all_fields(self, monkeypatch):
         # The fixture holds three real listings; two exceed the profile's
         # 25000 price cap and must be dropped by the client-side filter.
-        listings, calls, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_PROFILE)
+        listings, calls, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_SPEC, FLATS_CFG)
         assert [x.id for x in listings] == ["sreality:1222430796"]
         l = listings[0]
         assert l.source == "sreality"
@@ -166,7 +155,7 @@ class TestSrealityParsing:
 
     def test_houses_fixture_parses_land_and_district(self, monkeypatch):
         # One of the three fixture houses exceeds the 5M price cap.
-        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_PROFILE)
+        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC, HOUSES_CFG)
         assert sorted(x.id for x in listings) == ["sreality:3870457932", "sreality:527867980"]
         l = next(x for x in listings if x.id == "sreality:527867980")
         assert l.disposition == "Rodinný"
@@ -177,12 +166,12 @@ class TestSrealityParsing:
 
     def test_city_equal_to_citypart_is_not_duplicated_in_location(self, monkeypatch):
         # Village listings often have city == citypart (Drahotín/Drahotín).
-        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_PROFILE)
+        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC, HOUSES_CFG)
         l = next(x for x in listings if x.id == "sreality:3870457932")
         assert l.location == "Drahotín, Domažlice"
 
     def test_request_sends_browser_headers(self, monkeypatch):
-        _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_PROFILE)
+        _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_SPEC, FLATS_CFG)
         headers = calls[0].headers
         assert "Mozilla" in headers["User-Agent"]
         assert headers["Accept"] == "application/json"
@@ -212,14 +201,14 @@ class TestSrealityPagination:
             100: {"results": [self._estate(2), self._estate(3)], "pagination": {"total": 3}},
         }
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
+        listings = SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
         assert sorted(l.id for l in listings) == ["sreality:1", "sreality:2", "sreality:3"]
         assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
     def test_stops_on_empty_page(self, monkeypatch):
         pages = {0: {"results": [self._estate(1)], "pagination": {"total": 99}}}
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
+        listings = SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
         assert len(listings) == 1
         assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
@@ -229,7 +218,7 @@ class TestSrealityPagination:
         same = [self._estate(1), self._estate(2)]
         pages = {o: {"results": same, "pagination": {"total": 500}} for o in (0, 100, 200, 300)}
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
+        listings = SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
         assert len(listings) == 2
         assert len(calls) == 2
 
@@ -237,7 +226,7 @@ class TestSrealityPagination:
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=99999)],
                      "pagination": {"total": 2}}}
         client, _ = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
+        listings = SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
     def test_missing_disposition_never_produces_double_slash_url(self, monkeypatch):
@@ -245,7 +234,7 @@ class TestSrealityPagination:
         estate["category_sub_cb"] = None
         pages = {0: {"results": [estate], "pagination": {"total": 1}}}
         client, _ = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
+        listings = SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
         url = listings[0].url
         assert "//" not in url.removeprefix("https://")
         assert url.endswith("/praha-holesovice/7")
@@ -261,17 +250,15 @@ class TestSrealityContract:
 
         client = build_client(transport=httpx.MockTransport(handler))
         with pytest.raises(ScraperBrokenError):
-            SrealityScraper(FLATS_PROFILE, client).scrape()
+            SrealityScraper(FLATS_SPEC, FLATS_CFG, client).scrape()
 
 
-BEZ_PROFILE = {
-    "search": {"min_price": 0, "max_price": 25000},
-    "scrapers": {"bezrealitky": {
-        "enabled": True,
-        "estate_type": "BYT",
-        "offer_type": "PRONAJEM",
-        "region_osm_id": "R20000064250",
-    }},
+BEZ_SPEC = SearchSpec(offer_type="rent", estate_type="flat", min_price=0, max_price=25000)
+BEZ_CFG = {
+    "enabled": True,
+    "estate_type": "BYT",
+    "offer_type": "PRONAJEM",
+    "region_osm_id": "R20000064250",
 }
 
 
@@ -324,7 +311,7 @@ class TestBezrealitkyParsing:
 
     def test_parses_advert_fields(self, monkeypatch):
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([_bez_advert(1)], total_count=1)})
-        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        listings = BezrealitkyScraper(BEZ_SPEC, BEZ_CFG, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
         l = listings[0]
         assert l.source == "bezrealitky"
@@ -346,7 +333,7 @@ class TestBezrealitkyParsing:
             _bez_advert(3, price=99999),
         ]
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page(adverts, total_count=3)})
-        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        listings = BezrealitkyScraper(BEZ_SPEC, BEZ_CFG, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
 
     def test_paginates_until_total_count(self, monkeypatch):
@@ -356,7 +343,7 @@ class TestBezrealitkyParsing:
             1: _bez_page(first, total_count=16),
             2: _bez_page(second, total_count=16),
         })
-        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        listings = BezrealitkyScraper(BEZ_SPEC, BEZ_CFG, client).scrape()
         assert len(listings) == 16
         assert len(calls) == 2
 
@@ -369,22 +356,20 @@ class TestBezrealitkyParsing:
             1: _bez_page(first, total_count=16),
             2: _bez_page(second, total_count=16),
         })
-        listings = BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+        listings = BezrealitkyScraper(BEZ_SPEC, BEZ_CFG, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:16"]
 
     def test_missing_next_data_raises_scraper_broken(self, monkeypatch):
         client, _ = _serve_bez_pages(monkeypatch, {1: "<html><body>redesigned</body></html>"})
         with pytest.raises(ScraperBrokenError):
-            BezrealitkyScraper(BEZ_PROFILE, client).scrape()
+            BezrealitkyScraper(BEZ_SPEC, BEZ_CFG, client).scrape()
 
 
-REMAX_PROFILE = {
-    "search": {"min_price": 0, "max_price": 5000000},
-    "scrapers": {"remax": {
-        "enabled": True,
-        "search_url": ("https://www.remax-czech.cz/reality/vyhledavani/"
-                       "?hledani=1&price_from={min_price}&price_to={max_price}"),
-    }},
+REMAX_SPEC = SearchSpec(offer_type="sale", estate_type="house", min_price=0, max_price=5000000)
+REMAX_CFG = {
+    "enabled": True,
+    "search_url": ("https://www.remax-czech.cz/reality/vyhledavani/"
+                   "?hledani=1&price_from={min_price}&price_to={max_price}"),
 }
 
 
@@ -421,7 +406,7 @@ class TestRemaxParsing:
 
     def test_parses_card_fields(self, monkeypatch):
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([_remax_card(12345)])})
-        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        listings = RemaxScraper(REMAX_SPEC, REMAX_CFG, client).scrape()
         assert [l.id for l in listings] == ["remax:12345"]
         l = listings[0]
         assert l.source == "remax"
@@ -439,7 +424,7 @@ class TestRemaxParsing:
             1: _remax_page([_remax_card(1)], has_next=True),
             2: _remax_page([_remax_card(2)]),
         })
-        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        listings = RemaxScraper(REMAX_SPEC, REMAX_CFG, client).scrape()
         assert sorted(l.id for l in listings) == ["remax:1", "remax:2"]
         assert len(calls) == 2
 
@@ -447,10 +432,10 @@ class TestRemaxParsing:
         # A cardless page also means genuinely-zero results, so unlike the
         # other portals it cannot raise ScraperBrokenError.
         client, _ = _serve_remax_pages(monkeypatch, {1: "<html><body>žádné výsledky</body></html>"})
-        assert RemaxScraper(REMAX_PROFILE, client).scrape() == []
+        assert RemaxScraper(REMAX_SPEC, REMAX_CFG, client).scrape() == []
 
     def test_out_of_range_price_is_filtered(self, monkeypatch):
         cards = [_remax_card(1), _remax_card(2, price=99000000)]
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page(cards)})
-        listings = RemaxScraper(REMAX_PROFILE, client).scrape()
+        listings = RemaxScraper(REMAX_SPEC, REMAX_CFG, client).scrape()
         assert [l.id for l in listings] == ["remax:1"]
