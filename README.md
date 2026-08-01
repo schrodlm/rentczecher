@@ -122,7 +122,13 @@ profiles:
       ideal_size_m2: 150
 ```
 
-See `config.example.yaml` for a complete reference with all options.
+See `config.example.yaml` for a complete reference with all options. Check any
+config with `.venv/bin/rentczecher config validate` — typos and invalid values
+are reported with the exact offending key.
+
+**Deprecated:** `scrapers.remax.search_url` (the hand-built RE/MAX URL) still
+works but will be replaced by resolver-based location parameters and later
+becomes a validation error; `config validate` warns while it remains accepted.
 
 ## Adding a new profile
 
@@ -140,6 +146,7 @@ See `config.example.yaml` for a complete reference with all options.
 .venv/bin/rentczecher --profile praha7-byty    # Run one profile
 .venv/bin/rentczecher --dry-run                # No email, no DB changes
 .venv/bin/rentczecher --dry-run --profile X    # Test one profile
+.venv/bin/rentczecher config validate          # Check config.yaml for errors
 ```
 
 ## Logs
