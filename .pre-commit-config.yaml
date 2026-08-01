@@ -1,5 +1,5 @@
 # Pre-commit hooks, run by prek (https://github.com/j178/prek).
-# Setup: uv sync --extra dev && uv run prek install
+# Setup: uv sync && uv run prek install
 # Run manually: uv run prek run --all-files
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -17,7 +17,7 @@ dependencies = [
 [project.scripts]
 rentczecher = "rentczecher.cli.main:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
     "ruff",

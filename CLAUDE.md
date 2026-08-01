@@ -24,7 +24,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 
 ## Working here
 
-- Dev setup: `uv sync --extra dev && uv run prek install`. Commits are gated by pre-commit hooks (ruff, offline pytest, file hygiene — see `.pre-commit-config.yaml`); run them manually with `uv run prek run --all-files`.
+- Dev setup: `uv sync && uv run prek install`. Commits are gated by pre-commit hooks (ruff, offline pytest, file hygiene — see `.pre-commit-config.yaml`); run them manually with `uv run prek run --all-files`.
 - Offline tests: `uv run pytest` (live portal tests are excluded by default via the `live` marker). Run live tests deliberately: `uv run pytest -m live`.
 - Sreality's API blanket-404s some networks while the homepage serves 200. A sudden all-404 from sreality is usually the egress being blocked, not broken code.
 - Scoring and dedup thresholds are tuned-by-feel production behavior. Never retune or restructure them without boundary tests pinning current behavior first.

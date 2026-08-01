@@ -39,9 +39,9 @@ Requires Python >= 3.10 and [uv](https://docs.astral.sh/uv/).
 Development setup:
 
 ```bash
-uv sync --extra dev && uv run prek install   # deps + pre-commit hooks
-uv run pytest                                # offline test suite
-uv run pytest -m live                        # live portal tests (deliberate)
+uv sync && uv run prek install   # deps + pre-commit hooks
+uv run pytest                    # offline test suite
+uv run pytest -m live            # live portal tests (deliberate)
 ```
 
 ## Config
