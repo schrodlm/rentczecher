@@ -3,9 +3,7 @@ import re
 import time
 import unicodedata
 
-import requests
-
-from rentczecher.adapters.scrapers.base import BaseScraper, Listing
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
 
 log = logging.getLogger("rentczecher")
 
@@ -15,8 +13,7 @@ API_URL = "https://www.sreality.cz/api/v1/estates/search"
 PER_PAGE = 100
 # Hard bound so no server response pattern can cause an unbounded crawl.
 MAX_PAGES = 50
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+API_HEADERS = {
     # Selects the snake_case response shape; without it the API returns
     # camelCase page-hydration payloads.
     "Accept": "application/json",
@@ -73,16 +70,14 @@ class SrealityScraper(BaseScraper):
         estates: dict[int, dict] = {}
         offset = 0
         for _ in range(MAX_PAGES):
-            resp = requests.get(API_URL, params=self._build_params(offset), headers=HEADERS, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            results = data.get("results", [])
+            data = self._fetch_page(offset)
+            results = data["results"]
             known = len(estates)
             for estate in results:
                 hash_id = estate.get("hash_id")
                 if hash_id is not None:
                     estates.setdefault(hash_id, estate)
-            total = data.get("pagination", {}).get("total", 0)
+            total = data["pagination"].get("total", 0)
             made_progress = len(estates) > known
             if not results or len(estates) >= total or not made_progress:
                 break
@@ -97,6 +92,14 @@ class SrealityScraper(BaseScraper):
             if listing is not None:
                 listings.append(listing)
         return listings
+
+    def _fetch_page(self, offset: int) -> dict:
+        resp = self._client.get(API_URL, params=self._build_params(offset), headers=API_HEADERS)
+        resp.raise_for_status()
+        data = resp.json()
+        if not isinstance(data, dict) or "results" not in data or "pagination" not in data:
+            raise ScraperBrokenError("sreality: search response is missing results/pagination")
+        return data
 
     def _parse_estate(self, estate: dict) -> Listing | None:
         hash_id = estate.get("hash_id")

@@ -7,8 +7,10 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 
 from rentczecher.adapters.scrapers import sreality
+from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.adapters.scrapers.remax import RemaxScraper
@@ -46,27 +48,17 @@ HOUSES_PROFILE = {
 
 
 def _serve_pages(monkeypatch, pages):
-    """Stub sreality's requests.get with canned JSON payloads keyed by offset."""
+    """Serve canned JSON payloads keyed by offset through a MockTransport client."""
     calls = []
 
-    class FakeResponse:
-        def __init__(self, payload):
-            self._payload = payload
+    def handler(request):
+        calls.append(request)
+        offset = int(request.url.params["offset"])
+        payload = pages.get(offset, {"results": [], "pagination": {"total": 0}})
+        return httpx.Response(200, json=payload)
 
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return self._payload
-
-    def fake_get(url, params=None, headers=None, timeout=None):
-        calls.append({"url": url, "params": params, "headers": headers})
-        payload = pages.get(params["offset"], {"results": [], "pagination": {"total": 0}})
-        return FakeResponse(payload)
-
-    monkeypatch.setattr(sreality.requests, "get", fake_get)
     monkeypatch.setattr(sreality.time, "sleep", lambda _: None)
-    return calls
+    return build_client(transport=httpx.MockTransport(handler)), calls
 
 
 class TestScraperEnabledFlag:
@@ -149,8 +141,8 @@ class TestSrealityParsing:
 
     def _scrape_fixture(self, monkeypatch, fixture_name, profile):
         payload = json.loads((FIXTURES / fixture_name).read_text())
-        calls = _serve_pages(monkeypatch, {0: payload})
-        listings = SrealityScraper(profile, _refusing_client()).scrape()
+        client, calls = _serve_pages(monkeypatch, {0: payload})
+        listings = SrealityScraper(profile, client).scrape()
         return listings, calls, payload
 
     def test_flats_fixture_parses_all_fields(self, monkeypatch):
@@ -191,7 +183,7 @@ class TestSrealityParsing:
 
     def test_request_sends_browser_headers(self, monkeypatch):
         _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_PROFILE)
-        headers = calls[0]["headers"]
+        headers = calls[0].headers
         assert "Mozilla" in headers["User-Agent"]
         assert headers["Accept"] == "application/json"
 
@@ -219,41 +211,54 @@ class TestSrealityPagination:
             0: {"results": [self._estate(1), self._estate(2)], "pagination": {"total": 3}},
             100: {"results": [self._estate(2), self._estate(3)], "pagination": {"total": 3}},
         }
-        calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
+        client, calls = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
         assert sorted(l.id for l in listings) == ["sreality:1", "sreality:2", "sreality:3"]
-        assert [c["params"]["offset"] for c in calls] == [0, 100]
+        assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
     def test_stops_on_empty_page(self, monkeypatch):
         pages = {0: {"results": [self._estate(1)], "pagination": {"total": 99}}}
-        calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
+        client, calls = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
         assert len(listings) == 1
-        assert [c["params"]["offset"] for c in calls] == [0, 100]
+        assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
     def test_stops_when_server_repeats_results_instead_of_paginating(self, monkeypatch):
         # A server that re-serves the same listings for every offset must not
         # cause an endless crawl: no new hash_ids means stop.
         same = [self._estate(1), self._estate(2)]
         pages = {o: {"results": same, "pagination": {"total": 500}} for o in (0, 100, 200, 300)}
-        calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
+        client, calls = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
         assert len(listings) == 2
         assert len(calls) == 2
 
     def test_price_outside_range_is_filtered_client_side(self, monkeypatch):
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=99999)],
                      "pagination": {"total": 2}}}
-        _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
     def test_missing_disposition_never_produces_double_slash_url(self, monkeypatch):
         estate = self._estate(7)
         estate["category_sub_cb"] = None
         pages = {0: {"results": [estate], "pagination": {"total": 1}}}
-        _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_PROFILE, _refusing_client()).scrape()
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_PROFILE, client).scrape()
         url = listings[0].url
         assert "//" not in url.removeprefix("https://")
         assert url.endswith("/praha-holesovice/7")
+
+
+class TestSrealityContract:
+    """A search response without the expected shape raises ScraperBrokenError
+    instead of silently yielding zero results."""
+
+    def test_unrecognized_response_shape_raises(self):
+        def handler(request):
+            return httpx.Response(200, json={"estates": []})
+
+        client = build_client(transport=httpx.MockTransport(handler))
+        with pytest.raises(ScraperBrokenError):
+            SrealityScraper(FLATS_PROFILE, client).scrape()
