@@ -12,7 +12,7 @@ def _make_listing(**kwargs) -> Listing:
         location="Praha 7 - Holešovice", url="https://example.com",
     )
     defaults.update(kwargs)
-    return Listing(**defaults)
+    return Listing.build(**defaults)
 
 
 # ─── Scoring ────────────────────────────────────────────────
@@ -174,8 +174,7 @@ class TestDedup:
 class TestTramEnrichment:
     def test_adds_nearest_stop(self):
         from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = _make_listing(lat=50.1017, lon=14.4330)
-        enrich_tram(l)
+        l = enrich_tram(_make_listing(lat=50.1017, lon=14.4330))
         assert l.nearest_stop is not None
         assert "tram" in l.nearest_stop
         assert l.stop_distance_m is not None
@@ -183,21 +182,25 @@ class TestTramEnrichment:
 
     def test_skips_without_gps(self):
         from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = _make_listing()
-        enrich_tram(l)
+        l = enrich_tram(_make_listing())
         assert l.nearest_stop is None
+
+    def test_original_listing_is_untouched(self):
+        from rentczecher.adapters.enrichment.metro import enrich_tram
+        original = _make_listing(lat=50.1017, lon=14.4330)
+        enriched = enrich_tram(original)
+        assert original.nearest_stop is None
+        assert enriched.nearest_stop is not None
 
     def test_distance_reasonable(self):
         from rentczecher.adapters.enrichment.metro import enrich_tram
         # Right at Vltavska stop
-        l = _make_listing(lat=50.09907, lon=14.438273)
-        enrich_tram(l)
+        l = enrich_tram(_make_listing(lat=50.09907, lon=14.438273))
         assert l.stop_distance_m < 50, f"Should be very close to stop, got {l.stop_distance_m}m"
 
     def test_stop_includes_line_numbers(self):
         from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = _make_listing(lat=50.09907, lon=14.438273)
-        enrich_tram(l)
+        l = enrich_tram(_make_listing(lat=50.09907, lon=14.438273))
         assert "tram" in l.nearest_stop
         # Should have at least one line number
         import re

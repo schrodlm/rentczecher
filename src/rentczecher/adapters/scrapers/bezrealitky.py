@@ -169,7 +169,7 @@ class BezrealitkyScraper(BaseScraper):
                     title_parts.append(address)
                 title = " - ".join(title_parts)
 
-                listings.append(Listing(
+                listings.append(Listing.build(
                     id=f"bezrealitky:{advert_id}",
                     source="bezrealitky",
                     title=title,

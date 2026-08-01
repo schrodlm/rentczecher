@@ -174,7 +174,7 @@ class RemaxScraper(BaseScraper):
         if disp_match:
             disposition = disp_match.group(1)
 
-        return Listing(
+        return Listing.build(
             id=f"remax:{listing_id}",
             source="remax",
             title=title or f"RE/MAX - {disposition or ''} {location}".strip(),

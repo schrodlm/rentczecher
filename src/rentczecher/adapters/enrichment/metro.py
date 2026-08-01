@@ -46,10 +46,10 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> int:
     return round(2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
 
 
-def enrich_tram(listing: Listing) -> None:
-    """Add nearest tram stop, distance, and lines to a listing (mutates in place)."""
+def enrich_tram(listing: Listing) -> Listing:
+    """Return the listing annotated with its nearest tram stop and distance."""
     if listing.lat is None or listing.lon is None:
-        return
+        return listing
 
     best_name = None
     best_dist: int | None = None
@@ -62,6 +62,9 @@ def enrich_tram(listing: Listing) -> None:
             best_name = name
             best_lines = lines
 
-    if best_name:
-        listing.nearest_stop = f"{best_name} (tram {', '.join(str(l) for l in best_lines)})"
-        listing.stop_distance_m = best_dist
+    if best_name is None:
+        return listing
+    return listing.with_annotations(
+        nearest_stop=f"{best_name} (tram {', '.join(str(l) for l in best_lines)})",
+        stop_distance_m=best_dist,
+    )

@@ -123,8 +123,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool =
 
     # Enrich with tram distances (only for Prague profiles)
     if profile.get("tram_enrichment", False):
-        for listing in all_listings:
-            enrich_tram(listing)
+        all_listings = [enrich_tram(listing) for listing in all_listings]
 
     # Cross-source dedup
     pre_dedup = len(all_listings)
@@ -133,19 +132,26 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool =
         log.info("Cross-source dedup: %d -> %d listings", pre_dedup, len(all_listings))
 
     # Compute scores
-    for listing in all_listings:
-        listing.score = compute_score(listing, profile)
+    all_listings = [l.with_annotations(score=compute_score(l, profile)) for l in all_listings]
 
-    # Check for price drops
+    # Check for price drops; all_listings is the single source of truth, so
+    # the annotated replacements land there and everything below derives
+    # from it.
     price_drops = db.update_prices(profile_id, all_listings)
+    dropped = {}
     for listing, old_price in price_drops:
-        listing.price_drop_from = old_price
+        dropped[listing.id] = listing.with_annotations(price_drop_from=old_price)
         log.info("  PRICE DROP: %s | %d -> %d Kc", listing.title[:50], old_price, listing.price)
+    all_listings = [dropped.get(l.id, l) for l in all_listings]
 
     # Find new listings BEFORE updating DB
     seen = db.get_seen(profile_id)
     new_listings = [l for l in all_listings if l.id not in seen]
-    price_drop_listings = [l for l, _ in price_drops if l.id not in {n.id for n in new_listings}]
+    new_ids = {n.id for n in new_listings}
+    price_drop_listings = [
+        l for l in all_listings
+        if l.price_drop_from is not None and l.id not in new_ids
+    ]
 
     # Detect disappeared (requires 3+ consecutive misses to filter API noise).
     # Dry-run skips the write, so it previews disappearances from the last

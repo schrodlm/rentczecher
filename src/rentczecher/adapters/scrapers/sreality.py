@@ -134,7 +134,7 @@ class SrealityScraper(BaseScraper):
             if image_url.startswith("//"):
                 image_url = f"https:{image_url}"
 
-        return Listing(
+        return Listing.build(
             id=f"sreality:{hash_id}",
             source="sreality",
             title=name,

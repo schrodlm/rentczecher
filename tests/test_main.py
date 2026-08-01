@@ -72,7 +72,7 @@ def _make_listing(**kwargs):
         url="https://example.com/1",
     )
     defaults.update(kwargs)
-    return Listing(**defaults)
+    return Listing.build(**defaults)
 
 
 class TestDryRunIsReadOnly:

@@ -60,7 +60,7 @@ def _fake_scrapers(listing_data):
                 pass
 
             def scrape(self):
-                return [Listing(**r) for r in self._records]
+                return [Listing.build(**r) for r in self._records]
 
         scrapers[source] = FakeScraper
     return scrapers

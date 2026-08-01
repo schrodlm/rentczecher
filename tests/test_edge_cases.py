@@ -13,7 +13,7 @@ def _make_listing(**kwargs) -> Listing:
         location="Praha 7 - Holesovice", url="https://example.com",
     )
     defaults.update(kwargs)
-    return Listing(**defaults)
+    return Listing.build(**defaults)
 
 
 # ─── 1. Dedup cross_source correctness ────────────────────────
@@ -173,7 +173,7 @@ class TestNotifierAllNoneOptionals:
         """Only required fields set -- all optional fields are None/default."""
         from rentczecher.adapters.notifiers.smtp import _render_card
 
-        listing = Listing(
+        listing = Listing.build(
             id="test:bare", source="test", title="Bare listing",
             price=15000, location="Praha", url="https://example.com",
         )
@@ -185,7 +185,7 @@ class TestNotifierAllNoneOptionals:
     def test_render_card_no_image(self):
         from rentczecher.adapters.notifiers.smtp import _render_card
 
-        listing = Listing(
+        listing = Listing.build(
             id="test:noimg", source="test", title="No image",
             price=10000, location="Praha", url="https://example.com",
         )
@@ -195,7 +195,7 @@ class TestNotifierAllNoneOptionals:
     def test_render_card_no_location_no_gps_no_map_link(self):
         from rentczecher.adapters.notifiers.smtp import _render_card
 
-        listing = Listing(
+        listing = Listing.build(
             id="test:nogps", source="test", title="No GPS",
             price=10000, location="", url="https://example.com",
         )
@@ -205,7 +205,7 @@ class TestNotifierAllNoneOptionals:
     def test_render_card_location_produces_map_link(self):
         from rentczecher.adapters.notifiers.smtp import _render_card
 
-        listing = Listing(
+        listing = Listing.build(
             id="test:loc", source="test", title="Test",
             price=10000, location="Umělecká, Praha - Holešovice", url="https://example.com",
         )

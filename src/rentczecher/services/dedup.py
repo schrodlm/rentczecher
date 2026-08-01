@@ -115,12 +115,14 @@ def cross_source_dedup(listings: list[Listing]) -> list[Listing]:
 
             remove_to_keeper[remove_idx] = keeper_idx
 
-    # Build cross_source annotations
+    # Annotate keepers with the sources they absorbed, by replacement.
+    replacements: dict[int, Listing] = {}
     for remove_idx, keeper_idx in remove_to_keeper.items():
-        keeper = listings[keeper_idx]
+        keeper = replacements.get(keeper_idx, listings[keeper_idx])
         removed = listings[remove_idx]
-        # Only add if source is different from keeper's source
         if removed.source != keeper.source and removed.source not in keeper.cross_source:
-            keeper.cross_source.append(removed.source)
+            replacements[keeper_idx] = keeper.with_annotations(
+                cross_source=keeper.cross_source + (removed.source,)
+            )
 
-    return [l for i, l in enumerate(listings) if i not in remove_to_keeper]
+    return [replacements.get(i, l) for i, l in enumerate(listings) if i not in remove_to_keeper]
