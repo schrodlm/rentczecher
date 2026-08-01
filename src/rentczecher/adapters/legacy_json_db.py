@@ -172,9 +172,9 @@ def prune(profile_id: str, max_age_days: int = 90) -> int:
         to_remove = []
         for lid, entry in seen.items():
             if isinstance(entry, dict):
-                last = entry.get("last_seen", entry.get("first_seen", ""))
+                last = str(entry.get("last_seen") or entry.get("first_seen") or "")
             else:
-                last = entry
+                last = str(entry)
             if last < cutoff:
                 to_remove.append(lid)
         for lid in to_remove:

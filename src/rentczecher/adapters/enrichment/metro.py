@@ -52,12 +52,12 @@ def enrich_tram(listing: Listing) -> None:
         return
 
     best_name = None
-    best_dist = float("inf")
-    best_lines = []
+    best_dist: int | None = None
+    best_lines: list[int] = []
 
     for name, lat, lon, lines in TRAM_STOPS:
         dist = _haversine_m(listing.lat, listing.lon, lat, lon)
-        if dist < best_dist:
+        if best_dist is None or dist < best_dist:
             best_dist = dist
             best_name = name
             best_lines = lines

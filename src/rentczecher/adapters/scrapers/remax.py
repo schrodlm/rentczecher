@@ -40,7 +40,7 @@ class RemaxScraper(BaseScraper):
             soup = BeautifulSoup(resp.text, "lxml")
 
             # Find listing cards
-            cards = soup.select("div.pl-items__item, article.property-card, div.card-property")
+            cards: list = soup.select("div.pl-items__item, article.property-card, div.card-property")
             if not cards:
                 cards = self._find_listing_blocks(soup)
             if not cards:

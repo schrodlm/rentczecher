@@ -53,7 +53,7 @@ def _are_same_property(li: Listing, lj: Listing) -> bool:
             return False
 
     # GPS proximity (strongest signal)
-    if li.lat is not None and lj.lat is not None:
+    if li.lat is not None and li.lon is not None and lj.lat is not None and lj.lon is not None:
         dist = _haversine_m(li.lat, li.lon, lj.lat, lj.lon)
         if dist < 200:
             return True

@@ -123,6 +123,17 @@ class TestDedup:
         assert len(result) == 1, "Same flat should be deduped"
         assert len(result[0].cross_source) == 1
 
+    def test_listing_with_lat_but_no_lon_does_not_crash(self):
+        """GPS matching requires all four coordinates; a half-set pair falls
+        through to location matching instead of crashing."""
+        from rentczecher.services.dedup import cross_source_dedup
+        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
+                           size_m2=50, disposition="2+kk", lat=50.1, lon=None)
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
+                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
+        result = cross_source_dedup([l1, l2])
+        assert len(result) == 1
+
     def test_different_price_not_deduped(self):
         from rentczecher.services.dedup import cross_source_dedup
         l1 = _make_listing(id="sreality:1", source="sreality", price=15000,
