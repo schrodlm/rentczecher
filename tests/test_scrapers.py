@@ -102,7 +102,7 @@ class TestSrealityDistrictConfig:
                 "category_type_cb": 2,
             }},
         }
-        with caplog.at_level("ERROR", logger="byt_watchdog"):
+        with caplog.at_level("ERROR", logger="rentczecher"):
             listings = SrealityScraper(profile).scrape()
         assert listings == []
         assert any("locality_district_id" in r.message for r in caplog.records)

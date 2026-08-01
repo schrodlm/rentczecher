@@ -7,7 +7,7 @@ import requests
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 
-log = logging.getLogger("byt_watchdog")
+log = logging.getLogger("rentczecher")
 
 API_URL = "https://www.sreality.cz/api/v1/estates/search"
 # The API silently clamps per_page to 100 and paginates by offset;

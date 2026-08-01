@@ -21,7 +21,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-log = logging.getLogger("byt_watchdog")
+log = logging.getLogger("rentczecher")
 
 # Resolves to the repo root only under an editable install.
 BASE_DIR = str(Path(__file__).resolve().parents[3])

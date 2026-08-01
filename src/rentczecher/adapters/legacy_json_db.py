@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-log = logging.getLogger("byt_watchdog")
+log = logging.getLogger("rentczecher")
 
 # Resolves to the repo root only under an editable install.
 DATA_DIR = str(Path(__file__).resolve().parents[3] / "data")
