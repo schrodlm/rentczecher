@@ -9,7 +9,7 @@ import sys
 import yaml
 
 from rentczecher.adapters import legacy_json_db as db
-from rentczecher.adapters.config.paths import repo_root
+from rentczecher.adapters.config import paths
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -23,13 +23,14 @@ logging.basicConfig(
 )
 log = logging.getLogger("rentczecher")
 
-CONFIG_PATH = str(repo_root() / "config.yaml")
-PID_PATH = str(repo_root() / "data" / "watchdog.pid")
+CONFIG_PATH = str(paths.config_path())
+PID_PATH = str(paths.pid_lock_path())
 
 
 def load_config() -> dict:
     if not os.path.exists(CONFIG_PATH):
-        log.error("config.yaml not found. Copy config.example.yaml and fill in your settings.")
+        log.error("Config not found at %s - run ./install.py, or copy "
+                  "config.example.yaml there and fill in your settings.", CONFIG_PATH)
         sys.exit(1)
     with open(CONFIG_PATH, "r") as f:
         return yaml.safe_load(f)
@@ -206,7 +207,21 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool =
     db.prune(profile_id, max_age_days=90)
 
 
+def _warn_if_repo_data_orphaned():
+    repo_data = paths.repo_root() / "data"
+    if str(repo_data) == db.DATA_DIR or os.environ.get("RENTCZECHER_DATA_DIR"):
+        return
+    if any(repo_data.glob("seen-*.json")):
+        log.warning(
+            "Repo-local state at %s is not in use; runs now store data in %s. "
+            "Move the seen-*.json files there if that history should carry over.",
+            repo_data, db.DATA_DIR,
+        )
+
+
 def run(dry_run: bool = False, profile_filter: str | None = None):
+    log.info("Using config: %s, data: %s", CONFIG_PATH, db.DATA_DIR)
+    _warn_if_repo_data_orphaned()
     config = load_config()
 
     if not _acquire_pidlock():

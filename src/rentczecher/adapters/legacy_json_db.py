@@ -5,11 +5,11 @@ import os
 import tempfile
 from datetime import datetime, timezone, timedelta
 
-from rentczecher.adapters.config.paths import repo_root
+from rentczecher.adapters.config import paths
 
 log = logging.getLogger("rentczecher")
 
-DATA_DIR = str(repo_root() / "data")
+DATA_DIR = str(paths.data_dir())
 
 
 def _db_path(profile_id: str) -> str:

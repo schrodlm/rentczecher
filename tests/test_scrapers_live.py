@@ -10,10 +10,11 @@ import os
 
 pytestmark = pytest.mark.live
 
-# Load config
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
-if os.path.exists(CONFIG_PATH):
-    CONFIG = yaml.safe_load(open(CONFIG_PATH))
+# Load the resolved config, falling back to the example profiles.
+from rentczecher.adapters.config import paths  # noqa: E402
+
+if paths.config_path().exists():
+    CONFIG = yaml.safe_load(paths.config_path().read_text())
 else:
     CONFIG = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "config.example.yaml")))
 
