@@ -25,6 +25,13 @@ repos:
         language: system
         types: [python]
 
+      - id: mypy
+        name: mypy
+        entry: uv run mypy src/
+        language: system
+        pass_filenames: false
+        types: [python]
+
       # Not filtered to Python files: fixture and config changes can break
       # tests too, and the offline suite costs well under a second. The
       # live-marker exclusion is repeated here so the commit gate cannot
