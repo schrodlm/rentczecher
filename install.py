@@ -11,9 +11,15 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
-CONFIG = REPO_ROOT / "config.yaml"
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+# The resolver is stdlib-only, so it is importable straight from src/ before
+# anything is installed - installer and app share one source of truth.
+from rentczecher.adapters.config.paths import config_path, data_dir, repo_root  # noqa: E402
+
+CONFIG = config_path()
 CONFIG_EXAMPLE = REPO_ROOT / "config.example.yaml"
-DATA_DIR = REPO_ROOT / "data"
+DATA_DIR = data_dir()
 ENTRY_POINT = REPO_ROOT / ".venv" / "bin" / "rentczecher"
 CRON_LOG = DATA_DIR / "cron.log"
 
@@ -71,8 +77,22 @@ def ensure_config(dry_run):
         return "kept"
     step(f"Creating config from example: {CONFIG}")
     if not dry_run:
+        CONFIG.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(CONFIG_EXAMPLE, CONFIG)
+    warn_if_repo_data_orphaned()
     return "created"
+
+
+def warn_if_repo_data_orphaned():
+    """A fresh config away from an existing repo-local installation would
+    silently strand its seen-listing history - say so before it happens."""
+    repo_data = repo_root() / "data"
+    if repo_data == DATA_DIR:
+        return
+    if any(repo_data.glob("seen-*.json")):
+        print(f"    WARNING: existing state found in {repo_data}, but this install\n"
+              f"             will store data in {DATA_DIR}; move the seen-*.json\n"
+              f"             files there if that history should carry over")
 
 
 def render_cron_block(interval_hours):

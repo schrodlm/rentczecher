@@ -144,6 +144,9 @@ See `config.example.yaml` for a complete reference with all options.
 
 ## Logs
 
+The cron log lives in the data directory the installer printed:
+
 ```bash
-tail -f data/cron.log
+tail -f ~/.local/share/rentczecher/cron.log   # fresh installs
+tail -f data/cron.log                         # repo-local setups
 ```

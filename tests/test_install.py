@@ -124,6 +124,16 @@ class TestEnsureConfig:
         assert install.ensure_config(dry_run=False) == "created"
         assert config.read_text() == "template\n"
 
+    def test_missing_parent_directories_are_created(self, tmp_path, monkeypatch):
+        """XDG config homes do not exist on a fresh machine."""
+        example = tmp_path / "config.example.yaml"
+        example.write_text("template\n")
+        config = tmp_path / "deep" / "nested" / "config.yaml"
+        monkeypatch.setattr(install, "CONFIG", config)
+        monkeypatch.setattr(install, "CONFIG_EXAMPLE", example)
+        assert install.ensure_config(dry_run=False) == "created"
+        assert config.read_text() == "template\n"
+
     def test_dry_run_creates_nothing(self, tmp_path, monkeypatch):
         example = tmp_path / "config.example.yaml"
         example.write_text("template\n")
@@ -156,6 +166,33 @@ class TestNextSteps:
         out = capsys.readouterr().out
         assert "edit" not in out
         assert "test it" in out
+
+
+class TestResolverWiring:
+    def test_install_constants_come_from_the_shared_resolver(self):
+        from rentczecher.adapters.config import paths
+        assert install.CONFIG == paths.config_path()
+        assert install.DATA_DIR == paths.data_dir()
+
+
+class TestOrphanWarning:
+    def test_warns_when_install_targets_a_different_data_home(self, tmp_path, monkeypatch, capsys):
+        repo = tmp_path / "repo"
+        (repo / "data").mkdir(parents=True)
+        (repo / "data" / "seen-x.json").write_text("{}")
+        monkeypatch.setattr(install, "repo_root", lambda: repo)
+        monkeypatch.setattr(install, "DATA_DIR", tmp_path / "xdg" / "rentczecher")
+        install.warn_if_repo_data_orphaned()
+        assert "WARNING" in capsys.readouterr().out
+
+    def test_silent_when_install_stays_repo_local(self, tmp_path, monkeypatch, capsys):
+        repo = tmp_path / "repo"
+        (repo / "data").mkdir(parents=True)
+        (repo / "data" / "seen-x.json").write_text("{}")
+        monkeypatch.setattr(install, "repo_root", lambda: repo)
+        monkeypatch.setattr(install, "DATA_DIR", repo / "data")
+        install.warn_if_repo_data_orphaned()
+        assert "WARNING" not in capsys.readouterr().out
 
 
 class TestParseArgs:
