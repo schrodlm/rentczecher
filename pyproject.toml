@@ -22,6 +22,7 @@ dev = [
     "pytest",
     "ruff",
     "mypy",
+    "prek",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -38,10 +39,10 @@ line-length = 120
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-# Deliberately lenient for now: pyflakes + pycodestyle errors only, pinned
-# explicitly so findings don't change when ruff's defaults do.
+# Pyflakes + pycodestyle errors only, pinned explicitly so findings do not
+# change when ruff's default rule selection does.
 select = ["E4", "E7", "E9", "F"]
-# The codebase idiomatically uses `l` for listings; revisit with a rename.
+# The codebase idiomatically uses `l` for listings.
 ignore = ["E741"]
 
 [tool.mypy]
