@@ -4,12 +4,12 @@ import logging
 import os
 import tempfile
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
+
+from rentczecher.adapters.config.paths import repo_root
 
 log = logging.getLogger("rentczecher")
 
-# Resolves to the repo root only under an editable install.
-DATA_DIR = str(Path(__file__).resolve().parents[3] / "data")
+DATA_DIR = str(repo_root() / "data")
 
 
 def _db_path(profile_id: str) -> str:

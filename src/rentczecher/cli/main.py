@@ -5,11 +5,11 @@ import argparse
 import logging
 import os
 import sys
-from pathlib import Path
 
 import yaml
 
 from rentczecher.adapters import legacy_json_db as db
+from rentczecher.adapters.config.paths import repo_root
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -23,10 +23,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("rentczecher")
 
-# Resolves to the repo root only under an editable install.
-BASE_DIR = str(Path(__file__).resolve().parents[3])
-CONFIG_PATH = os.path.join(BASE_DIR, "config.yaml")
-PID_PATH = os.path.join(BASE_DIR, "data", "watchdog.pid")
+CONFIG_PATH = str(repo_root() / "config.yaml")
+PID_PATH = str(repo_root() / "data" / "watchdog.pid")
 
 
 def load_config() -> dict:
