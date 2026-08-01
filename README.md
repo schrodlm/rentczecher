@@ -112,7 +112,7 @@ profiles:
         region_osm_id: "R441864"
       remax:
         enabled: true
-        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1&types%5B6%5D=on&types%5B10%5D=on&regions%5B43%5D%5B3402%5D=on"
+        search_url: "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1&types%5B6%5D=on&types%5B10%5D=on&regions%5B43%5D%5B3401%5D=on"
     scoring:
       land_weight: 40
       ideal_land_m2: 2000
