@@ -5,11 +5,12 @@ import argparse
 import logging
 import os
 import sys
-
-import yaml
+from pathlib import Path
 
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
+from rentczecher.adapters.config.loader import load_config as load_validated_config
+from rentczecher.domain.errors import ConfigError
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -28,12 +29,40 @@ PID_PATH = str(paths.pid_lock_path())
 
 
 def load_config() -> dict:
-    if not os.path.exists(CONFIG_PATH):
+    config_file = Path(CONFIG_PATH)
+    if not config_file.exists():
         log.error("Config not found at %s - run ./install.py, or copy "
                   "config.example.yaml there and fill in your settings.", CONFIG_PATH)
         sys.exit(1)
-    with open(CONFIG_PATH, "r") as f:
-        return yaml.safe_load(f)
+    try:
+        return load_validated_config(config_file)
+    except ConfigError as error:
+        log.error("Invalid config:\n%s", error)
+        sys.exit(1)
+
+
+def validate_config(path: Path | None = None) -> int:
+    config_file = path if path is not None else Path(CONFIG_PATH)
+    if not config_file.exists():
+        print(f"error: config not found at {config_file}", file=sys.stderr)
+        return 1
+    try:
+        config = load_validated_config(config_file)
+    except ConfigError as error:
+        print(error, file=sys.stderr)
+        return 1
+    profiles = config["profiles"]
+    enabled = sum(
+        1 for profile in profiles.values()
+        for scraper in profile["scrapers"].values() if scraper["enabled"]
+    )
+    print(f"OK - {len(profiles)} profile(s), {enabled} scraper(s) enabled")
+    for profile_id, profile in profiles.items():
+        if profile["scrapers"].get("remax", {}).get("search_url"):
+            print(f"WARNING: profiles.{profile_id}.scrapers.remax.search_url is "
+                  "deprecated; it will be replaced by resolver-based location "
+                  "parameters and later become an error")
+    return 0
 
 
 def _acquire_pidlock() -> bool:
@@ -190,8 +219,6 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict, dry_run: bool =
 
     # Determine recipients - profile-level "to" overrides global
     recipients = profile.get("to", [])
-    if isinstance(recipients, str):
-        recipients = [recipients]
 
     if not recipients:
         log.error("Profile %s has no 'to' recipients configured - skipping email", profile_id)
@@ -265,7 +292,18 @@ def main():
                         help="Scrape and show results without sending email or updating DB")
     parser.add_argument("--profile", type=str, default=None,
                         help="Run only a specific profile (by ID)")
+    subparsers = parser.add_subparsers(dest="command")
+    config_parser = subparsers.add_parser("config", help="Configuration utilities")
+    config_subparsers = config_parser.add_subparsers(dest="config_command")
+    validate_parser = config_subparsers.add_parser("validate", help="Validate the config file")
+    validate_parser.add_argument("--path", type=Path, default=None,
+                                 help="Config file to validate (default: the resolved config)")
     args = parser.parse_args()
+
+    if args.command == "config":
+        if args.config_command == "validate":
+            sys.exit(validate_config(args.path))
+        config_parser.error("expected a subcommand: validate")
     run(dry_run=args.dry_run, profile_filter=args.profile)
 
 

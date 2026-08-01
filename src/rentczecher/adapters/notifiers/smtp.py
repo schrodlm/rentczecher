@@ -236,8 +236,6 @@ def send_email(listings: list[Listing], email_cfg: dict, profile: dict | None = 
     msg["Message-ID"] = make_msgid(domain="byt-watchdog")
 
     recipients = email_cfg.get("to", [])
-    if isinstance(recipients, str):
-        recipients = [recipients]
     msg["To"] = ", ".join(recipients)
 
     # Plain text

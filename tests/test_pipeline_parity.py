@@ -27,13 +27,15 @@ PROFILE = {
     "enabled": True,
     "to": ["parity@example.com"],
     "search": {
+        "offer_type": "rent",
+        "estate_type": "flat",
         "min_price": 0,
         "max_price": 25000,
         "dispositions": ["2+kk", "1+1"],
         "min_size_m2": 30,
     },
     "scrapers": {
-        "sreality": {"enabled": True},
+        "sreality": {"enabled": True, "locality_district_id": 5007},
         "bezrealitky": {"enabled": True},
         "remax": {"enabled": True},
     },
@@ -124,6 +126,12 @@ def _normalize_seen(seen):
                 entry[key] = "TS"
         normalized[listing_id] = entry
     return normalized
+
+
+def test_parity_profile_satisfies_the_config_schema():
+    """The golden fixture's profile must stay a valid real-world config."""
+    from rentczecher.adapters.config.schema import ProfileConfig
+    ProfileConfig.model_validate(PROFILE)
 
 
 def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):

@@ -48,6 +48,26 @@ class TestOrphanedRepoDataWarning:
         assert not caplog.records
 
 
+class TestValidateConfig:
+    def test_deprecated_search_url_prints_a_warning(self, tmp_path, capsys):
+        import yaml
+        config = {
+            "email": {"smtp_host": "h", "smtp_user": "u",
+                      "smtp_password": "p", "from": "u@example.com"},
+            "profiles": {"p": {
+                "name": "P", "to": ["a@example.com"],
+                "search": {"offer_type": "rent", "estate_type": "flat"},
+                "scrapers": {"remax": {"enabled": True, "search_url": "https://example.com/{min_price}{max_price}"}},
+            }},
+        }
+        path = tmp_path / "config.yaml"
+        path.write_text(yaml.safe_dump(config))
+        assert main_module.validate_config(path) == 0
+        out = capsys.readouterr().out
+        assert "OK - 1 profile(s)" in out
+        assert "search_url is deprecated" in out
+
+
 class TestPidLock:
     """A second invocation against the same resolved data dir must refuse
     to run while the first one is alive."""
