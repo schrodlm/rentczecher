@@ -20,24 +20,28 @@ Multi-profile real estate monitor for the Czech Republic. Scrapes major Czech re
 
 ## Setup
 
+Requires Python >= 3.10 and [uv](https://docs.astral.sh/uv/).
+
 ```bash
-# Install (creates venv, installs deps, sets up cron)
-./install.sh
+# Install (creates .venv, installs deps, copies the example config, sets up cron)
+./install.py
 
-# Or manually:
-python3 -m venv venv
-venv/bin/pip install -r requirements.txt
+# Preview what the installer would do
+./install.py --dry-run
 
-# Configure
-cp config.example.yaml config.yaml
-# Edit config.yaml
+# Configure: edit config.yaml (SMTP credentials, search profiles)
 
-# Test
-venv/bin/python main.py --dry-run
-venv/bin/python main.py --dry-run --profile praha7-byty
+# Test without sending email or writing state
+.venv/bin/rentczecher --dry-run
+.venv/bin/rentczecher --dry-run --profile praha7-byty
+```
 
-# Run for real
-venv/bin/python main.py
+Development setup:
+
+```bash
+uv sync --extra dev && uv run prek install   # deps + pre-commit hooks
+uv run pytest                                # offline test suite
+uv run pytest -m live                        # live portal tests (deliberate)
 ```
 
 ## Config
@@ -132,10 +136,10 @@ See `config.example.yaml` for a complete reference with all options.
 ## CLI
 
 ```bash
-python3 main.py                          # Run all profiles
-python3 main.py --profile praha7-byty    # Run one profile
-python3 main.py --dry-run                # No email, no DB changes
-python3 main.py --dry-run --profile X    # Test one profile
+.venv/bin/rentczecher                          # Run all profiles
+.venv/bin/rentczecher --profile praha7-byty    # Run one profile
+.venv/bin/rentczecher --dry-run                # No email, no DB changes
+.venv/bin/rentczecher --dry-run --profile X    # Test one profile
 ```
 
 ## Logs
