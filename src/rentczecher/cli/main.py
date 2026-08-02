@@ -21,6 +21,7 @@ from rentczecher.services.score import compute_score
 from rentczecher.adapters.scrapers import ALL_SCRAPERS
 from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.client import build_client
+from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,6 +127,9 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
             else:
                 log.info("  %s: found %d listings", name, len(listings))
             all_listings.extend(listings)
+        except PlaceNotFoundError as error:
+            log.error("Profile %s: %s - fix search.place", profile_id, error)
+            return
         except ScraperBrokenError as error:
             log.error("  %s: portal changed its contract - scraper needs updating: %s", name, error)
         except Exception:
