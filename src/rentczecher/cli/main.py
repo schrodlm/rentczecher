@@ -11,7 +11,7 @@ import httpx
 
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
-from rentczecher.adapters.config.loader import load_config as load_validated_config
+from rentczecher.adapters.config.loader import load_config
 from rentczecher.domain.errors import ConfigError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
@@ -33,14 +33,14 @@ CONFIG_PATH = str(paths.config_path())
 PID_PATH = str(paths.pid_lock_path())
 
 
-def load_config() -> dict:
+def _load_config_or_exit() -> dict:
     config_file = Path(CONFIG_PATH)
     if not config_file.exists():
         log.error("Config not found at %s - run ./install.py, or copy "
                   "config.example.yaml there and fill in your settings.", CONFIG_PATH)
         sys.exit(1)
     try:
-        return load_validated_config(config_file)
+        return load_config(config_file)
     except ConfigError as error:
         log.error("Invalid config:\n%s", error)
         sys.exit(1)
@@ -52,7 +52,7 @@ def validate_config(path: Path | None = None) -> int:
         print(f"error: config not found at {config_file}", file=sys.stderr)
         return 1
     try:
-        config = load_validated_config(config_file)
+        config = load_config(config_file)
     except ConfigError as error:
         print(error, file=sys.stderr)
         return 1
@@ -250,7 +250,7 @@ def _warn_if_repo_data_orphaned():
 def run(dry_run: bool = False, profile_filter: str | None = None):
     log.info("Using config: %s, data: %s", CONFIG_PATH, db.DATA_DIR)
     _warn_if_repo_data_orphaned()
-    config = load_config()
+    config = _load_config_or_exit()
 
     if not _acquire_pidlock():
         log.warning("Another instance is already running, exiting")
