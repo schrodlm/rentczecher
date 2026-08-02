@@ -476,6 +476,39 @@ class TestEstateOfferTypeCoverage:
         RemaxScraper(spec, _refusing_client())._build_url()
 
 
+class TestNarrowPlaceViews:
+    """Each scraper narrows the resolved place to its own typed view at
+    construction and holds no other portal's data afterwards."""
+
+    def test_sreality_view_carries_only_sreality_fields(self):
+        from rentczecher.adapters.scrapers.location_resolver import resolve
+        from rentczecher.adapters.scrapers.sreality import SrealityPlace
+        view = SrealityPlace.from_params(resolve("praha-7"))
+        assert view == SrealityPlace(district_id=5007, region_id=10)
+
+    def test_bezrealitky_view_carries_only_its_region_id(self):
+        from rentczecher.adapters.scrapers.location_resolver import resolve
+        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyPlace
+        view = BezrealitkyPlace.from_params(resolve("domazlice"))
+        assert view == BezrealitkyPlace(region_id="R441864")
+
+    def test_remax_view_tells_the_single_region_truth(self):
+        from rentczecher.adapters.scrapers.location_resolver import resolve
+        from rentczecher.adapters.scrapers.remax import RemaxPlace
+        assert RemaxPlace.from_params(resolve("domazlice")) == RemaxPlace(
+            region_id=43, district_ids=(3401,))
+        kraj = RemaxPlace.from_params(resolve("plzensky"))
+        assert kraj.region_id == 43 and len(kraj.district_ids) == 7
+
+    def test_scrapers_hold_no_full_place_params(self):
+        from rentczecher.adapters.scrapers.location_resolver import PlaceParams
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", max_price=25000)
+        for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
+            scraper = scraper_cls(spec, _refusing_client())
+            assert not any(isinstance(value, PlaceParams)
+                           for value in vars(scraper).values()), scraper_cls.name
+
+
 class TestPlaceResolutionFailure:
     """A scraper built for an unresolvable place raises PlaceNotFoundError
     instead of silently searching nowhere."""

@@ -2,8 +2,10 @@ import logging
 import re
 import time
 import unicodedata
+from dataclasses import dataclass
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
+from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 
 log = logging.getLogger("rentczecher")
 
@@ -33,16 +35,31 @@ def _slugify(text: str) -> str:
     return "".join(c for c in decomposed if unicodedata.category(c) != "Mn").replace(" ", "-")
 
 
+@dataclass(frozen=True, slots=True)
+class SrealityPlace:
+    district_id: int | None
+    region_id: int
+
+    @classmethod
+    def from_params(cls, place: PlaceParams) -> "SrealityPlace":
+        return cls(district_id=place.sreality_district_id,
+                   region_id=place.sreality_region_id)
+
+
 class SrealityScraper(BaseScraper):
     name = "sreality"
+
+    def __init__(self, spec, client):
+        super().__init__(spec, client)
+        self.place = SrealityPlace.from_params(resolve(spec.place))
 
     def _category_cbs(self) -> tuple[int, int]:
         return ESTATE_TYPE_CB[self.spec.estate_type], OFFER_TYPE_CB[self.spec.offer_type]
 
     def _location_params(self) -> dict:
-        if self.place.sreality_district_id is not None:
-            return {"locality_district_id": self.place.sreality_district_id}
-        return {"locality_region_id": self.place.sreality_region_id}
+        if self.place.district_id is not None:
+            return {"locality_district_id": self.place.district_id}
+        return {"locality_region_id": self.place.region_id}
 
     def _build_params(self, offset: int) -> dict:
         main_cb, type_cb = self._category_cbs()

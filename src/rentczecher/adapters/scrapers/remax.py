@@ -1,10 +1,12 @@
 import re
 import time
+from dataclasses import dataclass
 from urllib.parse import urlencode
 
 from bs4 import BeautifulSoup
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
+from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 
 SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
 
@@ -13,16 +15,30 @@ ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
 OFFER_TYPE_ID = {"sale": 1, "rent": 2}
 
 
+@dataclass(frozen=True, slots=True)
+class RemaxPlace:
+    region_id: int
+    district_ids: tuple[int, ...]
+
+    @classmethod
+    def from_params(cls, place: PlaceParams) -> "RemaxPlace":
+        (region_id, district_ids), = place.remax_regions.items()
+        return cls(region_id=region_id, district_ids=district_ids)
+
+
 class RemaxScraper(BaseScraper):
     name = "remax"
+
+    def __init__(self, spec, client):
+        super().__init__(spec, client)
+        self.place = RemaxPlace.from_params(resolve(spec.place))
 
     def _build_url(self) -> str:
         query: list[tuple[str, object]] = [("hledani", OFFER_TYPE_ID[self.spec.offer_type])]
         query += [(f"types[{type_id}]", "on")
                   for type_id in ESTATE_TYPE_IDS[self.spec.estate_type]]
-        for region_id, district_ids in self.place.remax_regions.items():
-            query += [(f"regions[{region_id}][{district_id}]", "on")
-                      for district_id in district_ids]
+        query += [(f"regions[{self.place.region_id}][{district_id}]", "on")
+                  for district_id in self.place.district_ids]
         if self.spec.min_price > 0:
             query.append(("price_from", self.spec.min_price))
         if self.spec.max_price > 0:

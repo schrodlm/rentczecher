@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 import httpx
 
-from rentczecher.adapters.scrapers.location_resolver import resolve
 from rentczecher.domain.listing import Listing
 from rentczecher.domain.search import SearchSpec
 
@@ -18,7 +17,6 @@ class BaseScraper(ABC):
 
     def __init__(self, spec: SearchSpec, client: httpx.Client):
         self.spec = spec
-        self.place = resolve(spec.place)
         self._client = client
 
     @abstractmethod

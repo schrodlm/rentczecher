@@ -2,7 +2,10 @@ import json
 import re
 import time
 
+from dataclasses import dataclass
+
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
+from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
 
@@ -37,15 +40,28 @@ def _apollo_get(obj: dict, prefix: str):
     return None
 
 
+@dataclass(frozen=True, slots=True)
+class BezrealitkyPlace:
+    region_id: str
+
+    @classmethod
+    def from_params(cls, place: PlaceParams) -> "BezrealitkyPlace":
+        return cls(region_id=place.bezrealitky_region_id)
+
+
 class BezrealitkyScraper(BaseScraper):
     name = "bezrealitky"
+
+    def __init__(self, spec, client):
+        super().__init__(spec, client)
+        self.place = BezrealitkyPlace.from_params(resolve(spec.place))
 
     def _build_url(self) -> str:
         params = [
             "currency=CZK",
             f"estateType={ESTATE_TYPE_PARAM[self.spec.estate_type]}",
             f"offerType={OFFER_TYPE_PARAM[self.spec.offer_type]}",
-            f"regionOsmIds={self.place.bezrealitky_region_id}",
+            f"regionOsmIds={self.place.region_id}",
             # The server applies search filters only when this param is
             # present; without it the page renders the place name but
             # serves unfiltered countrywide results.
