@@ -10,9 +10,10 @@ BROWSER_HEADERS = {
 def build_client(transport: httpx.BaseTransport | None = None) -> httpx.Client:
     # follow_redirects matches the requests behavior the scrapers were
     # built against; httpx does not follow redirects by default.
+    # Transport retries cover connect failures only, not HTTP errors.
     return httpx.Client(
         headers=BROWSER_HEADERS,
         timeout=30,
         follow_redirects=True,
-        transport=transport,
+        transport=transport if transport is not None else httpx.HTTPTransport(retries=3),
     )
