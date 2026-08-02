@@ -10,7 +10,7 @@ import yaml
 
 from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.config.schema import Config, ProfileConfig
-from rentczecher.domain.errors import ConfigError
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
@@ -110,6 +110,13 @@ class TestScrapersList:
 
 
 class TestLoader:
+    def test_missing_file_raises_config_not_found_naming_the_path(self, tmp_path):
+        """A nonexistent config file is a ConfigError like any other, so
+        every caller reports it through one channel."""
+        missing = tmp_path / "config.yaml"
+        with pytest.raises(ConfigNotFoundError, match="config not found at"):
+            load_config(missing)
+
     def test_valid_config_loads_as_plain_dict(self, tmp_path):
         config = load_config(_write(tmp_path, VALID))
         assert config["email"]["from"] == "u@example.com"

@@ -12,7 +12,7 @@ import httpx
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
-from rentczecher.domain.errors import ConfigError
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.adapters.enrichment.metro import enrich_tram
@@ -34,13 +34,12 @@ PID_PATH = str(paths.pid_lock_path())
 
 
 def _load_config_or_exit() -> dict:
-    config_file = Path(CONFIG_PATH)
-    if not config_file.exists():
-        log.error("Config not found at %s - run ./install.py, or copy "
-                  "config.example.yaml there and fill in your settings.", CONFIG_PATH)
-        sys.exit(1)
     try:
-        return load_config(config_file)
+        return load_config(Path(CONFIG_PATH))
+    except ConfigNotFoundError as error:
+        log.error("%s - run ./install.py, or copy config.example.yaml "
+                  "there and fill in your settings.", error)
+        sys.exit(1)
     except ConfigError as error:
         log.error("Invalid config:\n%s", error)
         sys.exit(1)
@@ -48,9 +47,6 @@ def _load_config_or_exit() -> dict:
 
 def validate_config(path: Path | None = None) -> int:
     config_file = path if path is not None else Path(CONFIG_PATH)
-    if not config_file.exists():
-        print(f"error: config not found at {config_file}", file=sys.stderr)
-        return 1
     try:
         config = load_config(config_file)
     except ConfigError as error:

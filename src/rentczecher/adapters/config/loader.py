@@ -9,10 +9,12 @@ from pydantic import ValidationError
 
 from rentczecher.adapters.config.schema import Config, StrictModel, field_aliases
 from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError, resolve
-from rentczecher.domain.errors import ConfigError
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 
 
 def load_config(path: Path) -> dict:
+    if not path.exists():
+        raise ConfigNotFoundError(f"config not found at {path}")
     raw = yaml.safe_load(path.read_text())
     if not isinstance(raw, dict):
         raise ConfigError(f"{path.name}: expected a mapping at the top level")
