@@ -7,7 +7,8 @@ Standard clean open-source development practices are the baseline everywhere; th
 ## Code style
 
 - **Code is self-documenting first.** Pick names and structure so a comment is unnecessary. If you feel the need to explain *what* code does, rewrite the code instead of commenting it.
-- **Comment only to state a constraint the code cannot express** — an external system's quirk, a deliberate trade-off, a non-obvious consequence. One or two lines, directly above the code they govern.
+- **Comment to state a constraint the code cannot express** — an external system's quirk, a deliberate trade-off, a non-obvious consequence. One or two lines, directly above the code they govern.
+- **Short narrating comments are allowed when they genuinely speed up reading** — a section marker in a long parse routine ("# Resolve main image") earns its place; a line-by-line paraphrase never does. Short, on point, at the right spot.
 - **Never reference documents from code.** No plan files, milestones, issue numbers, commit hashes, or anything else with a different lifespan than the source. A comment pointing at `docs/plans/...` or "Milestone 1.5" is wrong even while it is accurate. (Docs referencing docs is fine; commit messages referencing anything is fine.)
 - **No reviewer-facing commentary in code.** Never explain what changed, what the old code did, or why the change is correct — that belongs in the commit message and dies there.
 
