@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
 
 SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
 
@@ -178,17 +179,8 @@ class RemaxScraper(BaseScraper):
             if image_url and not image_url.startswith("http"):
                 image_url = f"https://www.remax-czech.cz{image_url}"
 
-        # Size
-        size = None
-        size_match = re.search(r"(\d+)\s*m[2²]", card_text)
-        if size_match:
-            size = int(size_match.group(1))
-
-        # Land area - "pozemek X m2" or "X m² pozemek"
-        land = None
-        land_match = re.search(r"pozemek\s+([\d\s]+)\s*m[2²]", card_text, re.IGNORECASE)
-        if land_match:
-            land = int(land_match.group(1).replace(" ", "").replace("\xa0", ""))
+        size = parse_size_m2(card_text)
+        land = parse_land_m2(card_text)
 
         # Disposition
         disposition = None

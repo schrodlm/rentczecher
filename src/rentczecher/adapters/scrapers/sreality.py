@@ -1,11 +1,11 @@
 import logging
-import re
 import time
 import unicodedata
 from dataclasses import dataclass
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
 
 log = logging.getLogger("rentczecher")
 
@@ -125,16 +125,8 @@ class SrealityScraper(BaseScraper):
             return None
 
         name = estate.get("advert_name", "")
-
-        size = None
-        size_match = re.search(r"(\d+)\s*m[2²]", name)
-        if size_match:
-            size = int(size_match.group(1))
-
-        land = None
-        land_match = re.search(r"pozemek\s+([\d\s]+)\s*m[2²]", name, re.IGNORECASE)
-        if land_match:
-            land = int(land_match.group(1).replace(" ", "").replace("\xa0", ""))
+        size = parse_size_m2(name)
+        land = parse_land_m2(name)
 
         sub_cb = estate.get("category_sub_cb") or {}
         disposition = sub_cb.get("name") or None
