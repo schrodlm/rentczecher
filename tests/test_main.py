@@ -4,6 +4,9 @@ Run: python3 -m pytest tests/test_main.py -v
 """
 
 import os
+import sys
+
+import pytest
 
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.cli import main as main_module
@@ -84,6 +87,36 @@ class TestValidateConfig:
         err = capsys.readouterr().err
         assert "place" in err
         assert "scrapers" in err
+
+
+class TestDbMigrate:
+    def test_migrate_builds_the_database(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(main_module.paths, "db_path",
+                            lambda: tmp_path / "rentczecher.db")
+        assert main_module.migrate_db() == 0
+        db = tmp_path / "rentczecher.db"
+        assert db.exists()
+        import sqlite3
+        conn = sqlite3.connect(db)
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert "properties" in tables and "listings" in tables
+
+    def test_migrate_is_idempotent(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(main_module.paths, "db_path",
+                            lambda: tmp_path / "rentczecher.db")
+        assert main_module.migrate_db() == 0
+        assert main_module.migrate_db() == 0
+
+    def test_bare_db_command_errors_instead_of_scraping(self, monkeypatch):
+        # A bare `rentczecher db` must not fall through to a real scrape run.
+        monkeypatch.setattr(sys, "argv", ["rentczecher", "db"])
+        ran = []
+        monkeypatch.setattr(main_module, "run", lambda **kw: ran.append(kw))
+        with pytest.raises(SystemExit):
+            main_module.main()
+        assert ran == []
 
 
 class TestPidLock:

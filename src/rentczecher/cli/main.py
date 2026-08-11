@@ -59,6 +59,22 @@ def validate_config(path: Path | None = None) -> int:
     return 0
 
 
+def migrate_db() -> int:
+    from rentczecher.adapters.repositories.sqlite import connection, migrate
+    db_file = paths.db_path()
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    conn = connection.connect(db_file)
+    try:
+        applied = migrate.apply_pending(conn)
+    finally:
+        conn.close()
+    if applied:
+        print(f"Applied migration(s) {', '.join(map(str, applied))} to {db_file}")
+    else:
+        print(f"OK - schema up to date at {db_file}")
+    return 0
+
+
 def _acquire_pidlock() -> bool:
     os.makedirs(os.path.dirname(PID_PATH), exist_ok=True)
     if os.path.exists(PID_PATH):
@@ -294,12 +310,19 @@ def main():
     validate_parser = config_subparsers.add_parser("validate", help="Validate the config file")
     validate_parser.add_argument("--path", type=Path, default=None,
                                  help="Config file to validate (default: the resolved config)")
+    db_parser = subparsers.add_parser("db", help="Database utilities")
+    db_subparsers = db_parser.add_subparsers(dest="db_command")
+    db_subparsers.add_parser("migrate", help="Create or upgrade the database schema")
     args = parser.parse_args()
 
     if args.command == "config":
         if args.config_command == "validate":
             sys.exit(validate_config(args.path))
         config_parser.error("expected a subcommand: validate")
+    if args.command == "db":
+        if args.db_command == "migrate":
+            sys.exit(migrate_db())
+        db_parser.error("expected a subcommand: migrate")
     run(dry_run=args.dry_run, profile_filter=args.profile)
 
 
