@@ -76,3 +76,7 @@ def data_dir() -> Path:
 
 def pid_lock_path() -> Path:
     return data_dir() / "watchdog.pid"
+
+
+def db_path() -> Path:
+    return data_dir() / "rentczecher.db"

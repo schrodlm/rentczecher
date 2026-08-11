@@ -97,3 +97,10 @@ class TestPidLock:
         _isolate(monkeypatch, tmp_path)
         monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path / "d"))
         assert paths.pid_lock_path() == tmp_path / "d" / "watchdog.pid"
+
+
+class TestDbPath:
+    def test_db_lives_under_the_resolved_data_dir(self, monkeypatch, tmp_path):
+        _isolate(monkeypatch, tmp_path)
+        monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path / "d"))
+        assert paths.db_path() == tmp_path / "d" / "rentczecher.db"
