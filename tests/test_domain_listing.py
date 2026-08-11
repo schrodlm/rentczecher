@@ -85,6 +85,16 @@ class TestBuild:
         assert listing.cross_source == ()
 
 
+class TestScrapedAt:
+    def test_defaults_to_none(self):
+        assert _listing().scraped_at is None
+
+    def test_round_trips_a_tz_aware_utc_string(self):
+        listing = _listing(scraped_at="2026-08-11T06:00:00+00:00")
+        assert listing.scraped_at == "2026-08-11T06:00:00+00:00"
+        assert listing.scraped.scraped_at == "2026-08-11T06:00:00+00:00"
+
+
 class TestEquality:
     def test_same_content_is_equal(self):
         assert _listing() == _listing()

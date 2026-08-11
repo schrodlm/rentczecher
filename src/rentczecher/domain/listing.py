@@ -23,6 +23,7 @@ class ScrapedListing:
     lon: float | None = None
     charges: int | None = None
     land_m2: int | None = None
+    scraped_at: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +108,10 @@ class Listing:
     @property
     def land_m2(self) -> int | None:
         return self.scraped.land_m2
+
+    @property
+    def scraped_at(self) -> str | None:
+        return self.scraped.scraped_at
 
     @property
     def score(self) -> int:
