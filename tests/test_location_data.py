@@ -478,12 +478,13 @@ def _row(adm, muni_code, muni, part_code="", part="", street_code="", street="",
             f"{street_code};{street};č.p.;1;;;17000;{y};{x}")
 
 
-def _build(tmp_path, rows):
+def _build(tmp_path, rows, okres_names=None):
     tmp_path.mkdir(parents=True, exist_ok=True)
     zip_path = _ruian_zip(tmp_path, rows)
     tiers = harvest.derive_gazetteer(harvest.read_address_points(zip_path))
+    okres_names = okres_names or {}
     db_path = tmp_path / "gazetteer.sqlite"
-    harvest.write_gazetteer(tiers, db_path, source="test")
+    harvest.write_gazetteer(tiers, db_path, source="test", okres_name_by_muni_code=okres_names)
     import sqlite3
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -582,6 +583,51 @@ class TestGazetteerDerivation:
             "SELECT name, muni_norm FROM places WHERE tier = 'city_district'").fetchone()
         assert row["name"] == "Praha 7"
         assert row["muni_norm"] == "praha"
+
+
+class TestOkresNaming:
+    def _munis(self, *entries):
+        """entries: (muni_code, name, address_point_count)"""
+        munis = {}
+        for code, name, points in entries:
+            place = harvest._Place(name, name, code)
+            place.ys.extend([1042585.0] * points)
+            place.xs.extend([741928.0] * points)
+            munis[(code, code)] = place
+        return munis
+
+    def test_okres_named_by_its_largest_district_named_member(self):
+        # Okres Blansko contains a village Benešov; city size must decide.
+        munis = self._munis((1, "Blansko", 900), (2, "Benešov", 12), (3, "Lipůvka", 40))
+        names = harvest.derive_okres_names(
+            munis, {1: 3701, 2: 3701, 3: 3701}, {"Blansko", "Benešov"})
+        assert names[3701] == "Blansko"
+
+    def test_capital_less_okres_comes_from_overrides(self):
+        munis = self._munis((1, "Šlapanice", 300))
+        names = harvest.derive_okres_names(munis, {1: 3703}, {"Brno-venkov"})
+        assert names[3703] == "Brno-venkov"
+
+    def test_unnameable_okres_aborts(self):
+        munis = self._munis((1, "Lipůvka", 40))
+        with pytest.raises(SystemExit, match="okres naming failed"):
+            harvest.derive_okres_names(munis, {1: 9999}, {"Blansko"})
+
+    def test_okres_lands_on_every_member_place_row(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Kdyně", street_code=466111, street="Škarmanská"),
+        ], okres_names={554782: "Domažlice"})
+        row = conn.execute(
+            "SELECT okres_name, okres_norm FROM places WHERE tier = 'street'").fetchone()
+        assert row["okres_name"] == "Domažlice"
+        assert row["okres_norm"] == "domazlice"
+
+    def test_municipality_without_okres_gets_null(self, tmp_path):
+        # Praha belongs to no okres; its rows must not invent one.
+        conn = _build(tmp_path, [_row(1, 554782, "Praha")])
+        row = conn.execute(
+            "SELECT okres_name FROM places WHERE tier = 'municipality'").fetchone()
+        assert row["okres_name"] is None
 
 
 class TestGazetteerVerification:
