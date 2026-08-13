@@ -121,6 +121,63 @@ class TestResolve:
         assert gazetteer.resolve("Plzeňský kraj") is None
 
 
+class TestResolveDistrictLabeled:
+    """RE/MAX-shaped strings: the municipality slot holds the okres."""
+
+    def test_unique_street_in_the_okres_resolves(self, gazetteer):
+        place = gazetteer.resolve("Škarmanská 369 / 369, Domažlice , Plzeňský kraj",
+                                  district_labeled=True)
+        assert place.tier == "street"
+        assert place.muni_name == "Kdyně"
+        assert place.okres_name == "Domažlice"
+
+    def test_repeated_street_in_the_okres_degrades_to_district(self, gazetteer):
+        # Nádražní exists in Klatovy town AND elsewhere in okres Klatovy;
+        # picking the town's street would sit ~25 km wrong at full
+        # confidence. The honest answer is the district.
+        place = gazetteer.resolve("Nádražní 10, Klatovy, Plzeňský kraj",
+                                  district_labeled=True)
+        assert place.tier == "district"
+        assert place.name == "Klatovy"
+
+    def test_bare_okres_resolves_to_the_district(self, gazetteer):
+        place = gazetteer.resolve("Domažlice , Plzeňský kraj", district_labeled=True)
+        assert place.tier == "district"
+        assert place.name == "Domažlice"
+
+    def test_okres_only_name_resolves_to_the_district(self, gazetteer):
+        place = gazetteer.resolve("Brno-venkov, Jihomoravský kraj", district_labeled=True)
+        assert place.tier == "district"
+        assert place.name == "Brno-venkov"
+
+    def test_non_district_town_still_resolves_as_town(self, gazetteer):
+        # A name that is not an okres keeps normal town resolution even
+        # under the district label.
+        place = gazetteer.resolve("Kdyně, Plzeňský kraj", district_labeled=True)
+        assert place.muni_name == "Kdyně"
+        assert place.tier != "district"
+
+
+class TestResolveDefaultKeepsTownSemantics:
+    def test_street_plus_capital_name_means_the_town(self, gazetteer):
+        # Sreality/Bezrealitky write the municipality, so 'Klatovy' vouches
+        # for the town's own street.
+        place = gazetteer.resolve("Nádražní 10, Klatovy")
+        assert place.tier == "street"
+        assert place.muni_name == "Klatovy"
+
+    def test_okres_scope_rescues_a_street_missing_from_the_named_town(self, gazetteer):
+        # Default mode also uses the okres scope when town agreement finds
+        # nothing: the only Škarmanská in okres Domažlice is in Kdyně.
+        place = gazetteer.resolve("Škarmanská 369 / 369, Domažlice , Plzeňský kraj")
+        assert place.tier == "street"
+        assert place.muni_name == "Kdyně"
+
+    def test_resolved_places_carry_the_okres(self, gazetteer):
+        place = gazetteer.resolve("Kdyně")
+        assert place.okres_name == "Domažlice"
+
+
 class TestReadOnly:
     def test_missing_gazetteer_fails_loudly(self, tmp_path):
         import sqlite3

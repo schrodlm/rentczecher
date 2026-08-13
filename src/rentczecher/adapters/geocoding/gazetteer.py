@@ -22,7 +22,8 @@ _TIERS_MOST_SPECIFIC_FIRST = ("street", "municipality_part", "city_district", "m
 @dataclass(frozen=True, slots=True)
 class ResolvedPlace:
     name: str
-    muni_name: str
+    muni_name: str | None  # a resolved district has no municipality
+    okres_name: str | None
     tier: str
     lat: float
     lon: float
@@ -58,18 +59,25 @@ def candidate_names(location: str) -> list[str]:
 class Gazetteer:
     """Read-only place lookups over the bundled gazetteer.
 
-    Resolution runs two passes, each trying tiers most specific first.
+    Resolution runs three passes, each trying tiers most specific first.
     Pass 1, municipality agreement: a second candidate names the row's
     municipality ('Veletržní' + 'Praha') - street names repeat across the
     country ('U Studánky' exists 49 times), so a street alone proves little.
-    Pass 2, unique name: every row of a candidate sits in one single
-    municipality ('Škarmanská' occurs once countrywide) - portals sometimes
-    put the district where the municipality belongs, so around a unique name
-    the other labels cannot be trusted anyway. Uniqueness counts distinct
+    Pass 2, district scope: a candidate naming an okres narrows the search
+    to it, and a name unique within that okres resolves ('Škarmanská' +
+    okres 'Domažlice' finds the street in Kdyně); several copies inside one
+    okres stay ambiguous. Pass 3, unique name: every row of a candidate
+    sits in one single municipality. Uniqueness counts distinct
     municipalities, not rows: a town and its self-named part ('Kdyně') are
     one place, while parts of the same name in two towns ('Holešovice' in
-    Praha and in Chroustovice) are a real tie. Anything still ambiguous
-    resolves to None rather than a guess.
+    Praha and in Chroustovice) are a real tie.
+
+    district_labeled says the caller knows the location string names the
+    okres where a town would normally stand (RE/MAX does this, always -
+    'Nádražní 10, Klatovy' means a Nádražní somewhere in okres Klatovy, not
+    the one in Klatovy town). District-named candidates then only scope and
+    resolve as districts, never as towns. Anything still ambiguous resolves
+    to None rather than a guess.
     """
 
     def __init__(self, db_path: Path | None = None):
@@ -84,44 +92,78 @@ class Gazetteer:
         return ResolvedPlace(
             name=row["name"],
             muni_name=row["muni_name"],
+            okres_name=row["okres_name"],
             tier=row["tier"],
             lat=row["lat"],
             lon=row["lon"],
         )
 
-    def resolve(self, location: str) -> ResolvedPlace | None:
+    def resolve(self, location: str, *, district_labeled: bool = False) -> ResolvedPlace | None:
         names = candidate_names(location)
         if not names:
             return None
+        rows = self._rows_named(names)
+        district_names = {r["name_norm"] for r in rows if r["tier"] == "district"}
+        if district_labeled:
+            # A district-named candidate is context only, never the town.
+            rows = [r for r in rows
+                    if r["name_norm"] not in district_names or r["tier"] == "district"]
+        place_rows = [r for r in rows if r["tier"] != "district"]
+        vouchers = set(names) - (district_names if district_labeled else set())
+
+        match = (self._vouched_by_municipality(place_rows, vouchers)
+                 or self._unique_in_named_district(place_rows, district_names)
+                 or self._unique_name(place_rows)
+                 or self._named_district(rows))
+        return self._to_place(match) if match else None
+
+    def _rows_named(self, names: list[str]) -> list[sqlite3.Row]:
         stmt = """
-            SELECT name, name_norm, muni_name, muni_norm, muni_code, tier, lat, lon
+            SELECT name, name_norm, muni_name, muni_norm, muni_code,
+                   okres_name, okres_norm, tier, lat, lon
             FROM places WHERE name_norm = ?
         """
-        rows_by_name = {
-            name: self._conn.execute(stmt, (name,)).fetchall() for name in names
-        }
-        candidate_set = set(names)
+        rows: list[sqlite3.Row] = []
+        for name in names:
+            rows.extend(self._conn.execute(stmt, (name,)).fetchall())
+        return rows
 
-        # Pass 1: municipality agreement. The vouching name must be a second
-        # candidate - a lone 'Domažlice' may not vouch for itself.
+    def _vouched_by_municipality(self, place_rows, vouchers) -> sqlite3.Row | None:
+        """"Did the text name a street and its town?"""
         for tier in _TIERS_MOST_SPECIFIC_FIRST:
-            agreeing = [
-                row for rows in rows_by_name.values() for row in rows
-                if row["tier"] == tier
-                and row["muni_norm"] in candidate_set - {row["name_norm"]}
-            ]
+            agreeing = [r for r in place_rows if r["tier"] == tier
+                        and r["muni_norm"] in vouchers - {r["name_norm"]}]
             if len(agreeing) == 1:
-                return self._to_place(agreeing[0])
+                return agreeing[0]
+        return None
 
-        # Pass 2: a name all of whose rows sit in one single municipality.
+    def _unique_in_named_district(self, place_rows, district_names) -> sqlite3.Row | None:
+        """The only place of its name inside a candidate-named okres."""
         for tier in _TIERS_MOST_SPECIFIC_FIRST:
-            for name in names:
-                rows = rows_by_name[name]
-                if not rows:
+            scoped = [r for r in place_rows if r["tier"] == tier
+                      and r["okres_norm"] in district_names - {r["name_norm"]}]
+            if len(scoped) == 1:
+                return scoped[0]
+        return None
+
+    def _unique_name(self, place_rows) -> sqlite3.Row | None:
+        """A name all of whose rows sit in one single municipality - a town
+        and its self-named part are one place, not a tie."""
+        by_name: dict[str, list[sqlite3.Row]] = {}
+        for row in place_rows:
+            by_name.setdefault(row["name_norm"], []).append(row)
+        for tier in _TIERS_MOST_SPECIFIC_FIRST:
+            for rows in by_name.values():
+                if len({r["muni_code"] for r in rows}) != 1:
                     continue
-                if len({row["muni_code"] for row in rows}) != 1:
-                    continue
-                in_tier = [row for row in rows if row["tier"] == tier]
+                in_tier = [r for r in rows if r["tier"] == tier]
                 if len(in_tier) == 1:
-                    return self._to_place(in_tier[0])
+                    return in_tier[0]
+        return None
+
+    def _named_district(self, rows) -> sqlite3.Row | None:
+        """Last resort: the named district itself, at its honest coarse tier."""
+        districts = [r for r in rows if r["tier"] == "district"]
+        if len(districts) == 1:
+            return districts[0]
         return None
