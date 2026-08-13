@@ -6,6 +6,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 
 ## Code style
 
+- **Static readability over cleverness.** Prefer code a reader can follow top-to-bottom and a type checker can verify over a terser form that saves lines by being indirect. Spell things out: name every field, list every column, avoid reflection and metaprogramming that trade a compile-time error for a runtime surprise. A few extra lines that fail loudly and read plainly beat a clever one-liner that fails silently.
 - **Code is self-documenting first.** Pick names and structure so a comment is unnecessary. If you feel the need to explain *what* code does, rewrite the code instead of commenting it.
 - **Comment to state a constraint the code cannot express** — an external system's quirk, a deliberate trade-off, a non-obvious consequence. One or two lines, directly above the code they govern.
 - **Short narrating comments are allowed when they genuinely speed up reading** — a section marker in a long parse routine ("# Resolve main image") earns its place; a line-by-line paraphrase never does. Short, on point, at the right spot.
