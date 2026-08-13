@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate the shipped location table (places.json) from the portals.
+"""Regenerate the shipped location data: places.json and gazetteer.sqlite.
 
-Maintainer tool - run rarely, by hand, when a portal renumbers its taxonomy:
+Maintainer tool - run rarely, by hand:
 
-    uv run python scripts/refresh_location_data.py
+    uv run python scripts/refresh_location_data.py places     # portal ids
+    uv run python scripts/refresh_location_data.py gazetteer  # geocoding table
+    uv run python scripts/refresh_location_data.py all
+
+places: run when a portal renumbers its taxonomy.
 
 Harvests each portal's own location taxonomy (Sreality search-page facets,
 RE/MAX search-form checkboxes, Bezrealitky's czechRegions GraphQL tree),
@@ -27,18 +31,37 @@ The name join is collision-free only at district granularity; expanding
 below it (village names repeat across the country) needs a composite
 region-scoped key and a cheaper verification strategy than one request
 per place.
+
+gazetteer: run when a new RÚIAN monthly dump is worth picking up (streets
+barely change; once or twice a year is plenty). Downloads the state address
+registry (~60 MB zip, CC-BY 4.0, every address point in the country),
+collapses ~3M address points into one centroid row per street, municipality
+part, city district, and municipality, and writes gazetteer.sqlite next to
+the geocoding adapter. Same-named places stay separate rows - they are keyed
+by RÚIAN codes, and ~950 municipalities share a name with another one.
+The file is verified before it replaces the previous one; a half-built or
+empty gazetteer aborts without writing.
 """
 
+import argparse
+import csv
+import io
 import json
 import re
+import sqlite3
 import sys
+import tempfile
 import time
+import zipfile
+from array import array
 from datetime import date
 from pathlib import Path
 
 import httpx
+from pyproj import Transformer
 
 from rentczecher.adapters.scrapers.location_resolver import normalize_name, slugify
+from rentczecher.domain.geo import geocell
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCATION_DATA_DIR = REPO_ROOT / "src" / "rentczecher" / "adapters" / "scrapers" / "location_data"
@@ -273,7 +296,7 @@ def build_places(client: httpx.Client) -> dict:
     return {"generated_at": date.today().isoformat(), "regions": regions, "districts": districts}
 
 
-def main() -> None:
+def refresh_places() -> None:
     try:
         with httpx.Client(timeout=30, follow_redirects=True) as client:
             places = build_places(client)
@@ -282,6 +305,233 @@ def main() -> None:
     LOCATION_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PLACES_PATH.write_text(json.dumps(places, indent=1, ensure_ascii=False) + "\n")
     print(f"Wrote {len(places['regions'])} regions and {len(places['districts'])} districts to {PLACES_PATH}")
+
+
+# --- gazetteer (RÚIAN) ---
+
+RUIAN_DOWNLOAD_PAGE = "https://nahlizenidokn.cuzk.gov.cz/StahniAdresniMistaRUIAN.aspx"
+GAZETTEER_PATH = REPO_ROOT / "src" / "rentczecher" / "adapters" / "geocoding" / "gazetteer.sqlite"
+
+# RÚIAN address CSV columns (semicolon-separated, cp1250, one file per municipality).
+_MUNI_CODE, _MUNI_NAME = 1, 2
+_MOMC_CODE, _MOMC_NAME = 3, 4
+_PART_CODE, _PART_NAME = 7, 8
+_STREET_CODE, _STREET_NAME = 9, 10
+_COORD_Y, _COORD_X = 16, 17
+
+GAZETTEER_TIERS = ("street", "municipality_part", "city_district", "municipality")
+
+
+class _Place:
+    """One gazetteer place accumulating the S-JTSK points that belong to it."""
+
+    def __init__(self, name: str, muni_name: str, muni_code: int):
+        self.name = name
+        self.muni_name = muni_name
+        self.muni_code = muni_code
+        self.ys = array("d")
+        self.xs = array("d")
+
+
+def find_ruian_zip_url(html: str) -> str:
+    match = re.search(r'href="(https://[^"]*_OB_ADR_csv\.zip)"', html)
+    if not match:
+        raise SystemExit("ruian: no OB_ADR_csv.zip link on the download page - page shape changed?")
+    return match.group(1)
+
+
+def download_ruian_zip(client: httpx.Client, dest: Path) -> None:
+    resp = client.get(RUIAN_DOWNLOAD_PAGE)
+    resp.raise_for_status()
+    url = find_ruian_zip_url(resp.text)
+    print(f"Downloading {url} ...")
+    with client.stream("GET", url) as stream, open(dest, "wb") as out:
+        stream.raise_for_status()
+        for chunk in stream.iter_bytes():
+            out.write(chunk)
+    print(f"  {dest.stat().st_size / 1e6:.0f} MB")
+
+
+def read_address_points(zip_path: Path):
+    """Yield raw CSV rows across the per-municipality files in the dump."""
+    with zipfile.ZipFile(zip_path) as bundle:
+        for name in bundle.namelist():
+            with bundle.open(name) as raw:
+                text = io.TextIOWrapper(raw, encoding="cp1250")
+                reader = csv.reader(text, delimiter=";")
+                next(reader, None)
+                yield from reader
+
+
+def derive_gazetteer(rows) -> dict[str, dict]:
+    """Group address points into places, keyed by RÚIAN codes so that
+    same-named places never collapse into one row."""
+    tiers: dict[str, dict] = {tier: {} for tier in GAZETTEER_TIERS}
+    total = 0
+    skipped = 0
+    for row in rows:
+        total += 1
+        if not row[_COORD_Y] or not row[_COORD_X]:
+            skipped += 1
+            continue
+        y, x = float(row[_COORD_Y]), float(row[_COORD_X])
+        muni_code = int(row[_MUNI_CODE])
+        muni_name = row[_MUNI_NAME]
+
+        def add(tier: str, code: int, name: str) -> None:
+            place = tiers[tier].setdefault(
+                (muni_code, code), _Place(name, muni_name, muni_code))
+            place.ys.append(y)
+            place.xs.append(x)
+
+        add("municipality", muni_code, muni_name)
+        if row[_PART_NAME]:
+            add("municipality_part", int(row[_PART_CODE]), row[_PART_NAME])
+        if row[_MOMC_NAME]:
+            add("city_district", int(row[_MOMC_CODE]), row[_MOMC_NAME])
+        if row[_STREET_NAME]:
+            add("street", int(row[_STREET_CODE]), row[_STREET_NAME])
+    print(f"  {total:,} address points ({skipped:,} without coordinates, skipped)")
+    return tiers
+
+
+def write_gazetteer(tiers: dict[str, dict], out_path: Path, source: str) -> None:
+    # The CSV publishes S-JTSK Y/X as positive numbers; EPSG:5514 is
+    # negative-signed, hence the sign flips.
+    transformer = Transformer.from_crs("EPSG:5514", "EPSG:4326", always_xy=True)
+
+    out_path.unlink(missing_ok=True)
+    conn = sqlite3.connect(out_path)
+    conn.execute("""
+        CREATE TABLE meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE places (
+            id        INTEGER PRIMARY KEY,
+            name      TEXT NOT NULL,
+            name_norm TEXT NOT NULL,
+            muni_name TEXT NOT NULL,
+            muni_norm TEXT NOT NULL,
+            muni_code INTEGER NOT NULL,
+            tier      TEXT NOT NULL CHECK (tier IN
+                ('street', 'municipality_part', 'city_district', 'municipality')),
+            lat       REAL NOT NULL,
+            lon       REAL NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX idx_places_lookup ON places(name_norm, tier)")
+    conn.execute("""
+        CREATE TABLE place_cells (
+            place_id INTEGER NOT NULL REFERENCES places(id),
+            cell_lat INTEGER NOT NULL,
+            cell_lon INTEGER NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX idx_place_cells_place ON place_cells(place_id)")
+
+    insert_meta = "INSERT INTO meta (key, value) VALUES (?, ?)"
+    conn.execute(insert_meta, ("generated_at", date.today().isoformat()))
+    conn.execute(insert_meta, ("source", source))
+
+    insert_place = """
+        INSERT INTO places (name, name_norm, muni_name, muni_norm, muni_code, tier, lat, lon)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    insert_cell = "INSERT INTO place_cells (place_id, cell_lat, cell_lon) VALUES (?, ?, ?)"
+    for tier in GAZETTEER_TIERS:
+        for place in tiers[tier].values():
+            lons, lats = transformer.transform(
+                [-y for y in place.ys], [-x for x in place.xs])
+            lat = round(sum(lats) / len(lats), 6)
+            lon = round(sum(lons) / len(lons), 6)
+            cursor = conn.execute(insert_place, (
+                place.name, normalize_name(place.name),
+                place.muni_name, normalize_name(place.muni_name),
+                place.muni_code, tier, lat, lon,
+            ))
+            cells = {geocell(plat, plon) for plat, plon in zip(lats, lons)}
+            for cell_lat, cell_lon in sorted(cells):
+                conn.execute(insert_cell, (cursor.lastrowid, cell_lat, cell_lon))
+        print(f"  {len(tiers[tier]):,} {tier} places")
+    conn.commit()
+    conn.close()
+
+
+def verify_gazetteer(db_path: Path) -> None:
+    """A half-built or mis-transformed gazetteer must abort, not ship."""
+    conn = sqlite3.connect(db_path)
+    failures = []
+
+    count_stmt = "SELECT count(*) FROM places WHERE tier = ?"
+    for tier, low, high in (("street", 60_000, 150_000),
+                            ("municipality_part", 8_000, 30_000),
+                            ("city_district", 50, 500),
+                            ("municipality", 5_000, 8_000)):
+        n = conn.execute(count_stmt, (tier,)).fetchone()[0]
+        if not low <= n <= high:
+            failures.append(f"{tier}: {n:,} rows, expected {low:,}..{high:,}")
+
+    lookup_stmt = """
+        SELECT lat, lon FROM places
+        WHERE name_norm = ? AND muni_norm = ? AND tier = ?
+    """
+    for name_norm, muni_norm, tier, lat, lon in (
+            ("veletrzni", "praha", "street", 50.10, 14.43),
+            ("holesovice", "praha", "municipality_part", 50.10, 14.44),
+            ("praha 7", "praha", "city_district", 50.10, 14.43),
+            ("domazlice", "domazlice", "municipality", 49.44, 12.93)):
+        rows = conn.execute(lookup_stmt, (name_norm, muni_norm, tier)).fetchall()
+        if len(rows) != 1:
+            failures.append(f"{name_norm}/{muni_norm}/{tier}: {len(rows)} rows, expected 1")
+        elif abs(rows[0][0] - lat) > 0.05 or abs(rows[0][1] - lon) > 0.05:
+            failures.append(f"{name_norm}: centroid {rows[0]} not near ({lat}, {lon})")
+
+    cellless = conn.execute("""
+        SELECT count(*) FROM places
+        WHERE id NOT IN (SELECT place_id FROM place_cells)
+    """).fetchone()[0]
+    if cellless:
+        failures.append(f"{cellless} places have no cells")
+
+    conn.close()
+    if failures:
+        for line in failures:
+            print(f"VERIFY FAILED: {line}", file=sys.stderr)
+        raise SystemExit("aborting: gazetteer verification failed - not replacing the shipped file")
+
+
+def refresh_gazetteer(zip_path: Path | None) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        if zip_path is None:
+            zip_path = Path(tmp) / "ruian.zip"
+            try:
+                with httpx.Client(timeout=120, follow_redirects=True) as client:
+                    download_ruian_zip(client, zip_path)
+            except httpx.HTTPError as error:
+                raise SystemExit(f"aborting: network error while downloading RÚIAN - {error}")
+        print(f"Deriving gazetteer from {zip_path.name} ...")
+        tiers = derive_gazetteer(read_address_points(zip_path))
+        built = Path(tmp) / "gazetteer.sqlite"
+        write_gazetteer(tiers, built, source=zip_path.name)
+        verify_gazetteer(built)
+        GAZETTEER_PATH.parent.mkdir(parents=True, exist_ok=True)
+        GAZETTEER_PATH.write_bytes(built.read_bytes())
+    print(f"Wrote {GAZETTEER_PATH} ({GAZETTEER_PATH.stat().st_size / 1e6:.1f} MB)")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Regenerate the shipped location data.")
+    parser.add_argument("target", choices=["places", "gazetteer", "all"])
+    parser.add_argument("--ruian-zip", type=Path, default=None,
+                        help="reuse an already-downloaded RÚIAN zip instead of fetching")
+    args = parser.parse_args()
+    if args.target in ("places", "all"):
+        refresh_places()
+    if args.target in ("gazetteer", "all"):
+        refresh_gazetteer(args.ruian_zip)
 
 
 if __name__ == "__main__":
