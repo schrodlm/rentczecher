@@ -319,7 +319,21 @@ _PART_CODE, _PART_NAME = 7, 8
 _STREET_CODE, _STREET_NAME = 9, 10
 _COORD_Y, _COORD_X = 16, 17
 
-GAZETTEER_TIERS = ("street", "municipality_part", "city_district", "municipality")
+GAZETTEER_TIERS = ("street", "municipality_part", "city_district", "municipality", "district")
+
+# Okresy with no member municipality carrying their name; keyed by the RÚIAN
+# okres code (stable state code list). Every other okres is named by its
+# largest member municipality whose name is a places.json district.
+OKRES_NAME_OVERRIDES = {
+    3209: "Praha-východ",
+    3210: "Praha-západ",
+    3405: "Plzeň-město",
+    3406: "Plzeň-jih",
+    3407: "Plzeň-sever",
+    3702: "Brno-město",
+    3703: "Brno-venkov",
+    3807: "Ostrava-město",
+}
 
 
 class _Place:
@@ -340,10 +354,14 @@ def find_ruian_zip_url(html: str) -> str:
     return match.group(1)
 
 
-def download_ruian_zip(client: httpx.Client, dest: Path) -> None:
-    resp = client.get(RUIAN_DOWNLOAD_PAGE)
-    resp.raise_for_status()
-    url = find_ruian_zip_url(resp.text)
+def find_ruian_hierarchy_url(html: str) -> str:
+    match = re.search(r'href="(https://[^"]*_strukt_ADR\.csv\.zip)"', html)
+    if not match:
+        raise SystemExit("ruian: no strukt_ADR.csv.zip link on the download page - page shape changed?")
+    return match.group(1)
+
+
+def download_file(client: httpx.Client, url: str, dest: Path) -> None:
     print(f"Downloading {url} ...")
     with client.stream("GET", url) as stream, open(dest, "wb") as out:
         stream.raise_for_status()
@@ -395,7 +413,78 @@ def derive_gazetteer(rows) -> dict[str, dict]:
     return tiers
 
 
-def write_gazetteer(tiers: dict[str, dict], out_path: Path, source: str) -> None:
+def read_okres_by_obec(hierarchy_zip: Path) -> dict[int, int]:
+    """Municipality code to okres code, from the element-linkage bundle.
+
+    Rows without both codes are military areas and Praha (which sits at
+    kraj level and belongs to no okres)."""
+    okres_by_obec: dict[int, int] = {}
+    with zipfile.ZipFile(hierarchy_zip) as bundle:
+        with bundle.open("strukturovane-CSV/vazby-cr.csv") as raw:
+            reader = csv.reader(io.TextIOWrapper(raw, encoding="cp1250"), delimiter=";")
+            next(reader, None)
+            for row in reader:
+                if row[1] and row[4]:
+                    okres_by_obec[int(row[1])] = int(row[4])
+    return okres_by_obec
+
+
+def derive_okres_names(munis: dict, okres_by_obec: dict[int, int],
+                       district_names: set[str]) -> dict[int, str]:
+    """Name every okres or abort.
+
+    An okres is named by its largest member municipality (most address
+    points) whose name is a known district - small villages share names
+    with other okres capitals (okres Blansko contains a village Benešov),
+    so size decides. Capital-less okresy come from OKRES_NAME_OVERRIDES.
+    """
+    best_by_okres: dict[int, tuple[int, str]] = {}
+    for place in munis.values():
+        okres = okres_by_obec.get(place.muni_code)
+        if okres is None or place.name not in district_names:
+            continue
+        size = len(place.ys)
+        if okres not in best_by_okres or size > best_by_okres[okres][0]:
+            best_by_okres[okres] = (size, place.name)
+
+    present = set(okres_by_obec.values())
+    names: dict[int, str] = {okres: name for okres, (_, name) in best_by_okres.items()}
+    names.update({code: name for code, name in OKRES_NAME_OVERRIDES.items() if code in present})
+
+    failures = []
+    unnamed = set(okres_by_obec.values()) - set(names)
+    if unnamed:
+        failures.append(f"unnamed okres codes: {sorted(unnamed)}")
+    duplicated = {n for n in names.values() if list(names.values()).count(n) > 1}
+    if duplicated:
+        failures.append(f"duplicate okres names: {sorted(duplicated)}")
+    unknown = set(names.values()) - district_names
+    if unknown:
+        failures.append(f"okres names not in places.json districts: {sorted(unknown)}")
+    if failures:
+        for line in failures:
+            print(f"OKRES NAMING FAILED: {line}", file=sys.stderr)
+        raise SystemExit("aborting: okres naming failed - fix OKRES_NAME_OVERRIDES or places.json")
+    return names
+
+
+def build_district_places(munis: dict, okres_by_obec: dict[int, int],
+                          okres_names: dict[int, str]) -> dict:
+    """One gazetteer place per okres, accumulating its members' points."""
+    districts: dict = {}
+    for place in munis.values():
+        okres = okres_by_obec.get(place.muni_code)
+        if okres is None:
+            continue
+        district = districts.setdefault(
+            (okres, okres), _Place(okres_names[okres], okres_names[okres], okres))
+        district.ys.extend(place.ys)
+        district.xs.extend(place.xs)
+    return districts
+
+
+def write_gazetteer(tiers: dict[str, dict], out_path: Path, source: str,
+                    okres_name_by_muni_code: dict[int, str]) -> None:
     # The CSV publishes S-JTSK Y/X as positive numbers; EPSG:5514 is
     # negative-signed, hence the sign flips.
     transformer = Transformer.from_crs("EPSG:5514", "EPSG:4326", always_xy=True)
@@ -410,16 +499,18 @@ def write_gazetteer(tiers: dict[str, dict], out_path: Path, source: str) -> None
     """)
     conn.execute("""
         CREATE TABLE places (
-            id        INTEGER PRIMARY KEY,
-            name      TEXT NOT NULL,
-            name_norm TEXT NOT NULL,
-            muni_name TEXT NOT NULL,
-            muni_norm TEXT NOT NULL,
-            muni_code INTEGER NOT NULL,
-            tier      TEXT NOT NULL CHECK (tier IN
-                ('street', 'municipality_part', 'city_district', 'municipality')),
-            lat       REAL NOT NULL,
-            lon       REAL NOT NULL
+            id         INTEGER PRIMARY KEY,
+            name       TEXT NOT NULL,
+            name_norm  TEXT NOT NULL,
+            muni_name  TEXT,               -- null: a district has no municipality
+            muni_norm  TEXT,
+            muni_code  INTEGER,
+            okres_name TEXT,               -- null: Praha sits at kraj level
+            okres_norm TEXT,
+            tier       TEXT NOT NULL CHECK (tier IN
+                ('street', 'municipality_part', 'city_district', 'municipality', 'district')),
+            lat        REAL NOT NULL,
+            lon        REAL NOT NULL
         )
     """)
     conn.execute("CREATE INDEX idx_places_lookup ON places(name_norm, tier)")
@@ -437,20 +528,30 @@ def write_gazetteer(tiers: dict[str, dict], out_path: Path, source: str) -> None
     conn.execute(insert_meta, ("source", source))
 
     insert_place = """
-        INSERT INTO places (name, name_norm, muni_name, muni_norm, muni_code, tier, lat, lon)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO places (name, name_norm, muni_name, muni_norm, muni_code,
+                            okres_name, okres_norm, tier, lat, lon)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     insert_cell = "INSERT INTO place_cells (place_id, cell_lat, cell_lon) VALUES (?, ?, ?)"
     for tier in GAZETTEER_TIERS:
         for place in tiers[tier].values():
+            if tier == "district":
+                muni_name, muni_norm, muni_code = None, None, None
+                okres_name = place.name
+            else:
+                muni_name = place.muni_name
+                muni_norm = normalize_name(place.muni_name)
+                muni_code = place.muni_code
+                okres_name = okres_name_by_muni_code.get(place.muni_code)
             lons, lats = transformer.transform(
                 [-y for y in place.ys], [-x for x in place.xs])
             lat = round(sum(lats) / len(lats), 6)
             lon = round(sum(lons) / len(lons), 6)
             cursor = conn.execute(insert_place, (
                 place.name, normalize_name(place.name),
-                place.muni_name, normalize_name(place.muni_name),
-                place.muni_code, tier, lat, lon,
+                muni_name, muni_norm, muni_code,
+                okres_name, normalize_name(okres_name) if okres_name else None,
+                tier, lat, lon,
             ))
             cells = {geocell(plat, plon) for plat, plon in zip(lats, lons)}
             for cell_lat, cell_lon in sorted(cells):
@@ -469,7 +570,8 @@ def verify_gazetteer(db_path: Path) -> None:
     for tier, low, high in (("street", 60_000, 150_000),
                             ("municipality_part", 8_000, 30_000),
                             ("city_district", 50, 500),
-                            ("municipality", 5_000, 8_000)):
+                            ("municipality", 5_000, 8_000),
+                            ("district", 70, 90)):
         n = conn.execute(count_stmt, (tier,)).fetchone()[0]
         if not low <= n <= high:
             failures.append(f"{tier}: {n:,} rows, expected {low:,}..{high:,}")
@@ -496,6 +598,22 @@ def verify_gazetteer(db_path: Path) -> None:
     if cellless:
         failures.append(f"{cellless} places have no cells")
 
+    kdyne_okres = conn.execute("""
+        SELECT okres_norm FROM places
+        WHERE name_norm = 'kdyne' AND tier = 'municipality'
+    """).fetchone()
+    if kdyne_okres is None or kdyne_okres[0] != "domazlice":
+        failures.append(f"kdyne okres: {kdyne_okres} - expected domazlice")
+
+    # District-scoped street resolution rests on this data being present:
+    # Nádražní repeats within okres Klatovy, so scoping must see both copies.
+    nadrazni_klatovy = conn.execute("""
+        SELECT count(*) FROM places
+        WHERE name_norm = 'nadrazni' AND tier = 'street' AND okres_norm = 'klatovy'
+    """).fetchone()[0]
+    if nadrazni_klatovy < 2:
+        failures.append(f"nadrazni in okres klatovy: {nadrazni_klatovy} streets, expected >= 2")
+
     conn.close()
     if failures:
         for line in failures:
@@ -503,19 +621,37 @@ def verify_gazetteer(db_path: Path) -> None:
         raise SystemExit("aborting: gazetteer verification failed - not replacing the shipped file")
 
 
-def refresh_gazetteer(zip_path: Path | None) -> None:
+def refresh_gazetteer(zip_path: Path | None, hierarchy_path: Path | None) -> None:
+    if not PLACES_PATH.exists():
+        raise SystemExit("aborting: places.json is missing - okres names are verified against it")
+    district_names = {d["name"] for d in json.loads(PLACES_PATH.read_text())["districts"]}
+
     with tempfile.TemporaryDirectory() as tmp:
-        if zip_path is None:
-            zip_path = Path(tmp) / "ruian.zip"
+        if zip_path is None or hierarchy_path is None:
             try:
                 with httpx.Client(timeout=120, follow_redirects=True) as client:
-                    download_ruian_zip(client, zip_path)
+                    resp = client.get(RUIAN_DOWNLOAD_PAGE)
+                    resp.raise_for_status()
+                    if zip_path is None:
+                        zip_path = Path(tmp) / "ruian.zip"
+                        download_file(client, find_ruian_zip_url(resp.text), zip_path)
+                    if hierarchy_path is None:
+                        hierarchy_path = Path(tmp) / "hierarchy.zip"
+                        download_file(client, find_ruian_hierarchy_url(resp.text), hierarchy_path)
             except httpx.HTTPError as error:
                 raise SystemExit(f"aborting: network error while downloading RÚIAN - {error}")
-        print(f"Deriving gazetteer from {zip_path.name} ...")
+
+        print(f"Deriving gazetteer from {zip_path.name} + {hierarchy_path.name} ...")
         tiers = derive_gazetteer(read_address_points(zip_path))
+        okres_by_obec = read_okres_by_obec(hierarchy_path)
+        okres_names = derive_okres_names(tiers["municipality"], okres_by_obec, district_names)
+        tiers["district"] = build_district_places(tiers["municipality"], okres_by_obec, okres_names)
+        okres_name_by_muni_code = {
+            obec: okres_names[okres] for obec, okres in okres_by_obec.items()
+        }
         built = Path(tmp) / "gazetteer.sqlite"
-        write_gazetteer(tiers, built, source=zip_path.name)
+        write_gazetteer(tiers, built, source=f"{zip_path.name} {hierarchy_path.name}",
+                        okres_name_by_muni_code=okres_name_by_muni_code)
         verify_gazetteer(built)
         GAZETTEER_PATH.parent.mkdir(parents=True, exist_ok=True)
         GAZETTEER_PATH.write_bytes(built.read_bytes())
@@ -526,12 +662,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Regenerate the shipped location data.")
     parser.add_argument("target", choices=["places", "gazetteer", "all"])
     parser.add_argument("--ruian-zip", type=Path, default=None,
-                        help="reuse an already-downloaded RÚIAN zip instead of fetching")
+                        help="reuse an already-downloaded RÚIAN address zip instead of fetching")
+    parser.add_argument("--ruian-hierarchy", type=Path, default=None,
+                        help="reuse an already-downloaded RÚIAN strukt_ADR zip instead of fetching")
     args = parser.parse_args()
     if args.target in ("places", "all"):
         refresh_places()
     if args.target in ("gazetteer", "all"):
-        refresh_gazetteer(args.ruian_zip)
+        refresh_gazetteer(args.ruian_zip, args.ruian_hierarchy)
 
 
 if __name__ == "__main__":
