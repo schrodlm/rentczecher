@@ -448,3 +448,145 @@ class TestShippedIdsLive:
                         f"regions[{district['remax_region_id']}][{district['remax_district_id']}]": "on"},
             )
             assert resp.status_code == 200, district["slug"]
+
+
+def _ruian_zip(tmp_path, rows):
+    """A miniature RÚIAN dump: one cp1250 CSV per municipality code found in rows."""
+    header = ("Kód ADM;Kód obce;Název obce;Kód MOMC;Název MOMC;Kód obvodu Prahy;"
+              "Název obvodu Prahy;Kód části obce;Název části obce;Kód ulice;"
+              "Název ulice;Typ SO;Číslo domovní;Číslo orientační;"
+              "Znak čísla orientačního;PSČ;Souřadnice Y;Souřadnice X;Platí Od")
+    by_muni = {}
+    for row in rows:
+        by_muni.setdefault(row.split(";")[1], []).append(row)
+    path = tmp_path / "ruian.zip"
+    import zipfile
+    with zipfile.ZipFile(path, "w") as bundle:
+        for muni_code, muni_rows in by_muni.items():
+            content = "\n".join([header, *muni_rows]) + "\n"
+            bundle.writestr(f"CSV/20260731_OB_{muni_code}_ADR.csv", content.encode("cp1250"))
+    return path
+
+
+# An S-JTSK point in Praha - Holešovice; EPSG:5514 maps it to (50.092352, 14.432642).
+HOLESOVICE_Y, HOLESOVICE_X = "741928.31", "1042585.42"
+
+
+def _row(adm, muni_code, muni, part_code="", part="", street_code="", street="",
+         momc_code="", momc="", y=HOLESOVICE_Y, x=HOLESOVICE_X):
+    return (f"{adm};{muni_code};{muni};{momc_code};{momc};;;{part_code};{part};"
+            f"{street_code};{street};č.p.;1;;;17000;{y};{x}")
+
+
+def _build(tmp_path, rows):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    zip_path = _ruian_zip(tmp_path, rows)
+    tiers = harvest.derive_gazetteer(harvest.read_address_points(zip_path))
+    db_path = tmp_path / "gazetteer.sqlite"
+    harvest.write_gazetteer(tiers, db_path, source="test")
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+class TestRuianZipLink:
+    def test_finds_the_state_wide_csv_link(self):
+        html = '<a href="https://vdp.cuzk.gov.cz/vymenny_format/csv/20260731_OB_ADR_csv.zip">CSV</a>'
+        assert harvest.find_ruian_zip_url(html).endswith("_OB_ADR_csv.zip")
+
+    def test_missing_link_aborts(self):
+        with pytest.raises(SystemExit, match="page shape changed"):
+            harvest.find_ruian_zip_url("<html>redesigned</html>")
+
+
+class TestGazetteerDerivation:
+    def test_sjtsk_transforms_to_the_right_place_in_prague(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha", part_code=490067, part="Holešovice",
+                 street_code=466111, street="Veletržní"),
+        ])
+        row = conn.execute("SELECT lat, lon FROM places WHERE tier = 'street'").fetchone()
+        assert abs(row["lat"] - 50.092352) < 0.001
+        assert abs(row["lon"] - 14.432642) < 0.001
+
+    def test_display_name_keeps_diacritics_and_norm_strips_them(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha", street_code=466111, street="Veletržní"),
+        ])
+        row = conn.execute("SELECT name, name_norm FROM places WHERE tier = 'street'").fetchone()
+        assert row["name"] == "Veletržní"
+        assert row["name_norm"] == "veletrzni"
+
+    def test_same_named_municipalities_stay_separate_rows(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 529303, "Nová Ves"),
+            _row(2, 599727, "Nová Ves", y="741000.00", x="1043000.00"),
+        ])
+        rows = conn.execute(
+            "SELECT muni_code FROM places WHERE tier = 'municipality'").fetchall()
+        assert sorted(r["muni_code"] for r in rows) == [529303, 599727]
+
+    def test_centroid_is_the_mean_of_the_street_points(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha", street_code=466111, street="Veletržní",
+                 y="741900.00", x="1042500.00"),
+            _row(2, 554782, "Praha", street_code=466111, street="Veletržní",
+                 y="741700.00", x="1042700.00"),
+        ])
+        single = _build(tmp_path / "mid", [
+            _row(1, 554782, "Praha", street_code=466111, street="Veletržní",
+                 y="741800.00", x="1042600.00"),
+        ])
+        street = conn.execute("SELECT lat, lon FROM places WHERE tier = 'street'").fetchone()
+        midpoint = single.execute("SELECT lat, lon FROM places WHERE tier = 'street'").fetchone()
+        assert abs(street["lat"] - midpoint["lat"]) < 1e-4
+        assert abs(street["lon"] - midpoint["lon"]) < 1e-4
+
+    def test_village_without_streets_yields_no_street_row(self, tmp_path):
+        conn = _build(tmp_path, [_row(1, 553425, "Drahotín")])
+        assert conn.execute("SELECT count(*) FROM places WHERE tier = 'street'").fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT count(*) FROM places WHERE tier = 'municipality'").fetchone()[0] == 1
+
+    def test_address_point_without_coordinates_is_skipped(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha"),
+            _row(2, 554782, "Praha", y="", x=""),
+        ])
+        # The skipped point must not zero out the centroid.
+        row = conn.execute("SELECT lat FROM places WHERE tier = 'municipality'").fetchone()
+        assert abs(row["lat"] - 50.092352) < 0.001
+
+    def test_long_street_touches_multiple_cells(self, tmp_path):
+        # Two points ~2 km apart on one street: its cell set must cover both ends.
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha", street_code=466111, street="Dlouhá",
+                 y="741900.00", x="1042500.00"),
+            _row(2, 554782, "Praha", street_code=466111, street="Dlouhá",
+                 y="743900.00", x="1042500.00"),
+        ])
+        cells = conn.execute("""
+            SELECT count(*) FROM place_cells
+            JOIN places ON places.id = place_cells.place_id
+            WHERE places.tier = 'street'
+        """).fetchone()[0]
+        assert cells >= 2
+
+    def test_prague_city_district_rows_come_from_momc(self, tmp_path):
+        conn = _build(tmp_path, [
+            _row(1, 554782, "Praha", part_code=490067, part="Holešovice",
+                 momc_code=547310, momc="Praha 7"),
+        ])
+        row = conn.execute(
+            "SELECT name, muni_norm FROM places WHERE tier = 'city_district'").fetchone()
+        assert row["name"] == "Praha 7"
+        assert row["muni_norm"] == "praha"
+
+
+class TestGazetteerVerification:
+    def test_empty_gazetteer_aborts(self, tmp_path):
+        conn = _build(tmp_path, [_row(1, 554782, "Praha")])
+        conn.close()
+        with pytest.raises(SystemExit, match="verification failed"):
+            harvest.verify_gazetteer(tmp_path / "gazetteer.sqlite")
