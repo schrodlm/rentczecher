@@ -590,3 +590,28 @@ class TestGazetteerVerification:
         conn.close()
         with pytest.raises(SystemExit, match="verification failed"):
             harvest.verify_gazetteer(tmp_path / "gazetteer.sqlite")
+
+class TestGazetteerPackaging:
+    """The gazetteer ships as package data, so geocoding works from an
+    installed wheel and not only an editable checkout."""
+
+    def test_gazetteer_is_discoverable_as_package_data(self):
+        from importlib.resources import files
+        gaz = files("rentczecher.adapters.geocoding") / "gazetteer.sqlite"
+        assert gaz.is_file()
+
+    def test_shipped_gazetteer_resolves_a_known_street(self):
+        import sqlite3
+        from importlib.resources import files
+        gaz = files("rentczecher.adapters.geocoding") / "gazetteer.sqlite"
+        # mode=ro: plain connect() would create an empty file where the
+        # shipped one is missing, masking a packaging break.
+        conn = sqlite3.connect(f"file:{gaz}?mode=ro", uri=True)
+        stmt = """
+            SELECT lat, lon FROM places
+            WHERE name_norm = 'veletrzni' AND muni_norm = 'praha' AND tier = 'street'
+        """
+        rows = conn.execute(stmt).fetchall()
+        assert len(rows) == 1
+        assert abs(rows[0][0] - 50.10) < 0.05
+        assert abs(rows[0][1] - 14.43) < 0.05
