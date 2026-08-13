@@ -158,3 +158,24 @@ def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
 
     golden = json.loads(GOLDEN.read_text())
     assert snapshot == golden
+
+
+def test_run_profile_does_not_touch_the_storage_layer(tmp_path, monkeypatch):
+    """The storage layer is inert: a pipeline run reaches only the legacy JSON
+    store, never importing a repositories.* module and never writing the
+    database file."""
+    import sys
+
+    monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+    listing_data = json.loads((FIXTURES / "listings.json").read_text())
+    monkeypatch.setattr(main_module, "ALL_SCRAPERS", _fake_scrapers(listing_data))
+    monkeypatch.setattr(main_module, "send_email", lambda *a, **k: None)
+
+    for name in [m for m in sys.modules if "adapters.repositories" in m]:
+        monkeypatch.delitem(sys.modules, name)
+
+    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None, dry_run=False)
+
+    assert not [m for m in sys.modules if "adapters.repositories" in m]
+    assert not (tmp_path / "rentczecher.db").exists()
+    assert list(tmp_path.glob("seen-*.json"))
