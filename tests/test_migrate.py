@@ -133,3 +133,14 @@ class TestConcurrentWriters:
         waiter.execute("INSERT INTO profiles VALUES ('b', 'B', 1, '2026-08-02T00:00:00+00:00')")
         waiter.commit()
         assert connection.connect(db).execute("SELECT count(*) FROM profiles").fetchone()[0] == 2
+
+
+class TestPackaging:
+    """The migration ships as package data, so db migrate works from an
+    installed wheel and not only an editable checkout."""
+
+    def test_migration_is_discoverable_as_package_data(self):
+        from importlib.resources import files
+        sql = files("rentczecher.adapters.repositories.sqlite") / "migrations" / "0001_init.sql"
+        assert sql.is_file()
+        assert "CREATE TABLE properties" in sql.read_text()
