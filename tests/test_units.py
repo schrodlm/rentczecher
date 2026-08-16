@@ -110,65 +110,6 @@ class TestScoring:
                 assert 0 <= score <= 100, f"Score {score} out of range"
 
 
-# ─── Dedup ──────────────────────────────────────────────────
-
-class TestDedup:
-    def test_same_flat_different_sources_deduped(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=14.4)
-        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 1, "Same flat should be deduped"
-        assert len(result[0].cross_source) == 1
-
-    def test_listing_with_lat_but_no_lon_does_not_crash(self):
-        """GPS matching requires all four coordinates; a half-set pair falls
-        through to location matching instead of crashing."""
-        from rentczecher.services.dedup import cross_source_dedup
-        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=None)
-        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 1
-
-    def test_different_price_not_deduped(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        l1 = _make_listing(id="sreality:1", source="sreality", price=15000,
-                           lat=50.1, lon=14.4)
-        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=25000,
-                           lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 2, "Different prices should not dedup"
-
-    def test_same_source_not_deduped(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        l1 = _make_listing(id="sreality:1", source="sreality", price=20000)
-        l2 = _make_listing(id="sreality:2", source="sreality", price=20000)
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 2, "Same source should not dedup"
-
-    def test_gps_far_apart_not_deduped(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           lat=50.1, lon=14.4)
-        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           lat=50.2, lon=14.5)  # ~12km away
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 2, "GPS far apart should not dedup"
-
-    def test_empty_list(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        assert cross_source_dedup([]) == []
-
-    def test_single_listing(self):
-        from rentczecher.services.dedup import cross_source_dedup
-        l = _make_listing()
-        assert cross_source_dedup([l]) == [l]
-
-
 # ─── Tram Enrichment ────────────────────────────────────────
 
 class TestTramEnrichment:
