@@ -7,7 +7,7 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 
 from dataclasses import dataclass, fields, replace
 
-from rentczecher.domain.location import ParsedPlace
+from rentczecher.domain.location import ParsedPlace, ResolvedPlace
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +38,7 @@ class ListingAnnotations:
     nearest_stop: str | None = None
     stop_distance_m: int | None = None
     cross_source: tuple[str, ...] = ()
+    place: ResolvedPlace | None = None
 
 
 _SCRAPED_FIELDS = frozenset(f.name for f in fields(ScrapedListing))
@@ -141,3 +142,7 @@ class Listing:
     @property
     def cross_source(self) -> tuple[str, ...]:
         return self.annotations.cross_source
+
+    @property
+    def place(self) -> ResolvedPlace | None:
+        return self.annotations.place

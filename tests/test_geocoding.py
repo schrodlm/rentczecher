@@ -163,6 +163,29 @@ class TestResolveStatedDistrict:
         assert gazetteer.resolve(ParsedPlace(district="Kdyně")) is None
 
 
+class TestNameTiers:
+    def test_ambiguous_street_name_still_reports_street_tier(self, gazetteer):
+        assert "street" in gazetteer.name_tiers("Veletržní")
+
+    def test_capital_name_reports_all_its_tiers(self, gazetteer):
+        tiers = gazetteer.name_tiers("Klatovy")
+        assert "municipality" in tiers
+        assert "district" in tiers
+
+    def test_unknown_name_reports_nothing(self, gazetteer):
+        assert gazetteer.name_tiers("!!!") == frozenset()
+
+
+class TestReverse:
+    def test_point_reverse_geocodes_to_its_part(self, gazetteer):
+        place = gazetteer.reverse(50.1, 14.43)
+        assert place.muni_name == "Praha"
+        assert place.tier in ("municipality_part", "municipality")
+
+    def test_point_outside_czechia_is_none(self, gazetteer):
+        assert gazetteer.reverse(40.0, 10.0) is None
+
+
 class TestReadOnly:
     def test_missing_gazetteer_fails_loudly(self, tmp_path):
         import sqlite3
