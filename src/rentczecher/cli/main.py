@@ -12,6 +12,7 @@ import httpx
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
+from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
@@ -116,7 +117,8 @@ def _apply_filters(listings: list, spec: SearchSpec) -> list:
 
 
 def run_profile(profile_id: str, profile: dict, email_cfg: dict,
-                client: httpx.Client, dry_run: bool = False):
+                client: httpx.Client, dry_run: bool = False,
+                gazetteer: Gazetteer | None = None):
     """Run a single profile: scrape, filter, score, notify."""
     profile_name = profile.get("name", profile_id)
     log.info("=== Profile: %s ===", profile_name)
@@ -167,7 +169,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     # Cross-source dedup
     pre_dedup = len(all_listings)
-    all_listings = cross_source_dedup(all_listings)
+    all_listings = cross_source_dedup(all_listings, gazetteer)
     if pre_dedup > len(all_listings):
         log.info("Cross-source dedup: %d -> %d listings", pre_dedup, len(all_listings))
 
@@ -279,6 +281,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
             log.error("No profiles defined in config.yaml")
             return
 
+        gazetteer = Gazetteer()
         with build_client() as client:
             for profile_id, profile in profiles.items():
                 if profile_filter and profile_id != profile_filter:
@@ -291,7 +294,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     log.info("DRY RUN - no emails, no DB updates")
 
                 try:
-                    run_profile(profile_id, profile, email_cfg, client, dry_run)
+                    run_profile(profile_id, profile, email_cfg, client, dry_run, gazetteer)
                 except Exception:
                     log.exception("Profile %s failed", profile_id)
     finally:

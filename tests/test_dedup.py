@@ -3,8 +3,13 @@
 Run: python3 -m pytest tests/test_dedup.py -v
 """
 
+import pytest
+
+from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
+from rentczecher.domain.location import ParsedPlace
+from rentczecher.services import dedup as dedup_module
 from rentczecher.services.dedup import cross_source_dedup
 
 
@@ -29,11 +34,15 @@ class TestDedup:
 
     def test_listing_with_lat_but_no_lon_does_not_crash(self):
         """GPS matching requires all four coordinates; a half-set pair falls
-        through to location matching instead of crashing."""
+        back to the gazetteer-resolved place instead of crashing, and a
+        shared street name there still carries the pair to a match."""
+        shared_place = ParsedPlace(names=("Veletržní", "Praha 7"))
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=None)
+                           size_m2=50, disposition="2+kk", lat=50.1, lon=None,
+                           parsed_place=shared_place)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
+                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001,
+                           parsed_place=shared_place)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
@@ -154,14 +163,17 @@ class TestDedupThreeSources:
 class TestPriceGate:
     """Price gate: falsy price never matches; ratio uses max() of the two, strict `>` at 0.10."""
 
-    def test_zero_price_on_either_side_never_matches(self):
+    def test_zero_price_skips_the_price_factor_and_gps_alone_reaches_uncertain(self):
+        """A zero price on either side drops the price factor rather than
+        vetoing outright; near-identical GPS alone still clears the
+        uncertain band, so the pair merges with low confidence."""
         l1 = _make_listing(id="a:1", source="a", price=0, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1001, lon=14.4001)
-        assert cross_source_dedup([l1, l2]) == [l1, l2]
+        assert len(cross_source_dedup([l1, l2])) == 1
 
         l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.10, lon=14.40)
         l4 = _make_listing(id="b:2", source="b", price=0, lat=50.1001, lon=14.4001)
-        assert cross_source_dedup([l3, l4]) == [l3, l4]
+        assert len(cross_source_dedup([l3, l4])) == 1
 
     def test_diff_exactly_ten_percent_of_larger_matches(self):
         # 18000 vs 20000: diff/max = 2000/20000 = 0.10 exactly, gate is strict `>` so this passes.
@@ -170,12 +182,14 @@ class TestPriceGate:
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-    def test_one_unit_over_boundary_does_not_match(self):
-        # 17999 vs 20000: diff/max = 2001/20000 = 0.10005, just over the strict 0.10 cutoff.
+    def test_one_unit_over_price_near_bound_still_merges_on_near_identical_gps(self):
+        # 17999 vs 20000: diff/max = 2001/20000 = 0.10005, just over the near-price bound, so the
+        # price factor turns barely negative. Near-identical GPS alone still clears the uncertain
+        # band, so the two merge with low confidence rather than being vetoed.
         l1 = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=17999, lat=50.1001, lon=14.4001)
         result = cross_source_dedup([l1, l2])
-        assert len(result) == 2
+        assert len(result) == 1
 
     def test_ratio_is_order_independent(self):
         # max() in the denominator means swapping which listing is li/lj doesn't change the outcome.
@@ -188,8 +202,8 @@ class TestPriceGate:
         assert len(cross_source_dedup([c, d])) == len(cross_source_dedup([d, c]))
 
 
-class TestDispositionGate:
-    """Disposition gate runs before the GPS check, so a mismatch vetoes even near-identical GPS."""
+class TestDispositionFactor:
+    """Disposition disagreement outweighs near-identical GPS: same-building units stay separate."""
 
     def test_both_none_gate_skipped(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, disposition=None,
@@ -215,9 +229,9 @@ class TestDispositionGate:
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-    def test_mismatch_vetoes_despite_near_identical_gps(self):
-        # Disposition gate (before GPS check) rejects here even though the two
-        # points are ~0.1m apart, which would otherwise be an immediate GPS accept.
+    def test_disposition_disagreement_outweighs_near_identical_gps(self):
+        # GPS (+35) and price (+15) alone would clear the match threshold, but the disposition
+        # disagreement (-35) drags the total down to 15, below even the uncertain band.
         l1 = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk",
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="1+kk",
@@ -253,125 +267,132 @@ class TestSizeGate:
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-    def test_diff_six_does_not_match(self):
+    def test_diff_six_still_matches_on_gps_and_price_alone(self):
+        # Past the near bound the size factor contributes 0 rather than turning negative outright
+        # (diff 6 is still short of the far span), so GPS (+35) and equal price (+15) alone clear
+        # the match threshold.
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=50,
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=56,
                            lat=50.1001, lon=14.4001)
         result = cross_source_dedup([l1, l2])
-        assert len(result) == 2
+        assert len(result) == 1
 
 
 class TestGpsGate:
-    """GPS gate: all four coords required; <200m immediate accept, >1000m immediate reject,
-    the [200, 1000] band falls through to location-token overlap. Deltas below are derived with
-    haversine_m and asserted precisely so the fixtures prove the boundary they claim."""
+    """GPS factor: <=100m is the ceiling (immediate accept on GPS alone with any positive
+    corroboration), >=1500m is the negative ceiling, and the (100, 1500) band is graded by
+    distance. Deltas below are derived with haversine_m and asserted precisely so the fixtures
+    prove the boundary they claim."""
 
     BASE_LAT = 50.1
     BASE_LON = 14.4
 
-    def test_any_coord_none_falls_through_to_location_overlap(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, lat=None, lon=14.40,
-                           location="Praha 7 Holesovice")
-        l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.9999, lon=14.4001,
-                           location="Praha 7 Holesovice")
+    def test_any_coord_none_falls_back_to_the_resolved_place_and_a_shared_street_still_matches(self):
+        # Half-set GPS on one side falls back to the gazetteer's centroid for the resolved place,
+        # so the other listing's own GPS must be near THAT centroid (not just near the half-set
+        # listing's dropped coordinate) for the fallback to read as a real match.
+        shared_place = ParsedPlace(names=("Veletržní", "Praha 7"))
+        l1 = _make_listing(id="a:1", source="a", price=20000, lat=None, lon=14.4270,
+                           parsed_place=shared_place)
+        l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1015, lon=14.4298,
+                           parsed_place=shared_place)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-        l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.10, lon=None,
-                           location="Praha 7 Holesovice")
-        l4 = _make_listing(id="b:2", source="b", price=20000, lat=50.9999, lon=14.4001,
-                           location="Praha 7 Holesovice")
+        l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.1015, lon=None,
+                           parsed_place=shared_place)
+        l4 = _make_listing(id="b:2", source="b", price=20000, lat=50.1015, lon=14.4298,
+                           parsed_place=shared_place)
         result2 = cross_source_dedup([l3, l4])
         assert len(result2) == 1
 
-    def test_exactly_200m_is_not_immediate_accept(self):
-        dlat = 0.0017941466038102762
+    def test_101m_is_graded_not_ceiling_but_equal_price_still_clears_match(self):
+        dlat = 0.0009038182139455841
         dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
-        assert dist >= 200
+        assert dist == 101
 
         l1 = _make_listing(id="a:1", source="a", price=20000,
-                           lat=self.BASE_LAT, lon=self.BASE_LON, location="Zeta Alpha Nowhere")
+                           lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
-                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON,
-                           location="Beta Gamma Elsewhere")
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 2
-
-    def test_just_under_200m_is_immediate_accept(self):
-        dlat = 0.0017851533877468737
-        dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
-        assert dist < 200
-
-        l1 = _make_listing(id="a:1", source="a", price=20000,
-                           lat=self.BASE_LAT, lon=self.BASE_LON, location="Zeta Alpha Nowhere")
-        l2 = _make_listing(id="b:1", source="b", price=20000,
-                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON,
-                           location="Beta Gamma Elsewhere")
+                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-    def test_just_over_1000m_rejects_despite_overlapping_locations(self):
-        dlat = 0.008997712667220272
+    def test_exactly_100m_is_the_ceiling(self):
+        dlat = 0.0008948249978892875
         dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
-        assert dist > 1000
+        assert dist == 100
 
         l1 = _make_listing(id="a:1", source="a", price=20000,
-                           lat=self.BASE_LAT, lon=self.BASE_LON, location="Praha 7 Holesovice")
+                           lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
-                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON,
-                           location="Praha 7 Holesovice")
+                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
+        result = cross_source_dedup([l1, l2])
+        assert len(result) == 1
+
+    def test_1499m_is_graded_and_stays_no_match_with_no_other_evidence(self):
+        dlat = 0.013476334264691305
+        dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
+        assert dist == 1499
+
+        l1 = _make_listing(id="a:1", source="a", price=20000,
+                           lat=self.BASE_LAT, lon=self.BASE_LON)
+        l2 = _make_listing(id="b:1", source="b", price=20000,
+                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 2
 
-    def test_1000m_falls_through_and_matches_via_token_overlap(self):
+    def test_exactly_1500m_is_the_negative_ceiling(self):
+        dlat = 0.013485327480754705
+        dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
+        assert dist == 1500
+
+        l1 = _make_listing(id="a:1", source="a", price=20000,
+                           lat=self.BASE_LAT, lon=self.BASE_LON)
+        l2 = _make_listing(id="b:1", source="b", price=20000,
+                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
+        result = cross_source_dedup([l1, l2])
+        assert len(result) == 2
+
+    def test_1000m_graded_gps_merges_with_low_confidence_on_a_shared_street_name(self):
         dlat = 0.008988719451156868
         dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
-        assert dist <= 1000
+        assert dist == 1000
 
+        shared_place = ParsedPlace(names=("Veletržní", "Praha 7"))
         l1 = _make_listing(id="a:1", source="a", price=20000,
-                           lat=self.BASE_LAT, lon=self.BASE_LON, location="Praha 7 Holesovice")
+                           lat=self.BASE_LAT, lon=self.BASE_LON, parsed_place=shared_place)
         l2 = _make_listing(id="b:1", source="b", price=20000,
-                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON,
-                           location="Praha 7 Holesovice")
+                           lat=self.BASE_LAT + dlat, lon=self.BASE_LON, parsed_place=shared_place)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
 
-class TestLocationTokenOverlap:
-    """Location-token overlap, driven with no GPS on either listing."""
+class TestSharedNameFactorWithNoGps:
+    """With neither listing carrying GPS, a shared gazetteer-resolved name is the only path
+    to the evidence floor: the free-text `.location` string itself carries no weight."""
 
-    def test_empty_location_either_side_no_match(self):
+    def test_no_parsed_place_names_on_either_side_never_matches(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, location="")
         l2 = _make_listing(id="b:1", source="b", price=20000, location="Praha 7")
         result = cross_source_dedup([l1, l2])
         assert len(result) == 2
 
-    def test_locations_normalize_equal(self):
-        # ASCII spellings so normalization (lower, strip punctuation/dashes) is what equalizes
-        # them, not a diacritics coincidence.
-        l1 = _make_listing(id="a:1", source="a", price=20000, location="Praha, Holesovice")
-        l2 = _make_listing(id="b:1", source="b", price=20000, location="praha - holesovice")
+    def test_shared_street_name_alone_clears_the_evidence_floor_and_matches(self):
+        shared_place = ParsedPlace(names=("Veletržní",))
+        l1 = _make_listing(id="a:1", source="a", price=20000, parsed_place=shared_place)
+        l2 = _make_listing(id="b:1", source="b", price=20000, parsed_place=shared_place)
         result = cross_source_dedup([l1, l2])
         assert len(result) == 1
 
-    def test_shared_token_length_three_counts(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, location="xyz abc")
-        l2 = _make_listing(id="b:1", source="b", price=20000, location="qqq abc")
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 1
-
-    def test_shared_token_length_two_does_not_count(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, location="xyz ab")
-        l2 = _make_listing(id="b:1", source="b", price=20000, location="qqq ab")
-        result = cross_source_dedup([l1, l2])
-        assert len(result) == 2
-
-    def test_skip_words_only_location_no_match(self):
-        # "praha" is a SKIP_WORDS entry, so it never counts as a shared token
-        # even when both sides are identical.
-        l1 = _make_listing(id="a:1", source="a", price=20000, location="Praha")
-        l2 = _make_listing(id="b:1", source="b", price=20000, location="Praha")
+    def test_different_street_names_do_not_match(self):
+        # Both sides carry a street-tier name and share none, so the streets-disagree
+        # penalty (-25) applies on top of - not instead of - the price factor.
+        l1 = _make_listing(id="a:1", source="a", price=20000,
+                           parsed_place=ParsedPlace(names=("Veletržní",)))
+        l2 = _make_listing(id="b:1", source="b", price=20000,
+                           parsed_place=ParsedPlace(names=("Korunní",)))
         result = cross_source_dedup([l1, l2])
         assert len(result) == 2
 
@@ -451,11 +472,11 @@ class TestNoTransitiveGrouping:
         assert result[0].id == "b:1"
         assert set(result[0].cross_source) == {"a", "c"}
 
-    def test_consumed_middle_never_reaches_third_listing(self):
-        # Same trio as above, but ordered [A, B, C]. A~B matches (A richer, so A keeps and B is
-        # removed). B~C would also match in isolation, but B is skipped as soon as it becomes the
-        # outer-loop `i` because it is already in remove_to_keeper (:77) -- so B is never compared
-        # to C, and C survives unmerged even though a match exists on paper.
+    def test_direct_ac_match_merges_all_three_regardless_of_order(self):
+        # Same trio as above, ordered [A, B, C]. A-C alone is 13.04% apart in price, but GPS,
+        # disposition and size all agree, so A~C now scores a direct match on its own -- this
+        # is a straight pairwise match, not graph closure through B. A~B matches first (A richer,
+        # so A keeps and B is removed); A is then compared to C directly and matches too.
         a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
         b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
@@ -464,16 +485,16 @@ class TestNoTransitiveGrouping:
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = cross_source_dedup([a, b, c])
-        assert len(result) == 2
-        by_id = {listing.id: listing for listing in result}
-        assert set(by_id["a:1"].cross_source) == {"b"}
-        assert by_id["c:1"].cross_source == ()
+        assert len(result) == 1
+        assert result[0].id == "a:1"
+        assert set(result[0].cross_source) == {"b", "c"}
 
-    def test_reversed_order_changes_which_end_survives(self):
-        # Same trio, order reversed to [C, B, A]. Now C is compared to B first: B and C tie on
-        # completeness (neither has charges/land/image), and the gate uses `i_score >= j_score`,
-        # so C (the earlier index) keeps B. A is then compared to C and fails (A~C is false), so
-        # A survives alone. Input order decides which end of the chain survives.
+    def test_direct_ac_match_merges_all_three_in_reversed_order_but_drops_the_middle_source(self):
+        # Same trio, order reversed to [C, B, A]. C~B matches first (tied completeness, so C -- the
+        # earlier index -- keeps B, recorded as remove_to_keeper[B]=C). C is then compared to A
+        # directly: A is richer, so this time C itself is removed in A's favor
+        # (remove_to_keeper[C]=A). C never survives to be annotated onto the final list, so the
+        # cross_source it would have carried for B is lost -- only A survives, absorbing C alone.
         a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
         b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
@@ -482,10 +503,9 @@ class TestNoTransitiveGrouping:
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = cross_source_dedup([c, b, a])
-        assert len(result) == 2
-        by_id = {listing.id: listing for listing in result}
-        assert set(by_id["c:1"].cross_source) == {"b"}
-        assert by_id["a:1"].cross_source == ()
+        assert len(result) == 1
+        assert result[0].id == "a:1"
+        assert set(result[0].cross_source) == {"c"}
 
 
 class TestCrossSourceAccumulation:
@@ -503,3 +523,166 @@ class TestCrossSourceAccumulation:
         assert len(result) == 1
         assert result[0].id == "a:1"
         assert result[0].cross_source == ("b", "c")
+
+
+@pytest.fixture(scope="module")
+def gazetteer():
+    return Gazetteer()
+
+
+class TestScoredMatcherInvariants:
+    """The scored matcher scores every pair on the original scraped
+    listings, never on an already-merged keeper, and locate() is called
+    once per listing regardless of how many pairs are scored."""
+
+    def test_locate_call_count_is_linear_in_listing_count(self, gazetteer, monkeypatch):
+        calls = []
+        real_locate = dedup_module.locate
+
+        def counting_locate(listing, gaz):
+            calls.append(listing.id)
+            return real_locate(listing, gaz)
+
+        monkeypatch.setattr(dedup_module, "locate", counting_locate)
+
+        listings = [
+            _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
+                         lat=50.10, lon=14.40),
+            _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
+                         lat=50.1001, lon=14.4001),
+            _make_listing(id="c:1", source="c", price=25000, size_m2=60, disposition="3+kk",
+                         lat=49.0, lon=13.0),
+            _make_listing(id="d:1", source="d", price=25000, size_m2=60, disposition="3+kk",
+                         lat=49.0001, lon=13.0001),
+        ]
+        cross_source_dedup(listings, gazetteer)
+        assert len(calls) <= 4
+
+    def test_survivor_is_scored_against_the_original_listing_not_the_merged_keeper(self, gazetteer):
+        # A and B merge on near-identical GPS, matching price/size/disposition.
+        # C is far from both A and B (~18km) with a mismatched disposition and
+        # price, so raw A~C and raw B~C both score no_match on their own -
+        # nothing about A absorbing B's source changes what C is compared
+        # against, so C must survive unmerged.
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
+                          lat=50.10, lon=14.40)
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
+                          lat=50.1001, lon=14.4001)
+        c = _make_listing(id="c:1", source="c", price=40000, size_m2=20, disposition="3+kk",
+                          lat=50.20, lon=14.60)
+
+        result = cross_source_dedup([a, b, c], gazetteer)
+
+        by_id = {listing.id: listing for listing in result}
+        assert "c:1" in by_id
+        assert by_id["c:1"].cross_source == ()
+        assert len(result) == 2
+
+    def test_evidence_floor_rejects_a_naive_forty_with_no_gps_or_shared_name(self, gazetteer):
+        # Price (+15), size (+10) and disposition (+15) alone sum to exactly
+        # the match threshold, but neither listing carries GPS (portal or
+        # gazetteer-resolved) nor any parsed_place name, so the evidence
+        # floor (GPS or shared-name evidence) is never met and the pair must
+        # not merge despite the naive total.
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk")
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk")
+
+        result = cross_source_dedup([a, b], gazetteer)
+        assert len(result) == 2
+
+
+class TestVeletrzniShapedMatch:
+    """A shared street name with mid-band GPS clears the match threshold even
+    when the portals label the street with different municipality parts -
+    no single disagreeing label can veto the pair."""
+
+    def test_shared_street_name_with_midband_gps_matches(self, gazetteer):
+        lat_a, lon_a = 50.1005, 14.4270
+        lat_b, lon_b = 50.1059054054054, 14.4270
+        dist = haversine_m(lat_a, lon_a, lat_b, lon_b)
+        assert 400 < dist < 1500, "must land in the GPS mid-band, not an immediate accept/reject"
+
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
+                          lat=lat_a, lon=lon_a, location="Veletržní 1<>2",
+                          parsed_place=ParsedPlace(names=("Veletržní", "Praha")))
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
+                          lat=lat_b, lon=lon_b, location="Praha 7 - Bubeneč",
+                          parsed_place=ParsedPlace(names=("Veletržní", "Bubeneč")))
+
+        result = cross_source_dedup([a, b], gazetteer)
+        assert len(result) == 1
+
+
+class TestGeocellBoundaries:
+    """Geocells block candidate lookups; they never decide a match - a
+    close pair straddling a cell edge still merges."""
+
+    def test_pair_straddling_a_cell_edge_merges(self):
+        from rentczecher.domain.geo import CELL_LAT_DEG
+        edge = 4640 * CELL_LAT_DEG
+        shared = ParsedPlace(names=("U Vody", "Praha"))
+        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
+                           size_m2=55, disposition="2+kk",
+                           lat=edge - 0.0005, lon=14.44, parsed_place=shared)
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
+                           size_m2=55, disposition="2+kk",
+                           lat=edge + 0.0005, lon=14.44, parsed_place=shared)
+        assert len(cross_source_dedup([l1, l2])) == 1
+
+
+class TestStreetsDisagreeVetoesASharedPart:
+    """Two listings that each name a street, agreeing on none, do not merge even
+    when they share a coarser name (the same municipality part) and everything
+    else - close centroids, equal price, disposition, and size - would otherwise
+    read as a match: different streets are evidence of different properties, and
+    a coarser shared name cannot mask that."""
+
+    def test_adjacent_streets_with_everything_else_identical_merge_uncertain(self):
+        """Near-identical GPS plus agreeing price, size, and disposition
+        outweigh a street-name disagreement - two listings meters apart and
+        identical everywhere else are far likelier one property with a
+        divergent street label than two coincidentally identical neighbors.
+        The pair merges in the low-confidence band."""
+        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
+                           size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
+                           parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
+                           size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
+                           parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
+        assert len(cross_source_dedup([l1, l2])) == 1
+
+    def test_shared_municipality_part_does_not_paper_over_disagreeing_streets(self, gazetteer):
+        lat_a, lon_a = 50.1035, 14.4405
+        lat_b, lon_b = 50.1095, 14.4405
+        dist = haversine_m(lat_a, lon_a, lat_b, lon_b)
+        assert 100 < dist < 1500, "close but not an immediate GPS-ceiling accept on its own"
+
+        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
+                          lat=lat_a, lon=lon_a,
+                          parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
+        b = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk", size_m2=50,
+                          lat=lat_b, lon=lon_b,
+                          parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
+
+        result = cross_source_dedup([a, b], gazetteer)
+        assert len(result) == 2
+
+    def test_shared_part_name_that_is_a_street_elsewhere_stays_a_part(self, gazetteer):
+        """A shared neighborhood name some other municipality uses as a
+        street name ('Bubeneč' is a street in Lenešice) is read within the
+        listings' own municipality: it earns part-level credit only, and it
+        does not shield the disagreeing actual streets from their penalty."""
+        lat_a, lon_a = 50.0983, 14.4194
+        lat_b, lon_b = 50.1027, 14.4249
+        dist = haversine_m(lat_a, lon_a, lat_b, lon_b)
+        assert 100 < dist < 1500, "close but not an immediate GPS-ceiling accept on its own"
+
+        a = _make_listing(id="sreality:1", source="sreality", price=22000,
+                          size_m2=35, disposition="1+kk", lat=lat_a, lon=lon_a,
+                          parsed_place=ParsedPlace(names=("Korunovační", "Praha", "Bubeneč")))
+        b = _make_listing(id="bezrealitky:1", source="bezrealitky", price=22500,
+                          size_m2=37, disposition="1+kk", lat=lat_b, lon=lon_b,
+                          parsed_place=ParsedPlace(names=("U studánky", "Praha", "Bubeneč")))
+
+        result = cross_source_dedup([a, b], gazetteer)
+        assert len(result) == 2

@@ -39,7 +39,6 @@
    "nearest_stop": "Vltavská (tram 1, 12, 25, 34)",
    "stop_distance_m": 545,
    "cross_source": [
-    "remax",
     "sreality"
    ]
   },
@@ -61,9 +60,47 @@
    "price_drop_from": null,
    "nearest_stop": null,
    "stop_distance_m": null,
-   "cross_source": [
-    "remax"
-   ]
+   "cross_source": []
+  },
+  {
+   "id": "remax:3001",
+   "source": "remax",
+   "title": "Pronájem bytu 2+kk, 60 m², Veverkova",
+   "price": 23500,
+   "location": "Veverkova, Praha 7 - Holešovice",
+   "url": "https://www.remax-czech.cz/reality/detail/3001/pronajem-bytu-2-kk",
+   "image_url": null,
+   "size_m2": 60,
+   "disposition": "2+kk",
+   "lat": null,
+   "lon": null,
+   "charges": null,
+   "land_m2": null,
+   "score": 85,
+   "price_drop_from": null,
+   "nearest_stop": null,
+   "stop_distance_m": null,
+   "cross_source": []
+  },
+  {
+   "id": "remax:3002",
+   "source": "remax",
+   "title": "Pronájem bytu 2+kk, 55 m², U Vody",
+   "price": 23600,
+   "location": "U Vody, Praha 7 - Holešovice",
+   "url": "https://www.remax-czech.cz/reality/detail/3002/pronajem-bytu-2-kk",
+   "image_url": null,
+   "size_m2": 55,
+   "disposition": "2+kk",
+   "lat": null,
+   "lon": null,
+   "charges": null,
+   "land_m2": null,
+   "score": 79,
+   "price_drop_from": null,
+   "nearest_stop": null,
+   "stop_distance_m": null,
+   "cross_source": []
   },
   {
    "id": "sreality:1002",
@@ -115,6 +152,28 @@
    "size_m2": 61,
    "disposition": "2+kk",
    "charges": 2500
+  },
+  "remax:3001": {
+   "first_seen": "TS",
+   "last_seen": "TS",
+   "price": 23500,
+   "title": "Pronájem bytu 2+kk, 60 m², Veverkova",
+   "location": "Veverkova, Praha 7 - Holešovice",
+   "url": "https://www.remax-czech.cz/reality/detail/3001/pronajem-bytu-2-kk",
+   "source": "remax",
+   "size_m2": 60,
+   "disposition": "2+kk"
+  },
+  "remax:3002": {
+   "first_seen": "TS",
+   "last_seen": "TS",
+   "price": 23600,
+   "title": "Pronájem bytu 2+kk, 55 m², U Vody",
+   "location": "U Vody, Praha 7 - Holešovice",
+   "url": "https://www.remax-czech.cz/reality/detail/3002/pronajem-bytu-2-kk",
+   "source": "remax",
+   "size_m2": 55,
+   "disposition": "2+kk"
   },
   "sreality:1002": {
    "first_seen": "TS",
