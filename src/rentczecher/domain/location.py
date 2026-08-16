@@ -14,3 +14,16 @@ class ParsedPlace:
 
     names: tuple[str, ...] = ()
     district: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedPlace:
+    """A gazetteer's answer to a ParsedPlace: exactly one place, or a
+    caller would have gotten None instead."""
+
+    name: str
+    muni_name: str | None  # a resolved district has no municipality
+    okres_name: str | None
+    tier: str
+    lat: float
+    lon: float
