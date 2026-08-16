@@ -12,6 +12,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 - **Short narrating comments are allowed when they genuinely speed up reading** — a section marker in a long parse routine ("# Resolve main image") earns its place; a line-by-line paraphrase never does. Short, on point, at the right spot.
 - **Never reference documents from code.** No plan files, milestones, issue numbers, commit hashes, or anything else with a different lifespan than the source. A comment pointing at `docs/plans/...` or "Milestone 1.5" is wrong even while it is accurate. (Docs referencing docs is fine; commit messages referencing anything is fine.)
 - **No reviewer-facing commentary in code.** Never explain what changed, what the old code did, or why the change is correct — that belongs in the commit message and dies there.
+- **Portal knowledge stays in the portal's adapter.** Domain and services code never names a portal or narrates a scraper's mechanics. A domain rule motivated by one portal's quirk states the constraint generically ("the scraped field may hold a building-type label"); the quirk itself is documented at the adapter that owns it.
 - **No dead code in a commit.** Before committing, re-read the diff and delete anything nothing references — an unused constant, helper, import, or field left from an approach you abandoned mid-change. Ruff catches unused locals and imports but not module-level names, so this is a manual pass every time, not an optional one.
 
 ## Commits
