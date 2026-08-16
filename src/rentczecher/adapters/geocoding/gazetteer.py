@@ -1,4 +1,4 @@
-"""Offline geocoding: portal location text to coordinates, no network.
+"""Offline geocoding: scraped place names to coordinates, no network.
 
 Lookups run against the shipped gazetteer.sqlite (built by the location
 refresh script from the state address registry).
@@ -6,14 +6,16 @@ refresh script from the state address registry).
 
 import re
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
 from rentczecher.adapters.scrapers.location_resolver import normalize_name
+from rentczecher.domain.location import ParsedPlace
 
-# Portal location strings put a house number after the street name
-# ("Škarmanská 369 / 369"); the gazetteer knows streets, not buildings.
+# Portals put a house number after the street name ("Škarmanská 369 / 369");
+# the gazetteer knows streets, not buildings.
 _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
 
 _TIERS_MOST_SPECIFIC_FIRST = ("street", "municipality_part", "city_district", "municipality")
@@ -29,55 +31,74 @@ class ResolvedPlace:
     lon: float
 
 
-def candidate_names(location: str) -> list[str]:
-    """Normalized lookup candidates from one portal location string.
+def candidate_names(names: Iterable[str]) -> list[str]:
+    """Normalized lookup keys for scraped place names, most specific first.
 
-    Segments split on commas and on ' - ' (portals write 'Praha - Holešovice').
-    Each segment yields itself and a house-number-stripped variant, so
-    'Škarmanská 369 / 369, Domažlice, Plzeňský kraj' gives
-    ['skarmanska 369 / 369', 'skarmanska', 'domazlice'] and 'Praha 7' gives
-    ['praha 7', 'praha'].
+    Each name yields itself and a house-number-stripped variant, so
+    'Škarmanská 369 / 369' gives ['skarmanska 369 / 369', 'skarmanska'] and
+    'Praha 7' gives ['praha 7', 'praha'].
     """
-    segments = []
-    for comma_part in location.split(","):
-        segments.extend(re.split(r"\s+[-–]\s+", comma_part))
-    names: list[str] = []
-    for segment in segments:
-        segment = segment.strip()
-        # Regions are not in the gazetteer; 'Plzeňský kraj' would otherwise
-        # normalize to a bare 'plzensky' that can shadow a real place name.
-        if segment.casefold().endswith("kraj"):
-            continue
-        norm = normalize_name(segment)
+    candidates: list[str] = []
+    for name in names:
+        norm = normalize_name(name)
         without_numbers = " ".join(_HOUSE_NUMBER.sub(" ", norm).split())
-        for name in (norm, without_numbers):
-            if name and name not in names:
-                names.append(name)
-    return names
+        for candidate in (norm, without_numbers):
+            if candidate and candidate not in candidates:
+                candidates.append(candidate)
+    return candidates
 
 
 class Gazetteer:
-    """Read-only place lookups over the bundled gazetteer.
+    """Answers "where is this?" for scraped place names, offline.
 
-    Resolution runs three passes, each trying tiers most specific first.
-    Pass 1, municipality agreement: a second candidate names the row's
-    municipality ('Veletržní' + 'Praha') - street names repeat across the
-    country ('U Studánky' exists 49 times), so a street alone proves little.
-    Pass 2, district scope: a candidate naming an okres narrows the search
-    to it, and a name unique within that okres resolves ('Škarmanská' +
-    okres 'Domažlice' finds the street in Kdyně); several copies inside one
-    okres stay ambiguous. Pass 3, unique name: every row of a candidate
-    sits in one single municipality. Uniqueness counts distinct
-    municipalities, not rows: a town and its self-named part ('Kdyně') are
-    one place, while parts of the same name in two towns ('Holešovice' in
-    Praha and in Chroustovice) are a real tie.
+    The bundled file holds one row per Czech place at five tiers - street,
+    municipality part, city district, municipality, district (okres) - each
+    with a normalized name, its municipality, its okres, and a centroid.
+    Resolving a ParsedPlace means picking exactly one of those rows, or
+    refusing: a wrong place silently poisons everything built on top, so
+    anything ambiguous resolves to None rather than a guess.
 
-    district_labeled says the caller knows the location string names the
-    okres where a town would normally stand (RE/MAX does this, always -
-    'Nádražní 10, Klatovy' means a Nádražní somewhere in okres Klatovy, not
-    the one in Klatovy town). District-named candidates then only scope and
-    resolve as districts, never as towns. Anything still ambiguous resolves
-    to None rather than a guess.
+    The names carry no roles (see ParsedPlace): the same word can be a
+    street, a town, the town's self-named part, or all of them at once.
+    So every name is looked up across all tiers, everything lands in one
+    candidate pool, and four passes look for a single row the evidence
+    agrees on. The passes run in order of how much the answer can be
+    trusted, each walking tiers most specific first, and each returns a
+    row only when exactly one matches - two matches is a tie, and a tie
+    falls through to the next, weaker pass:
+
+    1. Municipality agreement: a second name vouches for the row's town.
+       'Veletržní' exists in Praha and in Brno; 'Veletržní' + 'Praha'
+       picks one. Street names repeat across the country ('U Studánky'
+       exists 49 times), so a street alone proves little - two parts of
+       one address agreeing is the strongest evidence there is.
+
+    2. District scope: the okres narrows the map. No town named
+       'Domažlice' has a Škarmanská street, but okres Domažlice contains
+       exactly one, in Kdyně. Weaker than pass 1: a region vouched for
+       the name, not the town itself. Several copies inside the okres
+       stay a tie.
+
+    3. Unique name: the name can only mean one place. Everything called
+       'Kdyně' sits in a single municipality, so bare 'Kdyně' needs no
+       witness. Uniqueness counts distinct municipalities, not rows - a
+       town plus its self-named central part is one place at two tiers,
+       while parts named 'Holešovice' in Praha and in Chroustovice are a
+       real tie.
+
+    4. The named district itself: the give-up-gracefully answer. When
+       'Nádražní' repeats inside okres Klatovy no single street can be
+       picked, but the okres is still certain - and a coarse true answer
+       beats a precise wrong one. The tier on the result says how coarse;
+       callers gate on it.
+
+    A stated district (ParsedPlace.district) changes exactly one thing:
+    that name may scope (pass 2) and be the answer (pass 4) but never
+    resolve as the same-named town - the caller has said which of the two
+    readings it means, and every district capital shares its okres's name.
+    Everything else is pooled: no name is ever routed to a specific pass
+    or tier by where it came from, because a name's kind is discovered by
+    lookup, never assumed.
     """
 
     def __init__(self, db_path: Path | None = None):
@@ -98,18 +119,19 @@ class Gazetteer:
             lon=row["lon"],
         )
 
-    def resolve(self, location: str, *, district_labeled: bool = False) -> ResolvedPlace | None:
-        names = candidate_names(location)
-        if not names:
+    def resolve(self, place: ParsedPlace) -> ResolvedPlace | None:
+        candidates = candidate_names(place.names)
+        stated = frozenset(candidate_names([place.district]) if place.district else ())
+        lookup = candidates + [name for name in stated if name not in candidates]
+        if not lookup:
             return None
-        rows = self._rows_named(names)
+        rows = self._rows_named(lookup)
+        # A stated district is context only, never the same-named town.
+        rows = [r for r in rows
+                if r["name_norm"] not in stated or r["tier"] == "district"]
         district_names = {r["name_norm"] for r in rows if r["tier"] == "district"}
-        if district_labeled:
-            # A district-named candidate is context only, never the town.
-            rows = [r for r in rows
-                    if r["name_norm"] not in district_names or r["tier"] == "district"]
         place_rows = [r for r in rows if r["tier"] != "district"]
-        vouchers = set(names) - (district_names if district_labeled else set())
+        vouchers = set(candidates) - stated
 
         match = (self._vouched_by_municipality(place_rows, vouchers)
                  or self._unique_in_named_district(place_rows, district_names)
@@ -129,7 +151,7 @@ class Gazetteer:
         return rows
 
     def _vouched_by_municipality(self, place_rows, vouchers) -> sqlite3.Row | None:
-        """"Did the text name a street and its town?"""
+        """Did a second name vouch for the row's town?"""
         for tier in _TIERS_MOST_SPECIFIC_FIRST:
             agreeing = [r for r in place_rows if r["tier"] == tier
                         and r["muni_norm"] in vouchers - {r["name_norm"]}]
@@ -138,7 +160,7 @@ class Gazetteer:
         return None
 
     def _unique_in_named_district(self, place_rows, district_names) -> sqlite3.Row | None:
-        """The only place of its name inside a candidate-named okres."""
+        """Is the name unique inside a named okres?"""
         for tier in _TIERS_MOST_SPECIFIC_FIRST:
             scoped = [r for r in place_rows if r["tier"] == tier
                       and r["okres_norm"] in district_names - {r["name_norm"]}]
@@ -147,8 +169,7 @@ class Gazetteer:
         return None
 
     def _unique_name(self, place_rows) -> sqlite3.Row | None:
-        """A name all of whose rows sit in one single municipality - a town
-        and its self-named part are one place, not a tie."""
+        """Can the name only mean one municipality?"""
         by_name: dict[str, list[sqlite3.Row]] = {}
         for row in place_rows:
             by_name.setdefault(row["name_norm"], []).append(row)
@@ -162,7 +183,7 @@ class Gazetteer:
         return None
 
     def _named_district(self, rows) -> sqlite3.Row | None:
-        """Last resort: the named district itself, at its honest coarse tier."""
+        """Give up gracefully: the named district itself."""
         districts = [r for r in rows if r["tier"] == "district"]
         if len(districts) == 1:
             return districts[0]
