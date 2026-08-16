@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher.domain.location import ParsedPlace
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
 
@@ -30,6 +31,19 @@ DISPOSITIONS = {
 }
 
 DETAIL_BASE = "https://www.bezrealitky.cz/nemovitosti-byty-domy"
+
+
+def _parse_location(address: str) -> ParsedPlace:
+    """The portal's address string is comma-separated, with 'Praha - Bubeneč'
+    style dash pairs inside a segment; the portal has no district (okres)
+    concept, so district is always None."""
+    names = []
+    for segment in address.split(","):
+        for name in re.split(r"\s+[-–]\s+", segment):
+            name = name.strip()
+            if name and name not in names:
+                names.append(name)
+    return ParsedPlace(names=tuple(names))
 
 
 def _apollo_get(obj: dict, prefix: str):
@@ -207,6 +221,7 @@ class BezrealitkyScraper(BaseScraper):
             title=title,
             price=price,
             location=address,
+            parsed_place=_parse_location(address),
             url=f"{DETAIL_BASE}/{uri}",
             image_url=image_url,
             size_m2=int(float(surface)) if surface else None,
