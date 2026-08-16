@@ -7,6 +7,8 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 
 from dataclasses import dataclass, fields, replace
 
+from rentczecher.domain.location import ParsedPlace
+
 
 @dataclass(frozen=True, slots=True)
 class ScrapedListing:
@@ -24,6 +26,9 @@ class ScrapedListing:
     charges: int | None = None
     land_m2: int | None = None
     scraped_at: str | None = None
+    # location, parsed into place names by the scraper - the only code
+    # that knows its portal's format.
+    parsed_place: ParsedPlace = ParsedPlace()
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +117,10 @@ class Listing:
     @property
     def scraped_at(self) -> str | None:
         return self.scraped.scraped_at
+
+    @property
+    def parsed_place(self) -> ParsedPlace:
+        return self.scraped.parsed_place
 
     @property
     def score(self) -> int:

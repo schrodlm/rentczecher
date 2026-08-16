@@ -95,6 +95,19 @@ class TestScrapedAt:
         assert listing.scraped.scraped_at == "2026-08-11T06:00:00+00:00"
 
 
+class TestParsedPlace:
+    def test_defaults_to_an_empty_place(self):
+        from rentczecher.domain.location import ParsedPlace
+        assert _listing().parsed_place == ParsedPlace()
+
+    def test_round_trips_through_build(self):
+        from rentczecher.domain.location import ParsedPlace
+        place = ParsedPlace(names=("Veletržní", "Praha 7"), district="Domažlice")
+        listing = _listing(parsed_place=place)
+        assert listing.parsed_place == place
+        assert listing.parsed_place.names == ("Veletržní", "Praha 7")
+
+
 class TestEquality:
     def test_same_content_is_equal(self):
         assert _listing() == _listing()
