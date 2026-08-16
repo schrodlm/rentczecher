@@ -24,6 +24,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 
 - **Organized by module or feature** (`tests/test_<module>.py`). A regression test lives in the owning module's test file, named for the behavior it pins — never in a bug- or milestone-themed catch-all file.
 - **Test docstrings state the behavior being pinned**, in present tense. Not the history of the bug, not where it was planned.
+- **Tests wait for accepted design.** While a change is still being iterated on with the owner, don't write new tests or chase broken ones — tests pin accepted behavior, not drafts. Once the design is accepted, write and fix them; they must be green by commit time (the hooks enforce it).
 
 ## Working here
 
