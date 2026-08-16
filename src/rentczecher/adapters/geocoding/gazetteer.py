@@ -7,28 +7,17 @@ refresh script from the state address registry).
 import re
 import sqlite3
 from collections.abc import Iterable
-from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
 from rentczecher.adapters.scrapers.location_resolver import normalize_name
-from rentczecher.domain.location import ParsedPlace
+from rentczecher.domain.location import ParsedPlace, ResolvedPlace
 
 # Portals put a house number after the street name ("Škarmanská 369 / 369");
 # the gazetteer knows streets, not buildings.
 _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
 
 _TIERS_MOST_SPECIFIC_FIRST = ("street", "municipality_part", "city_district", "municipality")
-
-
-@dataclass(frozen=True, slots=True)
-class ResolvedPlace:
-    name: str
-    muni_name: str | None  # a resolved district has no municipality
-    okres_name: str | None
-    tier: str
-    lat: float
-    lon: float
 
 
 def candidate_names(names: Iterable[str]) -> list[str]:
