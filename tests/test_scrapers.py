@@ -12,10 +12,14 @@ import pytest
 from rentczecher.adapters.scrapers import bezrealitky, remax, sreality
 from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+from rentczecher.adapters.scrapers.bezrealitky import _parse_location as _bez_parse_location
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError
 from rentczecher.adapters.scrapers.remax import RemaxScraper
+from rentczecher.adapters.scrapers.remax import _parse_location as _remax_parse_location
 from rentczecher.adapters.scrapers.sreality import SrealityScraper
+from rentczecher.adapters.scrapers.sreality import _parse_location as _sreality_parse_location
+from rentczecher.domain.location import ParsedPlace
 from rentczecher.domain.search import SearchSpec
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
@@ -95,6 +99,8 @@ class TestSrealityParsing:
         assert abs(l.lat - 50.111328) < 1e-6
         assert abs(l.lon - 14.448094) < 1e-6
         assert l.location == "U Vody, Praha - Holešovice, Praha 7"
+        assert l.parsed_place.names == ("U Vody", "Praha", "Holešovice", "Praha 7")
+        assert l.parsed_place.district is None
         assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/1222430796"
         assert l.image_url.startswith("https://")
 
@@ -120,6 +126,26 @@ class TestSrealityParsing:
         headers = calls[0].headers
         assert "Mozilla" in headers["User-Agent"]
         assert headers["Accept"] == "application/json"
+
+
+class TestSrealityLocationParsing:
+    """The locality dict's street/city/citypart/district keys all belong in
+    names, deduped and in that order; the portal has no okres concept."""
+
+    def test_full_locality(self):
+        place = _sreality_parse_location({
+            "street": "U Vody", "city": "Praha", "citypart": "Holešovice", "district": "Praha 7",
+        })
+        assert place.names == ("U Vody", "Praha", "Holešovice", "Praha 7")
+        assert place.district is None
+
+    def test_city_equal_to_citypart_is_deduped(self):
+        place = _sreality_parse_location({"city": "Drahotín", "citypart": "Drahotín"})
+        assert place.names == ("Drahotín",)
+        assert place.district is None
+
+    def test_empty_locality(self):
+        assert _sreality_parse_location({}) == ParsedPlace()
 
 
 class TestSrealityPagination:
@@ -282,6 +308,8 @@ class TestBezrealitkyParsing:
         assert l.title == "Pronajem - 2+kk - 55 m2 - Veletržní, Praha 7"
         assert l.price == 20000
         assert l.location == "Veletržní, Praha 7"
+        assert l.parsed_place.names == ("Veletržní", "Praha 7")
+        assert l.parsed_place.district is None
         assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
         assert l.image_url == "https://img.bezrealitky.cz/1.jpg"
         assert l.size_m2 == 55
@@ -333,6 +361,24 @@ class TestBezrealitkyParsing:
         client, _ = _serve_bez_pages(monkeypatch, {1: "<html><body>redesigned</body></html>"})
         with pytest.raises(ScraperBrokenError):
             BezrealitkyScraper(BEZ_SPEC, client).scrape()
+
+
+class TestBezrealitkyLocationParsing:
+    """The comma-separated address splits into names on both commas and
+    'Praha - Bubeneč' style dash pairs; the portal has no okres concept."""
+
+    def test_comma_separated_address(self):
+        place = _bez_parse_location("Veletržní, Praha 7")
+        assert place.names == ("Veletržní", "Praha 7")
+        assert place.district is None
+
+    def test_dash_pair_segment_splits_further(self):
+        place = _bez_parse_location("U Studánky, Praha - Bubeneč")
+        assert place.names == ("U Studánky", "Praha", "Bubeneč")
+        assert place.district is None
+
+    def test_empty_address(self):
+        assert _bez_parse_location("") == ParsedPlace()
 
 
 class TestBezrealitkyPlaceBasedParams:
@@ -391,6 +437,77 @@ def _serve_remax_pages(monkeypatch, pages):
     return build_client(transport=httpx.MockTransport(handler)), calls
 
 
+class TestRemaxLocationParsing:
+    """The card's address string splits into names and the okres it states
+    (the bare-name slot before the kraj holds a district, never a town);
+    the actual town rides at the tail of the card title."""
+
+    def test_title_town_joins_the_names(self):
+        place = _remax_parse_location(
+            "Dlouhá 2534 / 2534, Cheb , Karlovarský kraj",
+            "Prodej bytu 2+1 v osobním vlastnictví 60 m², Aš")
+        assert place.names == ("Dlouhá 2534 / 2534", "Aš")
+        assert place.district == "Cheb"
+
+    def test_title_town_equal_to_the_okres_means_the_capital(self):
+        place = _remax_parse_location(
+            "Mírová 2024 / 2024, Cheb , Karlovarský kraj",
+            "Pronájem bytu 1+1 v osobním vlastnictví 38 m², Cheb")
+        assert place.names == ("Mírová 2024 / 2024", "Cheb")
+        assert place.district is None
+
+    def test_bare_address_still_gets_the_title_town(self):
+        place = _remax_parse_location(
+            "Kladno , Středočeský kraj", "Prodej domu 250 m², Královice")
+        assert place.names == ("Královice",)
+        assert place.district == "Kladno"
+
+    def test_commaless_title_adds_nothing(self):
+        place = _remax_parse_location("Domažlice - Týnské Předměstí",
+                                      "Prodej rodinného domu")
+        assert place.names == ("Týnské Předměstí",)
+        assert place.district == "Domažlice"
+
+    def test_digit_bearing_title_tail_is_ignored(self):
+        place = _remax_parse_location("Vinohradská 12, Praha 2",
+                                      "Prodej bytu 2+kk 45 m², Praha 2")
+        assert place.names == ("Vinohradská 12", "Praha 2")
+        assert place.district is None
+
+    def test_street_and_okres(self):
+        place = _remax_parse_location("Škarmanská 369 / 369, Domažlice, Plzeňský kraj", "")
+        assert place.names == ("Škarmanská 369 / 369",)
+        assert place.district == "Domažlice"
+
+    def test_bare_okres(self):
+        place = _remax_parse_location("Domažlice, Plzeňský kraj", "")
+        assert place.names == ()
+        assert place.district == "Domažlice"
+
+    def test_okres_with_part(self):
+        place = _remax_parse_location("Domažlice - Týnské Předměstí", "")
+        assert place.names == ("Týnské Předměstí",)
+        assert place.district == "Domažlice"
+
+    def test_okres_only_name(self):
+        place = _remax_parse_location("Školní 853, Brno-venkov, Jihomoravský kraj", "")
+        assert place.names == ("Školní 853",)
+        assert place.district == "Brno-venkov"
+
+    def test_praha_city_district_is_not_an_okres(self):
+        place = _remax_parse_location("Vinohradská 12, Praha 2", "")
+        assert place.names == ("Vinohradská 12", "Praha 2")
+        assert place.district is None
+
+    def test_bare_praha_is_not_an_okres(self):
+        place = _remax_parse_location("Praha", "")
+        assert place.names == ("Praha",)
+        assert place.district is None
+
+    def test_empty_location(self):
+        assert _remax_parse_location("", "") == ParsedPlace()
+
+
 class TestRemaxParsing:
     """Fixture-driven parsing of search result cards."""
 
@@ -403,6 +520,9 @@ class TestRemaxParsing:
         assert l.title == "Prodej rodinného domu"
         assert l.price == 3000000
         assert l.location == "Domažlice - Týnské Předměstí"
+        # The portal's bare-name slot holds the okres, not the town.
+        assert l.parsed_place.district == "Domažlice"
+        assert l.parsed_place.names == ("Týnské Předměstí",)
         assert l.url == "https://www.remax-czech.cz/reality/detail/12345/prodej-domu"
         assert l.image_url == "https://www.remax-czech.cz/img/12345.jpg"
         assert l.size_m2 == 120

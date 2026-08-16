@@ -8,12 +8,44 @@ from bs4 import BeautifulSoup
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
+from rentczecher.domain.location import ParsedPlace
 
 SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
 
 # Checkbox ids from the search form's types tree.
 ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
 OFFER_TYPE_ID = {"sale": 1, "rent": 2}
+
+
+def _parse_location(location: str, title: str) -> ParsedPlace:
+    """The address slot before the kraj holds the okres, not the town - a
+    property labeled 'Domažlice' may lie anywhere in that district. Praha
+    listings are the exception (their slot holds a city district like
+    'Praha 4'), and a slot with digits is a street, not an okres. The town
+    itself rides at the tail of the card title ('Prodej bytu 60 m², Aš');
+    a tail equal to the okres means the property sits in the district
+    capital, and the town then says everything the okres would."""
+    names: list[str] = []
+    district = None
+    segments = [s.strip() for s in location.split(",") if s.strip()]
+    for at, segment in enumerate(segments):
+        if segment.casefold().endswith("kraj"):
+            continue
+        head, *tail = (part.strip() for part in re.split(r"\s+[-–]\s+", segment))
+        is_last_bare_slot = at == len(segments) - 1 or segments[at + 1].casefold().endswith("kraj")
+        if (is_last_bare_slot and district is None
+                and head != "Praha" and not any(ch.isdigit() for ch in head)):
+            district = head
+        elif head not in names:
+            names.append(head)
+        names.extend(part for part in tail if part and part not in names)
+    town = title.rpartition(",")[2].strip() if "," in title else ""
+    if town and not any(ch.isdigit() for ch in town):
+        if district is not None and town.casefold() == district.casefold():
+            district = None
+        if town not in names:
+            names.append(town)
+    return ParsedPlace(names=tuple(names), district=district)
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +202,7 @@ class RemaxScraper(BaseScraper):
             loc_match = re.search(r"(?:Praha\s*\d+\s*[-–]\s*\w+|[A-Z][a-záčďéěíňóřšťúůýž]+\s*[-–]\s*\w+)", card_text)
             if loc_match:
                 location = loc_match.group(0)
+        parsed_place = _parse_location(location, title)
 
         # Image
         image_url = None
@@ -194,6 +227,7 @@ class RemaxScraper(BaseScraper):
             title=title or f"RE/MAX - {disposition or ''} {location}".strip(),
             price=price,
             location=location,
+            parsed_place=parsed_place,
             url=detail_url,
             image_url=image_url,
             size_m2=size,

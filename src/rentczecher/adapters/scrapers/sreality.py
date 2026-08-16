@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
+from rentczecher.domain.location import ParsedPlace
 
 log = logging.getLogger("rentczecher")
 
@@ -33,6 +34,17 @@ OFFER_TYPE_CB = {"sale": 1, "rent": 2}
 def _slugify(text: str) -> str:
     decomposed = unicodedata.normalize("NFD", text.lower())
     return "".join(c for c in decomposed if unicodedata.category(c) != "Mn").replace(" ", "-")
+
+
+def _parse_location(locality: dict) -> ParsedPlace:
+    """The portal's "district" field is a city district ("Praha 7"), never an
+    okres, so everything belongs in names."""
+    names = []
+    for key in ("street", "city", "citypart", "district"):
+        value = (locality.get(key) or "").strip()
+        if value and value not in names:
+            names.append(value)
+    return ParsedPlace(names=tuple(names))
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,6 +161,7 @@ class SrealityScraper(BaseScraper):
             title=name,
             price=price,
             location=location,
+            parsed_place=_parse_location(locality),
             url=self._build_detail_url(estate, hash_id, disposition, locality),
             image_url=image_url,
             size_m2=size,
