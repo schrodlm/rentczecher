@@ -639,9 +639,9 @@ class TestStreetsDisagreeVetoesASharedPart:
     def test_adjacent_streets_with_everything_else_identical_stay_separate(self):
         """Near-identical GPS plus agreeing price, size, and disposition lift
         a street-name disagreement only into the uncertain band - possibly one
-        property with a divergent street label, but labeled real pairs showed
-        this shape is usually two units in one building. Uncertain pairs stay
-        separate: a wrong merge hides a listing, a missed one only repeats it."""
+        property with a divergent street label, more often two units in one
+        building. Uncertain pairs stay separate: a wrong merge hides a
+        listing, a missed one only repeats it."""
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
                            size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
                            parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
