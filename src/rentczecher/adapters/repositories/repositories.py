@@ -28,6 +28,12 @@ class PropertyRepository(ABC):
         """Log why a listing was judged the same property and how its facts
         diverged from canonical."""
 
+    @abstractmethod
+    def find_candidates(self, cell_lat: int, cell_lon: int) -> list[PropertyIdentity]:
+        """Live properties whose geocell is the given cell or one of its
+        eight neighbors - a recall-only blocking step, never a match
+        decision."""
+
 
 class ListingRepository(ABC):
     @abstractmethod

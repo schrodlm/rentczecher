@@ -80,6 +80,46 @@ class TestGeocell:
         assert (cell_lat, cell_lon) == (None, None)
 
 
+class TestFindCandidates:
+    def _seed_cell(self, conn, property_id, cell_lat, cell_lon, merged_into=None):
+        conn.execute(
+            "INSERT INTO properties (id, created_at, merged_into, cell_lat, cell_lon) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (property_id, CREATED, merged_into, cell_lat, cell_lon))
+        conn.commit()
+
+    def test_finds_a_property_in_the_exact_cell(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_cell(conn, "prop-1", 100, 200)
+        found = {p.id for p in repo.find_candidates(100, 200)}
+        assert found == {"prop-1"}
+
+    def test_finds_a_property_one_cell_away(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_cell(conn, "prop-1", 101, 201)
+        found = {p.id for p in repo.find_candidates(100, 200)}
+        assert found == {"prop-1"}
+
+    def test_excludes_a_property_two_cells_away(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_cell(conn, "prop-1", 102, 200)
+        found = {p.id for p in repo.find_candidates(100, 200)}
+        assert found == set()
+
+    def test_excludes_a_merged_property(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_cell(conn, "prop-a", 100, 200)
+        self._seed_cell(conn, "prop-b", 100, 200, merged_into="prop-a")
+        found = {p.id for p in repo.find_candidates(100, 200)}
+        assert found == {"prop-a"}
+
+    def test_excludes_a_property_with_no_cell(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_cell(conn, "prop-1", None, None)
+        found = {p.id for p in repo.find_candidates(100, 200)}
+        assert found == set()
+
+
 class TestAttachListing:
     def test_points_a_listing_at_a_property(self, tmp_path):
         repo, conn = _repo(tmp_path)
