@@ -8,9 +8,9 @@ import pytest
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
-from rentczecher.domain.location import ParsedPlace
+from rentczecher.domain.location import ParsedPlace, ResolvedPlace
 from rentczecher.services import dedup as dedup_module
-from rentczecher.services.dedup import cross_source_dedup
+from rentczecher.services.dedup import cross_source_dedup, promote_fields
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -686,3 +686,89 @@ class TestStreetsDisagreeVetoesASharedPart:
 
         result = cross_source_dedup([a, b], gazetteer)
         assert len(result) == 2
+
+
+class TestPromoteFields:
+    """promote_fields is a pure function with no pipeline caller yet - tests
+    are its only consumer. Kept's value wins wherever present; absorbed only
+    fills a gap kept left; location (and lat/lon with it) follows whichever
+    side's place evidence sits at the more specific tier."""
+
+    def test_kept_value_wins_over_a_present_absorbed_value(self):
+        kept = _make_listing(title="Kept title", size_m2=50, disposition="2+kk", land_m2=10)
+        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition="1+kk", land_m2=20)
+
+        canonical, _ = promote_fields(kept, absorbed)
+
+        assert canonical["title"] == "Kept title"
+        assert canonical["size_m2"] == 50
+        assert canonical["disposition"] == "2+kk"
+        assert canonical["land_m2"] == 10
+
+    def test_absorbed_fills_every_gap_kept_leaves(self):
+        kept = _make_listing(title="", size_m2=None, disposition=None, land_m2=None, lat=None, lon=None)
+        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition="1+kk", land_m2=20,
+                                  lat=50.1, lon=14.4)
+
+        canonical, differences = promote_fields(kept, absorbed)
+
+        assert canonical["title"] == "Absorbed title"
+        assert canonical["size_m2"] == 48
+        assert canonical["disposition"] == "1+kk"
+        assert canonical["land_m2"] == 20
+        assert canonical["lat"] == 50.1
+        assert canonical["lon"] == 14.4
+        assert differences == {}
+
+    def test_location_prefers_the_more_specific_tier_regardless_of_which_side_kept_is(self):
+        kept = _make_listing(location="Praha 7", lat=None, lon=None,
+                              place=ResolvedPlace(name="Praha 7", muni_name="Praha", okres_name=None,
+                                                   tier="city_district", lat=50.09, lon=14.42))
+        absorbed = _make_listing(location="Veletržní 1", lat=None, lon=None,
+                                  place=ResolvedPlace(name="Veletržní", muni_name="Praha", okres_name=None,
+                                                       tier="street", lat=50.1005, lon=14.4270))
+
+        canonical, _ = promote_fields(kept, absorbed)
+
+        assert canonical["location"] == "Veletržní 1"
+        assert canonical["lat"] == 50.1005
+        assert canonical["lon"] == 14.4270
+
+    def test_location_keeps_kept_when_kept_tier_is_already_the_more_specific(self):
+        kept = _make_listing(location="Veletržní 1", lat=50.1005, lon=14.4270)
+        absorbed = _make_listing(location="Praha 7", lat=None, lon=None,
+                                  place=ResolvedPlace(name="Praha 7", muni_name="Praha", okres_name=None,
+                                                       tier="city_district", lat=50.09, lon=14.42))
+
+        canonical, _ = promote_fields(kept, absorbed)
+
+        assert canonical["location"] == "Veletržní 1"
+        assert canonical["lat"] == 50.1005
+        assert canonical["lon"] == 14.4270
+
+    def test_differences_shape_matches_the_dedup_records_json_shape(self):
+        kept = _make_listing(disposition="2+kk", size_m2=50)
+        absorbed = _make_listing(disposition="1+kk", size_m2=48)
+
+        _, differences = promote_fields(kept, absorbed)
+
+        assert differences["disposition"] == {"canonical": "2+kk", "listing": "1+kk"}
+        assert differences["size_m2"] == {"canonical": 50, "listing": 48}
+
+    def test_no_differences_when_every_field_is_identical(self):
+        kept = _make_listing(title="Same", location="Praha 7", size_m2=50, disposition="2+kk",
+                              land_m2=10, lat=50.1, lon=14.4)
+        absorbed = _make_listing(title="Same", location="Praha 7", size_m2=50, disposition="2+kk",
+                                  land_m2=10, lat=50.1, lon=14.4)
+
+        _, differences = promote_fields(kept, absorbed)
+
+        assert differences == {}
+
+    def test_disposition_casing_disagreement_is_not_a_genuine_difference(self):
+        kept = _make_listing(disposition="2+KK")
+        absorbed = _make_listing(disposition="2+kk")
+
+        _, differences = promote_fields(kept, absorbed)
+
+        assert differences == {}
