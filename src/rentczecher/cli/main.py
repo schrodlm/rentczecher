@@ -16,6 +16,7 @@ from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
+from rentczecher.services.locate import locate_listings
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
 from rentczecher.services.score import compute_score
@@ -166,6 +167,11 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     # Enrich with tram distances (only for Prague profiles)
     if profile.get("tram_enrichment", False):
         all_listings = [enrich_tram(listing) for listing in all_listings]
+
+    # Locate listings
+    if gazetteer is None:
+        gazetteer = Gazetteer()
+    all_listings = locate_listings(all_listings, gazetteer)
 
     # Cross-source dedup
     pre_dedup = len(all_listings)

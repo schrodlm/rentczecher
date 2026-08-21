@@ -9,8 +9,8 @@ from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
 from rentczecher.domain.location import ParsedPlace, ResolvedPlace
-from rentczecher.services import dedup as dedup_module
 from rentczecher.services.dedup import cross_source_dedup, promote_fields
+from rentczecher.services.locate import locate_listings
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -22,13 +22,18 @@ def _make_listing(**kwargs) -> Listing:
     return Listing.build(**defaults)
 
 
+def _locate_and_dedup(listings, gazetteer=None):
+    gazetteer = gazetteer if gazetteer is not None else Gazetteer()
+    return cross_source_dedup(locate_listings(listings, gazetteer), gazetteer)
+
+
 class TestDedup:
     def test_same_flat_different_sources_deduped(self):
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
                            size_m2=50, disposition="2+kk", lat=50.1, lon=14.4)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1, "Same flat should be deduped"
         assert len(result[0].cross_source) == 1
 
@@ -43,7 +48,7 @@ class TestDedup:
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001,
                            parsed_place=shared_place)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_different_price_not_deduped(self):
@@ -51,13 +56,13 @@ class TestDedup:
                            lat=50.1, lon=14.4)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=25000,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2, "Different prices should not dedup"
 
     def test_same_source_not_deduped(self):
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000)
         l2 = _make_listing(id="sreality:2", source="sreality", price=20000)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2, "Same source should not dedup"
 
     def test_gps_far_apart_not_deduped(self):
@@ -65,15 +70,15 @@ class TestDedup:
                            lat=50.1, lon=14.4)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            lat=50.2, lon=14.5)  # ~12km away
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2, "GPS far apart should not dedup"
 
     def test_empty_list(self):
-        assert cross_source_dedup([]) == []
+        assert _locate_and_dedup([]) == []
 
     def test_single_listing(self):
         l = _make_listing()
-        assert cross_source_dedup([l]) == [l]
+        assert _locate_and_dedup([l]) == [l]
 
 
 class TestDedupCrossSourceCorrectness:
@@ -89,7 +94,7 @@ class TestDedupCrossSourceCorrectness:
                           size_m2=50, disposition="2+kk", lat=50.1002, lon=14.4002),
         ]
 
-        result = cross_source_dedup(listings)
+        result = _locate_and_dedup(listings)
 
         for listing in result:
             assert listing.source not in listing.cross_source, (
@@ -111,7 +116,7 @@ class TestDedupCrossSourceCorrectness:
         b2 = _make_listing(id="remax:b", source="remax", price=25000,
                            size_m2=60, disposition="3+kk", lat=49.0001, lon=13.0001)
 
-        result = cross_source_dedup([a1, a2, b1, b2])
+        result = _locate_and_dedup([a1, a2, b1, b2])
 
         for listing in result:
             assert listing.source not in listing.cross_source
@@ -133,7 +138,7 @@ class TestDedupThreeSources:
                           location="Praha 7"),
         ]
 
-        result = cross_source_dedup(listings)
+        result = _locate_and_dedup(listings)
         assert len(result) == 1, f"Expected 1 merged listing, got {len(result)}"
 
     def test_three_sources_cross_source_has_two_entries(self):
@@ -149,7 +154,7 @@ class TestDedupThreeSources:
                           location="Praha 7"),
         ]
 
-        result = cross_source_dedup(listings)
+        result = _locate_and_dedup(listings)
         keeper = result[0]
 
         # cross_source should contain exactly the two OTHER sources
@@ -169,17 +174,17 @@ class TestPriceGate:
         uncertain band, so the pair merges with low confidence."""
         l1 = _make_listing(id="a:1", source="a", price=0, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1001, lon=14.4001)
-        assert len(cross_source_dedup([l1, l2])) == 1
+        assert len(_locate_and_dedup([l1, l2])) == 1
 
         l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.10, lon=14.40)
         l4 = _make_listing(id="b:2", source="b", price=0, lat=50.1001, lon=14.4001)
-        assert len(cross_source_dedup([l3, l4])) == 1
+        assert len(_locate_and_dedup([l3, l4])) == 1
 
     def test_diff_exactly_ten_percent_of_larger_matches(self):
         # 18000 vs 20000: diff/max = 2000/20000 = 0.10 exactly, gate is strict `>` so this passes.
         l1 = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=18000, lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_one_unit_over_price_near_bound_still_merges_on_near_identical_gps(self):
@@ -188,18 +193,18 @@ class TestPriceGate:
         # band, so the two merge with low confidence rather than being vetoed.
         l1 = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=17999, lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_ratio_is_order_independent(self):
         # max() in the denominator means swapping which listing is li/lj doesn't change the outcome.
         a = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         b = _make_listing(id="b:1", source="b", price=18000, lat=50.1001, lon=14.4001)
-        assert len(cross_source_dedup([a, b])) == len(cross_source_dedup([b, a]))
+        assert len(_locate_and_dedup([a, b])) == len(_locate_and_dedup([b, a]))
 
         c = _make_listing(id="a:2", source="a", price=20000, lat=50.10, lon=14.40)
         d = _make_listing(id="b:2", source="b", price=17999, lat=50.1001, lon=14.4001)
-        assert len(cross_source_dedup([c, d])) == len(cross_source_dedup([d, c]))
+        assert len(_locate_and_dedup([c, d])) == len(_locate_and_dedup([d, c]))
 
 
 class TestDispositionFactor:
@@ -210,7 +215,7 @@ class TestDispositionFactor:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition=None,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_one_none_gate_skipped(self):
@@ -218,7 +223,7 @@ class TestDispositionFactor:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="3+1",
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_case_insensitive_match(self):
@@ -226,7 +231,7 @@ class TestDispositionFactor:
                            size_m2=50, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_disposition_disagreement_outweighs_near_identical_gps(self):
@@ -236,7 +241,7 @@ class TestDispositionFactor:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="1+kk",
                            lat=50.100001, lon=14.40)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
 
@@ -248,7 +253,7 @@ class TestSizeGate:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=999,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_both_none_skips_gate(self):
@@ -256,7 +261,7 @@ class TestSizeGate:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=None,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_diff_exactly_five_matches(self):
@@ -264,7 +269,7 @@ class TestSizeGate:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=55,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_diff_six_still_matches_on_gps_and_price_alone(self):
@@ -275,7 +280,7 @@ class TestSizeGate:
                            lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=56,
                            lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
 
@@ -297,14 +302,14 @@ class TestGpsGate:
                            parsed_place=shared_place)
         l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1015, lon=14.4298,
                            parsed_place=shared_place)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
         l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.1015, lon=None,
                            parsed_place=shared_place)
         l4 = _make_listing(id="b:2", source="b", price=20000, lat=50.1015, lon=14.4298,
                            parsed_place=shared_place)
-        result2 = cross_source_dedup([l3, l4])
+        result2 = _locate_and_dedup([l3, l4])
         assert len(result2) == 1
 
     def test_101m_is_graded_not_ceiling_but_equal_price_still_clears_match(self):
@@ -316,7 +321,7 @@ class TestGpsGate:
                            lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_exactly_100m_is_the_ceiling(self):
@@ -328,7 +333,7 @@ class TestGpsGate:
                            lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_1499m_is_graded_and_stays_no_match_with_no_other_evidence(self):
@@ -340,7 +345,7 @@ class TestGpsGate:
                            lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
     def test_exactly_1500m_is_the_negative_ceiling(self):
@@ -352,7 +357,7 @@ class TestGpsGate:
                            lat=self.BASE_LAT, lon=self.BASE_LON)
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
     def test_1000m_graded_gps_merges_with_low_confidence_on_a_shared_street_name(self):
@@ -365,7 +370,7 @@ class TestGpsGate:
                            lat=self.BASE_LAT, lon=self.BASE_LON, parsed_place=shared_place)
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON, parsed_place=shared_place)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
 
@@ -376,14 +381,14 @@ class TestSharedNameFactorWithNoGps:
     def test_no_parsed_place_names_on_either_side_never_matches(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, location="")
         l2 = _make_listing(id="b:1", source="b", price=20000, location="Praha 7")
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
     def test_shared_street_name_alone_clears_the_evidence_floor_and_matches(self):
         shared_place = ParsedPlace(names=("Veletržní",))
         l1 = _make_listing(id="a:1", source="a", price=20000, parsed_place=shared_place)
         l2 = _make_listing(id="b:1", source="b", price=20000, parsed_place=shared_place)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_different_street_names_do_not_match(self):
@@ -393,7 +398,7 @@ class TestSharedNameFactorWithNoGps:
                            parsed_place=ParsedPlace(names=("Veletržní",)))
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            parsed_place=ParsedPlace(names=("Korunní",)))
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
 
@@ -405,7 +410,7 @@ class TestKeeperChoice:
                            size_m2=50, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
         assert result[0].id == "s:1"
 
@@ -416,7 +421,7 @@ class TestKeeperChoice:
                            size_m2=50, lat=50.10, lon=14.40, image_url="")
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001, image_url=None)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
         assert result[0].id == "s:1"
 
@@ -425,7 +430,7 @@ class TestKeeperChoice:
                            size_m2=50, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001, charges=1500)
-        result = cross_source_dedup([l1, l2])
+        result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
         assert result[0].id == "b:1"
 
@@ -440,7 +445,7 @@ class TestOrderingMechanics:
                           size_m2=50, lat=50.1001, lon=14.4001)
         z = _make_listing(id="z:1", source="z", price=99999, location="Nowhere special zzz")
 
-        result = cross_source_dedup([x, y, z])
+        result = _locate_and_dedup([x, y, z])
         assert [listing.id for listing in result] == ["x:1", "z:1"]
 
 
@@ -453,7 +458,7 @@ class TestNoTransitiveGrouping:
         a = _make_listing(id="a:1", source="a", price=15000, location="Alpha Nowhere")
         b = _make_listing(id="b:1", source="b", price=25000, location="Beta Elsewhere")
         c = _make_listing(id="c:1", source="c", price=99999, location="Gamma Faraway")
-        result = cross_source_dedup([a, b, c])
+        result = _locate_and_dedup([a, b, c])
         assert len(result) == 3
 
     def test_shared_middle_compared_first_merges_all_three(self):
@@ -467,7 +472,7 @@ class TestNoTransitiveGrouping:
         c = _make_listing(id="c:1", source="c", price=23000, disposition="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
-        result = cross_source_dedup([b, a, c])
+        result = _locate_and_dedup([b, a, c])
         assert len(result) == 1
         assert result[0].id == "b:1"
         assert set(result[0].cross_source) == {"a", "c"}
@@ -484,7 +489,7 @@ class TestNoTransitiveGrouping:
         c = _make_listing(id="c:1", source="c", price=23000, disposition="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
-        result = cross_source_dedup([a, b, c])
+        result = _locate_and_dedup([a, b, c])
         assert len(result) == 1
         assert result[0].id == "a:1"
         assert set(result[0].cross_source) == {"b", "c"}
@@ -502,7 +507,7 @@ class TestNoTransitiveGrouping:
         c = _make_listing(id="c:1", source="c", price=23000, disposition="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
-        result = cross_source_dedup([c, b, a])
+        result = _locate_and_dedup([c, b, a])
         assert len(result) == 1
         assert result[0].id == "a:1"
         assert set(result[0].cross_source) == {"b", "c"}
@@ -519,7 +524,7 @@ class TestCrossSourceAccumulation:
         c = _make_listing(id="c:1", source="c", price=20000, disposition="2+kk",
                           size_m2=50, lat=50.1002, lon=14.4002)
 
-        result = cross_source_dedup([a, b, c])
+        result = _locate_and_dedup([a, b, c])
         assert len(result) == 1
         assert result[0].id == "a:1"
         assert result[0].cross_source == ("b", "c")
@@ -532,31 +537,7 @@ def gazetteer():
 
 class TestScoredMatcherInvariants:
     """The scored matcher scores every pair on the original scraped
-    listings, never on an already-merged keeper, and locate() is called
-    once per listing regardless of how many pairs are scored."""
-
-    def test_locate_call_count_is_linear_in_listing_count(self, gazetteer, monkeypatch):
-        calls = []
-        real_locate = dedup_module.locate
-
-        def counting_locate(listing, gaz):
-            calls.append(listing.id)
-            return real_locate(listing, gaz)
-
-        monkeypatch.setattr(dedup_module, "locate", counting_locate)
-
-        listings = [
-            _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
-                         lat=50.10, lon=14.40),
-            _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
-                         lat=50.1001, lon=14.4001),
-            _make_listing(id="c:1", source="c", price=25000, size_m2=60, disposition="3+kk",
-                         lat=49.0, lon=13.0),
-            _make_listing(id="d:1", source="d", price=25000, size_m2=60, disposition="3+kk",
-                         lat=49.0001, lon=13.0001),
-        ]
-        cross_source_dedup(listings, gazetteer)
-        assert len(calls) <= 4
+    listings, never on an already-merged keeper."""
 
     def test_survivor_is_scored_against_the_original_listing_not_the_merged_keeper(self, gazetteer):
         # A and B merge on near-identical GPS, matching price/size/disposition.
@@ -571,7 +552,7 @@ class TestScoredMatcherInvariants:
         c = _make_listing(id="c:1", source="c", price=40000, size_m2=20, disposition="3+kk",
                           lat=50.20, lon=14.60)
 
-        result = cross_source_dedup([a, b, c], gazetteer)
+        result = _locate_and_dedup([a, b, c], gazetteer)
 
         by_id = {listing.id: listing for listing in result}
         assert "c:1" in by_id
@@ -587,7 +568,7 @@ class TestScoredMatcherInvariants:
         a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk")
         b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk")
 
-        result = cross_source_dedup([a, b], gazetteer)
+        result = _locate_and_dedup([a, b], gazetteer)
         assert len(result) == 2
 
 
@@ -609,7 +590,7 @@ class TestVeletrzniShapedMatch:
                           lat=lat_b, lon=lon_b, location="Praha 7 - Bubeneč",
                           parsed_place=ParsedPlace(names=("Veletržní", "Bubeneč")))
 
-        result = cross_source_dedup([a, b], gazetteer)
+        result = _locate_and_dedup([a, b], gazetteer)
         assert len(result) == 1
 
 
@@ -627,7 +608,7 @@ class TestGeocellBoundaries:
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            size_m2=55, disposition="2+kk",
                            lat=edge + 0.0005, lon=14.44, parsed_place=shared)
-        assert len(cross_source_dedup([l1, l2])) == 1
+        assert len(_locate_and_dedup([l1, l2])) == 1
 
 
 class TestStreetsDisagreeVetoesASharedPart:
@@ -649,7 +630,7 @@ class TestStreetsDisagreeVetoesASharedPart:
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
                            parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
-        assert len(cross_source_dedup([l1, l2])) == 1
+        assert len(_locate_and_dedup([l1, l2])) == 1
 
     def test_shared_municipality_part_does_not_paper_over_disagreeing_streets(self, gazetteer):
         lat_a, lon_a = 50.1035, 14.4405
@@ -664,7 +645,7 @@ class TestStreetsDisagreeVetoesASharedPart:
                           lat=lat_b, lon=lon_b,
                           parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
 
-        result = cross_source_dedup([a, b], gazetteer)
+        result = _locate_and_dedup([a, b], gazetteer)
         assert len(result) == 2
 
     def test_shared_part_name_that_is_a_street_elsewhere_stays_a_part(self, gazetteer):
@@ -684,7 +665,7 @@ class TestStreetsDisagreeVetoesASharedPart:
                           size_m2=37, disposition="1+kk", lat=lat_b, lon=lon_b,
                           parsed_place=ParsedPlace(names=("U studánky", "Praha", "Bubeneč")))
 
-        result = cross_source_dedup([a, b], gazetteer)
+        result = _locate_and_dedup([a, b], gazetteer)
         assert len(result) == 2
 
 

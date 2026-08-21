@@ -8,7 +8,7 @@ import pytest
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.domain.listing import Listing
 from rentczecher.domain.location import ParsedPlace
-from rentczecher.services.locate import locate
+from rentczecher.services.locate import locate, locate_listings
 
 
 @pytest.fixture(scope="module")
@@ -47,3 +47,15 @@ class TestLocate:
             names=("Škarmanská 369 / 369",), district="Domažlice")), gazetteer)
         assert place.tier == "street"
         assert place.muni_name == "Kdyně"
+
+
+class TestLocateListings:
+    def test_every_listing_comes_back_with_its_place_annotation(self, gazetteer):
+        locatable = _listing()
+        unlocatable = _listing(parsed_place=ParsedPlace(names=("Nová Ves",)))
+
+        located = locate_listings([locatable, unlocatable], gazetteer)
+
+        assert located[0].place is not None
+        assert located[0].place.muni_name == "Praha"
+        assert located[1].place is None
