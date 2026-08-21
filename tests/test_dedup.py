@@ -489,12 +489,12 @@ class TestNoTransitiveGrouping:
         assert result[0].id == "a:1"
         assert set(result[0].cross_source) == {"b", "c"}
 
-    def test_direct_ac_match_merges_all_three_in_reversed_order_but_drops_the_middle_source(self):
+    def test_direct_ac_match_merges_all_three_in_reversed_order_and_carries_the_middle_source(self):
         # Same trio, order reversed to [C, B, A]. C~B matches first (tied completeness, so C -- the
         # earlier index -- keeps B, recorded as remove_to_keeper[B]=C). C is then compared to A
         # directly: A is richer, so this time C itself is removed in A's favor
-        # (remove_to_keeper[C]=A). C never survives to be annotated onto the final list, so the
-        # cross_source it would have carried for B is lost -- only A survives, absorbing C alone.
+        # (remove_to_keeper[C]=A). C's absorbed source (B) re-parents onto A when C is displaced,
+        # so the final survivor A carries both B and C even though C never survives itself.
         a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
         b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
@@ -505,7 +505,7 @@ class TestNoTransitiveGrouping:
         result = cross_source_dedup([c, b, a])
         assert len(result) == 1
         assert result[0].id == "a:1"
-        assert set(result[0].cross_source) == {"c"}
+        assert set(result[0].cross_source) == {"b", "c"}
 
 
 class TestCrossSourceAccumulation:
