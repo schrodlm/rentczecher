@@ -316,14 +316,26 @@ def cross_source_dedup(
 
             remove_to_keeper[remove_idx] = keeper_idx
 
-    # Annotate keepers with the sources they absorbed, by replacement.
-    replacements: dict[int, Listing] = {}
-    for remove_idx, keeper_idx in remove_to_keeper.items():
-        keeper = replacements.get(keeper_idx, listings[keeper_idx])
+    # A removed listing can itself have already absorbed others (it was a
+    # keeper before a third listing displaced it)
+    def _final_keeper(idx: int) -> int:
+        while idx in remove_to_keeper:
+            idx = remove_to_keeper[idx]
+        return idx
+
+    absorbed_sources: dict[int, tuple[str, ...]] = {}
+    for remove_idx in remove_to_keeper:
+        keeper_idx = _final_keeper(remove_idx)
         removed = listings[remove_idx]
-        if removed.source != keeper.source and removed.source not in keeper.cross_source:
-            replacements[keeper_idx] = keeper.with_annotations(
-                cross_source=keeper.cross_source + (removed.source,)
-            )
+        sources = absorbed_sources.get(keeper_idx, ())
+        for source in (removed.source, *removed.cross_source):
+            if source != listings[keeper_idx].source and source not in sources:
+                sources += (source,)
+        absorbed_sources[keeper_idx] = sources
+
+    replacements = {
+        keeper_idx: listings[keeper_idx].with_annotations(cross_source=sources)
+        for keeper_idx, sources in absorbed_sources.items()
+    }
 
     return [replacements.get(i, l) for i, l in enumerate(listings) if i not in remove_to_keeper]
