@@ -59,8 +59,10 @@ _NO_SHARED_NAME_PENALTY = -8.0
 # evidence of two different properties, and no coarser shared name may mask it.
 _STREETS_DISAGREE_PENALTY = -35.0
 
-_MATCH_THRESHOLD = 40.0
-_UNCERTAIN_THRESHOLD = 25.0
+# Calibrated on owner-labeled real cross-portal pairs; move them only with
+# the evidence of scripts/matcher_eval.py, never by feel.
+_MATCH_THRESHOLD = 55.0
+_UNCERTAIN_THRESHOLD = 30.0
 
 FactorResult = tuple[float, bool]
 
