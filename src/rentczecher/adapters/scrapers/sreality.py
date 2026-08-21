@@ -140,6 +140,9 @@ class SrealityScraper(BaseScraper):
         size = parse_size_m2(name)
         land = parse_land_m2(name)
 
+        # category_sub_cb names the flat's layout ("2+kk") but a house's
+        # building subtype ("Rodinný"); a house's real layout appears only in
+        # the advert title, unextracted.
         sub_cb = estate.get("category_sub_cb") or {}
         disposition = sub_cb.get("name") or None
 
