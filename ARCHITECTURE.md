@@ -10,13 +10,13 @@ and knowing which is which will save you a lot of confusion.
 **Two storage-and-dedup worlds coexist in this repo.**
 
 - The **live pipeline**, what cron actually runs, persists state in per-profile
-  `seen-*.json` files and dedups with a strict-pairwise matcher. This is the
-  working product.
-- A **canonical-property model** (a real SQLite schema, repositories, an offline
-  geocoder, a rewritten matcher) is being built underneath it. Most of it exists
-  and is unit-tested, but it is **inert**. Nothing in the running pipeline calls
-  it yet. It's reachable only from `rentczecher db migrate`, from an offline
-  build script, and from tests.
+  `seen-*.json` files and dedups with a scored, strict-pairwise matcher backed
+  by an offline geocoder. This is the working product.
+- A **canonical-property model** (a real SQLite schema, repositories, cross-run
+  geocell candidacy, the dedup audit trail) is being built underneath it. It
+  exists and is unit-tested, but it is **inert**. Nothing in the running
+  pipeline calls it yet. It's reachable only from `rentczecher db migrate` and
+  from tests.
 
 The rewrite lands in small, always-green steps. Each piece ships before its
 consumer, tested in isolation, so the tool keeps working the whole time and there
@@ -67,7 +67,9 @@ filter by disposition / min size / min land             # _apply_filters
    ▼
 enrich_tram(listing)   (Prague profiles only)           # adapters/enrichment
    ▼
-cross_source_dedup(listings)                            # services/dedup
+locate_listings(listings, gazetteer)                    # services/locate
+   ▼
+cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
 compute_score(listing, profile)                         # services/score
    ▼
@@ -94,7 +96,8 @@ it.
   title, price, location, url, optional size/disposition/gps/land/charges, plus a
   `ParsedPlace` (the raw place names the scraper pulled out).
 - `ListingAnnotations` (frozen): the pipeline's conclusions. score,
-  `price_drop_from`, nearest stop, `cross_source`.
+  `price_drop_from`, nearest stop, `cross_source`, and `place` (the
+  gazetteer-resolved location; `None` means unlocatable, not unasked).
 - `Listing`: wraps the two. Construct with `Listing.build(**flat_fields)` and
   never mutate. `with_annotations(...)` returns a new `Listing` sharing the same
   facts. Every field of both inner records is exposed as a read-only property.
@@ -140,6 +143,33 @@ it is the only hand-maintained part (the Bezrealitky Prague id quirk).
 Config loading resolves every profile's `place` up front, so an unresolvable
 place is a config error before any scraper runs.
 
+### Offline geocoder (RÚIAN gazetteer)
+
+`adapters/geocoding/gazetteer.py` resolves a listing's scraped place names to a
+single Czech place with a centroid (lat/lon), **entirely offline**. The data is a
+bundled read-only SQLite file (`gazetteer.sqlite`, about 21 MB, roughly 105k
+places) generated from the RÚIAN state address registry by
+`scripts/refresh_location_data.py gazetteer`. Resolution is deliberately
+conservative: ambiguous names resolve to `None` rather than guessing. Name-tier
+lookups are municipality-scoped, so another town's street name can never
+impersonate street-level evidence for a Prague neighbourhood.
+
+`services/locate.py::locate(listing, gazetteer)` sits on top: text resolution
+first, reverse geocoding when the text is ambiguous but the portal gave GPS.
+`locate_listings` runs as a pipeline stage before dedup, landing the result as
+the `place` annotation that dedup and everything after read location from.
+
+### The scored matcher
+
+`services/dedup.py::cross_source_dedup` scores every cross-source pair on five
+three-state factors (GPS distance, shared place name, disposition, price, size:
+agree positive, disagree negative, missing exactly zero), gated by an evidence
+floor. Pairs merge only above the confident-match threshold; an **uncertain
+band** below it is scored and recorded but never merges — a wrong merge hides a
+listing, a missed one only repeats it. The weights and thresholds are calibrated
+against owner-labeled real cross-portal pairs; `scripts/matcher_eval.py` replays
+the matcher over every reviewed pair and runs before and after any tuning.
+
 ### Config
 
 `adapters/config/schema.py` is the single source of truth for config shape,
@@ -182,34 +212,24 @@ reflection. `rentczecher db migrate` applies the migrations. **Nothing writes to
 these tables in a normal run.** The live pipeline still persists through
 `adapters/legacy_json_db.py`, which knows nothing about the domain types.
 
-### Offline geocoder (RÚIAN gazetteer)
+### Geocell blocking, dormant
 
-`adapters/geocoding/gazetteer.py` resolves a listing's scraped place names to a
-single Czech place with a centroid (lat/lon), **entirely offline**. The data is a
-bundled read-only SQLite file (`gazetteer.sqlite`, about 21 MB, roughly 105k
-places) generated from the RÚIAN state address registry by
-`scripts/refresh_location_data.py gazetteer`. Resolution is deliberately
-conservative: ambiguous names resolve to `None` rather than guessing.
-
-`services/locate.py::locate(listing, gazetteer)` sits on top: portal GPS first,
-gazetteer fallback otherwise. It has no pipeline caller yet. `ParsedPlace` is
-already populated by every scraper and carried through the live pipeline, so the
-data `locate` needs is flowing. Only the call itself is missing.
-
-`domain/geo.py` also carries the `geocell` blocking grid (a roughly 1.2 km cell
-key) used for near-point candidate lookup. The gazetteer build and the tests use
-it, but the runtime pipeline doesn't.
+`domain/geo.py` carries the `geocell` blocking grid (a roughly 1.2 km cell key)
+used for near-point candidate lookup. Migration `0002` adds the cell columns to
+`properties` and `find_candidates` queries a cell and its eight neighbours, but
+nothing on the live path calls either — blocking becomes load-bearing when
+cross-run property resolution wires in.
 
 ## Where the work is now
 
-The current milestone is the **dedup matcher rewrite** (1.7.6 in the project's
-own numbering). The plan replaces the live strict-pairwise, hard-gate matcher
-with a scored multi-factor one. No factor ever compares a raw portal string.
-Every input passes a normalizer whose contract is canonical-or-None, and `None`
-means the factor abstains rather than vetoes. Location and disposition are
-normalized (via the gazetteer and a synonym table), price and size are numeric,
-and nothing else is load-bearing for v1. Geospatial blocking over the gazetteer
-is what makes cross-run, cross-profile property resolution tractable.
+The **dedup matcher rewrite** (1.7.6 in the project's own numbering) just
+landed: the hard-gate matcher became the scored multi-factor one described
+above. No factor ever compares a raw portal string. Every input passes a
+normalizer whose contract is canonical-or-None, and `None` means the factor
+abstains rather than vetoes. Location and disposition are normalized (via the
+gazetteer and a synonym table), price and size are numeric, and nothing else is
+load-bearing for v1. Geospatial blocking over the gazetteer is what will make
+cross-run, cross-profile property resolution tractable.
 
 One rule is permanent and predates this work: **strict pairwise matching, no
 transitive grouping.** Transitive grouping shipped once, merged unrelated
@@ -217,10 +237,10 @@ listings in production, and was reverted. It stays reverted. Any move back to
 union-find is gated on proving it matches or beats the current precision on a
 labelled sample first.
 
-After the matcher lands, the sequence is: wire storage in (the JSON to SQLite
-cutover, with dry-run, backup, and a guard that refuses if a cron run may be
-mid-write), then extract the orchestration into a `services/pipeline.run_profile`
-that the CLI and, later, a GUI both call.
+Next in sequence: wire storage in (the JSON to SQLite cutover, with dry-run,
+backup, and a guard that refuses if a cron run may be mid-write), then extract
+the orchestration into a `services/pipeline.run_profile` that the CLI and,
+later, a GUI both call.
 
 ### The bigger arc
 
@@ -265,8 +285,10 @@ enough to orient a contributor.
   fixes never do.
 - **Tests pin accepted behavior, per module.** A regression test lives in the
   owning module's test file, named for the behavior it pins, not in a bug- or
-  milestone-themed catch-all. The dedup and scoring thresholds are tuned-by-feel
-  production values. Pin them with boundary tests before touching them.
+  milestone-themed catch-all. Scoring thresholds are tuned-by-feel production
+  values — pin them with boundary tests before touching them. The dedup
+  matcher's weights and thresholds are calibrated against owner-labeled pairs —
+  move them only with `scripts/matcher_eval.py` evidence.
 - **User-facing strings are Czech. Code and internal strings are English.**
 
 `CLAUDE.md` has the full text of these stances.
