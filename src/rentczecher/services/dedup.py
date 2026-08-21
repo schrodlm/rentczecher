@@ -13,7 +13,6 @@ from rentczecher.adapters.geocoding.gazetteer import Gazetteer, candidate_names
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.disposition import normalize_disposition
 from rentczecher.domain.geo import haversine_m
-from rentczecher.services.locate import locate
 
 # Tiers a resolved point or a shared name can land at, most specific first.
 # "gps" is a portal-provided point, tied with "street" for the tightest ceiling.
@@ -254,6 +253,8 @@ def cross_source_dedup(
 ) -> list[Listing]:
     """Detect same property listed on multiple sites.
 
+    Listings must already carry their resolved place.
+
     Uses strict pairwise matching (no transitive grouping).
     For each cross-source pair found, keeps the listing with more data
     and annotates it with the other source.
@@ -263,7 +264,6 @@ def cross_source_dedup(
     if gazetteer is None:
         gazetteer = Gazetteer()
 
-    listings = [listing.with_annotations(place=locate(listing, gazetteer)) for listing in listings]
     name_sets = [set(candidate_names(listing.parsed_place.names)) for listing in listings]
     tier_maps = [
         _listing_name_tiers(listing, names, gazetteer)
