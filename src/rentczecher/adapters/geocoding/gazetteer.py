@@ -129,16 +129,26 @@ class Gazetteer:
                  or self._named_district(rows))
         return self._to_place(match) if match else None
 
-    def name_tiers(self, name: str) -> frozenset[str]:
+    def name_tiers(self, name: str, muni: str | None = None) -> frozenset[str]:
         """Tiers at which any place carries this name, ambiguity ignored.
 
         'Veletržní' is a street in Praha and in Brno - which one is unknown,
         but that it names a street is knowledge in itself. Callers weighing
-        shared names need exactly that and nothing more."""
-        stmt = "SELECT DISTINCT tier FROM places WHERE name_norm = ?"
+        shared names need exactly that and nothing more.
+
+        A municipality narrows the question to places inside it: nationally
+        'Bubeneč' is both a part of Praha and a street (Lenešice named one
+        after the neighborhood), but scoped to Praha the street reading
+        disappears."""
+        if muni is None:
+            stmt = "SELECT DISTINCT tier FROM places WHERE name_norm = ?"
+            scope: tuple[str, ...] = ()
+        else:
+            stmt = "SELECT DISTINCT tier FROM places WHERE name_norm = ? AND muni_norm = ?"
+            scope = (normalize_name(muni),)
         tiers: set[str] = set()
         for candidate in candidate_names([name]):
-            for row in self._conn.execute(stmt, (candidate,)):
+            for row in self._conn.execute(stmt, (candidate, *scope)):
                 tiers.add(row["tier"])
         return frozenset(tiers)
 
