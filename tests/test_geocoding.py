@@ -175,6 +175,16 @@ class TestNameTiers:
     def test_unknown_name_reports_nothing(self, gazetteer):
         assert gazetteer.name_tiers("!!!") == frozenset()
 
+    def test_municipality_scope_drops_other_municipalities_readings(self, gazetteer):
+        assert "street" in gazetteer.name_tiers("Bubeneč")
+        assert gazetteer.name_tiers("Bubeneč", muni="Praha") == frozenset({"municipality_part"})
+
+    def test_municipality_scope_keeps_the_local_reading(self, gazetteer):
+        assert gazetteer.name_tiers("Bubeneč", muni="Lenešice") == frozenset({"street"})
+
+    def test_municipality_scope_with_no_local_bearer_reports_nothing(self, gazetteer):
+        assert gazetteer.name_tiers("U studánky", muni="Lenešice") == frozenset()
+
 
 class TestReverse:
     def test_point_reverse_geocodes_to_its_part(self, gazetteer):
