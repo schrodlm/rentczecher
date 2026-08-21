@@ -17,6 +17,7 @@ from pathlib import Path
 from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.cli import main as main_module
+from rentczecher.domain.location import ParsedPlace
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -49,6 +50,14 @@ PROFILE = {
 }
 
 
+def _build_fixture_listing(record):
+    record = dict(record)
+    place = record.get("parsed_place")
+    if place is not None:
+        record["parsed_place"] = ParsedPlace(names=tuple(place["names"]), district=place.get("district"))
+    return Listing.build(**record)
+
+
 def _fake_scrapers(listing_data):
     scrapers = {}
     for source, records in listing_data.items():
@@ -59,7 +68,7 @@ def _fake_scrapers(listing_data):
                 pass
 
             def scrape(self):
-                return [Listing.build(**r) for r in self._records]
+                return [_build_fixture_listing(r) for r in self._records]
 
         scrapers[source] = FakeScraper
     return scrapers
