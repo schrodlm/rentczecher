@@ -14,6 +14,7 @@ import pytest
 
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.properties import SqlitePropertyRepository
+from rentczecher.domain.geo import geocell
 from rentczecher.domain.property import PropertyIdentity
 
 BASE = datetime(2026, 8, 13, 6, 0, 0, tzinfo=timezone.utc)
@@ -61,6 +62,22 @@ class TestCreateAndGet:
         ts = repo.get("prop-1").created_at
         assert ts.endswith("+00:00")
         assert datetime.fromisoformat(ts).tzinfo is not None
+
+
+class TestGeocell:
+    def test_created_property_with_coords_gets_its_cell(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(lat=50.1, lon=14.4))
+        cell_lat, cell_lon = conn.execute(
+            "SELECT cell_lat, cell_lon FROM properties WHERE id = 'prop-1'").fetchone()
+        assert (cell_lat, cell_lon) == geocell(50.1, 14.4)
+
+    def test_created_property_without_coords_gets_null_cell(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(lat=None, lon=None))
+        cell_lat, cell_lon = conn.execute(
+            "SELECT cell_lat, cell_lon FROM properties WHERE id = 'prop-1'").fetchone()
+        assert (cell_lat, cell_lon) == (None, None)
 
 
 class TestAttachListing:

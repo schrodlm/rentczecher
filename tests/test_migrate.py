@@ -34,12 +34,18 @@ class TestConnectionSetup:
 class TestMigrate:
     """apply_pending brings a fresh DB to the shipped schema, once, idempotently."""
 
-    def test_fresh_db_gets_all_tables_at_version_1(self, tmp_path):
+    def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert migrate.apply_pending(conn) == [1, 2]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
+
+    def test_fresh_db_reaches_version_2_with_geocell_columns(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        columns = {r[1] for r in conn.execute("PRAGMA table_info(properties)")}
+        assert {"cell_lat", "cell_lon"} <= columns
 
     def test_second_run_is_a_noop(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")

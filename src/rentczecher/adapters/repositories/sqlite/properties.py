@@ -5,6 +5,7 @@ from datetime import datetime
 
 from rentczecher.adapters.repositories.repositories import PropertyRepository
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
+from rentczecher.domain.geo import geocell
 from rentczecher.domain.property import PropertyIdentity
 
 
@@ -38,16 +39,22 @@ class SqlitePropertyRepository(PropertyRepository):
         return self._to_identity(row) if row else None
 
     def create(self, identity: PropertyIdentity) -> None:
+        cell_lat, cell_lon = (
+            geocell(identity.lat, identity.lon)
+            if identity.lat is not None and identity.lon is not None
+            else (None, None)
+        )
         stmt = """
             INSERT INTO properties (
                 id, created_at, merged_into, title, location,
-                size_m2, disposition, lat, lon, land_m2
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                size_m2, disposition, lat, lon, land_m2, cell_lat, cell_lon
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
             identity.id, identity.created_at, identity.merged_into,
             identity.title, identity.location, identity.size_m2,
             identity.disposition, identity.lat, identity.lon, identity.land_m2,
+            cell_lat, cell_lon,
         ))
         self._conn.commit()
 
