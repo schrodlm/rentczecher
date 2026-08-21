@@ -339,3 +339,77 @@ def cross_source_dedup(
     }
 
     return [replacements.get(i, l) for i, l in enumerate(listings) if i not in remove_to_keeper]
+
+
+def _location_evidence(listing: Listing) -> tuple[float, float, str] | None:
+    """The listing's own coordinates and their tier - its own GPS when
+    given, else its resolved place's centroid and tier - or None when
+    neither source has anything to offer."""
+    if listing.lat is not None and listing.lon is not None:
+        return listing.lat, listing.lon, "gps"
+    if listing.place is not None:
+        return listing.place.lat, listing.place.lon, listing.place.tier
+    return None
+
+
+def _more_specific_tier(kept_tier: str | None, absorbed_tier: str | None) -> bool:
+    """Whether the absorbed listing's tier outranks the kept listing's -
+    an untiered side never outranks a tiered one."""
+    if absorbed_tier is None or absorbed_tier not in _TIERS_MOST_SPECIFIC_FIRST:
+        return False
+    if kept_tier is None or kept_tier not in _TIERS_MOST_SPECIFIC_FIRST:
+        return True
+    return _TIERS_MOST_SPECIFIC_FIRST.index(absorbed_tier) < _TIERS_MOST_SPECIFIC_FIRST.index(kept_tier)
+
+
+def _record_difference(differences: dict, field: str, canonical: object, listing_value: object) -> None:
+    if listing_value is not None and listing_value != canonical:
+        differences[field] = {"canonical": canonical, "listing": listing_value}
+
+
+def _promote_gap_fill(kept: Listing, absorbed: Listing, field: str) -> object:
+    kept_value = getattr(kept, field)
+    return kept_value if kept_value is not None else getattr(absorbed, field)
+
+
+def promote_fields(kept: Listing, absorbed: Listing) -> tuple[dict, dict]:
+    """Canonical field values for a kept/absorbed pair, and every genuine
+    disagreement between them.
+
+    Kept's value wins wherever present; absorbed only fills a gap kept
+    left (None or missing). Location and its coordinates promote together,
+    by whichever side's place evidence sits at the more specific tier
+    (locate()'s own tier ordering), not by source. Nothing here writes to
+    a property row yet - the property-row writer arrives later.
+    """
+    canonical: dict = {}
+    differences: dict = {}
+
+    canonical["title"] = kept.title if kept.title else absorbed.title
+    _record_difference(differences, "title", canonical["title"], absorbed.title)
+
+    kept_evidence = _location_evidence(kept)
+    absorbed_evidence = _location_evidence(absorbed)
+    kept_tier = kept_evidence[2] if kept_evidence else None
+    absorbed_tier = absorbed_evidence[2] if absorbed_evidence else None
+    if _more_specific_tier(kept_tier, absorbed_tier):
+        assert absorbed_evidence is not None
+        canonical["location"] = absorbed.location
+        canonical["lat"] = absorbed_evidence[0]
+        canonical["lon"] = absorbed_evidence[1]
+    else:
+        canonical["location"] = kept.location
+        canonical["lat"] = kept_evidence[0] if kept_evidence else None
+        canonical["lon"] = kept_evidence[1] if kept_evidence else None
+    _record_difference(differences, "location", canonical["location"], absorbed.location)
+
+    canonical_disposition = normalize_disposition(kept.disposition) or normalize_disposition(absorbed.disposition)
+    canonical["disposition"] = canonical_disposition
+    absorbed_disposition = normalize_disposition(absorbed.disposition)
+    _record_difference(differences, "disposition", canonical_disposition, absorbed_disposition)
+
+    for field in ("size_m2", "land_m2"):
+        canonical[field] = _promote_gap_fill(kept, absorbed, field)
+        _record_difference(differences, field, canonical[field], getattr(absorbed, field))
+
+    return canonical, differences
