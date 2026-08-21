@@ -289,7 +289,10 @@ def cross_source_dedup(
             score = score_match(
                 listings[i], listings[j], shared_tier, streets_disagree
             )
-            if score.band is MatchBand.NO_MATCH:
+            # Only confident matches merge. An uncertain pair stays separate:
+            # a wrong merge hides a real listing, a missed merge only repeats
+            # one - the band survives for the audit trail.
+            if score.band is not MatchBand.MATCH:
                 continue
 
             # Determine which to keep (more data = better)

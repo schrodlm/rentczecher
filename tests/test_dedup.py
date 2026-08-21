@@ -9,7 +9,7 @@ from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
 from rentczecher.domain.location import ParsedPlace, ResolvedPlace
-from rentczecher.services.dedup import cross_source_dedup, promote_fields
+from rentczecher.services.dedup import MatchBand, cross_source_dedup, promote_fields, score_match
 from rentczecher.services.locate import locate_listings
 
 
@@ -25,6 +25,16 @@ def _make_listing(**kwargs) -> Listing:
 def _locate_and_dedup(listings, gazetteer=None):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
     return cross_source_dedup(locate_listings(listings, gazetteer), gazetteer)
+
+
+def _score_pair(a, b, gazetteer=None):
+    gazetteer = gazetteer if gazetteer is not None else Gazetteer()
+    located_a, located_b = locate_listings([a, b], gazetteer)
+    return score_match(located_a, located_b, None)
+
+
+def _factor(score, name):
+    return next(f for f in score.factors if f.name == name)
 
 
 class TestDedup:
@@ -168,33 +178,34 @@ class TestDedupThreeSources:
 class TestPriceGate:
     """Price gate: falsy price never matches; ratio uses max() of the two, strict `>` at 0.10."""
 
-    def test_zero_price_skips_the_price_factor_and_gps_alone_reaches_uncertain(self):
+    def test_zero_price_skips_the_price_factor_and_gps_alone_stays_uncertain(self):
         """A zero price on either side drops the price factor rather than
-        vetoing outright; near-identical GPS alone still clears the
-        uncertain band, so the pair merges with low confidence."""
+        vetoing outright; near-identical GPS alone reaches only the
+        uncertain band, and an uncertain pair stays separate."""
         l1 = _make_listing(id="a:1", source="a", price=0, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1001, lon=14.4001)
-        assert len(_locate_and_dedup([l1, l2])) == 1
+        score = _score_pair(l1, l2)
+        assert not _factor(score, "price").evidence
+        assert score.band is MatchBand.UNCERTAIN
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
-        l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.10, lon=14.40)
-        l4 = _make_listing(id="b:2", source="b", price=0, lat=50.1001, lon=14.4001)
-        assert len(_locate_and_dedup([l3, l4])) == 1
-
-    def test_diff_exactly_ten_percent_of_larger_matches(self):
-        # 18000 vs 20000: diff/max = 2000/20000 = 0.10 exactly, gate is strict `>` so this passes.
+    def test_diff_exactly_ten_percent_of_larger_is_price_neutral(self):
+        # 18000 vs 20000: diff/max = 2000/20000 = 0.10 exactly, the strict `>`
+        # boundary - the price factor contributes exactly zero, not a penalty.
         l1 = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=18000, lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        price = _factor(_score_pair(l1, l2), "price")
+        assert price.evidence
+        assert price.contribution == 0.0
 
-    def test_one_unit_over_price_near_bound_still_merges_on_near_identical_gps(self):
-        # 17999 vs 20000: diff/max = 2001/20000 = 0.10005, just over the near-price bound, so the
-        # price factor turns barely negative. Near-identical GPS alone still clears the uncertain
-        # band, so the two merge with low confidence rather than being vetoed.
+    def test_one_unit_over_price_near_bound_turns_the_factor_negative(self):
+        # 17999 vs 20000: diff/max = 2001/20000 = 0.10005, just over the near
+        # bound, so the price factor turns barely negative rather than vetoing.
         l1 = _make_listing(id="a:1", source="a", price=20000, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=17999, lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        price = _factor(_score_pair(l1, l2), "price")
+        assert price.evidence
+        assert -1.0 < price.contribution < 0.0
 
     def test_ratio_is_order_independent(self):
         # max() in the denominator means swapping which listing is li/lj doesn't change the outcome.
@@ -360,7 +371,10 @@ class TestGpsGate:
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
-    def test_1000m_graded_gps_merges_with_low_confidence_on_a_shared_street_name(self):
+    def test_1000m_graded_gps_with_a_shared_street_name_stays_uncertain(self):
+        # At 1000 m the graded GPS factor is already negative; a shared street
+        # name and equal price lift the pair only into the uncertain band, and
+        # an uncertain pair stays separate.
         dlat = 0.008988719451156868
         dist = haversine_m(self.BASE_LAT, self.BASE_LON, self.BASE_LAT + dlat, self.BASE_LON)
         assert dist == 1000
@@ -371,7 +385,7 @@ class TestGpsGate:
         l2 = _make_listing(id="b:1", source="b", price=20000,
                            lat=self.BASE_LAT + dlat, lon=self.BASE_LON, parsed_place=shared_place)
         result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        assert len(result) == 2
 
 
 class TestSharedNameFactorWithNoGps:
@@ -618,19 +632,19 @@ class TestStreetsDisagreeVetoesASharedPart:
     read as a match: different streets are evidence of different properties, and
     a coarser shared name cannot mask that."""
 
-    def test_adjacent_streets_with_everything_else_identical_merge_uncertain(self):
-        """Near-identical GPS plus agreeing price, size, and disposition
-        outweigh a street-name disagreement - two listings meters apart and
-        identical everywhere else are far likelier one property with a
-        divergent street label than two coincidentally identical neighbors.
-        The pair merges in the low-confidence band."""
+    def test_adjacent_streets_with_everything_else_identical_stay_separate(self):
+        """Near-identical GPS plus agreeing price, size, and disposition lift
+        a street-name disagreement only into the uncertain band - possibly one
+        property with a divergent street label, but labeled real pairs showed
+        this shape is usually two units in one building. Uncertain pairs stay
+        separate: a wrong merge hides a listing, a missed one only repeats it."""
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
                            size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
                            parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
                            size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
                            parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
-        assert len(_locate_and_dedup([l1, l2])) == 1
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
     def test_shared_municipality_part_does_not_paper_over_disagreeing_streets(self, gazetteer):
         lat_a, lon_a = 50.1035, 14.4405
