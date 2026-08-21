@@ -223,12 +223,15 @@ line that changes is `generated_at`.
 
 ```bash
 uv sync && uv run prek install   # deps + pre-commit hooks
-uv run pytest                    # offline test suite (368 tests, fast, no network)
+uv run pytest                    # offline test suite (fast, no network)
 uv run pytest -m live            # live portal tests, hits the real sites, run deliberately
 uv run prek run --all-files      # ruff, mypy, offline pytest, file hygiene (the commit gate)
 ```
 
 Commits are gated by the pre-commit hooks, and the offline suite must be green.
+The dedup matcher's weights and thresholds are calibrated against owner-labeled
+listing pairs: `scripts/matcher_eval.py` replays the matcher over every reviewed
+pair - run it before and after any tuning.
 [ARCHITECTURE.md](ARCHITECTURE.md) maps the code, the module layout, and the
 storage rewrite in progress. `CLAUDE.md` records the coding stances this repo
 holds to.
