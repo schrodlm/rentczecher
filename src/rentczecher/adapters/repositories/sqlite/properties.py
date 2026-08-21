@@ -76,3 +76,15 @@ class SqlitePropertyRepository(PropertyRepository):
             self._now().isoformat(),
         ))
         self._conn.commit()
+
+    def find_candidates(self, cell_lat: int, cell_lon: int) -> list[PropertyIdentity]:
+        stmt = """
+            SELECT id, created_at, merged_into, title, location,
+                   size_m2, disposition, lat, lon, land_m2
+            FROM properties
+            WHERE merged_into IS NULL
+              AND cell_lat BETWEEN ? - 1 AND ? + 1
+              AND cell_lon BETWEEN ? - 1 AND ? + 1
+        """
+        rows = self._conn.execute(stmt, (cell_lat, cell_lat, cell_lon, cell_lon)).fetchall()
+        return [self._to_identity(row) for row in rows]
