@@ -86,6 +86,30 @@ class MatchScore:
     band: MatchBand
 
 
+@dataclass(frozen=True, slots=True)
+class MergeDecision:
+    """One merged pair, as scored - the original two listing ids, even when
+    a later re-parenting moves what they were absorbed into."""
+
+    keeper_id: str
+    absorbed_id: str
+    score: MatchScore
+
+
+@dataclass(frozen=True, slots=True)
+class UncertainPair:
+    listing_id_a: str
+    listing_id_b: str
+    score: MatchScore
+
+
+@dataclass(frozen=True, slots=True)
+class DedupOutcome:
+    survivors: list[Listing]
+    merges: tuple[MergeDecision, ...]
+    uncertain: tuple[UncertainPair, ...]
+
+
 def _looser_tier(tier_a: str, tier_b: str) -> str | None:
     """The less specific of two gazetteer tiers, or None when either falls
     outside the scored tiers (the gazetteer's district fallback)."""
@@ -252,7 +276,7 @@ def _streets_disagree(street_names_a: set[str], street_names_b: set[str]) -> boo
 
 def cross_source_dedup(
     listings: list[Listing], gazetteer: Gazetteer | None = None
-) -> list[Listing]:
+) -> DedupOutcome:
     """Detect same property listed on multiple sites.
 
     Listings must already carry their resolved place.
@@ -262,7 +286,7 @@ def cross_source_dedup(
     and annotates it with the other source.
     """
     if len(listings) < 2:
-        return listings
+        return DedupOutcome(survivors=listings, merges=(), uncertain=())
     if gazetteer is None:
         gazetteer = Gazetteer()
 
@@ -276,6 +300,8 @@ def cross_source_dedup(
     # For each listing, track which other listing it's a duplicate of
     # Key: index to remove -> Value: index of the keeper
     remove_to_keeper: dict[int, int] = {}
+    merges: list[MergeDecision] = []
+    uncertain: list[UncertainPair] = []
 
     for i in range(len(listings)):
         if i in remove_to_keeper:
@@ -291,6 +317,8 @@ def cross_source_dedup(
             score = score_match(
                 listings[i], listings[j], shared_tier, streets_disagree
             )
+            if score.band is MatchBand.UNCERTAIN:
+                uncertain.append(UncertainPair(listings[i].id, listings[j].id, score))
             # Only confident matches merge. An uncertain pair stays separate:
             # a wrong merge hides a real listing, a missed merge only repeats
             # one - the band survives for the audit trail.
@@ -320,6 +348,7 @@ def cross_source_dedup(
                 keeper_idx, remove_idx = j, i
 
             remove_to_keeper[remove_idx] = keeper_idx
+            merges.append(MergeDecision(listings[keeper_idx].id, listings[remove_idx].id, score))
 
     # A removed listing can itself have already absorbed others (it was a
     # keeper before a third listing displaced it)
@@ -343,7 +372,8 @@ def cross_source_dedup(
         for keeper_idx, sources in absorbed_sources.items()
     }
 
-    return [replacements.get(i, l) for i, l in enumerate(listings) if i not in remove_to_keeper]
+    survivors = [replacements.get(i, l) for i, l in enumerate(listings) if i not in remove_to_keeper]
+    return DedupOutcome(survivors=survivors, merges=tuple(merges), uncertain=tuple(uncertain))
 
 
 def _location_evidence(listing: Listing) -> tuple[float, float, str] | None:

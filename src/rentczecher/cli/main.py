@@ -175,7 +175,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     # Cross-source dedup
     pre_dedup = len(all_listings)
-    all_listings = cross_source_dedup(all_listings, gazetteer)
+    all_listings = cross_source_dedup(all_listings, gazetteer).survivors
     if pre_dedup > len(all_listings):
         log.info("Cross-source dedup: %d -> %d listings", pre_dedup, len(all_listings))
 
