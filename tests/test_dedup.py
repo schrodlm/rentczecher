@@ -3,13 +3,23 @@
 Run: python3 -m pytest tests/test_dedup.py -v
 """
 
+import json
+
 import pytest
 
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
 from rentczecher.domain.location import ParsedPlace, ResolvedPlace
-from rentczecher.services.dedup import MatchBand, cross_source_dedup, promote_fields, score_match
+from rentczecher.services.dedup import (
+    FactorContribution,
+    MatchBand,
+    MatchScore,
+    cross_source_dedup,
+    match_score_to_json,
+    promote_fields,
+    score_match,
+)
 from rentczecher.services.locate import locate_listings
 
 
@@ -824,3 +834,49 @@ class TestDedupOutcomeDecisions:
         assert outcome.merges == ()
         assert outcome.uncertain == ()
         assert len(outcome.survivors) == 2
+
+
+class TestMatchScoreToJson:
+    """match_score_to_json is round-trippable and pins the exact key shape
+    the dedup_records audit trail stores."""
+
+    def _example_score(self) -> MatchScore:
+        return MatchScore(
+            total=42.5,
+            factors=(
+                FactorContribution("gps", 35.0, True),
+                FactorContribution("shared_name", 0.0, False),
+                FactorContribution("disposition", -35.0, True),
+                FactorContribution("price", 15.0, True),
+                FactorContribution("size", 10.0, True),
+            ),
+            band=MatchBand.UNCERTAIN,
+        )
+
+    def test_exact_json_shape(self):
+        payload = json.loads(match_score_to_json(self._example_score()))
+
+        assert payload == {
+            "total": 42.5,
+            "band": "uncertain",
+            "factors": [
+                {"name": "gps", "contribution": 35.0, "evidence": True},
+                {"name": "shared_name", "contribution": 0.0, "evidence": False},
+                {"name": "disposition", "contribution": -35.0, "evidence": True},
+                {"name": "price", "contribution": 15.0, "evidence": True},
+                {"name": "size", "contribution": 10.0, "evidence": True},
+            ],
+        }
+
+    def test_round_trips_through_json_loads(self):
+        score = self._example_score()
+
+        payload = json.loads(match_score_to_json(score))
+
+        assert payload["total"] == score.total
+        assert payload["band"] == score.band.value
+        assert len(payload["factors"]) == len(score.factors)
+        for serialized, factor in zip(payload["factors"], score.factors, strict=True):
+            assert serialized["name"] == factor.name
+            assert serialized["contribution"] == factor.contribution
+            assert serialized["evidence"] == factor.evidence
