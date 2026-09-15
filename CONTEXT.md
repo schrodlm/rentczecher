@@ -37,7 +37,8 @@ person knows it exists.
 _Avoid_: seen, found
 
 **Viewed**:
-The user has looked at the listing in the GUI.
+The listing has been on the user's screen in the GUI - scrolling past it
+counts; it does not need to be opened.
 _Avoid_: seen, read, opened
 
 **New**:
