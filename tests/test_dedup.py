@@ -22,9 +22,13 @@ def _make_listing(**kwargs) -> Listing:
     return Listing.build(**defaults)
 
 
-def _locate_and_dedup(listings, gazetteer=None):
+def _locate_and_dedup_outcome(listings, gazetteer=None):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
     return cross_source_dedup(locate_listings(listings, gazetteer), gazetteer)
+
+
+def _locate_and_dedup(listings, gazetteer=None):
+    return _locate_and_dedup_outcome(listings, gazetteer).survivors
 
 
 def _score_pair(a, b, gazetteer=None):
@@ -771,3 +775,52 @@ class TestPromoteFields:
         _, differences = promote_fields(kept, absorbed)
 
         assert differences == {}
+
+
+class TestDedupOutcomeDecisions:
+    """cross_source_dedup reports which pairs merged and which scored
+    uncertain, alongside the survivors list."""
+
+    def test_merging_pair_appears_in_merges_with_a_match_band_score(self):
+        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
+                           size_m2=50, disposition="2+kk", lat=50.1, lon=14.4)
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
+                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
+
+        outcome = _locate_and_dedup_outcome([l1, l2])
+
+        assert len(outcome.merges) == 1
+        decision = outcome.merges[0]
+        assert {decision.keeper_id, decision.absorbed_id} == {"sreality:1", "bezrealitky:1"}
+        assert decision.score.band is MatchBand.MATCH
+        assert outcome.uncertain == ()
+
+    def test_uncertain_pair_appears_in_uncertain_and_both_survive(self):
+        l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
+                           size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
+                           parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
+                           size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
+                           parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
+
+        outcome = _locate_and_dedup_outcome([l1, l2])
+
+        assert len(outcome.uncertain) == 1
+        pair = outcome.uncertain[0]
+        assert {pair.listing_id_a, pair.listing_id_b} == {"sreality:1", "bezrealitky:1"}
+        assert pair.score.band is MatchBand.UNCERTAIN
+        assert outcome.merges == ()
+        survivor_ids = {listing.id for listing in outcome.survivors}
+        assert survivor_ids == {"sreality:1", "bezrealitky:1"}
+
+    def test_no_match_pair_appears_in_neither(self):
+        l1 = _make_listing(id="sreality:1", source="sreality", price=15000,
+                           lat=50.1, lon=14.4)
+        l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=25000,
+                           lat=50.1001, lon=14.4001)
+
+        outcome = _locate_and_dedup_outcome([l1, l2])
+
+        assert outcome.merges == ()
+        assert outcome.uncertain == ()
+        assert len(outcome.survivors) == 2
