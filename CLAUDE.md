@@ -38,3 +38,13 @@ Standard clean open-source development practices are the baseline everywhere; th
 - Scoring thresholds are tuned-by-feel production behavior. Never retune or restructure them without boundary tests pinning current behavior first.
 - The dedup matcher's weights and thresholds are calibrated against owner-labeled listing pairs. Move them only with `scripts/matcher_eval.py` evidence, never by feel.
 - User-facing strings (emails, logs meant for the owner) are Czech; identifiers and internal strings are English.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues, driven via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root (created lazily — neither exists yet). See `docs/agents/domain.md`.
