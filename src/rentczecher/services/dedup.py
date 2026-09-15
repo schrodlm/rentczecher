@@ -6,6 +6,7 @@ size). No factor can veto on its own - only the combined score, gated by
 an evidence floor, decides a match.
 """
 
+import json
 from dataclasses import dataclass
 from enum import Enum
 
@@ -84,6 +85,23 @@ class MatchScore:
     total: float
     factors: tuple[FactorContribution, ...]
     band: MatchBand
+
+
+def match_score_to_json(score: MatchScore) -> str:
+    """A MatchScore as a JSON string, for the audit trail's match-reason column."""
+    payload = {
+        "total": score.total,
+        "band": score.band.value,
+        "factors": [
+            {
+                "name": factor.name,
+                "contribution": factor.contribution,
+                "evidence": factor.evidence,
+            }
+            for factor in score.factors
+        ],
+    }
+    return json.dumps(payload)
 
 
 @dataclass(frozen=True, slots=True)
