@@ -31,6 +31,26 @@ A listing present in the profile's most recent scrape. A listing missing
 from one scrape stops being active but is not yet disappeared.
 _Avoid_: live, current
 
+**Observed**:
+A scrape returned the listing in a run. Says nothing about whether any
+person knows it exists.
+_Avoid_: seen, found
+
+**Viewed**:
+The user has looked at the listing in the GUI.
+_Avoid_: seen, read, opened
+
+**New**:
+Observed but not yet viewed. What the GUI's inbox counts and what the
+watchdog exists to surface.
+_Avoid_: unseen, unread, fresh
+
+**Notified**:
+A notification channel (email today, others later) delivered the listing.
+Channels are toggleable; notifying does not make a listing stop being new -
+only viewing does.
+_Avoid_: sent, emailed
+
 **Disappeared**:
 A listing missed by three consecutive scrapes. Three misses distinguish
 real delisting from portal flicker.
