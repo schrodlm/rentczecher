@@ -1,28 +1,25 @@
 # Architecture
 
 This is the map for working on the code. If you only want to run rentczecher,
-[README.md](README.md) is enough. Read this before touching the internals. There
-is a live pipeline and a half-built successor sitting side by side in the tree,
-and knowing which is which will save you a lot of confusion.
+[README.md](README.md) is enough. Read this before touching the internals.
 
 ## The one thing to understand first
 
-**Two storage-and-dedup worlds coexist in this repo.**
+**The pipeline runs on the SQLite canonical-property model.** A run reads its
+seen state and price history from the database, decides what is new, dropped,
+or disappeared, and persists the outcome through one object,
+`SqliteRunStore`, only after the notification succeeded. The schema is
+documented in [SCHEMA.md](SCHEMA.md): a **property** is the inferred
+real-world unit, a **listing** is one portal's posting of it (a global fact),
+and **listing_tracking** carries each profile's seen state for a listing.
 
-- The **live pipeline**, what cron actually runs, persists state in per-profile
-  `seen-*.json` files and dedups with a scored, strict-pairwise matcher backed
-  by an offline geocoder. This is the working product.
-- A **canonical-property model** (a real SQLite schema, repositories, cross-run
-  geocell candidacy, the dedup audit trail) is being built underneath it. It
-  exists and is unit-tested, but it is **inert**. Nothing in the running
-  pipeline calls it yet. It's reachable only from `rentczecher db migrate` and
-  from tests.
-
-The rewrite lands in small, always-green steps. Each piece ships before its
-consumer, tested in isolation, so the tool keeps working the whole time and there
-is never a big-bang cutover. When you read a module, the first question to ask is
-whether it's on the live path or ahead of its consumer. The map below tells you
-for every part.
+A few pieces still ship ahead of their consumer, tested but unwired: the
+geocell candidate query (for future cross-run property matching), the
+`notification_state` and `scrape_runs` tables, and the field-level promotion
+of canonical property values. The old JSON store module remains in the tree
+unused by the pipeline, with its removal scheduled. When you read a module,
+the first question to ask is whether it's on the live path or ahead of its
+consumer.
 
 ## Layout
 
@@ -73,9 +70,9 @@ cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
 compute_score(listing, profile)                         # services/score
    ▼
-price drops + new + disappeared                         # adapters/legacy_json_db
+price drops + new + disappeared                         # SqliteRunStore reads
    ▼
-send_email(...)   then   mark_seen(...)                 # notify-then-commit
+send_email(...)   then   persist_outcome(...)           # notify-then-commit
 ```
 
 Two orderings are load-bearing and must be preserved:
@@ -189,10 +186,7 @@ fallback), and an optional disappeared section.
 tram stop. Note it's a hardcoded Praha-7-area stop table (the module is named
 `metro` but holds tram data), so it's only meaningful for Prague profiles.
 
-## The inert successor
-
-None of this is on the live path yet. It's built ahead of its consumers, on
-purpose.
+## Storage
 
 ### SQLite canonical-property model
 
@@ -204,13 +198,14 @@ are documented in [SCHEMA.md](SCHEMA.md). Migration `0001_init.sql` is the
 authoritative DDL.
 
 `adapters/repositories/` holds the repository interfaces and their SQLite
-implementations (`SqliteListingRepository`, `SqlitePropertyRepository`), plus the
-connection setup and the migration runner. These follow the repo's
-static-readability stance to the letter: `row_factory = sqlite3.Row`, a
-`_to_<type>(row)` mapper naming every field, full column lists spelled out, no
-reflection. `rentczecher db migrate` applies the migrations. **Nothing writes to
-these tables in a normal run.** The live pipeline still persists through
-`adapters/legacy_json_db.py`, which knows nothing about the domain types.
+implementations (`SqliteListingRepository`, `SqlitePropertyRepository`,
+`SqliteProfileRepository`), plus `SqliteRunStore` (everything one profile run
+reads and persists, behind one object), the connection setup, and the
+migration runner. These follow the repo's static-readability stance to the
+letter: `row_factory = sqlite3.Row`, a `_to_<type>(row)` mapper naming every
+field, full column lists spelled out, no reflection. Migrations apply
+automatically at run startup; `rentczecher db migrate` applies them without
+scraping.
 
 ### Geocell blocking, dormant
 
@@ -222,14 +217,14 @@ cross-run property resolution wires in.
 
 ## Where the work is now
 
-The **dedup matcher rewrite** (1.7.6 in the project's own numbering) just
-landed: the hard-gate matcher became the scored multi-factor one described
-above. No factor ever compares a raw portal string. Every input passes a
-normalizer whose contract is canonical-or-None, and `None` means the factor
-abstains rather than vetoes. Location and disposition are normalized (via the
-gazetteer and a synonym table), price and size are numeric, and nothing else is
-load-bearing for v1. Geospatial blocking over the gazetteer is what will make
-cross-run, cross-profile property resolution tractable.
+The **storage flip** (1.8 in the project's own numbering) just landed: the
+pipeline persists through the SQLite canonical-property model described above,
+and the per-profile JSON files are no longer read or written. The matcher
+principles from 1.7.6 stand: no factor ever compares a raw portal string,
+every input passes a normalizer whose contract is canonical-or-None, and
+`None` means the factor abstains rather than vetoes. Geospatial blocking over
+the gazetteer is what will make cross-run, cross-profile property resolution
+tractable.
 
 One rule is permanent and predates this work: **strict pairwise matching, no
 transitive grouping.** Transitive grouping shipped once, merged unrelated
@@ -237,10 +232,10 @@ listings in production, and was reverted. It stays reverted. Any move back to
 union-find is gated on proving it matches or beats the current precision on a
 labelled sample first.
 
-Next in sequence: wire storage in (the JSON to SQLite cutover, with dry-run,
-backup, and a guard that refuses if a cron run may be mid-write), then extract
-the orchestration into a `services/pipeline.run_profile` that the CLI and,
-later, a GUI both call.
+Next in sequence: extract the orchestration into a
+`services/pipeline.run_profile` that the CLI and, later, the GUI's sidecar
+both call. The GUI itself follows, its decisions tracked on the project's
+wayfinder map.
 
 ### The bigger arc
 
