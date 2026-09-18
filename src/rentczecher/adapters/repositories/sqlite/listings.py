@@ -187,7 +187,7 @@ class SqliteListingRepository(ListingRepository):
         cutoff = (self._now() - timedelta(days=max_age_days)).isoformat()
         stmt = """
             DELETE FROM listing_tracking
-            WHERE profile_id = ? AND last_seen_at < ?
+            WHERE profile_id = ? AND last_seen_at < ? AND favourited_at IS NULL
         """
         cursor = self._conn.execute(stmt, (profile_id, cutoff))
         self._conn.commit()

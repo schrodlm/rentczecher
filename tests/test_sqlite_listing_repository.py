@@ -301,6 +301,18 @@ class TestPrune:
         assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
         assert len(repo.price_history("sreality:old")) == 1
 
+    def test_favourited_tracking_survives_pruning(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:kept"))
+        stale = (BASE - timedelta(days=91)).isoformat()
+        conn.execute(
+            "UPDATE listing_tracking SET last_seen_at = ?, favourited_at = ? "
+            "WHERE listing_id = 'sreality:kept'",
+            (stale, BASE.isoformat()))
+        conn.commit()
+        assert repo.prune(PROFILE) == 0
+        assert repo.seen_ids(PROFILE) == {"sreality:kept"}
+
     def test_scoped_to_the_profile(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
