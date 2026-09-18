@@ -58,6 +58,13 @@ class SqlitePropertyRepository(PropertyRepository):
         ))
         self._conn.commit()
 
+    def fold_into(self, loser_id: str, winner_id: str) -> None:
+        """Marks the loser as merged into the winner. A folded property is a
+        tombstone: it stays for its history but is never a merge target."""
+        stmt = "UPDATE properties SET merged_into = ? WHERE id = ?"
+        self._conn.execute(stmt, (winner_id, loser_id))
+        self._conn.commit()
+
     def attach_listing(self, property_id: str, listing_id: str) -> None:
         stmt = "UPDATE listings SET property_id = ? WHERE id = ?"
         self._conn.execute(stmt, (property_id, listing_id))
