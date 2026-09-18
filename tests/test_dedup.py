@@ -12,9 +12,11 @@ from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.geo import haversine_m
 from rentczecher.domain.location import ParsedPlace, ResolvedPlace
 from rentczecher.services.dedup import (
+    DedupOutcome,
     FactorContribution,
     MatchBand,
     MatchScore,
+    MergeDecision,
     cross_source_dedup,
     match_score_to_json,
     promote_fields,
@@ -880,3 +882,20 @@ class TestMatchScoreToJson:
             assert serialized["name"] == factor.name
             assert serialized["contribution"] == factor.contribution
             assert serialized["evidence"] == factor.evidence
+
+class TestFinalKeeperIds:
+    def test_a_reparenting_chain_resolves_to_the_surviving_listing(self):
+        """When B absorbs C and A later absorbs B, both C and B resolve to
+        A - the listing that actually survived the chain."""
+        score = MatchScore(total=60.0, factors=(), band=MatchBand.MATCH)
+        outcome = DedupOutcome(
+            survivors=[],
+            merges=(MergeDecision(keeper_id="b", absorbed_id="c", score=score),
+                    MergeDecision(keeper_id="a", absorbed_id="b", score=score)),
+            uncertain=())
+        assert outcome.final_keeper_ids() == {"c": "a", "b": "a"}
+
+    def test_no_merges_resolve_to_nothing(self):
+        outcome = DedupOutcome(survivors=[], merges=(), uncertain=())
+        assert outcome.final_keeper_ids() == {}
+
