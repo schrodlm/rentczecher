@@ -27,7 +27,8 @@ keys in `0001_init.sql` — the migration is authoritative if the two disagree.
 
 ```mermaid
 erDiagram
-    profiles   ||--o{ listings           : "searches produce"
+    profiles   ||--o{ listing_tracking   : "tracks"
+    listings   ||--o{ listing_tracking   : "seen by profiles as"
     profiles   ||--o{ scrape_runs         : "records a run of"
     profiles   ||--o{ notification_state  : "tracks emails for"
     properties ||--o{ listings            : "posted as"
@@ -46,7 +47,8 @@ erDiagram
 |---|---|
 | `profiles` | One row per configured search: `id`, `name`, `active`, `created_at`; the search *parameters* stay in `config.yaml`. |
 | `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. |
-| `listings` | One per-portal posting: `source:source_id`, which property/profile, url, seen/scraped timestamps, `miss_count`, `active`. No facts of its own. |
+| `listings` | One per-portal posting: `source:source_id`, which property, url, scraped timestamp. A fact of the posting, shared by every profile whose search sees it. No per-profile state. |
+| `listing_tracking` | Per-profile seen state for a listing: first/last seen, `miss_count`, `favourited_at`. One row per profile and listing. Pruning deletes only these rows, never the facts. |
 | `property_images` | Superset of image URLs across a property's listings. `local_path` is reserved (always null today) for an opt-in photo-archiving feature. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
 | `dedup_records` | Audit trail of every dedup match: why two were judged the same (`match_reason`) and how the listing's facts diverged from canonical (`differences`, JSON). |

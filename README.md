@@ -172,10 +172,9 @@ rentczecher db migrate               # create/upgrade the SQLite schema (see not
 
 Use `.venv/bin/rentczecher` if `.venv` isn't on your `PATH`.
 
-> **On `db migrate`:** the SQLite database it creates is part of a storage
-> rewrite that isn't wired into the running tool yet. Today every run reads and
-> writes per-profile `seen-*.json` files, and `db migrate` produces an empty
-> database that nothing populates. You don't need it to use rentczecher. See
+> **On `db migrate`:** every run applies pending schema migrations on startup,
+> so you rarely need this command. It exists to create or upgrade the database
+> without scraping (fresh installs, checking a new schema). See
 > [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Where things live
@@ -232,8 +231,7 @@ Commits are gated by the pre-commit hooks, and the offline suite must be green.
 The dedup matcher's weights and thresholds are calibrated against owner-labeled
 listing pairs: `scripts/matcher_eval.py` replays the matcher over every reviewed
 pair - run it before and after any tuning.
-[ARCHITECTURE.md](ARCHITECTURE.md) maps the code, the module layout, and the
-storage rewrite in progress. `CLAUDE.md` records the coding stances this repo
+[ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout. `CLAUDE.md` records the coding stances this repo
 holds to.
 
 ## Troubleshooting
