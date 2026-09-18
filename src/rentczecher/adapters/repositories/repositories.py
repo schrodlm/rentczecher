@@ -38,6 +38,10 @@ class PropertyRepository(ABC):
         ...
 
     @abstractmethod
+    def fold_into(self, loser_id: str, winner_id: str) -> None:
+        ...
+
+    @abstractmethod
     def attach_listing(self, property_id: str, listing_id: str) -> None:
         """Point a listing at its property (a bare FK write; matching policy
         is the caller's)."""
@@ -75,6 +79,14 @@ class ListingRepository(ABC):
 
     @abstractmethod
     def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
+        ...
+
+    @abstractmethod
+    def latest_prices(self, profile_id: str) -> dict[str, int]:
+        ...
+
+    @abstractmethod
+    def property_id_of(self, listing_id: str) -> str | None:
         ...
 
     @abstractmethod

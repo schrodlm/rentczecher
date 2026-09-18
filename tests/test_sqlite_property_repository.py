@@ -35,9 +35,13 @@ def _property(id="prop-1", **kw):
 
 def _seed_listing(conn, id="sreality:1", property_id="prop-1", profile_id="p"):
     conn.execute(
-        "INSERT INTO listings (id, property_id, profile_id, source, url, "
-        "first_seen_at, last_seen_at, scraped_at) VALUES (?, ?, ?, ?, 'u', ?, ?, ?)",
-        (id, property_id, profile_id, id.split(":")[0], CREATED, CREATED, CREATED))
+        "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+        "VALUES (?, ?, ?, 'u', ?)",
+        (id, property_id, id.split(":")[0], CREATED))
+    conn.execute(
+        "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, "
+        "last_seen_at, miss_count) VALUES (?, ?, ?, ?, 0)",
+        (profile_id, id, CREATED, CREATED))
     conn.commit()
 
 
@@ -179,3 +183,12 @@ class TestCascade:
         conn.execute("DELETE FROM properties WHERE id = 'prop-1'")
         conn.commit()
         assert conn.execute("SELECT count(*) FROM dedup_records").fetchone()[0] == 0
+
+class TestFoldInto:
+    def test_marks_the_loser_as_merged_into_the_winner(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(id="prop-winner"))
+        repo.create(_property(id="prop-loser"))
+        repo.fold_into("prop-loser", "prop-winner")
+        assert repo.get("prop-loser").merged_into == "prop-winner"
+        assert repo.get("prop-winner").merged_into is None

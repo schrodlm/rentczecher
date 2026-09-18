@@ -11,6 +11,7 @@ from rentczecher.adapters.repositories.sqlite import connection, migrate
 
 EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
+    "listing_tracking",
     "price_observations", "dedup_records", "notification_state", "scrape_runs",
 }
 
@@ -36,8 +37,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert migrate.apply_pending(conn) == [1, 2, 3]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -58,16 +59,18 @@ class TestMigrate:
         conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
         with pytest.raises(sqlite3.IntegrityError):
-            conn.execute("INSERT INTO listings VALUES "
-                         "('idnes:1', 'x', 'p', 'idnes', 1, 'u', 't', 't', 't', 0)")
+            conn.execute(
+                "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                "VALUES ('idnes:1', 'x', 'idnes', 'u', 't')")
 
     def test_invalid_differences_json_is_rejected(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
         conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
-        conn.execute("INSERT INTO listings VALUES "
-                     "('sreality:1', 'x', 'p', 'sreality', 1, 'u', 't', 't', 't', 0)")
+        conn.execute(
+            "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+            "VALUES ('sreality:1', 'x', 'sreality', 'u', 't')")
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute("INSERT INTO dedup_records (property_id, listing_id, match_reason, differences, decided_at) "
                          "VALUES ('x', 'sreality:1', 'r', 'not json', 't')")
@@ -77,8 +80,9 @@ class TestMigrate:
         migrate.apply_pending(conn)
         conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
-        conn.execute("INSERT INTO listings VALUES "
-                     "('sreality:1', 'x', 'p', 'sreality', 1, 'u', 't', 't', 't', 0)")
+        conn.execute(
+            "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+            "VALUES ('sreality:1', 'x', 'sreality', 'u', 't')")
         conn.execute("INSERT INTO price_observations (listing_id, price, observed_at) "
                      "VALUES ('sreality:1', 100, '2026-08-02T00:00:00+00:00')")
         conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
