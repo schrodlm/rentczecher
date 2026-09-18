@@ -127,6 +127,18 @@ class DedupOutcome:
     merges: tuple[MergeDecision, ...]
     uncertain: tuple[UncertainPair, ...]
 
+    def final_keeper_ids(self) -> dict[str, str]:
+        """Absorbed listing id to its chain-final keeper id. When a keeper
+        was itself later absorbed, the chain resolves to the listing that
+        actually survived."""
+        keeper_of = {merge.absorbed_id: merge.keeper_id for merge in self.merges}
+        resolved: dict[str, str] = {}
+        for absorbed_id, keeper_id in keeper_of.items():
+            while keeper_id in keeper_of:
+                keeper_id = keeper_of[keeper_id]
+            resolved[absorbed_id] = keeper_id
+        return resolved
+
 
 def _looser_tier(tier_a: str, tier_b: str) -> str | None:
     """The less specific of two gazetteer tiers, or None when either falls
