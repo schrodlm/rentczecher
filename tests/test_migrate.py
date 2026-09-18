@@ -37,8 +37,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 

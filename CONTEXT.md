@@ -67,6 +67,11 @@ A cross-source pair that is plausibly one property but unproven. Recorded,
 never merged.
 _Avoid_: fuzzy match, low-confidence match
 
+**Favourite**:
+A listing the user marked to keep. A favourite and its price history are
+never pruned.
+_Avoid_: starred, saved, bookmarked
+
 **Cutover**:
 The one-time import of JSON seen-state into SQLite, after which the
 pipeline reads and writes only SQLite.
