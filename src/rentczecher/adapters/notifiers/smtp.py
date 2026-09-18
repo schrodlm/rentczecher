@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from html import escape
 
+from rentczecher.adapters.repositories.repositories import DisappearedListing
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.search import SearchSpec
 
@@ -158,14 +159,14 @@ def _render_card(listing: Listing, is_rent: bool) -> str:
     </div>"""
 
 
-def _render_disappeared_section(disappeared: list[dict], is_rent: bool) -> str:
+def _render_disappeared_section(disappeared: list[DisappearedListing], is_rent: bool) -> str:
     if not disappeared:
         return ""
     rows = []
     for d in disappeared[:10]:
-        title = escape(d.get("title", "?"))
-        price = d.get("price", 0)
-        url = _safe_url(d.get("url", ""))
+        title = escape(d.title or "?")
+        price = d.price or 0
+        url = _safe_url(d.url)
         price_str = _format_price(price, is_rent) if price else "?"
         rows.append(
             f'<div style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;">'
@@ -185,7 +186,7 @@ def _render_disappeared_section(disappeared: list[dict], is_rent: bool) -> str:
 
 def send_email(listings: list[Listing], email_cfg: dict, spec: SearchSpec,
                profile: dict | None = None,
-               disappeared: list[dict] | None = None) -> None:
+               disappeared: list[DisappearedListing] | None = None) -> None:
     if not listings:
         return
 

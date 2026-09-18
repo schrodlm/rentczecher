@@ -9,10 +9,11 @@ from pathlib import Path
 
 import httpx
 
-from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher.adapters.repositories.sqlite import connection, migrate
+from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
@@ -62,7 +63,6 @@ def validate_config(path: Path | None = None) -> int:
 
 
 def migrate_db() -> int:
-    from rentczecher.adapters.repositories.sqlite import connection, migrate
     db_file = paths.db_path()
     db_file.parent.mkdir(parents=True, exist_ok=True)
     conn = connection.connect(db_file)
@@ -118,7 +118,8 @@ def _apply_filters(listings: list, spec: SearchSpec) -> list:
 
 
 def run_profile(profile_id: str, profile: dict, email_cfg: dict,
-                client: httpx.Client, dry_run: bool = False,
+                client: httpx.Client, store: SqliteRunStore,
+                dry_run: bool = False,
                 gazetteer: Gazetteer | None = None):
     """Run a single profile: scrape, filter, score, notify."""
     profile_name = profile.get("name", profile_id)
@@ -175,7 +176,9 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     # Cross-source dedup
     pre_dedup = len(all_listings)
-    all_listings = cross_source_dedup(all_listings, gazetteer).survivors
+    located_by_id = {l.id: l for l in all_listings}
+    outcome = cross_source_dedup(all_listings, gazetteer)
+    all_listings = outcome.survivors
     if pre_dedup > len(all_listings):
         log.info("Cross-source dedup: %d -> %d listings", pre_dedup, len(all_listings))
 
@@ -185,15 +188,17 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     # Check for price drops; all_listings is the single source of truth, so
     # the annotated replacements land there and everything below derives
     # from it.
-    price_drops = db.update_prices(profile_id, all_listings)
+    latest_prices = store.latest_prices(profile_id)
     dropped = {}
-    for listing, old_price in price_drops:
-        dropped[listing.id] = listing.with_annotations(price_drop_from=old_price)
-        log.info("  PRICE DROP: %s | %d -> %d Kc", listing.title[:50], old_price, listing.price)
+    for listing in all_listings:
+        old_price = latest_prices.get(listing.id)
+        if old_price and listing.price and old_price > listing.price:
+            dropped[listing.id] = listing.with_annotations(price_drop_from=old_price)
+            log.info("  PRICE DROP: %s | %d -> %d Kc", listing.title[:50], old_price, listing.price)
     all_listings = [dropped.get(l.id, l) for l in all_listings]
 
     # Find new listings BEFORE updating DB
-    seen = db.get_seen(profile_id)
+    seen = store.seen_ids(profile_id)
     new_listings = [l for l in all_listings if l.id not in seen]
     new_ids = {n.id for n in new_listings}
     price_drop_listings = [
@@ -204,20 +209,22 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     # Detect disappeared (requires 3+ consecutive misses to filter API noise).
     # Dry-run skips the write, so it previews disappearances from the last
     # real run's counters.
-    current_ids = {l.id for l in all_listings}
+    # An absorbed listing was present in this scrape, so it counts toward
+    # the miss reset even though it never survives dedup.
+    current_ids = {l.id for l in all_listings} | {m.absorbed_id for m in outcome.merges}
     if not dry_run:
-        db.update_miss_counts(profile_id, current_ids)
-    disappeared = db.get_disappeared(profile_id, current_ids)
+        store.increment_miss_counts(profile_id, current_ids)
+    disappeared = store.get_disappeared(profile_id, current_ids)
     if disappeared:
         log.info("Disappeared: %d listings confirmed gone (3+ misses)", len(disappeared))
 
     notable = new_listings + price_drop_listings
     log.info("Total: %d listings, %d new, %d price drops, %d disappeared",
-             len(all_listings), len(new_listings), len(price_drops), len(disappeared))
+             len(all_listings), len(new_listings), len(dropped), len(disappeared))
 
     if not notable:
         if not dry_run:
-            db.mark_seen(profile_id, all_listings)
+            store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
         if disappeared:
             log.info("Only disappeared listings (%d) - no email sent", len(disappeared))
         else:
@@ -232,7 +239,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
         for l in price_drop_listings:
             log.info("  [DROP] %d -> %d Kc | %s", l.price_drop_from, l.price, l.title[:50])
         for d in disappeared[:5]:
-            log.info("  [GONE] %s | %d Kc", d.get("title", "?")[:50], d.get("price", 0))
+            log.info("  [GONE] %s | %d Kc", (d.title or "?")[:50], d.price or 0)
         log.info("DRY RUN complete for %s", profile_id)
         return
 
@@ -241,7 +248,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     if not recipients:
         log.error("Profile %s has no 'to' recipients configured - skipping email", profile_id)
-        db.mark_seen(profile_id, all_listings)
+        store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
         return
 
     # Send email FIRST
@@ -254,32 +261,39 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
         log.exception("Failed to send email for %s - will retry next run", profile_id)
         return
 
-    # Mark as seen AFTER successful email
-    db.mark_seen(profile_id, all_listings)
-    db.prune(profile_id, max_age_days=90)
+    # Persist AFTER successful email
+    store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
+    store.prune(profile_id)
 
 
 def _warn_if_repo_data_orphaned():
     repo_data = paths.repo_root() / "data"
-    if str(repo_data) == db.DATA_DIR or os.environ.get("RENTCZECHER_DATA_DIR"):
+    if repo_data == paths.data_dir() or os.environ.get("RENTCZECHER_DATA_DIR"):
         return
     if any(repo_data.glob("seen-*.json")):
         log.warning(
-            "Repo-local state at %s is not in use; runs now store data in %s. "
-            "Move the seen-*.json files there if that history should carry over.",
-            repo_data, db.DATA_DIR,
+            "Repo-local seen-*.json files at %s are not in use. "
+            "Runs now store data in %s.",
+            repo_data, paths.data_dir(),
         )
 
 
 def run(dry_run: bool = False, profile_filter: str | None = None):
-    log.info("Using config: %s, data: %s", CONFIG_PATH, db.DATA_DIR)
+    log.info("Using config: %s, data: %s", CONFIG_PATH, paths.data_dir())
     _warn_if_repo_data_orphaned()
     config = _load_config_or_exit()
 
+    db_file = paths.db_path()
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    conn = connection.connect(db_file)
     if not _acquire_pidlock():
+        conn.close()
         log.warning("Another instance is already running, exiting")
         return
     try:
+        migrate.apply_pending(conn)
+        store = SqliteRunStore(conn)
+
         email_cfg = config.get("email", {})
         profiles = config.get("profiles", {})
 
@@ -300,10 +314,12 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     log.info("DRY RUN - no emails, no DB updates")
 
                 try:
-                    run_profile(profile_id, profile, email_cfg, client, dry_run, gazetteer)
+                    run_profile(profile_id, profile, email_cfg, client, store,
+                                dry_run, gazetteer)
                 except Exception:
                     log.exception("Profile %s failed", profile_id)
     finally:
+        conn.close()
         _release_pidlock()
 
 

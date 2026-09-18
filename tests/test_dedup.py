@@ -898,4 +898,3 @@ class TestFinalKeeperIds:
     def test_no_merges_resolve_to_nothing(self):
         outcome = DedupOutcome(survivors=[], merges=(), uncertain=())
         assert outcome.final_keeper_ids() == {}
-

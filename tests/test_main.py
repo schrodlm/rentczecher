@@ -3,12 +3,10 @@
 Run: python3 -m pytest tests/test_main.py -v
 """
 
-import os
 import sys
 
 import pytest
 
-from rentczecher.adapters import legacy_json_db as db
 from rentczecher.cli import main as main_module
 from rentczecher.adapters.scrapers.base import Listing, ScraperBrokenError
 
@@ -22,7 +20,7 @@ class TestOrphanedRepoDataWarning:
         (repo / "data").mkdir(parents=True)
         (repo / "data" / "seen-praha7.json").write_text("{}")
         monkeypatch.setattr(main_module.paths, "repo_root", lambda: repo)
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path / "xdg-data"))
+        monkeypatch.setattr(main_module.paths, "data_dir", lambda: tmp_path / "xdg-data")
         monkeypatch.delenv("RENTCZECHER_DATA_DIR", raising=False)
         with caplog.at_level("WARNING", logger="rentczecher"):
             main_module._warn_if_repo_data_orphaned()
@@ -33,7 +31,7 @@ class TestOrphanedRepoDataWarning:
         (repo / "data").mkdir(parents=True)
         (repo / "data" / "seen-praha7.json").write_text("{}")
         monkeypatch.setattr(main_module.paths, "repo_root", lambda: repo)
-        monkeypatch.setattr(db, "DATA_DIR", str(repo / "data"))
+        monkeypatch.setattr(main_module.paths, "data_dir", lambda: repo / "data")
         monkeypatch.delenv("RENTCZECHER_DATA_DIR", raising=False)
         with caplog.at_level("WARNING", logger="rentczecher"):
             main_module._warn_if_repo_data_orphaned()
@@ -44,7 +42,7 @@ class TestOrphanedRepoDataWarning:
         (repo / "data").mkdir(parents=True)
         (repo / "data" / "seen-praha7.json").write_text("{}")
         monkeypatch.setattr(main_module.paths, "repo_root", lambda: repo)
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path / "explicit"))
+        monkeypatch.setattr(main_module.paths, "data_dir", lambda: tmp_path / "explicit")
         monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path / "explicit"))
         with caplog.at_level("WARNING", logger="rentczecher"):
             main_module._warn_if_repo_data_orphaned()
@@ -151,8 +149,8 @@ class TestBrokenScraperHandling:
     and does not abort the profile: the remaining scrapers' listings still
     flow through the pipeline."""
 
-    def test_broken_scraper_is_reported_and_run_continues(self, tmp_path, monkeypatch, caplog):
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+    def test_broken_scraper_is_reported_and_run_continues(self, run_store, monkeypatch, caplog):
+        store, conn = run_store
         healthy_listing = _make_listing(id="sreality:good", title="Good listing")
 
         class WorkingScraper:
@@ -181,7 +179,8 @@ class TestBrokenScraperHandling:
             "scrapers": ["sreality", "bezrealitky"],
         }
         with caplog.at_level("INFO", logger="rentczecher"):
-            main_module.run_profile("broken-test", profile, email_cfg={}, client=None, dry_run=True)
+            main_module.run_profile("broken-test", profile, email_cfg={}, client=None,
+                                    store=store, dry_run=True)
 
         contract_errors = [r for r in caplog.records if "portal changed its contract" in r.getMessage()]
         assert len(contract_errors) == 1
@@ -195,8 +194,8 @@ class TestUnresolvablePlace:
     """A profile whose place cannot resolve fails once with a clean error
     naming the place, not once per scraper with stack traces."""
 
-    def test_profile_fails_once_without_tracebacks(self, tmp_path, monkeypatch, caplog):
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+    def test_profile_fails_once_without_tracebacks(self, run_store, monkeypatch, caplog):
+        store, conn = run_store
         from rentczecher.adapters.scrapers import ALL_SCRAPERS
         monkeypatch.setattr(main_module, "ALL_SCRAPERS", ALL_SCRAPERS)
         profile = {
@@ -205,7 +204,8 @@ class TestUnresolvablePlace:
             "scrapers": ["sreality", "bezrealitky", "remax"],
         }
         with caplog.at_level("ERROR", logger="rentczecher"):
-            main_module.run_profile("bad-place", profile, email_cfg={}, client=None, dry_run=True)
+            main_module.run_profile("bad-place", profile, email_cfg={}, client=None,
+                                    store=store, dry_run=True)
         errors = [r for r in caplog.records if "atlantis" in r.getMessage()]
         assert len(errors) == 1
         assert not any(r.exc_info for r in caplog.records)
@@ -215,7 +215,7 @@ class TestEmptyScraperList:
     """A profile with an empty scrapers list is valid config and skips
     cleanly at runtime."""
 
-    def test_empty_list_validates_and_skips(self, caplog):
+    def test_empty_list_validates_and_skips(self, run_store, caplog):
         from rentczecher.adapters.config.schema import ProfileConfig
         ProfileConfig.model_validate({
             "name": "P", "to": ["a@example.com"],
@@ -224,15 +224,17 @@ class TestEmptyScraperList:
         })
         profile = {"name": "Empty", "search": {"offer_type": "rent", "estate_type": "flat",
                                                "place": "praha-7"}, "scrapers": []}
+        store, conn = run_store
         with caplog.at_level("WARNING", logger="rentczecher"):
-            main_module.run_profile("empty", profile, email_cfg={}, client=None, dry_run=True)
+            main_module.run_profile("empty", profile, email_cfg={}, client=None,
+                                    store=store, dry_run=True)
         assert any("no enabled scrapers" in r.getMessage() for r in caplog.records)
 
 
 class TestDryRunIsReadOnly:
-    """--dry-run writes no state; miss counters advance only on real runs."""
+    """A dry run writes no state. Miss counters advance only on real runs."""
 
-    def _run_dry(self, profile_id, monkeypatch):
+    def _run_dry(self, profile_id, store, monkeypatch):
         fake_new = _make_listing(id="sreality:new", title="New listing")
 
         class FakeScraper:
@@ -250,25 +252,37 @@ class TestDryRunIsReadOnly:
             "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
             "scrapers": ["sreality"],
         }
-        main_module.run_profile(profile_id, profile, email_cfg={}, client=None, dry_run=True)
+        main_module.run_profile(profile_id, profile, email_cfg={}, client=None,
+                                store=store, dry_run=True)
 
-    def test_dry_run_leaves_seen_file_byte_identical(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+    def test_dry_run_leaves_the_database_untouched(self, run_store, monkeypatch):
+        store, conn = run_store
         profile_id = "dryrun-test"
 
         # Seed a listing the fake scrape will NOT return, so the miss-count
-        # write would have to happen if dry-run were not read-only.
-        db.mark_seen(profile_id, [_make_listing(id="sreality:old", title="Old")])
+        # write would have to happen if dry run were not read only.
+        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
+                     "VALUES (?, 'Dry-run test', 1, 't')", (profile_id,))
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-old', 't')")
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('sreality:old', 'prop-old', 'sreality', 'u', 't')")
+        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, "
+                     "first_seen_at, last_seen_at, miss_count) "
+                     "VALUES (?, 'sreality:old', 't', 't', 0)", (profile_id,))
+        conn.commit()
 
-        path = db._db_path(profile_id)
-        with open(path, "rb") as f:
-            before = f.read()
-        mtime_before = os.path.getmtime(path)
+        def state():
+            tracking = conn.execute(
+                "SELECT profile_id, listing_id, miss_count FROM listing_tracking "
+                "ORDER BY listing_id").fetchall()
+            listings = conn.execute("SELECT count(*) FROM listings").fetchone()[0]
+            observations = conn.execute("SELECT count(*) FROM price_observations").fetchone()[0]
+            return [tuple(r) for r in tracking], listings, observations
 
-        self._run_dry(profile_id, monkeypatch)
-        self._run_dry(profile_id, monkeypatch)
+        before = state()
 
-        with open(path, "rb") as f:
-            after = f.read()
-        assert after == before
-        assert os.path.getmtime(path) == mtime_before
+        self._run_dry(profile_id, store, monkeypatch)
+        self._run_dry(profile_id, store, monkeypatch)
+
+        assert state() == before
+        assert store.seen_ids(profile_id) == {"sreality:old"}

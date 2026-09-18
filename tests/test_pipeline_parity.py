@@ -14,7 +14,6 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from rentczecher.adapters import legacy_json_db as db
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.cli import main as main_module
 from rentczecher.domain.location import ParsedPlace
@@ -74,30 +73,38 @@ def _fake_scrapers(listing_data):
     return scrapers
 
 
-def _seed_seen_state(profile_id):
+def _seed_seen_state(conn):
     """Previously-seen state: one price-drop candidate and one listing at the
     disappearance threshold."""
     recent = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-    seen = {
+    conn.execute(
+        "INSERT INTO profiles (id, name, active, created_at) VALUES (?, ?, 1, ?)",
+        (PROFILE_ID, "Parity profile", recent))
+    seeded = [
         # Already seen at a higher price -> must surface as a price drop.
-        "sreality:1002": {
-            "first_seen": recent, "last_seen": recent, "price": 24000,
-            "title": "Pronájem bytu 1+1 40 m²", "location": "Kamenická, Praha",
-            "url": "https://www.sreality.cz/detail/1002", "source": "sreality",
-            "size_m2": 40, "disposition": "1+1", "miss_count": 0,
-        },
+        ("prop-1002", "sreality:1002", "Pronájem bytu 1+1 40 m²",
+         "Kamenická, Praha", 40, "1+1", 24000, 0, "https://www.sreality.cz/detail/1002"),
         # Missing for 2 runs already; this run is the third -> disappeared.
-        "sreality:9999": {
-            "first_seen": recent, "last_seen": recent, "price": 18000,
-            "title": "Pronájem bytu 1+kk 30 m²", "location": "Tusarova, Praha",
-            "url": "https://www.sreality.cz/detail/9999", "source": "sreality",
-            "size_m2": 30, "disposition": "1+kk", "miss_count": 2,
-        },
-    }
-    path = db._db_path(profile_id)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(seen, f)
+        ("prop-9999", "sreality:9999", "Pronájem bytu 1+kk 30 m²",
+         "Tusarova, Praha", 30, "1+kk", 18000, 2, "https://www.sreality.cz/detail/9999"),
+    ]
+    for prop_id, listing_id, title, location, size_m2, disposition, price, misses, url in seeded:
+        conn.execute(
+            "INSERT INTO properties (id, created_at, title, location, size_m2, disposition) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (prop_id, recent, title, location, size_m2, disposition))
+        conn.execute(
+            "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+            "VALUES (?, ?, 'sreality', ?, ?)",
+            (listing_id, prop_id, url, recent))
+        conn.execute(
+            "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, "
+            "last_seen_at, miss_count) VALUES (?, ?, ?, ?, ?)",
+            (PROFILE_ID, listing_id, recent, recent, misses))
+        conn.execute(
+            "INSERT INTO price_observations (listing_id, price, observed_at) VALUES (?, ?, ?)",
+            (listing_id, price, recent))
+    conn.commit()
 
 
 def _listing_snapshot(listing):
@@ -123,15 +130,38 @@ def _listing_snapshot(listing):
     }
 
 
-def _normalize_seen(seen):
-    normalized = {}
-    for listing_id, entry in sorted(seen.items()):
-        entry = dict(entry)
-        for key in ("first_seen", "last_seen"):
-            if key in entry:
-                entry[key] = "TS"
-        normalized[listing_id] = entry
-    return normalized
+def _seen_snapshot(conn):
+    """Every listing the profile tracks, with its property facts and latest
+    price, timestamps excluded."""
+    stmt = """
+        SELECT listings.id AS id, listings.source AS source, listings.url AS url,
+               listing_tracking.miss_count AS miss_count,
+               properties.title AS title, properties.location AS location,
+               properties.size_m2 AS size_m2, properties.disposition AS disposition,
+               properties.land_m2 AS land_m2,
+               latest_price.price AS price
+        FROM listing_tracking
+        JOIN listings ON listings.id = listing_tracking.listing_id
+        JOIN properties ON properties.id = listings.property_id
+        LEFT JOIN price_observations AS latest_price
+            ON latest_price.id = (
+                SELECT id FROM price_observations
+                WHERE listing_id = listings.id
+                ORDER BY observed_at DESC, id DESC
+                LIMIT 1
+            )
+        ORDER BY listings.id
+    """
+    return {
+        row["id"]: {
+            "source": row["source"], "url": row["url"],
+            "miss_count": row["miss_count"], "price": row["price"],
+            "title": row["title"], "location": row["location"],
+            "size_m2": row["size_m2"], "disposition": row["disposition"],
+            "land_m2": row["land_m2"],
+        }
+        for row in conn.execute(stmt)
+    }
 
 
 def test_parity_profile_satisfies_the_config_schema():
@@ -140,11 +170,11 @@ def test_parity_profile_satisfies_the_config_schema():
     ProfileConfig.model_validate(PROFILE)
 
 
-def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
-    monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
+    store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
     monkeypatch.setattr(main_module, "ALL_SCRAPERS", _fake_scrapers(listing_data))
-    _seed_seen_state(PROFILE_ID)
+    _seed_seen_state(conn)
 
     sent = {}
 
@@ -154,12 +184,13 @@ def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
 
     monkeypatch.setattr(main_module, "send_email", capture_email)
 
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None, dry_run=False)
+    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None,
+                            store=store, dry_run=False)
 
     snapshot = {
         "notable": [_listing_snapshot(l) for l in sent["notable"]],
-        "disappeared_ids": sorted(d["id"] for d in sent["disappeared"]),
-        "seen_after": _normalize_seen(db.get_seen(PROFILE_ID)),
+        "disappeared_ids": sorted(d.id for d in sent["disappeared"]),
+        "seen_after": _seen_snapshot(conn),
     }
 
     if os.environ.get("PARITY_REGEN"):
@@ -169,22 +200,18 @@ def test_pipeline_outcome_matches_golden(tmp_path, monkeypatch):
     assert snapshot == golden
 
 
-def test_run_profile_does_not_touch_the_storage_layer(tmp_path, monkeypatch):
-    """The storage layer is inert: a pipeline run reaches only the legacy JSON
-    store, never importing a repositories.* module and never writing the
-    database file."""
-    import sys
+def test_run_profile_persists_only_through_the_store(run_store, monkeypatch):
+    """A pipeline run persists through the store it is handed and writes
+    no files of its own."""
+    from rentczecher.adapters.config import paths
 
-    monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
+    store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
     monkeypatch.setattr(main_module, "ALL_SCRAPERS", _fake_scrapers(listing_data))
     monkeypatch.setattr(main_module, "send_email", lambda *a, **k: None)
 
-    for name in [m for m in sys.modules if "adapters.repositories" in m]:
-        monkeypatch.delitem(sys.modules, name)
+    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None,
+                            store=store, dry_run=False)
 
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None, dry_run=False)
-
-    assert not [m for m in sys.modules if "adapters.repositories" in m]
-    assert not (tmp_path / "rentczecher.db").exists()
-    assert list(tmp_path.glob("seen-*.json"))
+    assert store.seen_ids(PROFILE_ID)
+    assert not list(paths.data_dir().glob("seen-*.json"))
