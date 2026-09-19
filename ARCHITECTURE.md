@@ -7,19 +7,19 @@ This is the map for working on the code. If you only want to run rentczecher,
 
 **The pipeline runs on the SQLite canonical-property model.** A run reads its
 seen state and price history from the database, decides what is new, dropped,
-or disappeared, and persists the outcome through one object,
-`SqliteRunStore`, only after the notification succeeded. The schema is
-documented in [SCHEMA.md](SCHEMA.md): a **property** is the inferred
-real-world unit, a **listing** is one portal's posting of it (a global fact),
-and **listing_tracking** carries each profile's seen state for a listing.
+or disappeared, and persists the outcome only after the notification
+succeeded. The schema is documented in [SCHEMA.md](SCHEMA.md): a **property**
+is the inferred real-world unit, a **listing** is one portal's posting of it
+(a global fact), and **listing_tracking** carries each profile's seen state
+for a listing.
 
 A few pieces still ship ahead of their consumer, tested but unwired: the
 geocell candidate query (for future cross-run property matching), the
-`notification_state` and `scrape_runs` tables, and the field-level promotion
-of canonical property values. The old JSON store module remains in the tree
-unused by the pipeline, with its removal scheduled. When you read a module,
-the first question to ask is whether it's on the live path or ahead of its
-consumer.
+`notification_state` and `scrape_runs` tables, and field-level promotion of
+canonical property values (`services/dedup.py::promote_fields`). The legacy
+JSON store module is unused by the pipeline (kept only for its own tests) and
+is scheduled for removal. When you read a module, the first question to ask
+is whether it's on the live path or ahead of its consumer.
 
 ## Layout
 
@@ -29,13 +29,16 @@ A single installable package with light hexagonal layering:
 src/rentczecher/
   domain/        frozen dataclasses, pure. no I/O, no deps on adapters
   adapters/      the edges: scrapers, notifiers, config, storage, geocoding
-  services/      use-cases over the domain: dedup, scoring, locate
+  services/      use-cases and orchestration over the domain
   cli/           argparse entry point. wires adapters to the pipeline
 ```
 
-- `domain/` never imports from `adapters/` or `services/`. It's just types and
-  two geo functions.
-- `services/` depends on `domain/` only.
+- `domain/` never imports from `adapters/` or `services/`. Just types and two
+  geo functions.
+- `services/` depends on `domain/` only, never on `adapters/` or on
+  `sqlite3`, `httpx`, or `smtplib` directly. A layering guard test
+  (`tests/test_layering.py`) parses every module's imports and fails the
+  build on a violation.
 - `adapters/` and `cli/` may depend on everything. `cli/main.py` is where the
   wiring happens.
 
@@ -45,8 +48,14 @@ pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
 
 ## The live pipeline
 
-Everything below runs today. The entry point is `cli/main.py::run` →
-`run_profile`, called once per enabled profile per cron invocation.
+`services/pipeline.py::run_profile(profile_config, deps, dry_run=False)` is
+the whole orchestration, called once per enabled profile by `cli/main.py::run`.
+It returns a `ProfileRunResult` (status, per-scraper health, counts) that the
+CLI logs. `PipelineDeps` bundles everything the run needs behind protocols:
+`RunStore` (satisfied by `SqliteRunStore`), a `Gazetteer`, a `Notifier`, the
+scraper registry, an `httpx` client, and a clock. Because these are
+structural protocols, `services/` never imports the adapters that implement
+them.
 
 ```
 config.yaml
@@ -55,12 +64,12 @@ config.yaml
 SearchSpec.from_search_config(profile["search"])        # portal-neutral intent
    │
    ▼
-for each scraper in profile["scrapers"]:                # adapters/scrapers
-   resolve(spec.place) → per-portal ids                 # location_resolver
-   fetch → parse → list[Listing]                         # fetch/parse split
+scrape_all(scrapers, spec, client)                      # services/scrape, per scraper:
+   │      resolve(spec.place) → per-portal ids            location_resolver
+   │      fetch → parse → list[Listing]                   fetch/parse split
    │      (ScraperBrokenError = contract changed, isolated per scraper)
    ▼
-filter by disposition / min size / min land             # _apply_filters
+apply_filters(listings, spec)                           # disposition / min size / min land
    ▼
 locate_listings(listings, gazetteer)                    # services/locate
    ▼
@@ -68,22 +77,29 @@ cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
 compute_score(listing, profile)                         # services/score
    ▼
-price drops + new + disappeared                         # SqliteRunStore reads
+classify(survivors, seen_ids, latest_prices, disappeared)  # services/diff
    ▼
-send_email(...)   then   persist_outcome(...)           # notify-then-commit
+build_notification(diff, profile, spec)   then   notifier.send(...)
+   ▼
+store.persist_outcome(...)   then, if notable, store.prune(...)
 ```
 
 Two orderings are load-bearing and must be preserved:
 
-- **Notify-then-commit.** State is marked seen only after the email is sent. If
-  the send fails, nothing is committed and the same listings are retried next
-  run. You never silently swallow a new listing because SMTP hiccuped.
+- **Notify-then-commit.** `run_profile` only calls `store.persist_outcome`
+  after `notifier.send` returns something other than `False` (or there was
+  nothing to send). If the send fails, nothing commits, including the
+  miss-count increments, so the same listings are retried next run. A profile
+  with no configured recipients still persists (a stand-in notifier logs a
+  warning and reports success). Pruning is a separate transaction after
+  `persist_outcome`'s, and only runs when there was something notable to send
+  and the profile has recipients.
 - **Three-miss disappearance.** A listing is disappeared only after three
   consecutive runs without it, to ride out portal API flicker.
 
-`--dry-run` runs the whole thing but skips every write, including the miss-count
-increment, so it previews against the last real run's state without corrupting
-it.
+`--dry-run` runs the whole thing but skips every write, including the
+miss-count increment, so it previews against the last real run's state
+without corrupting it.
 
 ### Domain types (live)
 
@@ -91,15 +107,15 @@ it.
   title, price, location, url, optional size/disposition/gps/land/charges, plus a
   `ParsedPlace` (the raw place names the scraper pulled out).
 - `ListingAnnotations` (frozen): the pipeline's conclusions. score,
-  `price_drop_from`, nearest stop, `cross_source`, and `place` (the
-  gazetteer-resolved location; `None` means unlocatable, not unasked).
+  `price_drop_from`, `cross_source`, and `place` (the gazetteer-resolved
+  location, `None` means unlocatable, not unasked).
 - `Listing`: wraps the two. Construct with `Listing.build(**flat_fields)` and
   never mutate. `with_annotations(...)` returns a new `Listing` sharing the same
   facts. Every field of both inner records is exposed as a read-only property.
   The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
   replaces facts, the pipeline replaces annotations, and the two never tangle.
 - `SearchSpec`: portal-neutral search intent, built once per profile and handed
-  to every scraper, the filter, and the email.
+  to every scraper, the filter, and the notification.
 
 ### Scrapers
 
@@ -116,7 +132,10 @@ timeout, connect retries). Two design points matter:
   `__NEXT_DATA__`) raises `ScraperBrokenError`, isolated to that scraper. A
   genuinely empty result is different and is not an error. RE/MAX is the
   exception: a cardless HTML page is indistinguishable from zero results there,
-  so it can't raise it.
+  so it can't raise it. `services/scrape.py::scrape_all` runs every enabled
+  scraper, catches `ScraperBrokenError` and any other exception per scraper,
+  and records a `ScraperHealth` (`ok`, `zero_results`, or `broken`) instead of
+  letting one portal's failure hide the others' listings.
 
 The portals, briefly. **Sreality** speaks its JSON API (`/api/v1/estates/search`,
 needs a browser UA). **Bezrealitky** is server-side Next.js: parse the
@@ -159,10 +178,10 @@ the `place` annotation that dedup and everything after read location from.
 `services/dedup.py::cross_source_dedup` scores every cross-source pair on five
 three-state factors (GPS distance, shared place name, disposition, price, size:
 agree positive, disagree negative, missing exactly zero), gated by an evidence
-floor. Pairs merge only above the confident-match threshold; an **uncertain
-band** below it is scored and recorded but never merges — a wrong merge hides a
+floor. Pairs merge only above the confident-match threshold. An **uncertain
+band** below it is scored and recorded but never merges: a wrong merge hides a
 listing, a missed one only repeats it. The weights and thresholds are calibrated
-against owner-labeled real cross-portal pairs; `scripts/matcher_eval.py` replays
+against owner-labeled real cross-portal pairs. `scripts/matcher_eval.py` replays
 the matcher over every reviewed pair and runs before and after any tuning.
 
 ### Config
@@ -176,10 +195,15 @@ then XDG).
 
 ### Notification
 
-`adapters/notifiers/smtp.py::send_email` builds one Czech HTML and text email per
-profile: score-sorted cards with image, price (and old price on a drop), details,
-source and cross-source badges, a Google Maps link (address-based, GPS as
-fallback), and an optional disappeared section.
+`services/notify.py::build_notification` assembles a channel-agnostic
+`Notification` (score-sorted listings, disappeared entries, a subject line) from
+the run's diff. A `Notifier` is anything with a `send(notification) -> bool`.
+`adapters/notifiers/smtp.py::SmtpNotifier` is the only one today: one Czech
+HTML and text email per profile, with image, price (and old price on a drop),
+details, source and cross-source badges, a Google Maps link (address-based, GPS
+as fallback), and an optional disappeared section. `cli/main.py` falls back to
+a no-op notifier that only logs when a profile has no `to` recipients, so the
+run still persists.
 
 ## Storage
 
@@ -189,37 +213,39 @@ A relational schema where a **property** is the inferred real-world unit and a
 **listing** is one portal's posting of it. The same flat on two portals is one
 property with two listings, and cross-portal disagreements are recorded as an
 audit trail rather than destructively merged. The tables and their relationships
-are documented in [SCHEMA.md](SCHEMA.md). Migration `0001_init.sql` is the
-authoritative DDL.
+are documented in [SCHEMA.md](SCHEMA.md). The numbered files under
+`migrations/` are the authoritative DDL.
 
 `adapters/repositories/` holds the repository interfaces and their SQLite
 implementations (`SqliteListingRepository`, `SqlitePropertyRepository`,
 `SqliteProfileRepository`), plus `SqliteRunStore` (everything one profile run
-reads and persists, behind one object), the connection setup, and the
-migration runner. These follow the repo's static-readability stance to the
-letter: `row_factory = sqlite3.Row`, a `_to_<type>(row)` mapper naming every
-field, full column lists spelled out, no reflection. Migrations apply
-automatically at run startup; `rentczecher db migrate` applies them without
-scraping.
+reads and persists, behind one object satisfying the pipeline's `RunStore`
+protocol), the connection setup, and the migration runner. Repository write
+methods never commit: `SqliteRunStore` owns the transaction boundary, committing
+once after `persist_outcome` and once after `prune`, and rolling back whatever
+either touched if a step raises. These follow the repo's static-readability
+stance to the letter: `row_factory = sqlite3.Row`, a `_to_<type>(row)` mapper
+naming every field, full column lists spelled out, no reflection. Migrations
+apply automatically at run startup. `rentczecher db migrate` applies them
+without scraping.
 
 ### Geocell blocking, dormant
 
 `domain/geo.py` carries the `geocell` blocking grid (a roughly 1.2 km cell key)
-used for near-point candidate lookup. Migration `0002` adds the cell columns to
+used for near-point candidate lookup. A migration adds the cell columns to
 `properties` and `find_candidates` queries a cell and its eight neighbours, but
-nothing on the live path calls either — blocking becomes load-bearing when
+nothing on the live path calls either. Blocking becomes load-bearing when
 cross-run property resolution wires in.
 
 ## Where the work is now
 
-The **storage flip** (1.8 in the project's own numbering) just landed: the
-pipeline persists through the SQLite canonical-property model described above,
-and the per-profile JSON files are no longer read or written. The matcher
-principles from 1.7.6 stand: no factor ever compares a raw portal string,
-every input passes a normalizer whose contract is canonical-or-None, and
-`None` means the factor abstains rather than vetoes. Geospatial blocking over
-the gazetteer is what will make cross-run, cross-profile property resolution
-tractable.
+The **services extraction** just landed: `services/pipeline.py::run_profile`
+is the one orchestration, called by `cli/main.py` today and, later, by the
+GUI's sidecar. `cli/main.py` only builds `PipelineDeps` and logs the result,
+it no longer knows the pipeline's steps. The matcher principles from earlier
+milestones stand: no factor ever compares a raw portal string, every input
+passes a normalizer whose contract is canonical-or-None, and `None` means the
+factor abstains rather than vetoes.
 
 One rule is permanent and predates this work: **strict pairwise matching, no
 transitive grouping.** Transitive grouping shipped once, merged unrelated
@@ -227,10 +253,8 @@ listings in production, and was reverted. It stays reverted. Any move back to
 union-find is gated on proving it matches or beats the current precision on a
 labelled sample first.
 
-Next in sequence: extract the orchestration into a
-`services/pipeline.run_profile` that the CLI and, later, the GUI's sidecar
-both call. The GUI itself follows, its decisions tracked on the project's
-wayfinder map.
+Next up is the GUI, whose decisions are tracked on the project's wayfinder
+map rather than here.
 
 ### The bigger arc
 
@@ -240,7 +264,7 @@ in order:
 
 1. **Foundations** (where we are): the package, the frozen domain model, the
    location resolver, SQLite and migrations, the scraper framework with recorded
-   fixtures.
+   fixtures, and now a pipeline extracted from the CLI.
 2. **Robustness**: a real test pyramid (pure unit, recorded-fixture contract,
    nightly live-drift, e2e), property tests, boundary pins on the tuned dedup and
    scoring constants, CI.
@@ -276,8 +300,8 @@ enough to orient a contributor.
 - **Tests pin accepted behavior, per module.** A regression test lives in the
   owning module's test file, named for the behavior it pins, not in a bug- or
   milestone-themed catch-all. Scoring thresholds are tuned-by-feel production
-  values — pin them with boundary tests before touching them. The dedup
-  matcher's weights and thresholds are calibrated against owner-labeled pairs —
+  values, pin them with boundary tests before touching them. The dedup
+  matcher's weights and thresholds are calibrated against owner-labeled pairs,
   move them only with `scripts/matcher_eval.py` evidence.
 - **User-facing strings are Czech. Code and internal strings are English.**
 
