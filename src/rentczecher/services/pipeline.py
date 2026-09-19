@@ -13,6 +13,7 @@ from typing import Literal, Protocol, runtime_checkable
 
 from rentczecher.domain.dedup import DedupOutcome
 from rentczecher.domain.listing import DisappearedListing, Listing
+from rentczecher.domain.scrape import ScraperHealth
 
 
 @runtime_checkable
@@ -38,13 +39,6 @@ class RunStore(Protocol):
 class PipelineDeps:
     store: RunStore
     clock: Callable[[], datetime]
-
-
-@dataclass(frozen=True, slots=True)
-class ScraperHealth:
-    status: Literal["ok", "broken", "zero_results"]
-    error: str | None
-    listing_count: int
 
 
 @dataclass(frozen=True, slots=True)

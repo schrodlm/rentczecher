@@ -7,8 +7,8 @@ from typing import Protocol, TypeVar
 
 from rentczecher.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher.domain.listing import Listing
+from rentczecher.domain.scrape import ScraperHealth
 from rentczecher.domain.search import SearchSpec
-from rentczecher.services.pipeline import ScraperHealth
 
 log = logging.getLogger("rentczecher")
 
