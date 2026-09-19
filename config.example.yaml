@@ -47,8 +47,6 @@ profiles:
         - "Letna"
         - "Bubenec"
 
-    tram_enrichment: true       # Only for Prague profiles
-
   # Profile 2: Domazlice houses/cottages for sale
   domazlice-domy:
     name: "Domazlicko - domy a chalupy"

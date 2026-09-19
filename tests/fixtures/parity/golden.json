@@ -16,8 +16,6 @@
    "land_m2": null,
    "score": 53,
    "price_drop_from": null,
-   "nearest_stop": "Dělnická (tram 1, 25, 34)",
-   "stop_distance_m": 5,
    "cross_source": []
   },
   {
@@ -36,8 +34,6 @@
    "land_m2": null,
    "score": 84,
    "price_drop_from": null,
-   "nearest_stop": "Vltavská (tram 1, 12, 25, 34)",
-   "stop_distance_m": 545,
    "cross_source": [
     "remax",
     "sreality"
@@ -59,8 +55,6 @@
    "land_m2": null,
    "score": 85,
    "price_drop_from": null,
-   "nearest_stop": null,
-   "stop_distance_m": null,
    "cross_source": [
     "remax"
    ]
@@ -81,8 +75,6 @@
    "land_m2": null,
    "score": 50,
    "price_drop_from": 24000,
-   "nearest_stop": "Kamenická (tram 1, 8, 25, 26)",
-   "stop_distance_m": 8,
    "cross_source": []
   }
  ],

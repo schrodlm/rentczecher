@@ -35,8 +35,6 @@ class ScrapedListing:
 class ListingAnnotations:
     score: int = 0
     price_drop_from: int | None = None
-    nearest_stop: str | None = None
-    stop_distance_m: int | None = None
     cross_source: tuple[str, ...] = ()
     place: ResolvedPlace | None = None
 
@@ -130,14 +128,6 @@ class Listing:
     @property
     def price_drop_from(self) -> int | None:
         return self.annotations.price_drop_from
-
-    @property
-    def nearest_stop(self) -> str | None:
-        return self.annotations.nearest_stop
-
-    @property
-    def stop_distance_m(self) -> int | None:
-        return self.annotations.stop_distance_m
 
     @property
     def cross_source(self) -> tuple[str, ...]:

@@ -1,4 +1,4 @@
-"""Unit tests for scoring, dedup, metro, and db modules.
+"""Unit tests for scoring, dedup, and db modules.
 
 Run with: python3 -m pytest tests/test_units.py -v
 """
@@ -108,44 +108,6 @@ class TestScoring:
                 l = _make_listing(price=price, size_m2=size, disposition="2+kk")
                 score = compute_score(l, self.RENTAL_PROFILE)
                 assert 0 <= score <= 100, f"Score {score} out of range"
-
-
-# ─── Tram Enrichment ────────────────────────────────────────
-
-class TestTramEnrichment:
-    def test_adds_nearest_stop(self):
-        from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = enrich_tram(_make_listing(lat=50.1017, lon=14.4330))
-        assert l.nearest_stop is not None
-        assert "tram" in l.nearest_stop
-        assert l.stop_distance_m is not None
-        assert l.stop_distance_m >= 0
-
-    def test_skips_without_gps(self):
-        from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = enrich_tram(_make_listing())
-        assert l.nearest_stop is None
-
-    def test_original_listing_is_untouched(self):
-        from rentczecher.adapters.enrichment.metro import enrich_tram
-        original = _make_listing(lat=50.1017, lon=14.4330)
-        enriched = enrich_tram(original)
-        assert original.nearest_stop is None
-        assert enriched.nearest_stop is not None
-
-    def test_distance_reasonable(self):
-        from rentczecher.adapters.enrichment.metro import enrich_tram
-        # Right at Vltavska stop
-        l = enrich_tram(_make_listing(lat=50.09907, lon=14.438273))
-        assert l.stop_distance_m < 50, f"Should be very close to stop, got {l.stop_distance_m}m"
-
-    def test_stop_includes_line_numbers(self):
-        from rentczecher.adapters.enrichment.metro import enrich_tram
-        l = enrich_tram(_make_listing(lat=50.09907, lon=14.438273))
-        assert "tram" in l.nearest_stop
-        # Should have at least one line number
-        import re
-        assert re.search(r"tram \d", l.nearest_stop)
 
 
 # ─── DB ─────────────────────────────────────────────────────

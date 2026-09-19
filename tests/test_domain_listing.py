@@ -58,7 +58,7 @@ class TestWithAnnotations:
 
     def test_scraped_half_is_shared_not_copied(self):
         original = _listing()
-        annotated = original.with_annotations(score=1).with_annotations(nearest_stop="X")
+        annotated = original.with_annotations(score=1).with_annotations(price_drop_from=100)
         assert annotated.scraped is original.scraped
 
     def test_unknown_annotation_is_rejected(self):
