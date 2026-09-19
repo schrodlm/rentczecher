@@ -17,6 +17,7 @@ from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
+from rentczecher.services.diff import classify
 from rentczecher.services.locate import locate_listings
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -169,26 +170,8 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     # Compute scores
     all_listings = [l.with_annotations(score=compute_score(l, profile)) for l in all_listings]
 
-    # Check for price drops; all_listings is the single source of truth, so
-    # the annotated replacements land there and everything below derives
-    # from it.
-    latest_prices = store.latest_prices(profile_id)
-    dropped = {}
-    for listing in all_listings:
-        old_price = latest_prices.get(listing.id)
-        if old_price and listing.price and old_price > listing.price:
-            dropped[listing.id] = listing.with_annotations(price_drop_from=old_price)
-            log.info("  PRICE DROP: %s | %d -> %d Kc", listing.title[:50], old_price, listing.price)
-    all_listings = [dropped.get(l.id, l) for l in all_listings]
-
-    # Find new listings BEFORE updating DB
     seen = store.seen_ids(profile_id)
-    new_listings = [l for l in all_listings if l.id not in seen]
-    new_ids = {n.id for n in new_listings}
-    price_drop_listings = [
-        l for l in all_listings
-        if l.price_drop_from is not None and l.id not in new_ids
-    ]
+    latest_prices = store.latest_prices(profile_id)
 
     # Detect disappeared (requires 3+ consecutive misses to filter API noise).
     # Dry-run skips the write, so it previews disappearances from the last
@@ -202,9 +185,15 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     if disappeared:
         log.info("Disappeared: %d listings confirmed gone (3+ misses)", len(disappeared))
 
+    diff = classify(all_listings, seen, latest_prices, disappeared)
+    new_listings = diff.new
+    price_drop_listings = diff.price_drops
+    for listing in price_drop_listings:
+        log.info("  PRICE DROP: %s | %d -> %d Kc", listing.title[:50], listing.price_drop_from, listing.price)
+
     notable = new_listings + price_drop_listings
     log.info("Total: %d listings, %d new, %d price drops, %d disappeared",
-             len(all_listings), len(new_listings), len(dropped), len(disappeared))
+             len(all_listings), len(new_listings), len(price_drop_listings), len(disappeared))
 
     if not notable:
         if not dry_run:
