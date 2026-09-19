@@ -107,3 +107,43 @@ def test_one_broken_scraper_does_not_prevent_others_listings():
 def test_place_not_found_error_propagates_instead_of_being_isolated():
     with pytest.raises(PlaceNotFoundError):
         scrape_all({"sreality": UnresolvablePlaceScraper}, SPEC, client=None)
+
+
+class TestOnScraperDone:
+    """on_scraper_done, when given, observes each scraper's health as soon
+    as it is known, once per scraper, regardless of outcome."""
+
+    def test_called_once_per_scraper_with_its_recorded_health(self):
+        calls = []
+        scrape_all(
+            {"sreality": WorkingScraper, "bezrealitky": EmptyScraper}, SPEC, client=None,
+            on_scraper_done=lambda name, health: calls.append((name, health.status)),
+        )
+        assert calls == [("sreality", "ok"), ("bezrealitky", "zero_results")]
+
+    def test_called_for_a_scraper_broken_error_too(self, caplog):
+        calls = []
+        with caplog.at_level("ERROR", logger="rentczecher"):
+            scrape_all(
+                {"bezrealitky": BrokenScraper}, SPEC, client=None,
+                on_scraper_done=lambda name, health: calls.append((name, health.status)),
+            )
+        assert calls == [("bezrealitky", "broken")]
+
+    def test_called_for_a_generic_exception_too(self, caplog):
+        calls = []
+        with caplog.at_level("ERROR", logger="rentczecher"):
+            scrape_all(
+                {"sreality": CrashingScraper}, SPEC, client=None,
+                on_scraper_done=lambda name, health: calls.append((name, health.status)),
+            )
+        assert calls == [("sreality", "broken")]
+
+    def test_not_called_when_place_not_found_aborts_before_any_scraper_runs(self):
+        calls = []
+        with pytest.raises(PlaceNotFoundError):
+            scrape_all(
+                {"sreality": UnresolvablePlaceScraper}, SPEC, client=None,
+                on_scraper_done=lambda name, health: calls.append((name, health.status)),
+            )
+        assert calls == []

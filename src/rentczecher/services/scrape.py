@@ -24,13 +24,16 @@ def scrape_all(
     scraper_classes: Mapping[str, Callable[[SearchSpec, ClientT], Scraper]],
     spec: SearchSpec,
     client: ClientT,
+    on_scraper_done: Callable[[str, ScraperHealth], None] | None = None,
 ) -> tuple[list[Listing], dict[str, ScraperHealth]]:
     """Run each scraper in turn, recording its health rather than letting
     one portal's failure hide the others' listings.
 
     A PlaceNotFoundError is not caught here: it means the profile's place
     could not be resolved for any portal, so the caller aborts the whole
-    profile rather than isolating it per scraper.
+    profile rather than isolating it per scraper. on_scraper_done, when
+    given, is called once per scraper right after its health is known, for
+    a caller that wants to observe progress before the whole run finishes.
     """
     listings: list[Listing] = []
     health: dict[str, ScraperHealth] = {}
@@ -43,12 +46,16 @@ def scrape_all(
         except ScraperBrokenError as error:
             log.error("  %s: portal changed its contract - scraper needs updating: %s", name, error)
             health[name] = ScraperHealth(status="broken", error=str(error), listing_count=0)
+            if on_scraper_done is not None:
+                on_scraper_done(name, health[name])
             continue
         except PlaceNotFoundError:
             raise
         except Exception:
             log.exception("  %s: scraper failed", name)
             health[name] = ScraperHealth(status="broken", error=None, listing_count=0)
+            if on_scraper_done is not None:
+                on_scraper_done(name, health[name])
             continue
 
         if len(found) == 0:
@@ -58,5 +65,7 @@ def scrape_all(
             log.info("  %s: found %d listings", name, len(found))
             health[name] = ScraperHealth(status="ok", error=None, listing_count=len(found))
         listings.extend(found)
+        if on_scraper_done is not None:
+            on_scraper_done(name, health[name])
 
     return listings, health
