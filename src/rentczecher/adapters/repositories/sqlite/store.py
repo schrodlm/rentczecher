@@ -8,7 +8,7 @@ from rentczecher.adapters.repositories.sqlite.listings import SqliteListingRepos
 from rentczecher.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.listing import DisappearedListing
+from rentczecher.domain.listing import DisappearedListing, InboxCard
 from rentczecher.services.assemble import assemble_property
 from rentczecher.services.dedup import DedupOutcome, match_score_to_json
 
@@ -35,6 +35,9 @@ class SqliteRunStore:
 
     def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
         return self._listings.pending_disappeared(profile_id, current_ids)
+
+    def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
+        return self._listings.inbox_listings(profile_id, only_new)
 
     def mark_viewed(self, profile_id: str, listing_id: str) -> None:
         """Records the view as its own unit of work."""

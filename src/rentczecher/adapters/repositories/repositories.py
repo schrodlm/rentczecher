@@ -4,7 +4,7 @@ lives behind them."""
 from abc import ABC, abstractmethod
 
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.listing import DisappearedListing
+from rentczecher.domain.listing import DisappearedListing, InboxCard
 from rentczecher.domain.price import PriceObservation
 from rentczecher.domain.property import PropertyIdentity
 
@@ -88,3 +88,7 @@ class ListingRepository(ABC):
     @abstractmethod
     def mark_viewed(self, profile_id: str, listing_id: str) -> None:
         """Record the listing as viewed by the profile, once."""
+
+    @abstractmethod
+    def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
+        """The profile's tracked listings as the GUI's inbox renders them."""

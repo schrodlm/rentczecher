@@ -371,6 +371,129 @@ class TestPropertyIdOf:
         assert repo.property_id_of("sreality:ghost") is None
 
 
+class TestInboxListings:
+    def test_carries_listing_and_property_facts(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("UPDATE properties SET title = ?, location = ?, size_m2 = ?, "
+                     "disposition = ? WHERE id = ?",
+                     ("Byt 2+kk", "Praha 7", 55, "2+kk", PROPERTY))
+        conn.commit()
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.id == "sreality:1"
+        assert card.source == "sreality"
+        assert card.url == "u"
+        assert card.title == "Byt 2+kk"
+        assert card.location == "Praha 7"
+        assert card.size_m2 == 55
+        assert card.disposition == "2+kk"
+
+    def test_missing_property_facts_are_none_not_dropped(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.title is None
+        assert card.location is None
+        assert card.size_m2 is None
+        assert card.disposition is None
+
+    def test_carries_tracking_state(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        conn.execute(
+            "UPDATE listing_tracking SET favourited_at = ? "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (BASE.isoformat(), PROFILE))
+        conn.commit()
+        repo.mark_viewed(PROFILE, "sreality:1")
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.first_seen_at == BASE.isoformat()
+        assert card.viewed_at == BASE.isoformat()
+        assert card.favourited_at == BASE.isoformat()
+
+    def test_never_viewed_is_none(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.viewed_at is None
+
+    def test_carries_the_latest_price(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price == 19000
+
+    def test_no_price_observation_yet_is_none(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute(
+            "INSERT INTO listings (id, property_id, source, url, scraped_at) "
+            "VALUES ('sreality:1', ?, 'sreality', 'u', ?)", (PROPERTY, BASE.isoformat()))
+        conn.execute(
+            "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, "
+            "last_seen_at, miss_count) VALUES (?, 'sreality:1', ?, ?, 0)",
+            (PROFILE, BASE.isoformat(), BASE.isoformat()))
+        conn.commit()
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price is None
+
+    def test_price_drop_from_is_set_when_the_previous_price_was_higher(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price_drop_from == 20000
+
+    def test_price_drop_from_is_none_when_the_price_is_unchanged_or_up(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price_drop_from is None
+
+    def test_price_drop_from_is_none_with_only_one_observation(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price_drop_from is None
+
+    def test_carries_sibling_sources_on_the_same_property(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1"))
+        cards = {card.id: card for card in repo.inbox_listings(PROFILE)}
+        assert [s.source for s in cards["sreality:1"].sibling_sources] == ["bezrealitky"]
+        assert cards["sreality:1"].sibling_sources[0].url == "u"
+        assert [s.source for s in cards["bezrealitky:1"].sibling_sources] == ["sreality"]
+
+    def test_no_siblings_is_an_empty_tuple(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.sibling_sources == ()
+
+    def test_only_new_excludes_viewed_listings(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:2"))
+        repo.mark_viewed(PROFILE, "sreality:1")
+        cards = repo.inbox_listings(PROFILE, only_new=True)
+        assert [card.id for card in cards] == ["sreality:2"]
+
+    def test_only_new_false_includes_viewed_listings(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.mark_viewed(PROFILE, "sreality:1")
+        cards = repo.inbox_listings(PROFILE, only_new=False)
+        assert [card.id for card in cards] == ["sreality:1"]
+
+    def test_scoped_to_the_profile(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:mine"))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:theirs"))
+        cards = repo.inbox_listings(PROFILE)
+        assert [card.id for card in cards] == ["sreality:mine"]
+
+
 class TestPrune:
     def test_forgets_tracking_older_than_ninety_days(self, tmp_path):
         repo, conn = _repo(tmp_path)

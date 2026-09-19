@@ -155,3 +155,37 @@ class DisappearedListing:
     title: str | None
     location: str | None
     price: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class SiblingSource:
+    """Another portal's posting of the same property - the take-na badge."""
+
+    source: str
+    url: str
+
+
+@dataclass(frozen=True, slots=True)
+class InboxCard:
+    """One listing as the GUI's inbox renders it: listing and property facts,
+    this profile's tracking state, the latest observed price, a price-drop
+    baseline when the previous observation was higher, and sibling postings
+    of the same property on other portals.
+
+    title/location/size_m2/disposition/price are nullable: a card can exist
+    before its property has facts or before any price was ever observed.
+    """
+
+    id: str
+    source: str
+    url: str
+    title: str | None
+    location: str | None
+    size_m2: int | None
+    disposition: str | None
+    first_seen_at: str
+    viewed_at: str | None
+    favourited_at: str | None
+    price: int | None
+    price_drop_from: int | None
+    sibling_sources: tuple[SiblingSource, ...]

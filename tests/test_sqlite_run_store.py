@@ -73,6 +73,24 @@ class TestMarkViewed:
         assert viewed_at == BASE.isoformat()
 
 
+class TestInboxListings:
+    def test_reflects_persisted_and_viewed_state(self, tmp_path):
+        store, conn = _store(tmp_path)
+        store.persist_outcome(PROFILE_ID, "P", _outcome(_listing(id="sreality:1")),
+                              {}, current_ids={"sreality:1"})
+        store.mark_viewed(PROFILE_ID, "sreality:1")
+        (card,) = store.inbox_listings(PROFILE_ID)
+        assert card.id == "sreality:1"
+        assert card.viewed_at == BASE.isoformat()
+
+    def test_only_new_excludes_the_viewed_listing(self, tmp_path):
+        store, conn = _store(tmp_path)
+        store.persist_outcome(PROFILE_ID, "P", _outcome(_listing(id="sreality:1")),
+                              {}, current_ids={"sreality:1"})
+        store.mark_viewed(PROFILE_ID, "sreality:1")
+        assert store.inbox_listings(PROFILE_ID, only_new=True) == []
+
+
 class TestPersistOutcomeRollsBackOnFailure:
     def test_a_failure_after_the_upsert_leaves_no_upsert_and_no_miss_count_change(self, tmp_path):
         store, conn = _store(tmp_path)
