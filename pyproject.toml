@@ -13,6 +13,8 @@ dependencies = [
     "lxml>=5.0",
     "pyyaml>=6.0",
     "pydantic>=2,<3",
+    "fastapi>=0.141.1",
+    "uvicorn>=0.53.0",
 ]
 
 [project.scripts]
