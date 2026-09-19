@@ -21,6 +21,7 @@ class SqliteRunStore:
     """
 
     def __init__(self, conn: sqlite3.Connection, *, now: Callable[[], datetime] = utc_now):
+        self._conn = conn
         self._listings = SqliteListingRepository(conn, now=now)
         self._properties = SqlitePropertyRepository(conn, now=now)
         self._profiles = SqliteProfileRepository(conn, now=now)
@@ -32,54 +33,65 @@ class SqliteRunStore:
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         return self._listings.latest_prices(profile_id)
 
-    def get_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
-        return self._listings.get_disappeared(profile_id, current_ids)
-
     def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
         return self._listings.pending_disappeared(profile_id, current_ids)
 
-    def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
-        self._listings.increment_miss_counts(profile_id, current_ids)
-
     def prune(self, profile_id: str) -> None:
-        self._listings.prune(profile_id)
+        """Forgets the profile's stale tracking rows, its own unit of work."""
+        try:
+            self._listings.prune(profile_id)
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
 
-    def persist_outcome(self, profile_id: str, profile_name: str,
-                        outcome: DedupOutcome, located_by_id: dict[str, Listing]) -> None:
-        """Writes the run's facts: the profile row, one property per
-        real-world unit, a listing row per portal posting (absorbed ones
-        included, under their keeper's property), and the dedup audit
-        trail."""
-        self._profiles.ensure(profile_id, profile_name)
-        now = self._now().isoformat()
-        keeper_ids = outcome.final_keeper_ids()
+    def persist_outcome(self, profile_id: str, profile_name: str, outcome: DedupOutcome,
+                        located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
+        """Writes the run's facts in one transaction: the profile row, one
+        property per real-world unit, a listing row per portal posting
+        (absorbed ones included, under their keeper's property), the dedup
+        audit trail, and the miss-count increments for listings absent this
+        run. Nothing commits if any step raises."""
+        try:
+            self._profiles.ensure(profile_id, profile_name)
+            now = self._now().isoformat()
+            keeper_ids = outcome.final_keeper_ids()
 
-        members_by_keeper: dict[str, list[Listing]] = {}
-        for listing in outcome.survivors:
-            members_by_keeper[listing.id] = [listing]
-        for absorbed_id, keeper_id in keeper_ids.items():
-            members_by_keeper[keeper_id].append(located_by_id[absorbed_id])
+            members_by_keeper: dict[str, list[Listing]] = {}
+            for listing in outcome.survivors:
+                members_by_keeper[listing.id] = [listing]
+            for absorbed_id, keeper_id in keeper_ids.items():
+                members_by_keeper[keeper_id].append(located_by_id[absorbed_id])
 
-        property_by_keeper = {
-            keeper_id: self._property_for(members, now)
-            for keeper_id, members in members_by_keeper.items()
-        }
+            property_by_keeper = {
+                keeper_id: self._property_for(members, now)
+                for keeper_id, members in members_by_keeper.items()
+            }
 
-        for keeper_id, members in members_by_keeper.items():
-            for listing in members:
-                self._listings.upsert(profile_id, property_by_keeper[keeper_id], listing)
+            for keeper_id, members in members_by_keeper.items():
+                for listing in members:
+                    self._listings.upsert(
+                        profile_id, property_by_keeper[keeper_id], listing)
 
-        for merge in outcome.merges:
-            self._properties.record_dedup(
-                property_by_keeper[keeper_ids[merge.absorbed_id]],
-                merge.absorbed_id, match_score_to_json(merge.score))
-        # An uncertain pair never merges: the record points one side's
-        # listing at the other side's property, so the doubt is auditable.
-        for pair in outcome.uncertain:
-            property_id = self._listings.property_id_of(pair.listing_id_a)
-            if property_id is not None:
+            for merge in outcome.merges:
                 self._properties.record_dedup(
-                    property_id, pair.listing_id_b, match_score_to_json(pair.score))
+                    property_by_keeper[keeper_ids[merge.absorbed_id]],
+                    merge.absorbed_id, match_score_to_json(merge.score))
+            # An uncertain pair never merges: the record points one side's
+            # listing at the other side's property, so the doubt is auditable.
+            for pair in outcome.uncertain:
+                property_id = self._listings.property_id_of(pair.listing_id_a)
+                if property_id is not None:
+                    self._properties.record_dedup(
+                        property_id, pair.listing_id_b, match_score_to_json(pair.score))
+
+            self._listings.increment_miss_counts(profile_id, current_ids)
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
 
     def _property_for(self, members: list[Listing], now: str) -> str:
         """The property a merge group lands on: the keeper's existing one

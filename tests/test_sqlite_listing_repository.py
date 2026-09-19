@@ -111,13 +111,14 @@ class TestPriceHistory:
         assert conn.execute("SELECT count(*) FROM price_observations").fetchone()[0] == 2
 
     def test_direct_record_persists_across_a_reopen(self, tmp_path):
-        # record_price_observation is public; a caller that isn't upsert must
-        # still see its write committed after the connection closes.
+        # record_price_observation does not commit. The caller owns that
+        # boundary, so this test stands in for one.
         from rentczecher.domain.price import PriceObservation
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(price=20000))
         repo.record_price_observation(PriceObservation(
             listing_id="sreality:1", price=17000, observed_at=BASE.isoformat()))
+        conn.commit()
         conn.close()
         reopened = connection.connect(tmp_path / "t.db")
         assert reopened.execute(

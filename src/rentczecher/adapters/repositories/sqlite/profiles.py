@@ -25,4 +25,3 @@ class SqliteProfileRepository:
             VALUES (?, ?, 1, ?)
         """
         self._conn.execute(insert, (profile_id, name, self._now().isoformat()))
-        self._conn.commit()
