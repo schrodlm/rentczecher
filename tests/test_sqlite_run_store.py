@@ -58,6 +58,21 @@ class TestPersistOutcomeCommitsTogether:
             "SELECT count(*) FROM listings WHERE id = 'sreality:1'").fetchone()[0] == 1
 
 
+class TestMarkViewed:
+    def test_commits_as_its_own_unit_of_work(self, tmp_path):
+        store, conn = _store(tmp_path)
+        store.persist_outcome(PROFILE_ID, "P", _outcome(_listing(id="sreality:1")),
+                              {}, current_ids={"sreality:1"})
+        store.mark_viewed(PROFILE_ID, "sreality:1")
+        conn.close()
+
+        reopened = connection.connect(tmp_path / "t.db")
+        viewed_at = reopened.execute(
+            "SELECT viewed_at FROM listing_tracking WHERE listing_id = 'sreality:1'"
+        ).fetchone()[0]
+        assert viewed_at == BASE.isoformat()
+
+
 class TestPersistOutcomeRollsBackOnFailure:
     def test_a_failure_after_the_upsert_leaves_no_upsert_and_no_miss_count_change(self, tmp_path):
         store, conn = _store(tmp_path)

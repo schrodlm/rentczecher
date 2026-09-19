@@ -137,6 +137,48 @@ class TestMissCounts:
         assert counts == {"sreality:1": 0, "sreality:2": 1}
 
 
+class TestMarkViewed:
+    def test_sets_viewed_at(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, "sreality:1")
+        row = conn.execute(
+            "SELECT viewed_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+        assert row["viewed_at"] == BASE.isoformat()
+
+    def test_does_not_overwrite_an_earlier_view(self, tmp_path):
+        repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2)))
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, "sreality:1")
+        row = conn.execute(
+            "SELECT viewed_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+        assert row["viewed_at"] == (BASE + timedelta(hours=1)).isoformat()
+
+    def test_scoped_to_the_profile(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, "sreality:1")
+        other = conn.execute(
+            "SELECT viewed_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (OTHER_PROFILE,)).fetchone()
+        assert other["viewed_at"] is None
+
+    def test_does_not_commit(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        conn.commit()
+        repo.mark_viewed(PROFILE, "sreality:1")
+        conn.rollback()
+        row = conn.execute(
+            "SELECT viewed_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+        assert row["viewed_at"] is None
+
+
 class TestDisappeared:
     def _seed_missing(self, repo, conn, first_seen, miss_count):
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:9"))

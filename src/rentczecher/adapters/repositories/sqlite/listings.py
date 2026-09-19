@@ -83,6 +83,19 @@ class SqliteListingRepository(ListingRepository):
             listing_id=listing.id, price=listing.price,
             charges=listing.charges, observed_at=now))
 
+    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
+        """Records the listing as viewed by the profile, without committing.
+        The caller owns the transaction boundary.
+
+        Viewed is set once: an already-viewed listing keeps its first
+        viewed_at, since viewing it again is not a new event.
+        """
+        stmt = """
+            UPDATE listing_tracking SET viewed_at = ?
+            WHERE profile_id = ? AND listing_id = ? AND viewed_at IS NULL
+        """
+        self._conn.execute(stmt, (self._now().isoformat(), profile_id, listing_id))
+
     def record_price_observation(self, observation: PriceObservation) -> None:
         stmt = """
             INSERT INTO price_observations (
