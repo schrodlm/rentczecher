@@ -12,9 +12,9 @@ Czech (the product still calls itself **Byt Watchdog** there). The code and
 config are in English.
 
 > **Status:** actively developed, single-maintainer hobby project. What's below
-> is what runs today. A larger rewrite of the storage and deduplication
-> internals is in progress underneath it. See [ARCHITECTURE.md](ARCHITECTURE.md)
-> if you want to work on the code rather than just run it.
+> is what runs today. A desktop GUI is in design on top of the same pipeline.
+> See [ARCHITECTURE.md](ARCHITECTURE.md) if you want to work on the code
+> rather than just run it.
 
 ## What it does
 
@@ -90,7 +90,7 @@ email:
   from: "you@gmail.com"
 
 schedule:
-  cron_interval_hours: 3          # informational; the cron entry is what runs
+  cron_interval_hours: 3          # informational, the cron entry is what runs
 
 profiles:
   praha7-byty:
@@ -101,7 +101,7 @@ profiles:
     search:
       offer_type: rent            # rent | sale
       estate_type: flat           # flat | house | land | cottage
-      place: praha-7              # any Czech kraj or district; typos get suggestions
+      place: praha-7              # any Czech kraj or district, typos get suggestions
       min_price: 0
       max_price: 25000
       dispositions: ["2+kk", "2+1"]   # empty = all
@@ -226,9 +226,10 @@ uv run prek run --all-files      # ruff, mypy, offline pytest, file hygiene (the
 Commits are gated by the pre-commit hooks, and the offline suite must be green.
 The dedup matcher's weights and thresholds are calibrated against owner-labeled
 listing pairs: `scripts/matcher_eval.py` replays the matcher over every reviewed
-pair - run it before and after any tuning.
-[ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout. `CLAUDE.md` records the coding stances this repo
-holds to.
+pair, run it before and after any tuning.
+
+[ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout.
+`CLAUDE.md` records the coding stances this repo holds to.
 
 ## Troubleshooting
 
