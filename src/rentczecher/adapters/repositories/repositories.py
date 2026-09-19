@@ -84,3 +84,7 @@ class ListingRepository(ABC):
     @abstractmethod
     def prune(self, profile_id: str, max_age_days: int = 90) -> int:
         ...
+
+    @abstractmethod
+    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
+        """Record the listing as viewed by the profile, once."""

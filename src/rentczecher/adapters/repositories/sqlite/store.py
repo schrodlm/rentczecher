@@ -36,6 +36,16 @@ class SqliteRunStore:
     def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
         return self._listings.pending_disappeared(profile_id, current_ids)
 
+    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
+        """Records the view as its own unit of work."""
+        try:
+            self._listings.mark_viewed(profile_id, listing_id)
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
+
     def prune(self, profile_id: str) -> None:
         """Forgets the profile's stale tracking rows, its own unit of work."""
         try:
