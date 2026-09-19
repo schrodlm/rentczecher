@@ -10,15 +10,14 @@ import httpx
 import pytest
 
 from rentczecher.adapters.scrapers import bezrealitky, remax, sreality
-from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher.adapters.scrapers.bezrealitky import _parse_location as _bez_parse_location
 from rentczecher.adapters.scrapers.client import build_client
-from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError
 from rentczecher.adapters.scrapers.remax import RemaxScraper
 from rentczecher.adapters.scrapers.remax import _parse_location as _remax_parse_location
 from rentczecher.adapters.scrapers.sreality import SrealityScraper
 from rentczecher.adapters.scrapers.sreality import _parse_location as _sreality_parse_location
+from rentczecher.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher.domain.location import ParsedPlace
 from rentczecher.domain.search import SearchSpec
 

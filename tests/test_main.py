@@ -8,7 +8,8 @@ import sys
 import pytest
 
 from rentczecher.cli import main as main_module
-from rentczecher.adapters.scrapers.base import Listing, ScraperBrokenError
+from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.errors import ScraperBrokenError
 
 
 class TestOrphanedRepoDataWarning:

@@ -4,8 +4,9 @@ import time
 
 from dataclasses import dataclass
 
-from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher.domain.errors import ScraperBrokenError
 from rentczecher.domain.location import ParsedPlace
 
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"

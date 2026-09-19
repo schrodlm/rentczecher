@@ -8,8 +8,8 @@ import yaml
 from pydantic import ValidationError
 
 from rentczecher.adapters.config.schema import Config, StrictModel, field_aliases
-from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError, resolve
-from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
+from rentczecher.adapters.scrapers.location_resolver import resolve
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError
 
 
 def load_config(path: Path) -> dict:
