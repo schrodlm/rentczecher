@@ -6,7 +6,9 @@ size). No factor can veto on its own - only the combined score, gated by
 an evidence floor, decides a match.
 """
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer, candidate_names
+from collections.abc import Iterable
+from typing import Protocol
+
 from rentczecher.domain.dedup import (
     DedupOutcome,
     FactorContribution,
@@ -26,12 +28,22 @@ __all__ = [
     "MatchBand",
     "MatchScore",
     "MergeDecision",
+    "NameTierLookup",
     "UncertainPair",
     "match_score_to_json",
     "cross_source_dedup",
     "promote_fields",
     "score_match",
 ]
+
+
+class NameTierLookup(Protocol):
+    def candidate_names(self, names: Iterable[str]) -> list[str]:
+        ...
+
+    def name_tiers(self, name: str, muni: str | None = None) -> frozenset[str]:
+        ...
+
 
 # Tiers a resolved point or a shared name can land at, most specific first.
 # "gps" is a portal-provided point, tied with "street" for the tightest ceiling.
@@ -214,7 +226,7 @@ def score_match(
 
 
 def _listing_name_tiers(
-    listing: Listing, names: set[str], gazetteer: Gazetteer
+    listing: Listing, names: set[str], gazetteer: NameTierLookup
 ) -> dict[str, str]:
     """Tier of each of the listing's names, asked within its resolved
     municipality - the whole country only when none resolved. A name found
@@ -251,7 +263,7 @@ def _streets_disagree(street_names_a: set[str], street_names_b: set[str]) -> boo
 
 
 def cross_source_dedup(
-    listings: list[Listing], gazetteer: Gazetteer | None = None
+    listings: list[Listing], gazetteer: NameTierLookup
 ) -> DedupOutcome:
     """Detect same property listed on multiple sites.
 
@@ -263,10 +275,8 @@ def cross_source_dedup(
     """
     if len(listings) < 2:
         return DedupOutcome(survivors=listings, merges=(), uncertain=())
-    if gazetteer is None:
-        gazetteer = Gazetteer()
 
-    name_sets = [set(candidate_names(listing.parsed_place.names)) for listing in listings]
+    name_sets = [set(gazetteer.candidate_names(listing.parsed_place.names)) for listing in listings]
     tier_maps = [
         _listing_name_tiers(listing, names, gazetteer)
         for listing, names in zip(listings, name_sets, strict=True)

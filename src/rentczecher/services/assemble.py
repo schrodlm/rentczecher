@@ -1,6 +1,6 @@
 """Build a property's canonical identity from one of its listings."""
 
-from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.listing import Listing
 from rentczecher.domain.property import PropertyIdentity
 
 

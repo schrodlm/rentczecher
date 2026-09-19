@@ -1,11 +1,20 @@
 """Where is this listing? Text resolution first, geometry when text fails."""
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from typing import Protocol
+
 from rentczecher.domain.listing import Listing
-from rentczecher.domain.location import ResolvedPlace
+from rentczecher.domain.location import ParsedPlace, ResolvedPlace
 
 
-def locate(listing: Listing, gazetteer: Gazetteer) -> ResolvedPlace | None:
+class PlaceResolver(Protocol):
+    def resolve(self, place: ParsedPlace) -> ResolvedPlace | None:
+        ...
+
+    def reverse(self, lat: float, lon: float) -> ResolvedPlace | None:
+        ...
+
+
+def locate(listing: Listing, gazetteer: PlaceResolver) -> ResolvedPlace | None:
     """The place a listing belongs to, or None when nothing trustworthy exists.
 
     Text resolution runs first, when it is ambiguous but the portal gave
@@ -19,5 +28,5 @@ def locate(listing: Listing, gazetteer: Gazetteer) -> ResolvedPlace | None:
     return place
 
 
-def locate_listings(listings: list[Listing], gazetteer: Gazetteer) -> list[Listing]:
+def locate_listings(listings: list[Listing], gazetteer: PlaceResolver) -> list[Listing]:
     return [listing.with_annotations(place=locate(listing, gazetteer)) for listing in listings]
