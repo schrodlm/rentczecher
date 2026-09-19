@@ -46,6 +46,8 @@ class SqliteListingRepository(ListingRepository):
         return {row["listing_id"] for row in self._conn.execute(stmt, (profile_id,))}
 
     def upsert(self, profile_id: str, property_id: str, listing: Listing) -> None:
+        """Reconciles a scraped observation into storage without committing.
+        The caller owns the transaction boundary."""
         now = self._now().isoformat()
         scraped_at = listing.scraped_at or now
         fact = self._conn.execute(
@@ -80,7 +82,6 @@ class SqliteListingRepository(ListingRepository):
         self.record_price_observation(PriceObservation(
             listing_id=listing.id, price=listing.price,
             charges=listing.charges, observed_at=now))
-        self._conn.commit()
 
     def record_price_observation(self, observation: PriceObservation) -> None:
         stmt = """
@@ -92,7 +93,6 @@ class SqliteListingRepository(ListingRepository):
             observation.listing_id, observation.price, observation.charges,
             observation.observed_at, observation.observed_in_run_id,
         ))
-        self._conn.commit()
 
     def price_history(self, listing_id: str) -> list[PriceObservation]:
         stmt = """
@@ -146,7 +146,6 @@ class SqliteListingRepository(ListingRepository):
                     "UPDATE listing_tracking SET miss_count = miss_count + 1 "
                     "WHERE profile_id = ? AND listing_id = ?",
                     (profile_id, row["listing_id"]))
-        self._conn.commit()
 
     def get_disappeared(self, profile_id: str, current_ids: set[str],
                         max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
@@ -214,5 +213,4 @@ class SqliteListingRepository(ListingRepository):
             WHERE profile_id = ? AND last_seen_at < ? AND favourited_at IS NULL
         """
         cursor = self._conn.execute(stmt, (profile_id, cutoff))
-        self._conn.commit()
         return cursor.rowcount

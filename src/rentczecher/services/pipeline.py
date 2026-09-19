@@ -23,17 +23,14 @@ class RunStore(Protocol):
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         ...
 
-    def get_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
-        ...
-
-    def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
+    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
         ...
 
     def prune(self, profile_id: str) -> None:
         ...
 
-    def persist_outcome(self, profile_id: str, profile_name: str,
-                        outcome: DedupOutcome, located_by_id: dict[str, Listing]) -> None:
+    def persist_outcome(self, profile_id: str, profile_name: str, outcome: DedupOutcome,
+                        located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
         ...
 
 

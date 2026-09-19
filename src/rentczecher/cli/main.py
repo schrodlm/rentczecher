@@ -174,14 +174,12 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     latest_prices = store.latest_prices(profile_id)
 
     # Detect disappeared (requires 3+ consecutive misses to filter API noise).
-    # Dry-run skips the write, so it previews disappearances from the last
-    # real run's counters.
+    # Computed read-only: the miss-count increment itself lands only with the
+    # rest of persist_outcome, after a successful send.
     # An absorbed listing was present in this scrape, so it counts toward
     # the miss reset even though it never survives dedup.
     current_ids = {l.id for l in all_listings} | {m.absorbed_id for m in outcome.merges}
-    if not dry_run:
-        store.increment_miss_counts(profile_id, current_ids)
-    disappeared = store.get_disappeared(profile_id, current_ids)
+    disappeared = store.pending_disappeared(profile_id, current_ids)
     if disappeared:
         log.info("Disappeared: %d listings confirmed gone (3+ misses)", len(disappeared))
 
@@ -197,7 +195,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     if not notable:
         if not dry_run:
-            store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
+            store.persist_outcome(profile_id, profile_name, outcome, located_by_id, current_ids)
         if disappeared:
             log.info("Only disappeared listings (%d) - no email sent", len(disappeared))
         else:
@@ -221,7 +219,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
 
     if not recipients:
         log.error("Profile %s has no 'to' recipients configured - skipping email", profile_id)
-        store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
+        store.persist_outcome(profile_id, profile_name, outcome, located_by_id, current_ids)
         return
 
     # Send email FIRST
@@ -235,7 +233,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
         return
 
     # Persist AFTER successful email
-    store.persist_outcome(profile_id, profile_name, outcome, located_by_id)
+    store.persist_outcome(profile_id, profile_name, outcome, located_by_id, current_ids)
     store.prune(profile_id)
 
 
