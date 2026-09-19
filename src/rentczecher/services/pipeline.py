@@ -13,16 +13,15 @@ from datetime import datetime
 from typing import Literal, Protocol, runtime_checkable
 from uuid import uuid4
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.domain.dedup import DedupOutcome
 from rentczecher.domain.errors import PlaceNotFoundError
 from rentczecher.domain.listing import DisappearedListing, Listing
 from rentczecher.domain.scrape import ScraperHealth
 from rentczecher.domain.search import SearchSpec
-from rentczecher.services.dedup import cross_source_dedup
+from rentczecher.services.dedup import NameTierLookup, cross_source_dedup
 from rentczecher.services.diff import classify
 from rentczecher.services.filters import apply_filters
-from rentczecher.services.locate import locate_listings
+from rentczecher.services.locate import PlaceResolver, locate_listings
 from rentczecher.services.scrape import Scraper, scrape_all
 from rentczecher.services.score import compute_score
 
@@ -46,6 +45,11 @@ class RunStore(Protocol):
     def persist_outcome(self, profile_id: str, profile_name: str, outcome: DedupOutcome,
                         located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
         ...
+
+
+class Gazetteer(PlaceResolver, NameTierLookup, Protocol):
+    """The offline-geocoding surface the pipeline drives: text/GPS place
+    resolution for locate_listings, name-tier lookup for cross_source_dedup."""
 
 
 @dataclass(frozen=True, slots=True)

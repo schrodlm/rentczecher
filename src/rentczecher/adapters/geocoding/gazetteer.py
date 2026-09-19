@@ -129,6 +129,9 @@ class Gazetteer:
                  or self._named_district(rows))
         return self._to_place(match) if match else None
 
+    def candidate_names(self, names: Iterable[str]) -> list[str]:
+        return candidate_names(names)
+
     def name_tiers(self, name: str, muni: str | None = None) -> frozenset[str]:
         """Tiers at which any place carries this name, ambiguity ignored.
 
