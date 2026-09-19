@@ -186,6 +186,11 @@ def _scraper(*listings):
     return FakeScraper
 
 
+class _SilentNotifier:
+    def send(self, notification) -> bool:
+        return True
+
+
 class TestDryRunIsReadOnly:
     """A dry run writes no state. Miss counters advance only on real runs."""
 
@@ -196,7 +201,7 @@ class TestDryRunIsReadOnly:
             client=None,
             scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
             gazetteer=Gazetteer(),
-            notify=lambda *a, **k: None,
+            notifier=_SilentNotifier(),
         )
 
     def _profile(self, profile_id):
@@ -243,7 +248,8 @@ class TestDryRunIsReadOnly:
 class TestNotifierSkipsEmailWithoutRecipients:
     """A profile with notable listings but no 'to' recipients still
     persists its outcome, but skips pruning stale tracking - only a real
-    send stands in for the owner having seen the run's results."""
+    send stands in for the owner having seen the run's results. The missing-
+    recipients error logs only when a notification is actually attempted."""
 
     def test_outcome_persists_but_stale_tracking_is_kept(self, run_store):
         store, conn = run_store
@@ -260,13 +266,15 @@ class TestNotifierSkipsEmailWithoutRecipients:
                      "'2000-01-01T00:00:00+00:00', 0)", (profile_id,))
         conn.commit()
 
+        notifier = main_module._build_smtp_notifier(
+            email_cfg={}, profile_id=profile_id, recipients=[]) or main_module._NoRecipientsNotifier(profile_id)
         deps = PipelineDeps(
             store=store,
             clock=utc_now,
             client=None,
             scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
             gazetteer=Gazetteer(),
-            notify=main_module._build_notifier(email_cfg={}, profile_id=profile_id),
+            notifier=notifier,
         )
         profile = {
             "id": profile_id, "name": "No recipients", "to": [],
@@ -280,3 +288,37 @@ class TestNotifierSkipsEmailWithoutRecipients:
             "SELECT listing_id FROM listing_tracking WHERE profile_id = ? ORDER BY listing_id", (profile_id,)
         ).fetchall()
         assert [r["listing_id"] for r in remaining] == ["sreality:new", "sreality:stale"]
+
+    def test_missing_recipients_error_only_logs_when_something_is_notable(self, run_store, caplog):
+        store, conn = run_store
+        profile_id = "no-recipients"
+
+        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
+                     "VALUES (?, 'No recipients', 1, 't')", (profile_id,))
+        conn.commit()
+
+        notifier = main_module._build_smtp_notifier(
+            email_cfg={}, profile_id=profile_id, recipients=[]) or main_module._NoRecipientsNotifier(profile_id)
+        profile = {
+            "id": profile_id, "name": "No recipients", "to": [],
+            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+            "scrapers": ["sreality"],
+        }
+
+        with caplog.at_level("ERROR", logger="rentczecher"):
+            deps = PipelineDeps(
+                store=store, clock=utc_now, client=None,
+                scrapers={"sreality": _scraper()}, gazetteer=Gazetteer(), notifier=notifier,
+            )
+            run_profile(profile, deps)
+        assert not caplog.records
+
+        caplog.clear()
+        with caplog.at_level("ERROR", logger="rentczecher"):
+            deps = PipelineDeps(
+                store=store, clock=utc_now, client=None,
+                scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
+                gazetteer=Gazetteer(), notifier=notifier,
+            )
+            run_profile(profile, deps)
+        assert any("has no 'to' recipients configured" in r.getMessage() for r in caplog.records)

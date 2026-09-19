@@ -1,22 +1,24 @@
 {
  "notable": [
   {
-   "id": "sreality:1003",
-   "source": "sreality",
-   "title": "Pronájem bytu 48 m²",
-   "price": 19000,
-   "location": "Dělnická, Praha - Holešovice, Praha 7",
-   "url": "https://www.sreality.cz/detail/pronajem/byt/praha-holesovice-delnicka/1003",
-   "image_url": null,
-   "size_m2": 48,
-   "disposition": null,
-   "lat": 50.1031,
-   "lon": 14.4499,
-   "charges": null,
+   "id": "bezrealitky:2002",
+   "source": "bezrealitky",
+   "title": "Pronájem - 2+kk - 61 m² - Veverkova, Praha",
+   "price": 24000,
+   "location": "Veverkova, Praha - Holešovice",
+   "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2002",
+   "image_url": "https://img.example/b2002.jpg",
+   "size_m2": 61,
+   "disposition": "2+kk",
+   "lat": null,
+   "lon": null,
+   "charges": 2500,
    "land_m2": null,
-   "score": 53,
+   "score": 85,
    "price_drop_from": null,
-   "cross_source": []
+   "cross_source": [
+    "remax"
+   ]
   },
   {
    "id": "bezrealitky:2001",
@@ -40,24 +42,22 @@
    ]
   },
   {
-   "id": "bezrealitky:2002",
-   "source": "bezrealitky",
-   "title": "Pronájem - 2+kk - 61 m² - Veverkova, Praha",
-   "price": 24000,
-   "location": "Veverkova, Praha - Holešovice",
-   "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2002",
-   "image_url": "https://img.example/b2002.jpg",
-   "size_m2": 61,
-   "disposition": "2+kk",
-   "lat": null,
-   "lon": null,
-   "charges": 2500,
+   "id": "sreality:1003",
+   "source": "sreality",
+   "title": "Pronájem bytu 48 m²",
+   "price": 19000,
+   "location": "Dělnická, Praha - Holešovice, Praha 7",
+   "url": "https://www.sreality.cz/detail/pronajem/byt/praha-holesovice-delnicka/1003",
+   "image_url": null,
+   "size_m2": 48,
+   "disposition": null,
+   "lat": 50.1031,
+   "lon": 14.4499,
+   "charges": null,
    "land_m2": null,
-   "score": 85,
+   "score": 53,
    "price_drop_from": null,
-   "cross_source": [
-    "remax"
-   ]
+   "cross_source": []
   },
   {
    "id": "sreality:1002",

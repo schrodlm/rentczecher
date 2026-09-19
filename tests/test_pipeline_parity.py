@@ -166,10 +166,24 @@ def _seen_snapshot(conn):
     }
 
 
-def _deps(store, scrapers, notify):
+class _CaptureNotifier:
+    def __init__(self):
+        self.notification = None
+
+    def send(self, notification) -> bool:
+        self.notification = notification
+        return True
+
+
+class _SilentNotifier:
+    def send(self, notification) -> bool:
+        return True
+
+
+def _deps(store, scrapers, notifier):
     return PipelineDeps(
         store=store, clock=utc_now, client=None, scrapers=scrapers,
-        gazetteer=GAZETTEER, notify=notify,
+        gazetteer=GAZETTEER, notifier=notifier,
     )
 
 
@@ -184,18 +198,14 @@ def test_pipeline_outcome_matches_golden(run_store):
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
     _seed_seen_state(conn)
 
-    sent = {}
-
-    def capture_notify(listings, spec, profile_config, disappeared):
-        sent["notable"] = listings
-        sent["disappeared"] = disappeared
-
-    deps = _deps(store, _fake_scrapers(listing_data), capture_notify)
+    notifier = _CaptureNotifier()
+    deps = _deps(store, _fake_scrapers(listing_data), notifier)
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
+    notification = notifier.notification
     snapshot = {
-        "notable": [_listing_snapshot(l) for l in sent["notable"]],
-        "disappeared_ids": sorted(d.id for d in sent["disappeared"]),
+        "notable": [_listing_snapshot(l) for l in notification.listings],
+        "disappeared_ids": sorted(d.id for d in notification.disappeared),
         "seen_after": _seen_snapshot(conn),
     }
 
@@ -214,7 +224,7 @@ def test_run_profile_persists_only_through_the_store(run_store):
     store, _conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
 
-    deps = _deps(store, _fake_scrapers(listing_data), lambda *a, **k: None)
+    deps = _deps(store, _fake_scrapers(listing_data), _SilentNotifier())
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
     assert store.seen_ids(PROFILE_ID)
