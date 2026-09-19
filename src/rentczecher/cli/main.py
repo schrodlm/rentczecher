@@ -18,6 +18,7 @@ from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNot
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.services.diff import classify
+from rentczecher.services.filters import apply_filters
 from rentczecher.services.locate import locate_listings
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
@@ -99,24 +100,6 @@ def _release_pidlock():
         pass
 
 
-def _apply_filters(listings: list, spec: SearchSpec) -> list:
-    result = listings
-    if spec.dispositions:
-        disp_lower = {d.lower() for d in spec.dispositions}
-        result = [
-            l for l in result
-            if l.disposition is None or l.disposition.lower() in disp_lower
-        ]
-
-    if spec.min_size_m2 > 0:
-        result = [l for l in result if l.size_m2 is None or l.size_m2 >= spec.min_size_m2]
-
-    if spec.min_land_m2 > 0:
-        result = [l for l in result if l.land_m2 is None or l.land_m2 >= spec.min_land_m2]
-
-    return result
-
-
 def run_profile(profile_id: str, profile: dict, email_cfg: dict,
                 client: httpx.Client, store: SqliteRunStore,
                 dry_run: bool = False,
@@ -145,7 +128,7 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
         return
 
     # Apply filters
-    filtered = _apply_filters(all_listings, spec)
+    filtered = apply_filters(all_listings, spec)
     if len(filtered) < len(all_listings):
         log.info("Filtered: %d -> %d listings", len(all_listings), len(filtered))
     all_listings = filtered
