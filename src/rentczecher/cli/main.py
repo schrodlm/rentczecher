@@ -14,12 +14,13 @@ from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
-from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError, ScraperBrokenError
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.services.locate import locate_listings
 from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
+from rentczecher.services.scrape import scrape_all
 from rentczecher.services.score import compute_score
 from rentczecher.adapters.scrapers import ALL_SCRAPERS
 from rentczecher.adapters.scrapers.client import build_client
@@ -126,32 +127,17 @@ def run_profile(profile_id: str, profile: dict, email_cfg: dict,
     spec = SearchSpec.from_search_config(profile["search"])
 
     # Scrape all sources for this profile
-    all_listings = []
     enabled_scrapers = profile.get("scrapers", [])
     if not enabled_scrapers:
         log.warning("Profile %s has no enabled scrapers", profile_id)
         return
 
-    for name, scraper_cls in ALL_SCRAPERS.items():
-        if name not in enabled_scrapers:
-            continue
-
-        log.info("Running scraper: %s", name)
-        try:
-            scraper = scraper_cls(spec, client)
-            listings = scraper.scrape()
-            if len(listings) == 0:
-                log.warning("  %s: returned 0 results - site structure may have changed!", name)
-            else:
-                log.info("  %s: found %d listings", name, len(listings))
-            all_listings.extend(listings)
-        except PlaceNotFoundError as error:
-            log.error("Profile %s: %s - fix search.place", profile_id, error)
-            return
-        except ScraperBrokenError as error:
-            log.error("  %s: portal changed its contract - scraper needs updating: %s", name, error)
-        except Exception:
-            log.exception("  %s: scraper failed", name)
+    scraper_classes = {name: cls for name, cls in ALL_SCRAPERS.items() if name in enabled_scrapers}
+    try:
+        all_listings, _scraper_health = scrape_all(scraper_classes, spec, client)
+    except PlaceNotFoundError as error:
+        log.error("Profile %s: %s - fix search.place", profile_id, error)
+        return
 
     if not all_listings:
         log.info("No listings found for profile %s", profile_id)
