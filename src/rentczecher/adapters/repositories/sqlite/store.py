@@ -35,6 +35,9 @@ class SqliteRunStore:
     def get_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
         return self._listings.get_disappeared(profile_id, current_ids)
 
+    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
+        return self._listings.pending_disappeared(profile_id, current_ids)
+
     def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
         self._listings.increment_miss_counts(profile_id, current_ids)
 

@@ -150,9 +150,38 @@ class SqliteListingRepository(ListingRepository):
 
     def get_disappeared(self, profile_id: str, current_ids: set[str],
                         max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+        candidates = self._tracked_within_window(profile_id, max_age_days)
+        return [
+            self._to_disappeared_listing(row)
+            for row in candidates
+            if row["id"] not in current_ids and row["miss_count"] >= min_misses
+        ]
+
+    def pending_disappeared(self, profile_id: str, current_ids: set[str],
+                            max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+        """The disappearances get_disappeared would report once this run's
+        miss counts land, without writing them: absent listings evaluated
+        one miss ahead, present ones at zero. Lets the pipeline compute the
+        notification before the send it must not corrupt state ahead of."""
+        candidates = self._tracked_within_window(profile_id, max_age_days)
+        result = []
+        for row in candidates:
+            if row["id"] in current_ids:
+                continue
+            pending_miss_count = row["miss_count"] + 1
+            if pending_miss_count >= min_misses:
+                result.append(self._to_disappeared_listing(row))
+        return result
+
+    def _tracked_within_window(self, profile_id: str, max_age_days: int) -> list[sqlite3.Row]:
+        """Every listing_tracking row for the profile whose first_seen_at is
+        recent enough to ever qualify as disappeared, joined with the
+        listing, property, and latest-price facts a report needs.
+
+        Reported only while recently first seen: an old listing that finally
+        drops off is stale, not news.
+        """
         cutoff = (self._now() - timedelta(days=max_age_days)).isoformat()
-        # Reported only while recently first seen: an old listing that finally
-        # drops off is stale, not news.
         # Latest price observation per listing: highest id wins ties on
         # observed_at, since id is monotonic insertion order and observed_at
         # is not guaranteed distinct.
@@ -172,15 +201,9 @@ class SqliteListingRepository(ListingRepository):
                     ORDER BY observed_at DESC, id DESC
                     LIMIT 1
                 )
-            WHERE listing_tracking.profile_id = ? AND listing_tracking.miss_count >= ?
-                  AND listing_tracking.first_seen_at >= ?
+            WHERE listing_tracking.profile_id = ? AND listing_tracking.first_seen_at >= ?
         """
-        rows = self._conn.execute(stmt, (profile_id, min_misses, cutoff))
-        return [
-            self._to_disappeared_listing(row)
-            for row in rows
-            if row["id"] not in current_ids
-        ]
+        return self._conn.execute(stmt, (profile_id, cutoff)).fetchall()
 
     def prune(self, profile_id: str, max_age_days: int = 90) -> int:
         """Forgets the profile's stale tracking rows. Listing facts, price

@@ -230,6 +230,67 @@ class TestDisappeared:
         assert gone.price is None
 
 
+class TestPendingDisappeared:
+    """pending_disappeared must report exactly what get_disappeared reports
+    once increment_miss_counts has landed the same run's counts - the
+    pairing today's pipeline relies on to compute a notification before any
+    write."""
+
+    def _seed_missing(self, repo, conn, first_seen, miss_count):
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:9"))
+        conn.execute(
+            "UPDATE listing_tracking SET first_seen_at = ?, miss_count = ? "
+            "WHERE profile_id = ? AND listing_id = 'sreality:9'",
+            (first_seen.isoformat(), miss_count, PROFILE))
+        conn.commit()
+
+    def _matches_post_increment_get_disappeared(self, repo, profile_id, current_ids):
+        pending = repo.pending_disappeared(profile_id, current_ids)
+        repo.increment_miss_counts(profile_id, current_ids)
+        after = repo.get_disappeared(profile_id, current_ids)
+        assert [d.id for d in pending] == [d.id for d in after]
+        return pending
+
+    def test_absent_listing_one_miss_from_threshold_is_reported_ahead_of_the_write(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=1), 2)
+        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
+        assert [d.id for d in pending] == ["sreality:9"]
+
+    def test_absent_listing_still_short_of_threshold_is_not_reported(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=1), 1)
+        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
+        assert pending == []
+
+    def test_present_listing_is_never_reported_even_at_a_stale_miss_count(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=1), 5)
+        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, {"sreality:9"})
+        assert pending == []
+
+    def test_first_seen_before_window_is_excluded_even_one_miss_from_threshold(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=8), 2)
+        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
+        assert pending == []
+
+    def test_only_the_missing_profile_reports_it(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=1), 2)
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:9"))
+        assert [d.id for d in repo.pending_disappeared(PROFILE, set())] == ["sreality:9"]
+        assert repo.pending_disappeared(OTHER_PROFILE, set()) == []
+
+    def test_does_not_write_anything(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        self._seed_missing(repo, conn, BASE - timedelta(days=1), 2)
+        repo.pending_disappeared(PROFILE, set())
+        row = conn.execute(
+            "SELECT miss_count FROM listing_tracking WHERE listing_id = 'sreality:9'").fetchone()
+        assert row["miss_count"] == 2
+
+
 class TestLatestPrices:
     def test_latest_observation_wins(self, tmp_path):
         repo, conn = _repo(tmp_path)
