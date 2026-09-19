@@ -111,7 +111,8 @@ def _has_recipients(profile_config: dict) -> bool:
     return bool(profile_config.get("to", []))
 
 
-def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = False) -> ProfileRunResult:
+def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = False,
+                on_scraper_done: Callable[[str, ScraperHealth], None] | None = None) -> ProfileRunResult:
     profile_id = profile_config["id"]
     run_id = str(uuid4())
     started_at = deps.clock()
@@ -120,7 +121,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
     enabled = {name: cls for name, cls in deps.scrapers.items()
               if name in profile_config["scrapers"]}
     try:
-        scraped, scraper_health = scrape_all(enabled, spec, deps.client)
+        scraped, scraper_health = scrape_all(enabled, spec, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
         log.error("Profile %s: %s - fix search.place", profile_id, error)
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
