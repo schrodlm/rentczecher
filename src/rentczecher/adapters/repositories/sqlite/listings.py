@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from rentczecher.adapters.repositories.repositories import ListingRepository
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.listing import DisappearedListing
+from rentczecher.domain.listing import DisappearedListing, InboxCard, SiblingSource
 from rentczecher.domain.price import PriceObservation
 
 
@@ -184,6 +184,98 @@ class SqliteListingRepository(ListingRepository):
             if pending_miss_count >= min_misses:
                 result.append(self._to_disappeared_listing(row))
         return result
+
+    def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
+        """The profile's tracked listings as the GUI's inbox renders them:
+        listing and property facts, this profile's tracking state, the
+        latest price, a price-drop baseline, and sibling postings on other
+        portals. only_new restricts to listings never viewed by the profile.
+        """
+        # Latest and previous price observation per listing: highest id wins
+        # ties on observed_at, since id is monotonic insertion order and
+        # observed_at is not guaranteed distinct.
+        stmt = """
+            SELECT listings.id AS id, listings.source AS source, listings.url AS url,
+                   listings.property_id AS property_id,
+                   properties.title AS title, properties.location AS location,
+                   properties.size_m2 AS size_m2, properties.disposition AS disposition,
+                   listing_tracking.first_seen_at AS first_seen_at,
+                   listing_tracking.viewed_at AS viewed_at,
+                   listing_tracking.favourited_at AS favourited_at,
+                   latest_price.price AS price,
+                   previous_price.price AS previous_price
+            FROM listing_tracking
+            JOIN listings ON listings.id = listing_tracking.listing_id
+            JOIN properties ON properties.id = listings.property_id
+            LEFT JOIN price_observations AS latest_price
+                ON latest_price.id = (
+                    SELECT id FROM price_observations
+                    WHERE listing_id = listings.id
+                    ORDER BY observed_at DESC, id DESC
+                    LIMIT 1
+                )
+            LEFT JOIN price_observations AS previous_price
+                ON previous_price.id = (
+                    SELECT id FROM price_observations
+                    WHERE listing_id = listings.id
+                    ORDER BY observed_at DESC, id DESC
+                    LIMIT 1 OFFSET 1
+                )
+            WHERE listing_tracking.profile_id = ?
+        """
+        params: tuple = (profile_id,)
+        if only_new:
+            stmt += " AND listing_tracking.viewed_at IS NULL"
+        rows = self._conn.execute(stmt, params).fetchall()
+        listings_by_property = self._listings_by_property({row["property_id"] for row in rows})
+        return [self._to_inbox_card(row, listings_by_property) for row in rows]
+
+    def _listings_by_property(
+        self, property_ids: set[str],
+    ) -> dict[str, list[tuple[str, SiblingSource]]]:
+        """Every listing posted under each given property, keyed by
+        property_id and paired with its own id - the take-na badge's raw
+        data before a card excludes its own listing from its own sibling
+        list."""
+        if not property_ids:
+            return {}
+        placeholders = ", ".join("?" for _ in property_ids)
+        stmt = f"""
+            SELECT id, property_id, source, url FROM listings
+            WHERE property_id IN ({placeholders})
+        """
+        result: dict[str, list[tuple[str, SiblingSource]]] = {pid: [] for pid in property_ids}
+        for row in self._conn.execute(stmt, tuple(property_ids)):
+            result[row["property_id"]].append(
+                (row["id"], SiblingSource(source=row["source"], url=row["url"])))
+        return result
+
+    def _to_inbox_card(
+        self, row: sqlite3.Row, listings_by_property: dict[str, list[tuple[str, SiblingSource]]],
+    ) -> InboxCard:
+        price_drop_from = None
+        if row["price"] is not None and row["previous_price"] is not None \
+                and row["previous_price"] > row["price"]:
+            price_drop_from = row["previous_price"]
+        siblings = tuple(
+            sibling for listing_id, sibling in listings_by_property.get(row["property_id"], [])
+            if listing_id != row["id"]
+        )
+        return InboxCard(
+            id=row["id"],
+            source=row["source"],
+            url=row["url"],
+            title=row["title"],
+            location=row["location"],
+            size_m2=row["size_m2"],
+            disposition=row["disposition"],
+            first_seen_at=row["first_seen_at"],
+            viewed_at=row["viewed_at"],
+            favourited_at=row["favourited_at"],
+            price=row["price"],
+            price_drop_from=price_drop_from,
+            sibling_sources=siblings,
+        )
 
     def _tracked_within_window(self, profile_id: str, max_age_days: int) -> list[sqlite3.Row]:
         """Every listing_tracking row for the profile whose first_seen_at is
