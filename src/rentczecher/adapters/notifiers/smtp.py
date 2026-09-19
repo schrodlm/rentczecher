@@ -5,8 +5,8 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from html import escape
 
-from rentczecher.adapters.repositories.repositories import DisappearedListing
 from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.listing import DisappearedListing
 from rentczecher.domain.search import SearchSpec
 
 NBSP = "\u00a0"  # Non-breaking space (works in both HTML and plain text)

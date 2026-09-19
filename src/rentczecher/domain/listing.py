@@ -146,3 +146,22 @@ class Listing:
     @property
     def place(self) -> ResolvedPlace | None:
         return self.annotations.place
+
+
+@dataclass(frozen=True, slots=True)
+class DisappearedListing:
+    """A listing judged gone, with the property facts and latest price the
+    disappeared-listings email needs to render it.
+
+    title/location/price are nullable: a listing can disappear before its
+    property has a title or before any price observation was ever recorded.
+    """
+
+    id: str
+    source: str
+    url: str
+    first_seen_at: str
+    miss_count: int
+    title: str | None
+    location: str | None
+    price: int | None

@@ -2,9 +2,10 @@ import sqlite3
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from rentczecher.adapters.repositories.repositories import DisappearedListing, ListingRepository
+from rentczecher.adapters.repositories.repositories import ListingRepository
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.listing import DisappearedListing
 from rentczecher.domain.price import PriceObservation
 
 

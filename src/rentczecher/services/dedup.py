@@ -6,14 +6,32 @@ size). No factor can veto on its own - only the combined score, gated by
 an evidence floor, decides a match.
 """
 
-import json
-from dataclasses import dataclass
-from enum import Enum
-
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer, candidate_names
-from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.dedup import (
+    DedupOutcome,
+    FactorContribution,
+    MatchBand,
+    MatchScore,
+    MergeDecision,
+    UncertainPair,
+    match_score_to_json,
+)
 from rentczecher.domain.disposition import normalize_disposition
 from rentczecher.domain.geo import haversine_m
+from rentczecher.domain.listing import Listing
+
+__all__ = [
+    "DedupOutcome",
+    "FactorContribution",
+    "MatchBand",
+    "MatchScore",
+    "MergeDecision",
+    "UncertainPair",
+    "match_score_to_json",
+    "cross_source_dedup",
+    "promote_fields",
+    "score_match",
+]
 
 # Tiers a resolved point or a shared name can land at, most specific first.
 # "gps" is a portal-provided point, tied with "street" for the tightest ceiling.
@@ -66,78 +84,6 @@ _MATCH_THRESHOLD = 55.0
 _UNCERTAIN_THRESHOLD = 30.0
 
 FactorResult = tuple[float, bool]
-
-
-@dataclass(frozen=True, slots=True)
-class FactorContribution:
-    name: str
-    contribution: float
-    evidence: bool
-
-class MatchBand(Enum):
-    MATCH = "match"
-    UNCERTAIN = "uncertain"
-    NO_MATCH = "no_match"
-
-
-@dataclass(frozen=True, slots=True)
-class MatchScore:
-    total: float
-    factors: tuple[FactorContribution, ...]
-    band: MatchBand
-
-
-def match_score_to_json(score: MatchScore) -> str:
-    """A MatchScore as a JSON string, for the audit trail's match-reason column."""
-    payload = {
-        "total": score.total,
-        "band": score.band.value,
-        "factors": [
-            {
-                "name": factor.name,
-                "contribution": factor.contribution,
-                "evidence": factor.evidence,
-            }
-            for factor in score.factors
-        ],
-    }
-    return json.dumps(payload)
-
-
-@dataclass(frozen=True, slots=True)
-class MergeDecision:
-    """One merged pair, as scored - the original two listing ids, even when
-    a later re-parenting moves what they were absorbed into."""
-
-    keeper_id: str
-    absorbed_id: str
-    score: MatchScore
-
-
-@dataclass(frozen=True, slots=True)
-class UncertainPair:
-    listing_id_a: str
-    listing_id_b: str
-    score: MatchScore
-
-
-@dataclass(frozen=True, slots=True)
-class DedupOutcome:
-    survivors: list[Listing]
-    merges: tuple[MergeDecision, ...]
-    uncertain: tuple[UncertainPair, ...]
-
-    def final_keeper_ids(self) -> dict[str, str]:
-        """Absorbed listing id to its chain-final keeper id. When a keeper
-        was itself later absorbed, the chain resolves to the listing that
-        actually survived."""
-        keeper_of = {merge.absorbed_id: merge.keeper_id for merge in self.merges}
-        resolved: dict[str, str] = {}
-        for absorbed_id, keeper_id in keeper_of.items():
-            while keeper_id in keeper_of:
-                keeper_id = keeper_of[keeper_id]
-            resolved[absorbed_id] = keeper_id
-        return resolved
 
 
 def _looser_tier(tier_a: str, tier_b: str) -> str | None:

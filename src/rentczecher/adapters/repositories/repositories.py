@@ -2,30 +2,11 @@
 lives behind them."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.listing import DisappearedListing
 from rentczecher.domain.price import PriceObservation
 from rentczecher.domain.property import PropertyIdentity
-
-
-@dataclass(frozen=True, slots=True)
-class DisappearedListing:
-    """A listing judged gone, with the property facts and latest price the
-    disappeared-listings email needs to render it.
-
-    title/location/price are nullable: a listing can disappear before its
-    property has a title or before any price observation was ever recorded.
-    """
-
-    id: str
-    source: str
-    url: str
-    first_seen_at: str
-    miss_count: int
-    title: str | None
-    location: str | None
-    price: int | None
 
 
 class PropertyRepository(ABC):
