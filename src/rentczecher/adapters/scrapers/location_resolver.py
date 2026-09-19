@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
+from rentczecher.domain.errors import PlaceNotFoundError
+
 PLACES_PATH = Path(__file__).parent / "location_data" / "places.json"
 
 # Portals disagree on decoration: sreality "Hlavní město Praha" is remax
@@ -23,14 +25,6 @@ def normalize_name(name: str) -> str:
 
 def slugify(name: str) -> str:
     return normalize_name(name).replace(" ", "-")
-
-
-class PlaceNotFoundError(Exception):
-    def __init__(self, place: str, suggestions: tuple[str, ...]):
-        self.place = place
-        self.suggestions = suggestions
-        hint = f" - did you mean: {', '.join(suggestions)}?" if suggestions else ""
-        super().__init__(f"unknown place {place!r}{hint}")
 
 
 @dataclass(frozen=True, slots=True)

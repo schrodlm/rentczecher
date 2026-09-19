@@ -14,7 +14,7 @@ from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
-from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
+from rentczecher.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError, ScraperBrokenError
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.services.locate import locate_listings
@@ -22,9 +22,7 @@ from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.notifiers.smtp import send_email
 from rentczecher.services.score import compute_score
 from rentczecher.adapters.scrapers import ALL_SCRAPERS
-from rentczecher.adapters.scrapers.base import ScraperBrokenError
 from rentczecher.adapters.scrapers.client import build_client
-from rentczecher.adapters.scrapers.location_resolver import PlaceNotFoundError
 
 logging.basicConfig(
     level=logging.INFO,

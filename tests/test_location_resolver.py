@@ -8,12 +8,12 @@ import dataclasses
 import pytest
 
 from rentczecher.adapters.scrapers.location_resolver import (
-    PlaceNotFoundError,
     PlaceParams,
     normalize_name,
     resolve,
     slugify,
 )
+from rentczecher.domain.errors import PlaceNotFoundError
 
 
 class TestNormalizeName:

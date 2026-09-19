@@ -3,9 +3,10 @@ import time
 import unicodedata
 from dataclasses import dataclass
 
-from rentczecher.adapters.scrapers.base import BaseScraper, Listing, ScraperBrokenError
+from rentczecher.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
+from rentczecher.domain.errors import ScraperBrokenError
 from rentczecher.domain.location import ParsedPlace
 
 log = logging.getLogger("rentczecher")
