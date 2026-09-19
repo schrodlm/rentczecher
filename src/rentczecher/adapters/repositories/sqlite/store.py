@@ -3,12 +3,12 @@ from collections.abc import Callable
 from datetime import datetime
 from uuid import uuid4
 
-from rentczecher.adapters.repositories.repositories import DisappearedListing
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.repositories.sqlite.listings import SqliteListingRepository
 from rentczecher.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher.adapters.scrapers.base import Listing
+from rentczecher.domain.listing import DisappearedListing
 from rentczecher.services.assemble import assemble_property
 from rentczecher.services.dedup import DedupOutcome, match_score_to_json
 
