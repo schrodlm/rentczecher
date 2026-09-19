@@ -8,12 +8,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from rentczecher.services.pipeline import (
-    ProfileRunResult,
-    RunCounts,
-    RunStore,
-    ScraperHealth,
-)
+from rentczecher.domain.scrape import ScraperHealth
+from rentczecher.services.pipeline import ProfileRunResult, RunCounts, RunStore
 
 
 def test_sqlite_run_store_structurally_satisfies_run_store(run_store):
