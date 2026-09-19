@@ -64,15 +64,22 @@ def _scraper(listings):
     return FakeScraper
 
 
+class _CaptureNotifier:
+    def __init__(self):
+        self.notable: list[Listing] = []
+
+    def send(self, notification) -> bool:
+        self.notable = list(notification.listings)
+        return True
+
+
 def _run(run_store, monkeypatch, records):
     """Run one simulated scrape and report (new_ids, drops, disappeared_ids)."""
     store, _conn = run_store
     listings = _listings(*records)
 
-    captured = {"notable": [], "disappeared": set()}
-
-    def capture_notify(notable, spec, profile_config, disappeared):
-        captured["notable"] = notable
+    captured = {"disappeared": set()}
+    notifier = _CaptureNotifier()
 
     real_pending_disappeared = store.pending_disappeared
 
@@ -86,7 +93,7 @@ def _run(run_store, monkeypatch, records):
     deps = PipelineDeps(
         store=store, clock=utc_now, client=None,
         scrapers={"sreality": _scraper(listings)}, gazetteer=GAZETTEER,
-        notify=capture_notify,
+        notifier=notifier,
     )
 
     seen_before = store.seen_ids(PROFILE_ID)
@@ -94,7 +101,7 @@ def _run(run_store, monkeypatch, records):
 
     new_ids = {r["id"] for r in records} - seen_before
     drops = {(l.id, l.price_drop_from)
-             for l in captured["notable"] if l.price_drop_from is not None}
+             for l in notifier.notable if l.price_drop_from is not None}
     return new_ids, drops, captured["disappeared"]
 
 

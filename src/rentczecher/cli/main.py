@@ -12,15 +12,15 @@ from typing import cast
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.notifiers.smtp import send_email
+from rentczecher.adapters.notifiers.smtp import SmtpNotifier
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher.adapters.scrapers import ALL_SCRAPERS
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
-from rentczecher.domain.listing import DisappearedListing, Listing
 from rentczecher.domain.search import SearchSpec
+from rentczecher.services.notify import Notification
 from rentczecher.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 from rentczecher.services.scrape import Scraper
 
@@ -97,24 +97,30 @@ def _release_pidlock():
         pass
 
 
-def _build_notifier(email_cfg: dict, profile_id: str):
-    """Adapts send_email's call shape to the pipeline's notify Protocol,
-    merging in the profile's recipients."""
+def _build_smtp_notifier(email_cfg: dict, profile_id: str, recipients: list[str]) -> SmtpNotifier | None:
+    if not recipients:
+        return None
+    return SmtpNotifier(
+        smtp_host=email_cfg["smtp_host"],
+        smtp_port=email_cfg["smtp_port"],
+        smtp_user=email_cfg["smtp_user"],
+        smtp_password=email_cfg["smtp_password"],
+        from_address=email_cfg["from"],
+        recipients=tuple(recipients),
+    )
 
-    def notify(listings: list[Listing], spec: SearchSpec, profile_config: dict,
-              disappeared: list[DisappearedListing]) -> bool:
-        recipients = profile_config.get("to", [])
-        if not recipients:
-            # Not a send failure: the run's outcome still persists, only the
-            # email is skipped.
-            log.error("Profile %s has no 'to' recipients configured - skipping email", profile_id)
-            return True
-        merged_email_cfg = {**email_cfg, "to": recipients}
-        send_email(listings, merged_email_cfg, spec, profile=profile_config, disappeared=disappeared)
-        log.info("Email sent to %s with %d listing(s)", ", ".join(recipients), len(listings))
+
+class _NoRecipientsNotifier:
+    """Stands in for a profile with no configured recipients: a run still
+    persists its outcome, it just never sends anything. The warning only
+    fires when there was actually something to notify about."""
+
+    def __init__(self, profile_id: str):
+        self._profile_id = profile_id
+
+    def send(self, notification: Notification) -> bool:
+        log.error("Profile %s has no 'to' recipients configured - skipping email", self._profile_id)
         return True
-
-    return notify
 
 
 def _log_run_result(profile_id: str, result: ProfileRunResult) -> None:
@@ -195,13 +201,15 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     name: cast(Callable[[SearchSpec, object], Scraper], cls)
                     for name, cls in ALL_SCRAPERS.items() if name in profile["scrapers"]
                 }
+                notifier = _build_smtp_notifier(
+                    email_cfg, profile_id, profile.get("to", [])) or _NoRecipientsNotifier(profile_id)
                 deps = PipelineDeps(
                     store=store,
                     clock=utc_now,
                     client=client,
                     scrapers=scrapers,
                     gazetteer=gazetteer,
-                    notify=_build_notifier(email_cfg, profile_id),
+                    notifier=notifier,
                 )
                 try:
                     result = run_profile({**profile, "id": profile_id}, deps, dry_run=dry_run)

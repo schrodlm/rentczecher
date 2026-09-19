@@ -76,25 +76,36 @@ def _profile_config(scrapers=("sreality",), **overrides):
     return config
 
 
-def _deps(store=None, notify=None, scrapers=None, clock=None):
+class FakeNotifier:
+    """Records every notification handed to it and returns a canned result,
+    so a test can assert whether send was called without a real channel."""
+
+    def __init__(self, result=True):
+        self.result = result
+        self.sent: list = []
+
+    def send(self, notification) -> bool:
+        if isinstance(self.result, Exception):
+            raise self.result
+        self.sent.append(notification)
+        return self.result
+
+
+def _deps(store=None, notifier=None, scrapers=None, clock=None):
     return PipelineDeps(
         store=store if store is not None else FakeRunStore(),
         clock=clock if clock is not None else (lambda: BASE),
         client=None,
         scrapers=scrapers if scrapers is not None else {"sreality": _scraper([_listing("1", "sreality")])},
         gazetteer=GAZETTEER,
-        notify=notify if notify is not None else (lambda *a, **k: None),
+        notifier=notifier if notifier is not None else FakeNotifier(),
     )
 
 
 class TestNotifyThenCommit:
     def test_a_raising_notify_persists_nothing_including_miss_counters(self):
         store = FakeRunStore()
-
-        def raising_notify(*args, **kwargs):
-            raise RuntimeError("smtp exploded")
-
-        deps = _deps(store=store, notify=raising_notify)
+        deps = _deps(store=store, notifier=FakeNotifier(result=RuntimeError("smtp exploded")))
 
         with pytest.raises(RuntimeError):
             run_profile(_profile_config(), deps)
@@ -104,7 +115,7 @@ class TestNotifyThenCommit:
 
     def test_a_notify_returning_false_persists_nothing(self):
         store = FakeRunStore()
-        deps = _deps(store=store, notify=lambda *a, **k: False)
+        deps = _deps(store=store, notifier=FakeNotifier(result=False))
 
         run_profile(_profile_config(), deps)
 
@@ -113,7 +124,7 @@ class TestNotifyThenCommit:
 
     def test_a_successful_notify_persists_once(self):
         store = FakeRunStore()
-        deps = _deps(store=store, notify=lambda *a, **k: True)
+        deps = _deps(store=store, notifier=FakeNotifier(result=True))
 
         run_profile(_profile_config(), deps)
 
@@ -122,7 +133,7 @@ class TestNotifyThenCommit:
 
     def test_no_recipients_persists_but_does_not_prune(self):
         store = FakeRunStore()
-        deps = _deps(store=store, notify=lambda *a, **k: True)
+        deps = _deps(store=store, notifier=FakeNotifier(result=True))
 
         run_profile(_profile_config(to=[]), deps)
 
@@ -130,20 +141,15 @@ class TestNotifyThenCommit:
         assert store.prune_calls == []
 
     def test_nothing_notable_persists_without_calling_notify(self):
-        calls = []
-
-        def spying_notify(*args, **kwargs):
-            calls.append(args)
-            return True
-
         store = FakeRunStore()
         store.seen = {"sreality:1"}
         store.prices = {"sreality:1": 20000}
-        deps = _deps(store=store, notify=spying_notify)
+        notifier = FakeNotifier(result=True)
+        deps = _deps(store=store, notifier=notifier)
 
         run_profile(_profile_config(), deps)
 
-        assert calls == []
+        assert notifier.sent == []
         assert len(store.persist_calls) == 1
         assert store.prune_calls == []
 
@@ -151,7 +157,7 @@ class TestNotifyThenCommit:
 class TestDryRun:
     def test_performs_zero_store_writes(self):
         store = FakeRunStore()
-        deps = _deps(store=store, notify=lambda *a, **k: True)
+        deps = _deps(store=store, notifier=FakeNotifier(result=True))
 
         run_profile(_profile_config(), deps, dry_run=True)
 
@@ -159,13 +165,13 @@ class TestDryRun:
         assert store.prune_calls == []
 
     def test_does_not_call_notify(self):
-        calls = []
         store = FakeRunStore()
-        deps = _deps(store=store, notify=lambda *a, **k: calls.append(1))
+        notifier = FakeNotifier(result=True)
+        deps = _deps(store=store, notifier=notifier)
 
         run_profile(_profile_config(), deps, dry_run=True)
 
-        assert calls == []
+        assert notifier.sent == []
 
 
 class TestScraperIsolation:

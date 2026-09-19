@@ -1,4 +1,6 @@
+import logging
 import smtplib
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -7,7 +9,9 @@ from html import escape
 
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.listing import DisappearedListing
-from rentczecher.domain.search import SearchSpec
+from rentczecher.services.notify import Notification
+
+log = logging.getLogger("rentczecher")
 
 NBSP = "\u00a0"  # Non-breaking space (works in both HTML and plain text)
 
@@ -177,47 +181,29 @@ def _render_disappeared_section(disappeared: list[DisappearedListing], is_rent: 
     </div>"""
 
 
-def send_email(listings: list[Listing], email_cfg: dict, spec: SearchSpec,
-               profile: dict | None = None,
-               disappeared: list[DisappearedListing] | None = None) -> None:
-    if not listings:
-        return
-
-    profile = profile or {}
-    profile_name = profile.get("name", "Byt Watchdog")
-    is_rent = spec.offer_type == "rent"
-
-    # Sort by score descending
-    listings = sorted(listings, key=lambda l: l.score, reverse=True)
-
-    cards_html = "\n".join(_render_card(l, is_rent) for l in listings)
+def _subtitle(notification: Notification) -> str:
+    new_count = sum(1 for l in notification.listings if not l.price_drop_from)
+    drop_count = sum(1 for l in notification.listings if l.price_drop_from)
+    parts = []
+    if new_count:
+        parts.append(f"{new_count} nových")
+    if drop_count:
+        parts.append(f"{drop_count} slev")
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    disappeared_html = _render_disappeared_section(disappeared or [], is_rent)
+    return ", ".join(parts) + f" ({now})"
 
-    new_count = sum(1 for l in listings if not l.price_drop_from)
-    drop_count = sum(1 for l in listings if l.price_drop_from)
-    subtitle_parts = []
-    if new_count:
-        subtitle_parts.append(f"{new_count} nových")
-    if drop_count:
-        subtitle_parts.append(f"{drop_count} slev")
-    subtitle = ", ".join(subtitle_parts) + f" ({now})"
 
-    # Subject line - distinguish new vs drops
-    subject_parts = []
-    if new_count:
-        subject_parts.append(f"{new_count} nových nabídek")
-    if drop_count:
-        subject_parts.append(f"{drop_count} slev")
-    subject_detail = ", ".join(subject_parts)
-
-    html = f"""<!DOCTYPE html>
+def _render_html(notification: Notification) -> str:
+    profile_name = notification.profile_name
+    cards_html = "\n".join(_render_card(l, notification.is_rent) for l in notification.listings)
+    disappeared_html = _render_disappeared_section(list(notification.disappeared), notification.is_rent)
+    return f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{escape(profile_name)}</title></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
 <div style="max-width:700px;margin:0 auto;">
   <h1 style="color:#1a1a1a;font-size:22px;margin-bottom:4px;">{escape(profile_name)}</h1>
-  <p style="color:#666;font-size:14px;margin-bottom:24px;">{subtitle}</p>
+  <p style="color:#666;font-size:14px;margin-bottom:24px;">{_subtitle(notification)}</p>
   {cards_html}
   {disappeared_html}
   <p style="text-align:center;color:#999;font-size:12px;margin-top:24px;">Byt Watchdog</p>
@@ -225,33 +211,48 @@ def send_email(listings: list[Listing], email_cfg: dict, spec: SearchSpec,
 </body>
 </html>"""
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{profile_name}: {subject_detail}"
-    msg["From"] = email_cfg["from"]
-    msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain="byt-watchdog")
 
-    recipients = email_cfg.get("to", [])
-    msg["To"] = ", ".join(recipients)
-
-    # Plain text
-    plain_lines = [f"{profile_name} - {subtitle}\n"]
-    for l in listings:
+def _render_plain(notification: Notification) -> str:
+    lines = [f"{notification.profile_name} - {_subtitle(notification)}\n"]
+    for l in notification.listings:
         extras = []
         if l.price_drop_from:
-            extras.append(f"SLEVA z {_format_price_plain(l.price_drop_from, is_rent)}")
+            extras.append(f"SLEVA z {_format_price_plain(l.price_drop_from, notification.is_rent)}")
         if l.land_m2:
             extras.append(f"pozemek {l.land_m2} m2")
         extra_str = " | ".join(extras)
         if extra_str:
             extra_str = f" | {extra_str}"
-        plain_lines.append(f"- [{l.score}%] {l.title} | {_format_price_plain(l.price, is_rent)}{extra_str} | {l.url}")
-    plain = "\n".join(plain_lines)
+        lines.append(f"- [{l.score}%] {l.title} | "
+                     f"{_format_price_plain(l.price, notification.is_rent)}{extra_str} | {l.url}")
+    return "\n".join(lines)
 
-    msg.attach(MIMEText(plain, "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    with smtplib.SMTP(email_cfg["smtp_host"], email_cfg["smtp_port"]) as server:
-        server.starttls()
-        server.login(email_cfg["smtp_user"], email_cfg["smtp_password"])
-        server.sendmail(email_cfg["from"], recipients, msg.as_string())
+@dataclass(frozen=True, slots=True)
+class SmtpNotifier:
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    from_address: str
+    recipients: tuple[str, ...]
+
+    def send(self, notification: Notification) -> bool:
+        if not notification.listings:
+            return True
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = notification.subject
+        msg["From"] = self.from_address
+        msg["To"] = ", ".join(self.recipients)
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain="byt-watchdog")
+        msg.attach(MIMEText(_render_plain(notification), "plain", "utf-8"))
+        msg.attach(MIMEText(_render_html(notification), "html", "utf-8"))
+
+        with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+            server.starttls()
+            server.login(self.smtp_user, self.smtp_password)
+            server.sendmail(self.from_address, self.recipients, msg.as_string())
+        log.info("Email sent to %s with %d listing(s)", ", ".join(self.recipients), len(notification.listings))
+        return True

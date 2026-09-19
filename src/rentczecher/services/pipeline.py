@@ -19,9 +19,10 @@ from rentczecher.domain.listing import DisappearedListing, Listing
 from rentczecher.domain.scrape import ScraperHealth
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import NameTierLookup, cross_source_dedup
-from rentczecher.services.diff import classify
+from rentczecher.services.diff import DiffResult, classify
 from rentczecher.services.filters import apply_filters
 from rentczecher.services.locate import PlaceResolver, locate_listings
+from rentczecher.services.notify import Notifier, build_notification
 from rentczecher.services.scrape import Scraper, scrape_all
 from rentczecher.services.score import compute_score
 
@@ -59,7 +60,7 @@ class PipelineDeps:
     client: object
     scrapers: Mapping[str, Callable[[SearchSpec, object], Scraper]]
     gazetteer: Gazetteer
-    notify: Callable[[list[Listing], SearchSpec, dict, list[DisappearedListing]], object]
+    notifier: Notifier
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,14 +98,13 @@ def _failed_result(profile_id: str, run_id: str, started_at: datetime,
     )
 
 
-def _notify_succeeded(notify: Callable[..., object], notable: list[Listing],
-                      spec: SearchSpec, profile_config: dict,
-                      disappeared: list[DisappearedListing]) -> bool:
+def _notify_succeeded(notifier: Notifier, notable: list[Listing], diff: DiffResult,
+                      profile_config: dict, spec: SearchSpec) -> bool:
     """Nothing to say is not a failure to say it - persisting still runs.
     A real send failing is signalled by raising or by returning False."""
     if not notable:
         return True
-    return notify(notable, spec, profile_config, disappeared) is not False
+    return notifier.send(build_notification(diff, profile_config, spec)) is not False
 
 
 def _has_recipients(profile_config: dict) -> bool:
@@ -139,7 +139,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
                     deps.store.latest_prices(profile_id), disappeared)
     notable = diff.new + diff.price_drops
 
-    if not dry_run and _notify_succeeded(deps.notify, notable, spec, profile_config, diff.disappeared):
+    if not dry_run and _notify_succeeded(deps.notifier, notable, diff, profile_config, spec):
         deps.store.persist_outcome(
             profile_id, profile_config["name"], outcome, located_by_id, current_ids)
         if notable and _has_recipients(profile_config):
