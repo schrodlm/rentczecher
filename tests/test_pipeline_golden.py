@@ -7,11 +7,16 @@ DROPS, and which ids come out as DISAPPEARED on each run.
 Run: python3 -m pytest tests/test_pipeline_golden.py -v
 """
 
+from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.cli import main as main_module
+from rentczecher.services.pipeline import PipelineDeps, run_profile
+
+GAZETTEER = Gazetteer()
 
 PROFILE_ID = "golden"
 PROFILE = {
+    "id": PROFILE_ID,
     "name": "Golden profile",
     "enabled": True,
     "to": ["golden@example.com"],
@@ -48,11 +53,7 @@ def _listings(*records):
     return [Listing.build(**r) for r in records]
 
 
-def _run(run_store, monkeypatch, records):
-    """Run one simulated scrape and report (new_ids, drops, disappeared_ids)."""
-    store, conn = run_store
-    listings = _listings(*records)
-
+def _scraper(listings):
     class FakeScraper:
         def __init__(self, spec, client):
             pass
@@ -60,16 +61,19 @@ def _run(run_store, monkeypatch, records):
         def scrape(self):
             return listings
 
-    monkeypatch.setattr(main_module, "ALL_SCRAPERS", {"sreality": FakeScraper})
+    return FakeScraper
+
+
+def _run(run_store, monkeypatch, records):
+    """Run one simulated scrape and report (new_ids, drops, disappeared_ids)."""
+    store, _conn = run_store
+    listings = _listings(*records)
 
     captured = {"notable": [], "disappeared": set()}
 
-    def capture_email(notable, *args, **kwargs):
+    def capture_notify(notable, spec, profile_config, disappeared):
         captured["notable"] = notable
 
-    monkeypatch.setattr(main_module, "send_email", capture_email)
-
-    seen_before = store.seen_ids(PROFILE_ID)
     real_pending_disappeared = store.pending_disappeared
 
     def spying_pending_disappeared(profile_id, current_ids):
@@ -79,8 +83,14 @@ def _run(run_store, monkeypatch, records):
 
     monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
 
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None,
-                            store=store, dry_run=False)
+    deps = PipelineDeps(
+        store=store, clock=utc_now, client=None,
+        scrapers={"sreality": _scraper(listings)}, gazetteer=GAZETTEER,
+        enrich_tram=lambda listing: listing, notify=capture_notify,
+    )
+
+    seen_before = store.seen_ids(PROFILE_ID)
+    run_profile(PROFILE, deps, dry_run=False)
 
     new_ids = {r["id"] for r in records} - seen_before
     drops = {(l.id, l.price_drop_from)

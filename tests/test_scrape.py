@@ -78,11 +78,13 @@ def test_zero_results_are_recorded_distinctly_from_a_broken_scraper():
     assert health["sreality"].listing_count == 0
 
 
-def test_a_scraper_broken_error_is_recorded_with_its_error_text_and_does_not_raise():
-    listings, health = scrape_all({"bezrealitky": BrokenScraper}, SPEC, client=None)
+def test_a_scraper_broken_error_is_recorded_with_its_error_text_and_does_not_raise(caplog):
+    with caplog.at_level("ERROR", logger="rentczecher"):
+        listings, health = scrape_all({"bezrealitky": BrokenScraper}, SPEC, client=None)
     assert listings == []
     assert health["bezrealitky"].status == "broken"
     assert "__NEXT_DATA__" in health["bezrealitky"].error
+    assert not any(r.exc_info for r in caplog.records), "an expected contract break must not dump a stack trace"
 
 
 def test_a_generic_exception_is_isolated_and_recorded_as_broken(caplog):

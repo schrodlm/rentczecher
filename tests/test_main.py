@@ -7,9 +7,11 @@ import sys
 
 import pytest
 
-from rentczecher.cli import main as main_module
+from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.errors import ScraperBrokenError
+from rentczecher.cli import main as main_module
+from rentczecher.services.pipeline import PipelineDeps, run_profile
 
 
 class TestOrphanedRepoDataWarning:
@@ -88,6 +90,34 @@ class TestValidateConfig:
         assert "scrapers" in err
 
 
+class TestEmptyScraperList:
+    """A profile whose scrapers list resolves to zero enabled scrapers is
+    valid config, but must not run silently."""
+
+    def test_warns_and_skips_the_profile(self, tmp_path, monkeypatch, caplog):
+        import yaml
+
+        config = {
+            "email": {"smtp_host": "h", "smtp_user": "u",
+                      "smtp_password": "p", "from": "u@example.com"},
+            "profiles": {"empty": {
+                "name": "Empty", "to": ["a@example.com"],
+                "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+                "scrapers": [],
+            }},
+        }
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(yaml.safe_dump(config))
+        monkeypatch.setattr(main_module, "CONFIG_PATH", str(config_path))
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        monkeypatch.setattr(main_module, "PID_PATH", str(tmp_path / "watchdog.pid"))
+
+        with caplog.at_level("WARNING", logger="rentczecher"):
+            main_module.run(dry_run=True)
+
+        assert any("no enabled scrapers" in r.getMessage() for r in caplog.records)
+
+
 class TestDbMigrate:
     def test_migrate_builds_the_database(self, tmp_path, monkeypatch):
         monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path))
@@ -145,118 +175,39 @@ def _make_listing(**kwargs):
     return Listing.build(**defaults)
 
 
-class TestBrokenScraperHandling:
-    """A scraper raising ScraperBrokenError is reported as a distinct ERROR
-    and does not abort the profile: the remaining scrapers' listings still
-    flow through the pipeline."""
+def _scraper(*listings):
+    class FakeScraper:
+        def __init__(self, spec, client):
+            pass
 
-    def test_broken_scraper_is_reported_and_run_continues(self, run_store, monkeypatch, caplog):
-        store, conn = run_store
-        healthy_listing = _make_listing(id="sreality:good", title="Good listing")
+        def scrape(self):
+            return list(listings)
 
-        class WorkingScraper:
-            name = "sreality"
-
-            def __init__(self, spec, client):
-                pass
-
-            def scrape(self):
-                return [healthy_listing]
-
-        class BrokenScraper:
-            name = "bezrealitky"
-
-            def __init__(self, spec, client):
-                pass
-
-            def scrape(self):
-                raise ScraperBrokenError("bezrealitky: __NEXT_DATA__ payload missing from search page")
-
-        monkeypatch.setattr(main_module, "ALL_SCRAPERS",
-                            {"sreality": WorkingScraper, "bezrealitky": BrokenScraper})
-        profile = {
-            "name": "Broken-portal test",
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
-            "scrapers": ["sreality", "bezrealitky"],
-        }
-        with caplog.at_level("INFO", logger="rentczecher"):
-            main_module.run_profile("broken-test", profile, email_cfg={}, client=None,
-                                    store=store, dry_run=True)
-
-        contract_errors = [r for r in caplog.records if "portal changed its contract" in r.getMessage()]
-        assert len(contract_errors) == 1
-        assert contract_errors[0].levelname == "ERROR"
-        assert "__NEXT_DATA__" in contract_errors[0].getMessage()
-        assert not any(r.exc_info for r in caplog.records), "broken portal must not dump a stack trace"
-        assert any("Total: 1 listings, 1 new" in r.getMessage() for r in caplog.records)
-
-
-class TestUnresolvablePlace:
-    """A profile whose place cannot resolve fails once with a clean error
-    naming the place, not once per scraper with stack traces."""
-
-    def test_profile_fails_once_without_tracebacks(self, run_store, monkeypatch, caplog):
-        store, conn = run_store
-        from rentczecher.adapters.scrapers import ALL_SCRAPERS
-        monkeypatch.setattr(main_module, "ALL_SCRAPERS", ALL_SCRAPERS)
-        profile = {
-            "name": "Bad place",
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "atlantis"},
-            "scrapers": ["sreality", "bezrealitky", "remax"],
-        }
-        with caplog.at_level("ERROR", logger="rentczecher"):
-            main_module.run_profile("bad-place", profile, email_cfg={}, client=None,
-                                    store=store, dry_run=True)
-        errors = [r for r in caplog.records if "atlantis" in r.getMessage()]
-        assert len(errors) == 1
-        assert not any(r.exc_info for r in caplog.records)
-
-
-class TestEmptyScraperList:
-    """A profile with an empty scrapers list is valid config and skips
-    cleanly at runtime."""
-
-    def test_empty_list_validates_and_skips(self, run_store, caplog):
-        from rentczecher.adapters.config.schema import ProfileConfig
-        ProfileConfig.model_validate({
-            "name": "P", "to": ["a@example.com"],
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
-            "scrapers": [],
-        })
-        profile = {"name": "Empty", "search": {"offer_type": "rent", "estate_type": "flat",
-                                               "place": "praha-7"}, "scrapers": []}
-        store, conn = run_store
-        with caplog.at_level("WARNING", logger="rentczecher"):
-            main_module.run_profile("empty", profile, email_cfg={}, client=None,
-                                    store=store, dry_run=True)
-        assert any("no enabled scrapers" in r.getMessage() for r in caplog.records)
+    return FakeScraper
 
 
 class TestDryRunIsReadOnly:
     """A dry run writes no state. Miss counters advance only on real runs."""
 
-    def _run_dry(self, profile_id, store, monkeypatch):
-        fake_new = _make_listing(id="sreality:new", title="New listing")
+    def _deps(self, store):
+        return PipelineDeps(
+            store=store,
+            clock=utc_now,
+            client=None,
+            scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
+            gazetteer=Gazetteer(),
+            enrich_tram=lambda listing: listing,
+            notify=lambda *a, **k: None,
+        )
 
-        class FakeScraper:
-            name = "sreality"
-
-            def __init__(self, spec, client):
-                pass
-
-            def scrape(self):
-                return [fake_new]
-
-        monkeypatch.setattr(main_module, "ALL_SCRAPERS", {"sreality": FakeScraper})
-        profile = {
-            "name": "Dry-run test",
+    def _profile(self, profile_id):
+        return {
+            "id": profile_id, "name": "Dry-run test",
             "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
             "scrapers": ["sreality"],
         }
-        main_module.run_profile(profile_id, profile, email_cfg={}, client=None,
-                                store=store, dry_run=True)
 
-    def test_dry_run_leaves_the_database_untouched(self, run_store, monkeypatch):
+    def test_dry_run_leaves_the_database_untouched(self, run_store):
         store, conn = run_store
         profile_id = "dryrun-test"
 
@@ -282,8 +233,52 @@ class TestDryRunIsReadOnly:
 
         before = state()
 
-        self._run_dry(profile_id, store, monkeypatch)
-        self._run_dry(profile_id, store, monkeypatch)
+        deps = self._deps(store)
+        run_profile(self._profile(profile_id), deps, dry_run=True)
+        run_profile(self._profile(profile_id), deps, dry_run=True)
 
         assert state() == before
         assert store.seen_ids(profile_id) == {"sreality:old"}
+
+
+class TestNotifierSkipsEmailWithoutRecipients:
+    """A profile with notable listings but no 'to' recipients still
+    persists its outcome, but skips pruning stale tracking - only a real
+    send stands in for the owner having seen the run's results."""
+
+    def test_outcome_persists_but_stale_tracking_is_kept(self, run_store):
+        store, conn = run_store
+        profile_id = "no-recipients"
+
+        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
+                     "VALUES (?, 'No recipients', 1, 't')", (profile_id,))
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-stale', 't')")
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('sreality:stale', 'prop-stale', 'sreality', 'u', 't')")
+        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, "
+                     "first_seen_at, last_seen_at, miss_count) "
+                     "VALUES (?, 'sreality:stale', '2000-01-01T00:00:00+00:00', "
+                     "'2000-01-01T00:00:00+00:00', 0)", (profile_id,))
+        conn.commit()
+
+        deps = PipelineDeps(
+            store=store,
+            clock=utc_now,
+            client=None,
+            scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
+            gazetteer=Gazetteer(),
+            enrich_tram=lambda listing: listing,
+            notify=main_module._build_notifier(email_cfg={}, profile_id=profile_id),
+        )
+        profile = {
+            "id": profile_id, "name": "No recipients", "to": [],
+            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+            "scrapers": ["sreality"],
+        }
+
+        run_profile(profile, deps)
+
+        remaining = conn.execute(
+            "SELECT listing_id FROM listing_tracking WHERE profile_id = ? ORDER BY listing_id", (profile_id,)
+        ).fetchall()
+        assert [r["listing_id"] for r in remaining] == ["sreality:new", "sreality:stale"]

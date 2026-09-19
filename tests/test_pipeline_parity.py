@@ -14,12 +14,17 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from rentczecher.adapters.enrichment.metro import enrich_tram
+from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.cli import main as main_module
 from rentczecher.domain.location import ParsedPlace
+from rentczecher.services.pipeline import PipelineDeps, run_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
+
+GAZETTEER = Gazetteer()
 
 PROFILE_ID = "parity"
 PROFILE = {
@@ -47,6 +52,7 @@ PROFILE = {
     },
     "tram_enrichment": True,
 }
+PROFILE_WITH_ID = {**PROFILE, "id": PROFILE_ID}
 
 
 def _build_fixture_listing(record):
@@ -164,28 +170,32 @@ def _seen_snapshot(conn):
     }
 
 
+def _deps(store, scrapers, notify):
+    return PipelineDeps(
+        store=store, clock=utc_now, client=None, scrapers=scrapers,
+        gazetteer=GAZETTEER, enrich_tram=enrich_tram, notify=notify,
+    )
+
+
 def test_parity_profile_satisfies_the_config_schema():
     """The golden fixture's profile must stay a valid real-world config."""
     from rentczecher.adapters.config.schema import ProfileConfig
     ProfileConfig.model_validate(PROFILE)
 
 
-def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
+def test_pipeline_outcome_matches_golden(run_store):
     store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
-    monkeypatch.setattr(main_module, "ALL_SCRAPERS", _fake_scrapers(listing_data))
     _seed_seen_state(conn)
 
     sent = {}
 
-    def capture_email(listings, email_cfg, spec=None, profile=None, disappeared=None):
+    def capture_notify(listings, spec, profile_config, disappeared):
         sent["notable"] = listings
-        sent["disappeared"] = disappeared or []
+        sent["disappeared"] = disappeared
 
-    monkeypatch.setattr(main_module, "send_email", capture_email)
-
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None,
-                            store=store, dry_run=False)
+    deps = _deps(store, _fake_scrapers(listing_data), capture_notify)
+    run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
     snapshot = {
         "notable": [_listing_snapshot(l) for l in sent["notable"]],
@@ -200,18 +210,16 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     assert snapshot == golden
 
 
-def test_run_profile_persists_only_through_the_store(run_store, monkeypatch):
+def test_run_profile_persists_only_through_the_store(run_store):
     """A pipeline run persists through the store it is handed and writes
     no files of its own."""
     from rentczecher.adapters.config import paths
 
-    store, conn = run_store
+    store, _conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
-    monkeypatch.setattr(main_module, "ALL_SCRAPERS", _fake_scrapers(listing_data))
-    monkeypatch.setattr(main_module, "send_email", lambda *a, **k: None)
 
-    main_module.run_profile(PROFILE_ID, PROFILE, email_cfg={}, client=None,
-                            store=store, dry_run=False)
+    deps = _deps(store, _fake_scrapers(listing_data), lambda *a, **k: None)
+    run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
     assert store.seen_ids(PROFILE_ID)
     assert not list(paths.data_dir().glob("seen-*.json"))
