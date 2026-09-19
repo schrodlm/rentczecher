@@ -196,7 +196,6 @@ class TestDryRunIsReadOnly:
             client=None,
             scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
             gazetteer=Gazetteer(),
-            enrich_tram=lambda listing: listing,
             notify=lambda *a, **k: None,
         )
 
@@ -267,7 +266,6 @@ class TestNotifierSkipsEmailWithoutRecipients:
             client=None,
             scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
             gazetteer=Gazetteer(),
-            enrich_tram=lambda listing: listing,
             notify=main_module._build_notifier(email_cfg={}, profile_id=profile_id),
         )
         profile = {

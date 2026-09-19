@@ -21,7 +21,6 @@ from rentczecher.domain.scrape import ScraperHealth
 from rentczecher.domain.search import SearchSpec
 from rentczecher.services.dedup import cross_source_dedup
 from rentczecher.services.diff import classify
-from rentczecher.services.enrich import apply_tram_enrichment
 from rentczecher.services.filters import apply_filters
 from rentczecher.services.locate import locate_listings
 from rentczecher.services.scrape import Scraper, scrape_all
@@ -56,7 +55,6 @@ class PipelineDeps:
     client: object
     scrapers: Mapping[str, Callable[[SearchSpec, object], Scraper]]
     gazetteer: Gazetteer
-    enrich_tram: Callable[[Listing], Listing]
     notify: Callable[[list[Listing], SearchSpec, dict, list[DisappearedListing]], object]
 
 
@@ -124,9 +122,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
     filtered = apply_filters(scraped, spec)
-    enriched = apply_tram_enrichment(
-        filtered, profile_config.get("tram_enrichment", False), deps.enrich_tram)
-    located = locate_listings(enriched, deps.gazetteer)
+    located = locate_listings(filtered, deps.gazetteer)
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)

@@ -1,7 +1,7 @@
 """Golden test pinning the exact end-to-end pipeline behavior.
 
-Feeds a fixed set of fixture listings through run_profile (filters, tram
-enrichment, cross-source dedup, scoring, price drops, disappearances,
+Feeds a fixed set of fixture listings through run_profile (filters,
+cross-source dedup, scoring, price drops, disappearances,
 notify-then-commit) and compares the full outcome against a committed
 golden file. Regenerate deliberately with:
 PARITY_REGEN=1 python3 -m pytest tests/test_pipeline_parity.py
@@ -14,7 +14,6 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
@@ -50,7 +49,6 @@ PROFILE = {
         "neighborhood_weight": 15,
         "preferred_neighborhoods": ["Holešovice", "Letná"],
     },
-    "tram_enrichment": True,
 }
 PROFILE_WITH_ID = {**PROFILE, "id": PROFILE_ID}
 
@@ -130,8 +128,6 @@ def _listing_snapshot(listing):
         "land_m2": listing.land_m2,
         "score": listing.score,
         "price_drop_from": listing.price_drop_from,
-        "nearest_stop": listing.nearest_stop,
-        "stop_distance_m": listing.stop_distance_m,
         "cross_source": sorted(listing.cross_source),
     }
 
@@ -173,7 +169,7 @@ def _seen_snapshot(conn):
 def _deps(store, scrapers, notify):
     return PipelineDeps(
         store=store, clock=utc_now, client=None, scrapers=scrapers,
-        gazetteer=GAZETTEER, enrich_tram=enrich_tram, notify=notify,
+        gazetteer=GAZETTEER, notify=notify,
     )
 
 

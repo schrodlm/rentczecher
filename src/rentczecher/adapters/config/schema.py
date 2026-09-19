@@ -58,7 +58,6 @@ class ProfileConfig(StrictModel):
     search: SearchConfig
     scrapers: list[str]
     scoring: ScoringConfig = ScoringConfig()
-    tram_enrichment: bool = False
 
     @field_validator("to", mode="before")
     @classmethod

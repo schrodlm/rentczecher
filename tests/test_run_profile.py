@@ -76,14 +76,13 @@ def _profile_config(scrapers=("sreality",), **overrides):
     return config
 
 
-def _deps(store=None, notify=None, scrapers=None, clock=None, enrich_tram=None):
+def _deps(store=None, notify=None, scrapers=None, clock=None):
     return PipelineDeps(
         store=store if store is not None else FakeRunStore(),
         clock=clock if clock is not None else (lambda: BASE),
         client=None,
         scrapers=scrapers if scrapers is not None else {"sreality": _scraper([_listing("1", "sreality")])},
         gazetteer=GAZETTEER,
-        enrich_tram=enrich_tram if enrich_tram is not None else (lambda listing: listing),
         notify=notify if notify is not None else (lambda *a, **k: None),
     )
 
@@ -249,19 +248,3 @@ class TestCountsAndHealth:
         assert result.started_at == BASE
         assert result.finished_at == BASE
         assert result.profile_id == "praha7-byty"
-
-
-def test_tram_enrichment_runs_only_when_the_profile_enables_it():
-    calls = []
-
-    def enrich(listing):
-        calls.append(listing.id)
-        return listing
-
-    deps = _deps(enrich_tram=enrich, scrapers={
-        "sreality": _scraper([_listing("1", "sreality")])
-    })
-
-    run_profile(_profile_config(tram_enrichment=True), deps)
-
-    assert calls == ["sreality:1"]

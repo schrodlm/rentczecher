@@ -94,13 +94,6 @@ def _render_card(listing: Listing, is_rent: bool) -> str:
     if location:
         details.append(location)
 
-    if listing.nearest_stop and listing.stop_distance_m is not None:
-        if listing.stop_distance_m < 1000:
-            stop_str = f"{escape(listing.nearest_stop)} ({listing.stop_distance_m}{NBSP}m)"
-        else:
-            stop_str = f"{escape(listing.nearest_stop)} ({listing.stop_distance_m / 1000:.1f}{NBSP}km)"
-        details.append(stop_str)
-
     details_html = " &middot; ".join(
         f'<span style="display:inline-block;margin-right:4px;">{d}</span>' for d in details
     )
@@ -249,8 +242,6 @@ def send_email(listings: list[Listing], email_cfg: dict, spec: SearchSpec,
             extras.append(f"SLEVA z {_format_price_plain(l.price_drop_from, is_rent)}")
         if l.land_m2:
             extras.append(f"pozemek {l.land_m2} m2")
-        if l.nearest_stop:
-            extras.append(l.nearest_stop)
         extra_str = " | ".join(extras)
         if extra_str:
             extra_str = f" | {extra_str}"

@@ -11,7 +11,6 @@ from typing import cast
 
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
-from rentczecher.adapters.enrichment.metro import enrich_tram
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher.adapters.notifiers.smtp import send_email
 from rentczecher.adapters.repositories.sqlite import connection, migrate
@@ -202,7 +201,6 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     client=client,
                     scrapers=scrapers,
                     gazetteer=gazetteer,
-                    enrich_tram=enrich_tram,
                     notify=_build_notifier(email_cfg, profile_id),
                 )
                 try:

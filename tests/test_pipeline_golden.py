@@ -86,7 +86,7 @@ def _run(run_store, monkeypatch, records):
     deps = PipelineDeps(
         store=store, clock=utc_now, client=None,
         scrapers={"sreality": _scraper(listings)}, gazetteer=GAZETTEER,
-        enrich_tram=lambda listing: listing, notify=capture_notify,
+        notify=capture_notify,
     )
 
     seen_before = store.seen_ids(PROFILE_ID)

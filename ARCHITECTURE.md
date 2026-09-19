@@ -62,8 +62,6 @@ for each scraper in profile["scrapers"]:                # adapters/scrapers
    ▼
 filter by disposition / min size / min land             # _apply_filters
    ▼
-enrich_tram(listing)   (Prague profiles only)           # adapters/enrichment
-   ▼
 locate_listings(listings, gazetteer)                    # services/locate
    ▼
 cross_source_dedup(listings, gazetteer)                 # services/dedup
@@ -176,15 +174,12 @@ and returns a plain dict with the SMTP secret unwrapped. `paths.py` resolves
 config and data locations (env overrides, then repo-local if a config is there,
 then XDG).
 
-### Notification and enrichment
+### Notification
 
 `adapters/notifiers/smtp.py::send_email` builds one Czech HTML and text email per
 profile: score-sorted cards with image, price (and old price on a drop), details,
 source and cross-source badges, a Google Maps link (address-based, GPS as
 fallback), and an optional disappeared section.
-`adapters/enrichment/metro.py::enrich_tram` annotates a listing with its nearest
-tram stop. Note it's a hardcoded Praha-7-area stop table (the module is named
-`metro` but holds tram data), so it's only meaningful for Prague profiles.
 
 ## Storage
 

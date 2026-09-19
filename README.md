@@ -42,8 +42,6 @@ config are in English.
   saw it comes back flagged with the old price. A listing gone for three
   consecutive runs is reported as disappeared. Three misses filters out portal
   API flicker.
-- **Prague tram enrichment (optional).** Prague profiles can annotate each
-  listing with its nearest tram stop and lines.
 
 ## Requirements
 
@@ -119,8 +117,6 @@ profiles:
       ideal_size_m2: 55
       neighborhood_weight: 15
       preferred_neighborhoods: ["Holešovice", "Letná"]
-
-    tram_enrichment: true         # nearest Prague tram stop on each card
 
   domazlice-domy:
     name: "Domažlicko – domy a chalupy"
