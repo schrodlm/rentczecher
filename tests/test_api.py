@@ -1,5 +1,10 @@
-"""Tests for the sidecar API: auth and the routes over a real SQLite
-database, driven through FastAPI's TestClient.
+"""Tests for the sidecar API: auth, the routes over a real SQLite database,
+run-now serialization, and the SSE event stream.
+
+The FastAPI TestClient in this environment buffers a streamed response
+until the ASGI app's coroutine returns, so it cannot drive a route whose
+generator runs forever. GET /v1/events is therefore exercised at the
+generator level (iter_sse_events) rather than through the test client.
 
 Run: python3 -m pytest tests/test_api.py -v
 """
@@ -12,7 +17,10 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from rentczecher.adapters.api.app import create_app
+from rentczecher.adapters.api.auth import BearerOrQueryTokenAuth
 from rentczecher.adapters.api.deps import ApiDeps
+from rentczecher.adapters.api.events import EventBroker, RunEvent
+from rentczecher.adapters.api.routes.events import iter_sse_events
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.dedup import DedupOutcome
@@ -107,6 +115,24 @@ class TestAuth:
         client = _client(tmp_path)
         response = client.get("/v1/profiles", params={"token": TOKEN})
         assert response.status_code == 401
+
+    def test_event_stream_rejects_a_missing_token(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.get("/v1/events")
+        assert response.status_code == 401
+
+    def test_event_stream_rejects_a_wrong_query_token(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.get("/v1/events", params={"token": "wrong"})
+        assert response.status_code == 401
+
+    def test_event_stream_accepts_a_correct_query_token(self):
+        """EventSource cannot set an Authorization header, so /v1/events
+        alone also accepts the token as a query parameter. Checked against
+        the dependency directly since the TestClient cannot drive a route
+        whose body never ends (see the module docstring)."""
+        auth = BearerOrQueryTokenAuth(TOKEN)
+        auth(authorization=None, token=TOKEN)
 
 
 class TestListProfiles:
@@ -242,3 +268,57 @@ class TestHealth:
         assert body[0]["portal"] == "sreality"
         assert body[0]["status"] == "ok"
         assert body[0]["listing_count"] == 2
+
+
+class TestEventStream:
+    """The SSE route's generator, driven directly since the TestClient in
+    this environment cannot stream a response whose body never ends."""
+
+    def test_published_events_are_yielded_as_sse(self):
+        broker = EventBroker()
+        gen = iter_sse_events(broker, poll_seconds=0.02)
+
+        def publish():
+            time.sleep(0.05)
+            broker.publish(RunEvent(kind="run_started", data={"run_id": "r1", "profile_id": "praha7-byty"}))
+
+        threading.Thread(target=publish, daemon=True).start()
+        first = next(gen)
+        gen.close()
+
+        assert first.startswith("event: run_started\n")
+        assert '"run_id": "r1"' in first
+
+    def test_closing_the_generator_unsubscribes_from_the_broker(self):
+        broker = EventBroker()
+        gen = iter_sse_events(broker, poll_seconds=0.02)
+
+        def publish():
+            time.sleep(0.05)
+            broker.publish(RunEvent(kind="run_started", data={}))
+
+        threading.Thread(target=publish, daemon=True).start()
+        next(gen)  # runs the generator up to and past broker.subscribe()
+        gen.close()
+        assert broker._subscribers == []
+
+    def test_a_full_run_publishes_started_progress_and_finished(self, tmp_path):
+        run_profile = _stub_run_profile()
+        deps = _api_deps(tmp_path)
+        app = create_app(TOKEN, deps, run_profile=run_profile)
+        broker = app.state.event_broker
+
+        def trigger_shortly_after_subscribing():
+            time.sleep(0.1)
+            app.state.run_manager.trigger("praha7-byty", deps.profile_config("praha7-byty"))
+
+        threading.Thread(target=trigger_shortly_after_subscribing, daemon=True).start()
+
+        gen = iter_sse_events(broker, poll_seconds=0.02)
+        kinds = []
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline and len(kinds) < 3:
+            kinds.append(next(gen).split("\n")[0].removeprefix("event: "))
+        gen.close()
+
+        assert kinds == ["run_started", "run_progress", "run_finished"]
