@@ -72,11 +72,6 @@ A listing the user marked to keep. A favourite and its price history are
 never pruned.
 _Avoid_: starred, saved, bookmarked
 
-**Cutover**:
-The one-time import of JSON seen-state into SQLite, after which the
-pipeline reads and writes only SQLite.
-_Avoid_: migration (that word is reserved for schema migrations)
-
 **Shell**:
 The desktop program the user launches. It owns the window showing the GUI
 and the sidecar's lifetime.
