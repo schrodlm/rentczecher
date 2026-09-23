@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI
 
 from rentczecher.adapters.api.auth import BearerAuth
 from rentczecher.adapters.api.deps import ApiDeps
-from rentczecher.adapters.api.routes import profiles
+from rentczecher.adapters.api.routes import listings, profiles
 
 
 def create_app(token: str, api_deps: ApiDeps) -> FastAPI:
@@ -25,7 +25,7 @@ def create_app(token: str, api_deps: ApiDeps) -> FastAPI:
     auth = BearerAuth(token)
     app.state.api_deps = api_deps
 
-    for router in (profiles.router,):
+    for router in (profiles.router, listings.router):
         app.include_router(router, dependencies=[Depends(auth)])
 
     return app
