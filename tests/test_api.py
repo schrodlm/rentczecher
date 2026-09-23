@@ -217,3 +217,28 @@ class TestTriggerRun:
         assert all(r.status_code == 202 for r in responses)
         time.sleep(1.0)
         assert not overlap_detected.is_set()
+
+
+class TestHealth:
+    def test_empty_before_any_run(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.get("/v1/health", headers=_auth())
+        assert response.json() == []
+
+    def test_reflects_the_last_run_per_portal(self, tmp_path):
+        run_profile = _stub_run_profile()
+        client = _client(tmp_path, run_profile=run_profile)
+        client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+
+        deadline = time.monotonic() + 3
+        body: list = []
+        while time.monotonic() < deadline:
+            body = client.get("/v1/health", headers=_auth()).json()
+            if body:
+                break
+            time.sleep(0.05)
+
+        assert len(body) == 1
+        assert body[0]["portal"] == "sreality"
+        assert body[0]["status"] == "ok"
+        assert body[0]["listing_count"] == 2
