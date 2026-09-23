@@ -38,7 +38,7 @@ _Avoid_: seen, found
 
 **Viewed**:
 The listing has been on the user's screen in the GUI - scrolling past it
-counts; it does not need to be opened.
+counts, it does not need to be opened.
 _Avoid_: seen, read, opened
 
 **New**:
