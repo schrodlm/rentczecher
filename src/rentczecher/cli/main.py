@@ -57,12 +57,7 @@ def validate_config(path: Path | None = None) -> int:
 
 def migrate_db() -> int:
     db_file = paths.db_path()
-    db_file.parent.mkdir(parents=True, exist_ok=True)
-    conn = connection.connect(db_file)
-    try:
-        applied = migrate.apply_pending(conn)
-    finally:
-        conn.close()
+    applied = migrate.apply_pending_at(db_file)
     if applied:
         print(f"Applied migration(s) {', '.join(map(str, applied))} to {db_file}")
     else:

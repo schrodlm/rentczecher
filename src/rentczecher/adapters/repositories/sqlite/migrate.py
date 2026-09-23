@@ -5,6 +5,8 @@ import re
 import sqlite3
 from pathlib import Path
 
+from rentczecher.adapters.repositories.sqlite import connection
+
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 _FILENAME_RE = re.compile(r"^(\d+)_.*\.sql$")
 
@@ -30,6 +32,17 @@ def apply_pending(conn: sqlite3.Connection) -> list[int]:
             raise
         applied.append(version)
     return applied
+
+
+def apply_pending_at(db_file: Path) -> list[int]:
+    """apply_pending against a database path: creates the parent directory
+    on first run and opens (and closes) its own connection."""
+    db_file.parent.mkdir(parents=True, exist_ok=True)
+    conn = connection.connect(db_file)
+    try:
+        return apply_pending(conn)
+    finally:
+        conn.close()
 
 
 def _pending(current_version: int) -> list[tuple[int, Path]]:
