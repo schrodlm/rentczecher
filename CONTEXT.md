@@ -107,3 +107,14 @@ _Avoid_: bus, router, dispatcher
 The long-lived HTTP response through which a connected GUI receives events.
 One connected GUI is one subscriber on the broker.
 _Avoid_: push channel, websocket
+
+**OpenAPI**:
+The vendor-neutral JSON format describing an HTTP API's endpoints and
+shapes. Ours is generated from the code, committed at docs/api/openapi.json,
+and the GUI's TypeScript types are generated from it.
+_Avoid_: Swagger (its old name), FastAPI (the framework, not the format)
+
+**FastAPI**:
+The Python framework the sidecar's API adapter is built on. It routes
+requests to typed functions and generates the OpenAPI document from them.
+_Avoid_: OpenAPI (the format, not the framework)
