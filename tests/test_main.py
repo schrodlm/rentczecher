@@ -149,6 +149,18 @@ class TestDbMigrate:
         assert ran == []
 
 
+class TestServe:
+    def test_missing_token_fails_fast_without_starting_the_server(self, monkeypatch, caplog):
+        monkeypatch.delenv("RENTCZECHER_API_TOKEN", raising=False)
+        started = []
+        monkeypatch.setattr(main_module.uvicorn, "run", lambda *a, **kw: started.append(True))
+        with caplog.at_level("ERROR", logger="rentczecher"):
+            exit_code = main_module.serve(8734)
+        assert exit_code == 1
+        assert started == []
+        assert any("RENTCZECHER_API_TOKEN" in r.message for r in caplog.records)
+
+
 class TestPidLock:
     """A second invocation against the same resolved data dir must refuse
     to run while the first one is alive."""
