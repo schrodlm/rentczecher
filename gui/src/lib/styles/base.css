@@ -1,0 +1,6 @@
+body {
+	margin: 0;
+	background: var(--color-ground);
+	color: var(--color-ink);
+	font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,35 @@
+/* The five-color palette is the whole
+identity. Every UI color is one of these or a derived neutral, nothing
+else enters. Light values are the defaults, dark values apply under
+prefers-color-scheme: dark, matching this repo's own theme convention. */
+
+:root {
+	--color-ink: #343330;
+	--color-ground: #faf5ec;
+	--color-card: #ffffff;
+	--color-line: #e8dfcf;
+	--color-olive: #45462a;
+	--color-bronze: #7e5920;
+	--color-amber: #dc851f;
+	--color-amber-bright: #ffa737;
+
+	/* Text on amber buttons is charcoal, never white, in both themes -
+	white on #DC851F fails contrast, and so does --color-ink's dark-mode
+	cream once --color-amber brightens to match. */
+	--color-on-amber: #343330;
+
+	font-family: system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-ink: #f3ede2;
+		--color-ground: #343330;
+		--color-card: #3e3d38;
+		--color-line: #4c4a42;
+		--color-olive: #a9ac6b;
+		--color-bronze: #c79a5b;
+		--color-amber: #ffa737;
+		--color-amber-bright: #ffa737;
+	}
+}
