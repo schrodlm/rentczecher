@@ -17,7 +17,15 @@ from datetime import datetime, timezone
 from typing import Literal, Protocol
 from uuid import uuid4
 
-from rentczecher.adapters.api.events import EventBroker, RunEvent
+from rentczecher.adapters.api.events import (
+    EventBroker,
+    ListingsArrivedEvent,
+    RunCountsModel,
+    RunEvent,
+    RunFinishedEvent,
+    RunProgressEvent,
+    RunStartedEvent,
+)
 from rentczecher.domain.scrape import ScraperHealth
 from rentczecher.services.pipeline import PipelineDeps, ProfileRunResult
 
@@ -98,16 +106,18 @@ class RunManager:
 
     def _run_one(self, request: _RunRequest) -> None:
         self._broker.publish(RunEvent(
-            kind="run_started", data={"run_id": request.run_id, "profile_id": request.profile_id}))
+            kind="run_started",
+            data=RunStartedEvent(
+                run_id=request.run_id, profile_id=request.profile_id).model_dump()))
 
         def on_scraper_done(scraper: str, health: ScraperHealth) -> None:
             self._record_health(scraper, health)
             self._broker.publish(RunEvent(
                 kind="run_progress",
-                data={
-                    "run_id": request.run_id, "profile_id": request.profile_id, "scraper": scraper,
-                    "status": health.status, "listing_count": health.listing_count,
-                },
+                data=RunProgressEvent(
+                    run_id=request.run_id, profile_id=request.profile_id, scraper=scraper,
+                    status=health.status, listing_count=health.listing_count,
+                ).model_dump(),
             ))
 
         try:
@@ -117,24 +127,28 @@ class RunManager:
             log.exception("Run %s for profile %s failed", request.run_id, request.profile_id)
             self._broker.publish(RunEvent(
                 kind="run_finished",
-                data={"run_id": request.run_id, "profile_id": request.profile_id,
-                     "status": "failed", "error": str(error)},
+                data=RunFinishedEvent(
+                    run_id=request.run_id, profile_id=request.profile_id,
+                    status="failed", error=str(error),
+                ).model_dump(),
             ))
             return
 
         self._broker.publish(RunEvent(
             kind="run_finished",
-            data={
-                "run_id": request.run_id, "profile_id": request.profile_id,
-                "status": result.status,
-                "counts": {
-                    "total": result.counts.total, "new": result.counts.new,
-                    "price_drops": result.counts.price_drops, "disappeared": result.counts.disappeared,
-                },
-            },
+            data=RunFinishedEvent(
+                run_id=request.run_id, profile_id=request.profile_id,
+                status=result.status,
+                counts=RunCountsModel(
+                    total=result.counts.total, new=result.counts.new,
+                    price_drops=result.counts.price_drops, disappeared=result.counts.disappeared,
+                ),
+            ).model_dump(),
         ))
         if result.counts.new:
             self._broker.publish(RunEvent(
                 kind="listings_arrived",
-                data={"run_id": request.run_id, "profile_id": request.profile_id, "new": result.counts.new},
+                data=ListingsArrivedEvent(
+                    run_id=request.run_id, profile_id=request.profile_id,
+                    new=result.counts.new).model_dump(),
             ))

@@ -146,6 +146,29 @@
         "title": "ListingModel",
         "type": "object"
       },
+      "ListingsArrivedEvent": {
+        "properties": {
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "profile_id",
+          "new"
+        ],
+        "title": "ListingsArrivedEvent",
+        "type": "object"
+      },
       "PortalHealthModel": {
         "properties": {
           "checked_at": {
@@ -212,6 +235,141 @@
           "enabled"
         ],
         "title": "ProfileModel",
+        "type": "object"
+      },
+      "RunCountsModel": {
+        "properties": {
+          "disappeared": {
+            "title": "Disappeared",
+            "type": "integer"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "price_drops": {
+            "title": "Price Drops",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "new",
+          "price_drops",
+          "disappeared"
+        ],
+        "title": "RunCountsModel",
+        "type": "object"
+      },
+      "RunFinishedEvent": {
+        "properties": {
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunCountsModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "profile_id",
+          "status"
+        ],
+        "title": "RunFinishedEvent",
+        "type": "object"
+      },
+      "RunProgressEvent": {
+        "properties": {
+          "listing_count": {
+            "title": "Listing Count",
+            "type": "integer"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "scraper": {
+            "title": "Scraper",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "broken",
+              "zero_results"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "profile_id",
+          "scraper",
+          "status",
+          "listing_count"
+        ],
+        "title": "RunProgressEvent",
+        "type": "object"
+      },
+      "RunStartedEvent": {
+        "properties": {
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "profile_id"
+        ],
+        "title": "RunStartedEvent",
         "type": "object"
       },
       "RunTriggeredModel": {
