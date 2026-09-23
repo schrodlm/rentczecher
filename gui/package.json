@@ -13,7 +13,9 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"check:locales": "tsx scripts/extract-locales.ts",
+		"extract:locales": "tsx scripts/extract-locales.ts --write"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
