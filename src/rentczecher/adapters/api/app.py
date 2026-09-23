@@ -14,7 +14,7 @@ from fastapi import Depends, FastAPI
 from rentczecher.adapters.api.auth import BearerAuth
 from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.api.events import EventBroker
-from rentczecher.adapters.api.routes import listings, profiles, runs
+from rentczecher.adapters.api.routes import health, listings, profiles, runs
 from rentczecher.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher.services.pipeline import run_profile as default_run_profile
 
@@ -36,7 +36,7 @@ def create_app(
     app.state.run_manager = RunManager(
         api_deps.build_pipeline_deps, app.state.event_broker, run_profile=run_profile)
 
-    for router in (profiles.router, listings.router, runs.router):
+    for router in (profiles.router, listings.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])
 
     return app
