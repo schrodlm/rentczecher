@@ -46,3 +46,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # Every t()/tn() msgid in gui/src must carry a Czech translation.
+      # Needs gui/node_modules installed (npm ci in gui/).
+      - id: gui-locales
+        name: gui locale catalog covers all msgids
+        entry: npm --prefix gui run --silent check:locales
+        language: system
+        pass_filenames: false
+        files: ^gui/(src/.*\.(svelte|ts)|locales/.*\.po)$
