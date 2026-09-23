@@ -9,7 +9,55 @@ from dataclasses import dataclass
 from types import TracebackType
 from typing import Any, Literal
 
+from pydantic import BaseModel
+
 EventKind = Literal["run_started", "run_progress", "run_finished", "listings_arrived"]
+
+
+class RunStartedEvent(BaseModel):
+    run_id: str
+    profile_id: str
+
+
+class RunProgressEvent(BaseModel):
+    run_id: str
+    profile_id: str
+    scraper: str
+    status: Literal["ok", "broken", "zero_results"]
+    listing_count: int
+
+
+class RunCountsModel(BaseModel):
+    total: int
+    new: int
+    price_drops: int
+    disappeared: int
+
+
+class RunFinishedEvent(BaseModel):
+    run_id: str
+    profile_id: str
+    status: Literal["ok", "partial", "failed"]
+    counts: RunCountsModel | None = None
+    error: str | None = None
+
+
+class ListingsArrivedEvent(BaseModel):
+    run_id: str
+    profile_id: str
+    new: int
+
+
+# What each event kind carries as its data payload. OpenAPI cannot express
+# this linkage (SSE payloads never appear on a route), so the schema export
+# folds these models into the document and the GUI states the pairing at
+# each listener.
+EVENT_PAYLOADS: dict[EventKind, type[BaseModel]] = {
+    "run_started": RunStartedEvent,
+    "run_progress": RunProgressEvent,
+    "run_finished": RunFinishedEvent,
+    "listings_arrived": ListingsArrivedEvent,
+}
 
 
 @dataclass(frozen=True, slots=True)
