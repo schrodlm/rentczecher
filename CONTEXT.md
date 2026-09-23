@@ -76,3 +76,39 @@ _Avoid_: starred, saved, bookmarked
 The one-time import of JSON seen-state into SQLite, after which the
 pipeline reads and writes only SQLite.
 _Avoid_: migration (that word is reserved for schema migrations)
+
+**Shell**:
+The desktop program the user launches. It owns the window showing the GUI
+and the sidecar's lifetime.
+_Avoid_: wrapper, launcher, frontend
+
+**Sidecar**:
+The Python process the shell spawns at launch. It serves the loopback API,
+executes runs, and dies with the shell.
+_Avoid_: server, backend, daemon
+
+**Token**:
+The random secret the shell generates at every launch and hands the sidecar
+at spawn. Every API request must present it back. It is never persisted and
+dies with the process.
+_Avoid_: API key, credential, session
+
+**Run**:
+One execution of the pipeline for one profile, identified by a run id. Runs
+are queued and execute strictly one at a time.
+_Avoid_: job, task, sync
+
+**Event**:
+A fact the sidecar announces the moment it happens: a run started, a portal
+finished, a run finished, new listings arrived.
+_Avoid_: notification (reserved for listing delivery), message
+
+**Broker**:
+The in-process fan-out point. Publishers hand it events and it copies each
+one to every current subscriber, knowing nothing about either side.
+_Avoid_: bus, router, dispatcher
+
+**Event stream**:
+The long-lived HTTP response through which a connected GUI receives events.
+One connected GUI is one subscriber on the broker.
+_Avoid_: push channel, websocket
