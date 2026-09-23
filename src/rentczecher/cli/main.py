@@ -12,7 +12,7 @@ from typing import cast
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.notifiers.smtp import SmtpNotifier
+from rentczecher.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
@@ -20,7 +20,6 @@ from rentczecher.adapters.scrapers import ALL_SCRAPERS
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher.domain.search import SearchSpec
-from rentczecher.services.notify import Notification
 from rentczecher.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 from rentczecher.services.scrape import Scraper
 
@@ -95,32 +94,6 @@ def _release_pidlock():
         os.unlink(PID_PATH)
     except OSError:
         pass
-
-
-def _build_smtp_notifier(email_cfg: dict, profile_id: str, recipients: list[str]) -> SmtpNotifier | None:
-    if not recipients:
-        return None
-    return SmtpNotifier(
-        smtp_host=email_cfg["smtp_host"],
-        smtp_port=email_cfg["smtp_port"],
-        smtp_user=email_cfg["smtp_user"],
-        smtp_password=email_cfg["smtp_password"],
-        from_address=email_cfg["from"],
-        recipients=tuple(recipients),
-    )
-
-
-class _NoRecipientsNotifier:
-    """Stands in for a profile with no configured recipients: a run still
-    persists its outcome, it just never sends anything. The warning only
-    fires when there was actually something to notify about."""
-
-    def __init__(self, profile_id: str):
-        self._profile_id = profile_id
-
-    def send(self, notification: Notification) -> bool:
-        log.error("Profile %s has no 'to' recipients configured - skipping email", self._profile_id)
-        return True
 
 
 def _log_run_result(profile_id: str, result: ProfileRunResult) -> None:
@@ -201,8 +174,8 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     name: cast(Callable[[SearchSpec, object], Scraper], cls)
                     for name, cls in ALL_SCRAPERS.items() if name in profile["scrapers"]
                 }
-                notifier = _build_smtp_notifier(
-                    email_cfg, profile_id, profile.get("to", [])) or _NoRecipientsNotifier(profile_id)
+                notifier = build_smtp_notifier(
+                    email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)
                 deps = PipelineDeps(
                     store=store,
                     clock=utc_now,

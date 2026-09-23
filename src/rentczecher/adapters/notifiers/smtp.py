@@ -256,3 +256,29 @@ class SmtpNotifier:
             server.sendmail(self.from_address, self.recipients, msg.as_string())
         log.info("Email sent to %s with %d listing(s)", ", ".join(self.recipients), len(notification.listings))
         return True
+
+
+def build_smtp_notifier(email_cfg: dict, profile_id: str, recipients: list[str]) -> SmtpNotifier | None:
+    if not recipients:
+        return None
+    return SmtpNotifier(
+        smtp_host=email_cfg["smtp_host"],
+        smtp_port=email_cfg["smtp_port"],
+        smtp_user=email_cfg["smtp_user"],
+        smtp_password=email_cfg["smtp_password"],
+        from_address=email_cfg["from"],
+        recipients=tuple(recipients),
+    )
+
+
+class NoRecipientsNotifier:
+    """Stands in for a profile with no configured recipients: a run still
+    persists its outcome, it just never sends anything. The warning only
+    fires when there was actually something to notify about."""
+
+    def __init__(self, profile_id: str):
+        self._profile_id = profile_id
+
+    def send(self, notification: Notification) -> bool:
+        log.error("Profile %s has no 'to' recipients configured - skipping email", self._profile_id)
+        return True

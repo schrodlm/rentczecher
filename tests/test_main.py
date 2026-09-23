@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.cli import main as main_module
@@ -266,8 +267,8 @@ class TestNotifierSkipsEmailWithoutRecipients:
                      "'2000-01-01T00:00:00+00:00', 0)", (profile_id,))
         conn.commit()
 
-        notifier = main_module._build_smtp_notifier(
-            email_cfg={}, profile_id=profile_id, recipients=[]) or main_module._NoRecipientsNotifier(profile_id)
+        notifier = build_smtp_notifier(
+            email_cfg={}, profile_id=profile_id, recipients=[]) or NoRecipientsNotifier(profile_id)
         deps = PipelineDeps(
             store=store,
             clock=utc_now,
@@ -297,8 +298,8 @@ class TestNotifierSkipsEmailWithoutRecipients:
                      "VALUES (?, 'No recipients', 1, 't')", (profile_id,))
         conn.commit()
 
-        notifier = main_module._build_smtp_notifier(
-            email_cfg={}, profile_id=profile_id, recipients=[]) or main_module._NoRecipientsNotifier(profile_id)
+        notifier = build_smtp_notifier(
+            email_cfg={}, profile_id=profile_id, recipients=[]) or NoRecipientsNotifier(profile_id)
         profile = {
             "id": profile_id, "name": "No recipients", "to": [],
             "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
