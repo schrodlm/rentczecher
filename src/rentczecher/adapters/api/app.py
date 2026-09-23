@@ -11,10 +11,10 @@ reachable without the token.
 
 from fastapi import Depends, FastAPI
 
-from rentczecher.adapters.api.auth import BearerAuth
+from rentczecher.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.api.events import EventBroker
-from rentczecher.adapters.api.routes import health, listings, profiles, runs
+from rentczecher.adapters.api.routes import events, health, listings, profiles, runs
 from rentczecher.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher.services.pipeline import run_profile as default_run_profile
 
@@ -31,6 +31,7 @@ def create_app(
     )
 
     auth = BearerAuth(token)
+    events_auth = BearerOrQueryTokenAuth(token)
     app.state.api_deps = api_deps
     app.state.event_broker = EventBroker()
     app.state.run_manager = RunManager(
@@ -38,5 +39,6 @@ def create_app(
 
     for router in (profiles.router, listings.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])
+    app.include_router(events.router, dependencies=[Depends(events_auth)])
 
     return app
