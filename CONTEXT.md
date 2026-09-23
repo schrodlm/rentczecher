@@ -118,3 +118,10 @@ _Avoid_: Swagger (its old name), FastAPI (the framework, not the format)
 The Python framework the sidecar's API adapter is built on. It routes
 requests to typed functions and generates the OpenAPI document from them.
 _Avoid_: OpenAPI (the format, not the framework)
+
+**i18n**:
+Internationalization, the industry numeronym (i, then 18 letters, then n).
+The concern of a multi-language UI, not a library. The GUI's runtime is our
+own code. English msgids written at call sites are the source language and
+cs.po derives Czech from them.
+_Avoid_: i18next, svelte-i18n (libraries branded after the term)
