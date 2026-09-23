@@ -7,6 +7,10 @@ import os
 import sys
 from pathlib import Path
 
+import uvicorn
+
+from rentczecher.adapters.api.app import create_app
+from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
 from rentczecher.adapters.geocoding.gazetteer import Gazetteer
@@ -62,6 +66,26 @@ def migrate_db() -> int:
         print(f"Applied migration(s) {', '.join(map(str, applied))} to {db_file}")
     else:
         print(f"OK - schema up to date at {db_file}")
+    return 0
+
+
+def serve(port: int) -> int:
+    """Runs the sidecar API on 127.0.0.1:port. The shell spawns this exact
+    subcommand, so its stdout/stderr are the only supervision signal a
+    parent process has."""
+    token = os.environ.get("RENTCZECHER_API_TOKEN")
+    if not token:
+        log.error("RENTCZECHER_API_TOKEN must be set to run the API server")
+        return 1
+
+    config = _load_config_or_exit()
+    db_file = paths.db_path()
+    migrate.apply_pending_at(db_file)
+
+    api_deps = ApiDeps(config=config, db_path=db_file, scrapers=scraper_registry())
+    app = create_app(token, api_deps)
+
+    uvicorn.run(app, host="127.0.0.1", port=port)
     return 0
 
 
@@ -195,6 +219,9 @@ def main():
     db_parser = subparsers.add_parser("db", help="Database utilities")
     db_subparsers = db_parser.add_subparsers(dest="db_command")
     db_subparsers.add_parser("migrate", help="Create or upgrade the database schema")
+    serve_parser = subparsers.add_parser("serve", help="Run the sidecar API server")
+    serve_parser.add_argument("--port", type=int, default=8734,
+                              help="Port to bind on 127.0.0.1 (default: 8734)")
     args = parser.parse_args()
 
     if args.command == "config":
@@ -205,6 +232,8 @@ def main():
         if args.db_command == "migrate":
             sys.exit(migrate_db())
         db_parser.error("expected a subcommand: migrate")
+    if args.command == "serve":
+        sys.exit(serve(args.port))
     run(dry_run=args.dry_run, profile_filter=args.profile)
 
 
