@@ -5,9 +5,7 @@ import argparse
 import logging
 import os
 import sys
-from collections.abc import Callable
 from pathlib import Path
-from typing import cast
 
 from rentczecher.adapters.config import paths
 from rentczecher.adapters.config.loader import load_config
@@ -16,12 +14,10 @@ from rentczecher.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.repositories.sqlite.clock import utc_now
 from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
-from rentczecher.adapters.scrapers import ALL_SCRAPERS
+from rentczecher.adapters.scrapers import scraper_registry
 from rentczecher.adapters.scrapers.client import build_client
 from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
-from rentczecher.domain.search import SearchSpec
 from rentczecher.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
-from rentczecher.services.scrape import Scraper
 
 logging.basicConfig(
     level=logging.INFO,
@@ -167,13 +163,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     log.warning("Profile %s has no enabled scrapers", profile_id)
                     continue
 
-                # PipelineDeps.scrapers is typed against a bare `object` client
-                # (services/ cannot name httpx.Client), so each concrete
-                # scraper constructor is widened here at the adapter boundary.
-                scrapers = {
-                    name: cast(Callable[[SearchSpec, object], Scraper], cls)
-                    for name, cls in ALL_SCRAPERS.items() if name in profile["scrapers"]
-                }
+                scrapers = scraper_registry(profile["scrapers"])
                 notifier = build_smtp_notifier(
                     email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)
                 deps = PipelineDeps(
