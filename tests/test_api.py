@@ -4,6 +4,9 @@ database, driven through FastAPI's TestClient.
 Run: python3 -m pytest tests/test_api.py -v
 """
 
+import threading
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -13,8 +16,11 @@ from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.repositories.sqlite import connection, migrate
 from rentczecher.adapters.scrapers.base import Listing
 from rentczecher.domain.dedup import DedupOutcome
+from rentczecher.domain.scrape import ScraperHealth
+from rentczecher.services.pipeline import ProfileRunResult, RunCounts
 
 TOKEN = "test-token"
+BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 
 PROFILE_CONFIG = {
     "praha7-byty": {
@@ -50,9 +56,30 @@ def _api_deps(tmp_path: Path, profiles: dict | None = None) -> ApiDeps:
     )
 
 
-def _client(tmp_path: Path, *, profiles: dict | None = None) -> TestClient:
+def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exception | None = None):
+    """A services.pipeline.run_profile stand-in: records every call and
+    returns a canned result (or raises), never touching a scraper."""
+    calls = []
+
+    def run_profile(profile_config, deps, *, dry_run=False, on_scraper_done=None):
+        calls.append(profile_config["id"])
+        if on_scraper_done is not None:
+            on_scraper_done("sreality", ScraperHealth(status="ok", error=None, listing_count=2))
+        if error is not None:
+            raise error
+        return result or ProfileRunResult(
+            profile_id=profile_config["id"], run_id="stub-run", started_at=BASE, finished_at=BASE,
+            status="ok", scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=2)},
+            counts=RunCounts(total=2, new=2, price_drops=0, disappeared=0),
+        )
+
+    run_profile.calls = calls
+    return run_profile
+
+
+def _client(tmp_path: Path, *, profiles: dict | None = None, run_profile=None) -> TestClient:
     deps = _api_deps(tmp_path, profiles)
-    app = create_app(TOKEN, deps)
+    app = create_app(TOKEN, deps, run_profile=run_profile or _stub_run_profile())
     return TestClient(app)
 
 
@@ -109,7 +136,7 @@ class TestListListings:
                 {}, current_ids={"sreality:1"})
             store.mark_viewed("praha7-byty", "sreality:1")
 
-        app = create_app(TOKEN, deps)
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
         client = TestClient(app)
 
         new_only = client.get("/v1/profiles/praha7-byty/listings", headers=_auth(), params={"filter": "new"})
@@ -136,7 +163,7 @@ class TestMarkViewed:
                 "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
                 {}, current_ids={"sreality:1"})
 
-        app = create_app(TOKEN, deps)
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
         client = TestClient(app)
 
         response = client.patch("/v1/profiles/praha7-byty/listings/sreality:1/viewed", headers=_auth())
@@ -145,3 +172,48 @@ class TestMarkViewed:
         listings = client.get(
             "/v1/profiles/praha7-byty/listings", headers=_auth(), params={"filter": "all"}).json()
         assert listings[0]["viewed_at"] is not None
+
+
+class TestTriggerRun:
+    def test_unknown_profile_is_404(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.post("/v1/runs", headers=_auth(), json={"profile_id": "nope"})
+        assert response.status_code == 404
+
+    def test_returns_a_run_id_immediately(self, tmp_path):
+        run_profile = _stub_run_profile()
+        client = _client(tmp_path, run_profile=run_profile)
+        response = client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+        assert response.status_code == 202
+        body = response.json()
+        assert body["profile_id"] == "praha7-byty"
+        assert body["run_id"]
+
+    def test_missing_profile_id_is_a_validation_error(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.post("/v1/runs", headers=_auth(), json={})
+        assert response.status_code == 422
+
+    def test_concurrent_requests_never_run_the_pipeline_at_the_same_time(self, tmp_path):
+        overlap_detected = threading.Event()
+        currently_running = threading.Event()
+
+        def run_profile(profile_config, deps, *, dry_run=False, on_scraper_done=None):
+            if currently_running.is_set():
+                overlap_detected.set()
+            currently_running.set()
+            time.sleep(0.2)
+            currently_running.clear()
+            return ProfileRunResult(
+                profile_id=profile_config["id"], run_id="r", started_at=BASE, finished_at=BASE,
+                status="ok", scraper_health={}, counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
+            )
+
+        client = _client(tmp_path, run_profile=run_profile)
+        responses = [
+            client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+            for _ in range(3)
+        ]
+        assert all(r.status_code == 202 for r in responses)
+        time.sleep(1.0)
+        assert not overlap_detected.is_set()
