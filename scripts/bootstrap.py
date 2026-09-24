@@ -53,6 +53,9 @@ def main() -> None:
     run("uv", "sync", cwd=REPO)
     run("uv", "run", "prek", "install", cwd=REPO)
     run(*npm_ci_command(), cwd=GUI)
+    # The generated catalog and API types are gitignored, so a fresh clone
+    # needs one codegen pass before the editor sees a consistent tree.
+    run("npm", "run", "codegen", cwd=GUI)
 
     env_file = GUI / ".env"
     if not env_file.exists():
