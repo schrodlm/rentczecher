@@ -46,7 +46,7 @@ describe('RunProgressStore', () => {
 		const source = FakeEventSource.instances[0];
 
 		source.emit('run_started', { run_id: 'r1', profile_id: 'praha7-byty' });
-		expect(store.state).toEqual({ status: 'running', profileId: 'praha7-byty', scrapersDone: [] });
+		expect(store.state).toEqual({ status: 'running', scrapersDone: [] });
 
 		source.emit('run_finished', {
 			run_id: 'r1',
@@ -80,7 +80,6 @@ describe('RunProgressStore', () => {
 		});
 		expect(store.state).toEqual({
 			status: 'failed',
-			profileId: 'praha7-byty',
 			error: 'scraper exploded'
 		});
 	});
@@ -98,7 +97,6 @@ describe('RunProgressStore', () => {
 		});
 		expect(store.state).toEqual({
 			status: 'failed',
-			profileId: 'praha7-byty',
 			error: null
 		});
 	});

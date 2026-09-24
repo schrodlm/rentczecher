@@ -17,7 +17,7 @@ describe('InboxHeader', () => {
 	test('disables the run button and shows a running label while a run is in progress', async () => {
 		const { getByRole } = await renderWithTranslator(InboxHeader, {
 			health: [],
-			runState: { status: 'running', profileId: 'a', scrapersDone: [] },
+			runState: { status: 'running', scrapersDone: [] },
 			lastFinishedAt: null,
 			triggerError: null,
 			onrun: () => {}
@@ -31,7 +31,6 @@ describe('InboxHeader', () => {
 			health: [],
 			runState: {
 				status: 'running',
-				profileId: 'a',
 				scrapersDone: [
 					{ run_id: 'r1', profile_id: 'a', scraper: 'sreality', status: 'ok', listing_count: 10 }
 				]
@@ -86,7 +85,7 @@ describe('InboxHeader', () => {
 	test('shows a failed run even with no error message, not a stale success label', async () => {
 		const { getByText, queryByText } = await renderWithTranslator(InboxHeader, {
 			health: [],
-			runState: { status: 'failed', profileId: 'a', error: null },
+			runState: { status: 'failed', error: null },
 			lastFinishedAt: new Date('2026-09-19T10:00:00Z'),
 			triggerError: null,
 			onrun: () => {}
