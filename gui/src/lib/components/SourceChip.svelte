@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { sourceInitial } from '$lib/format';
+
 	let { source }: { source: string } = $props();
 
-	const letter = $derived(source.charAt(0).toUpperCase());
+	const letter = $derived(sourceInitial(source));
 </script>
 
 <span class="chip">
