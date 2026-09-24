@@ -34,4 +34,4 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run check:locales
-      - run: npx vitest run
+      - run: npm test
