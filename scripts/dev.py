@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 REPO = Path(__file__).resolve().parent.parent
 GUI = REPO / "gui"
@@ -36,14 +37,16 @@ def main() -> None:
     base_url = env_values.get("PUBLIC_SIDECAR_BASE_URL", "")
     if not token:
         sys.exit("dev: PUBLIC_SIDECAR_TOKEN missing from gui/.env")
-    port = base_url.rsplit(":", 1)[-1] if ":" in base_url else "8734"
+    port = urlsplit(base_url).port
+    if port is None:
+        sys.exit(f"dev: PUBLIC_SIDECAR_BASE_URL carries no port: {base_url!r}")
 
     # Each child gets its own process group: npm runs vite as a grandchild,
     # so terminating npm alone would orphan the actual server. Teardown
     # kills the whole group instead.
     sidecar = subprocess.Popen(
         [
-            "uv", "run", "rentczecher", "serve", "--port", port,
+            "uv", "run", "rentczecher", "serve", "--port", str(port),
             "--allow-origin", "http://localhost:5173",
             "--allow-origin", "http://127.0.0.1:5173",
         ],
