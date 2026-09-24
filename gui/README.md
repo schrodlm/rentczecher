@@ -51,3 +51,11 @@ npm run build
 ```
 
 `npm run check` runs the Svelte and TypeScript checks the same way CI does.
+
+## Testing
+
+```sh
+npm run test
+```
+
+Component tests use Vitest and `@testing-library/svelte` against jsdom.
