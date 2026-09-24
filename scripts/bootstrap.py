@@ -47,7 +47,7 @@ def npm_ci_command() -> list[str]:
 
 def main() -> None:
     require("uv", "https://docs.astral.sh/uv/getting-started/installation/")
-    require("node", "https://nodejs.org (18.17 or newer)")
+    require("node", "https://nodejs.org (20 or newer)")
     require("npm", "ships with node")
 
     run("uv", "sync", cwd=REPO)
