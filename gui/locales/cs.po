@@ -10,6 +10,15 @@ msgstr ""
 msgid "Profiles"
 msgstr "Profily"
 
+msgid "Loading profiles..."
+msgstr "Načítám profily..."
+
+msgid "Could not load profiles: {message}"
+msgstr "Nepodařilo se načíst profily: {message}"
+
+msgid "No profiles yet"
+msgstr "Zatím žádný profil"
+
 msgid "Settings"
 msgstr "Nastavení"
 
