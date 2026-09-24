@@ -2,28 +2,7 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import { renderWithTranslator } from '$lib/test-support/render';
 import ListingFeed from './ListingFeed.svelte';
-import type { components } from '$lib/api/types.gen';
-
-type ListingModel = components['schemas']['ListingModel'];
-
-function listing(id: string, overrides: Partial<ListingModel> = {}): ListingModel {
-	return {
-		id,
-		source: 'sreality',
-		url: `https://sreality.cz/detail/${id}`,
-		title: 'Byt 2+kk',
-		location: 'Praha 7',
-		size_m2: 52,
-		disposition: '2+kk',
-		first_seen_at: new Date().toISOString(),
-		viewed_at: null,
-		favourited_at: null,
-		price: 21000,
-		price_drop_from: null,
-		sibling_sources: [],
-		...overrides
-	};
-}
+import { listing } from '$lib/test-support/listing';
 
 describe('ListingFeed', () => {
 	test('shows the empty message when nothing is new', async () => {
