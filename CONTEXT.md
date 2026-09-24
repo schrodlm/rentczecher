@@ -72,6 +72,17 @@ A listing the user marked to keep. A favourite and its price history are
 never pruned.
 _Avoid_: starred, saved, bookmarked
 
+**Engine**:
+The Python application as a whole: pipeline, storage, scrapers, API. The
+sidecar is the engine in its serving role, a cron run is the same engine
+in its batch role.
+_Avoid_: backend, server, core
+
+**Panel**:
+The SvelteKit web application in gui/. It renders in the shell's webview,
+or in a browser tab during development, and talks only to the sidecar.
+_Avoid_: frontend, webapp, GUI (the whole desktop experience, not this app)
+
 **Shell**:
 The desktop program the user launches. It owns the window showing the GUI
 and the sidecar's lifetime.
