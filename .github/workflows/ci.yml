@@ -1,0 +1,37 @@
+# The heavy checks live here, the commit gate stays light: pre-commit runs
+# the fast hooks per commit, CI runs everything on every push and PR.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run ruff check
+      - run: uv run mypy src/
+      - run: uv run pytest tests/ -q -m "not live"
+      - run: uv run python scripts/export_openapi_schema.py --check
+
+  panel:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gui/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run check:locales
+      - run: npx vitest run
