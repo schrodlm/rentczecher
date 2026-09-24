@@ -216,7 +216,8 @@ line that changes is `generated_at`.
 ## Development
 
 ```bash
-uv sync && uv run prek install   # deps + pre-commit hooks
+python3 scripts/bootstrap.py     # one-time setup: tools, both environments, hooks
+python3 scripts/dev.py           # run the sidecar and the panel together
 uv run pytest                    # offline test suite (fast, no network)
 uv run pytest -m live            # live portal tests, hits the real sites, run deliberately
 uv run prek run --all-files      # ruff, mypy, offline pytest, file hygiene (the commit gate)
