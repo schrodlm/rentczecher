@@ -79,8 +79,6 @@ msgstr[2] "sledováno {count} dní"
 msgid "price drop from {old_price}"
 msgstr "sleva z {old_price}"
 
-msgid "Score {score}"
-msgstr "Skóre {score}"
 
 msgid "working"
 msgstr "v pořádku"
