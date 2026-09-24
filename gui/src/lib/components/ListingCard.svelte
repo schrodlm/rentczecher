@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { daysSince, formatPrice, formatPricePerM2 } from '$lib/format';
+	import { daysSince, formatPrice, formatPricePerM2, sourceInitial } from '$lib/format';
 	import SourceChip from './SourceChip.svelte';
 	import type { ListingModel } from '$lib/api/client';
 
@@ -35,7 +35,7 @@
 >
 	<!-- the API carries no photo field, the letter fallback is the photo slot -->
 	<div class="card__photo">
-		<span class="card__photo-fallback">{listing.source.charAt(0).toUpperCase()}</span>
+		<span class="card__photo-fallback">{sourceInitial(listing.source)}</span>
 	</div>
 
 	<div class="card__body">
