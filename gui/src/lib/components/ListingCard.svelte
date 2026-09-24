@@ -6,7 +6,11 @@
 
 	type ListingModel = components['schemas']['ListingModel'];
 
-	let { listing, viewed = false }: { listing: ListingModel; viewed?: boolean } = $props();
+	let {
+		listing,
+		viewed = false,
+		onclick
+	}: { listing: ListingModel; viewed?: boolean; onclick?: () => void } = $props();
 
 	const t = getTranslatorContext();
 
@@ -29,6 +33,7 @@
 	target="_blank"
 	rel="noopener noreferrer"
 	data-listing-id={listing.id}
+	{onclick}
 >
 	<!-- the API carries no photo field, the letter fallback is the photo slot -->
 	<div class="card__photo">
