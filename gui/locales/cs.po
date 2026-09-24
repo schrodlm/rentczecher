@@ -25,6 +25,12 @@ msgstr "Žádné nové nabídky"
 msgid "Mark all viewed"
 msgstr "Označit vše jako zobrazené"
 
+msgid "Loading listings..."
+msgstr "Načítám nabídky..."
+
+msgid "Could not load listings: {message}"
+msgstr "Nepodařilo se načíst nabídky: {message}"
+
 msgid "Settings"
 msgstr "Nastavení"
 

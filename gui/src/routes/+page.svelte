@@ -5,6 +5,7 @@
 	import { SidecarClient } from '$lib/api/client';
 	import type { components } from '$lib/api/types.gen';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
+	import ListingFeed from '$lib/components/ListingFeed.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 
@@ -17,6 +18,7 @@
 	);
 
 	type PortalHealthModel = components['schemas']['PortalHealthModel'];
+	type ListingModel = components['schemas']['ListingModel'];
 
 	const runProgress = new RunProgressStore();
 
@@ -25,6 +27,79 @@
 	let selectedProfileId = $state<string | null>(null);
 	let health = $state<PortalHealthModel[]>([]);
 	let runError = $state<string | null>(null);
+	let listings = $state<ListingModel[] | null>(null);
+	let listingsError = $state<string | null>(null);
+	let newCounts = $state<Record<string, number>>({});
+
+	const newListings = $derived(
+		[...(listings ?? [])]
+			.filter((l) => l.viewed_at === null)
+			.sort((a, b) => b.first_seen_at.localeCompare(a.first_seen_at))
+	);
+	const viewedListings = $derived(
+		[...(listings ?? [])]
+			.filter((l) => l.viewed_at !== null)
+			.sort((a, b) => (b.viewed_at ?? '').localeCompare(a.viewed_at ?? ''))
+	);
+
+	async function loadListings(profileId: string): Promise<void> {
+		listingsError = null;
+		try {
+			const fetched = await client.listListings(profileId, 'all');
+			// A slow response for a tab the user already left must not
+			// overwrite the tab they are on.
+			if (profileId !== selectedProfileId) return;
+			listings = fetched;
+			newCounts = {
+				...newCounts,
+				[profileId]: fetched.filter((l) => l.viewed_at === null).length
+			};
+		} catch (err) {
+			if (profileId !== selectedProfileId) return;
+			listingsError = err instanceof Error ? err.message : String(err);
+		}
+	}
+
+	async function loadAllNewCounts(profileList: ProfileModel[]): Promise<void> {
+		const others = profileList.filter((profile) => profile.id !== selectedProfileId);
+		const counts = await Promise.all(
+			others.map(async (profile) => {
+				try {
+					const newOnes = await client.listListings(profile.id, 'new');
+					return [profile.id, newOnes.length] as const;
+				} catch {
+					return [profile.id, 0] as const;
+				}
+			})
+		);
+		newCounts = { ...newCounts, ...Object.fromEntries(counts) };
+	}
+
+	async function handleViewed(listingId: string): Promise<void> {
+		if (selectedProfileId === null) return;
+		try {
+			await client.markViewed(selectedProfileId, listingId);
+		} catch {
+			// A failed PATCH is not retried, the listing stays new until the
+			// next reload.
+			return;
+		}
+		const marked = listings?.find((l) => l.id === listingId);
+		if (marked && marked.viewed_at === null) {
+			marked.viewed_at = new Date().toISOString();
+			newCounts = {
+				...newCounts,
+				[selectedProfileId]: Math.max(0, (newCounts[selectedProfileId] ?? 1) - 1)
+			};
+		}
+	}
+
+	async function handleMarkAllViewed(): Promise<void> {
+		if (selectedProfileId === null) return;
+		const profileId = selectedProfileId;
+		await Promise.all(newListings.map((l) => client.markViewed(profileId, l.id).catch(() => {})));
+		await loadListings(profileId);
+	}
 
 	async function loadHealth(): Promise<void> {
 		try {
@@ -36,7 +111,10 @@
 
 	function selectProfile(profileId: string): void {
 		selectedProfileId = profileId;
+		listings = null;
+		void loadListings(profileId);
 		runProgress.connect(client.eventsUrl(), profileId, () => {
+			void loadListings(profileId);
 			void loadHealth();
 		});
 	}
@@ -61,6 +139,7 @@
 			}
 			if (profiles.length > 0) {
 				selectProfile(profiles[0].id);
+				await loadAllNewCounts(profiles);
 			}
 			await loadHealth();
 		})();
@@ -97,6 +176,9 @@
 							onclick={() => selectProfile(profile.id)}
 						>
 							{profile.name}
+							{#if newCounts[profile.id]}
+								<span class="tab__count">{newCounts[profile.id]}</span>
+							{/if}
 						</button>
 					{/each}
 					<button class="tab tab--add" title={t.t('Add profile')}>+</button>
@@ -111,31 +193,13 @@
 			/>
 		</header>
 
-		<main class="feed">
-			<section>
-				<h3 class="feed__heading">{t.t('New')}</h3>
-				<article class="card card--new">
-					<span class="card__badge">{t.t('New')}</span>
-					<div class="card__title">Byt 2+kk, 54 m²</div>
-					<div class="card__meta">Praha 7, Holešovice</div>
-					<div class="card__price">25 000 Kč <span class="card__drop">sleva z 27 000 Kč</span></div>
-				</article>
-				<article class="card card--new">
-					<span class="card__badge">{t.t('New')}</span>
-					<div class="card__title">Byt 3+1, 78 m²</div>
-					<div class="card__meta">Praha 7, Letná</div>
-					<div class="card__price">32 500 Kč</div>
-				</article>
-			</section>
-			<section>
-				<h3 class="feed__heading">{t.t('Viewed')}</h3>
-				<article class="card card--viewed">
-					<div class="card__title">Byt 1+kk, 32 m²</div>
-					<div class="card__meta">Praha 7, Bubeneč</div>
-					<div class="card__price">19 900 Kč</div>
-				</article>
-			</section>
-		</main>
+		{#if listingsError}
+			<p class="shell__status">{t.t('Could not load listings: {message}', { message: listingsError })}</p>
+		{:else if listings === null}
+			<p class="shell__status">{t.t('Loading listings...')}</p>
+		{:else}
+			<ListingFeed {newListings} {viewedListings} onviewed={handleViewed} onmarkallviewed={handleMarkAllViewed} />
+		{/if}
 	</div>
 </div>
 
@@ -233,6 +297,20 @@
 		padding: var(--space-2);
 	}
 
+	.tab__count {
+		background: var(--color-amber);
+		color: var(--color-on-amber);
+		border-radius: var(--radius-full);
+		font-size: 0.6875rem;
+		font-weight: 700;
+		padding: 0 var(--space-2);
+	}
+
+	.shell__status {
+		padding: var(--space-4);
+		color: var(--color-bronze);
+	}
+
 	.tabs__status {
 		font-size: 0.8125rem;
 		color: var(--color-bronze);
@@ -240,71 +318,4 @@
 		white-space: nowrap;
 	}
 
-	.feed {
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
-		overflow-y: auto;
-	}
-
-	.feed__heading {
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--color-bronze);
-		margin: 0 0 var(--space-2);
-	}
-
-	.card {
-		background: var(--color-card);
-		border: 1px solid var(--color-line);
-		border-radius: var(--radius-md);
-		padding: var(--space-3) var(--space-4);
-		margin-bottom: var(--space-3);
-	}
-
-	.card--new {
-		border-color: var(--color-amber);
-		position: relative;
-	}
-
-	.card__badge {
-		position: absolute;
-		top: var(--space-3);
-		right: var(--space-3);
-		background: var(--color-amber);
-		color: var(--color-on-amber);
-		border-radius: var(--radius-full);
-		font-size: 0.625rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		padding: 0 var(--space-2);
-	}
-
-	.card__drop {
-		color: var(--color-olive);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		margin-left: var(--space-2);
-	}
-
-	.card--viewed {
-		opacity: 0.6;
-	}
-
-	.card__title {
-		font-weight: 600;
-	}
-
-	.card__meta {
-		font-size: 0.8125rem;
-		color: var(--color-bronze);
-	}
-
-	.card__price {
-		margin-top: var(--space-1);
-		font-weight: 600;
-	}
 </style>
