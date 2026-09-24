@@ -8,15 +8,17 @@
 		"npm": ">=9.5.0"
 	},
 	"scripts": {
-		"dev": "npm run build:locales && vite dev",
-		"build": "npm run build:locales && vite build",
+		"dev": "npm run codegen && vite dev",
+		"build": "npm run codegen && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"check": "npm run build:locales && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "npm run codegen && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"codegen": "npm run build:locales && npm run generate:api-types",
 		"build:locales": "tsx scripts/build-locales.ts",
 		"check:locales": "tsx scripts/extract-locales.ts",
-		"extract:locales": "tsx scripts/extract-locales.ts --write"
+		"extract:locales": "tsx scripts/extract-locales.ts --write",
+		"generate:api-types": "openapi-typescript ../docs/api/openapi.json -o src/lib/api/types.gen.ts"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
