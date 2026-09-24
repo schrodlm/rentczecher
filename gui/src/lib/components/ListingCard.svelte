@@ -30,7 +30,6 @@
 	href={listing.url}
 	target="_blank"
 	rel="noopener noreferrer"
-	data-listing-id={listing.id}
 	{onclick}
 >
 	<!-- the API carries no photo field, the letter fallback is the photo slot -->
