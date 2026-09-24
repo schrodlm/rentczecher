@@ -10,6 +10,7 @@ reachable without the token.
 """
 
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from rentczecher.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher.adapters.api.deps import ApiDeps
@@ -24,11 +25,24 @@ def create_app(
     api_deps: ApiDeps,
     *,
     run_profile: PipelineRunner = default_run_profile,
+    allowed_origins: list[str] | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="rentczecher sidecar API", version="0",
         docs_url=None, redoc_url=None, openapi_url=None,
     )
+
+    if allowed_origins:
+        # A browser page on another origin (the Vite dev server, the shell's
+        # webview) is blocked by the browser's same-origin policy unless the
+        # API answers its CORS preflight. Origins are granted explicitly by
+        # whoever spawns the sidecar, never by default.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=allowed_origins,
+            allow_methods=["GET", "POST", "PATCH"],
+            allow_headers=["Authorization"],
+        )
 
     auth = BearerAuth(token)
     events_auth = BearerOrQueryTokenAuth(token)

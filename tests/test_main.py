@@ -155,7 +155,7 @@ class TestServe:
         started = []
         monkeypatch.setattr(main_module.uvicorn, "run", lambda *a, **kw: started.append(True))
         with caplog.at_level("ERROR", logger="rentczecher"):
-            exit_code = main_module.serve(8734)
+            exit_code = main_module.serve(8734, allowed_origins=[])
         assert exit_code == 1
         assert started == []
         assert any("RENTCZECHER_API_TOKEN" in r.message for r in caplog.records)
