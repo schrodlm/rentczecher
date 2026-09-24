@@ -47,6 +47,15 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # The committed OpenAPI schema must match the code that generates it,
+      # or the GUI builds its types against a stale contract.
+      - id: schema-freshness
+        name: openapi.json matches the API code
+        entry: uv run python scripts/export_openapi_schema.py --check
+        language: system
+        pass_filenames: false
+        files: ^(src/rentczecher/adapters/api/|scripts/export_openapi_schema\.py|docs/api/openapi\.json)
+
       # Every t()/tn() msgid in gui/src must carry a Czech translation.
       # Needs gui/node_modules installed (npm ci in gui/).
       - id: gui-locales
