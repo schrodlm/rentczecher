@@ -1,10 +1,10 @@
 import createClient from 'openapi-fetch';
 import type { components, paths } from './types.gen';
 
-type ProfileModel = components['schemas']['ProfileModel'];
-type ListingModel = components['schemas']['ListingModel'];
-type PortalHealthModel = components['schemas']['PortalHealthModel'];
-type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
+export type ProfileModel = components['schemas']['ProfileModel'];
+export type ListingModel = components['schemas']['ListingModel'];
+export type PortalHealthModel = components['schemas']['PortalHealthModel'];
+export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
 type ListingFilter = NonNullable<
 	paths['/v1/profiles/{profile_id}/listings']['get']['parameters']['query']
 >['filter'];

@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import ListingCard from './ListingCard.svelte';
-	import type { components } from '$lib/api/types.gen';
-
-	type ListingModel = components['schemas']['ListingModel'];
+	import type { ListingModel } from '$lib/api/client';
 
 	let {
 		newListings,
