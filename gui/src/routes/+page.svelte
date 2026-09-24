@@ -1,8 +1,34 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { env } from '$env/dynamic/public';
 	import logo from '$lib/assets/logo.svg';
+	import { SidecarClient } from '$lib/api/client';
+	import type { components } from '$lib/api/types.gen';
 	import { getTranslatorContext } from '$lib/i18n/context';
 
+	type ProfileModel = components['schemas']['ProfileModel'];
+
 	const t = getTranslatorContext();
+	const client = new SidecarClient(
+		env.PUBLIC_SIDECAR_BASE_URL ?? '',
+		env.PUBLIC_SIDECAR_TOKEN ?? ''
+	);
+
+	let profiles = $state<ProfileModel[] | null>(null);
+	let profilesError = $state<string | null>(null);
+	let selectedProfileId = $state<string | null>(null);
+
+	onMount(async () => {
+		try {
+			profiles = await client.listProfiles();
+		} catch (err) {
+			profilesError = err instanceof Error ? err.message : String(err);
+			return;
+		}
+		if (profiles.length > 0) {
+			selectedProfileId = profiles[0].id;
+		}
+	});
 </script>
 
 <div class="shell">
@@ -17,12 +43,26 @@
 	<div class="shell__main">
 		<header class="topbar">
 			<nav class="tabs" aria-label={t.t('Profiles')}>
-				<button class="tab tab--selected">
-					Praha 7 byty k pronájmu
-					<span class="tab__count">3</span>
-				</button>
-				<button class="tab">Domažlice domy</button>
-				<button class="tab tab--add" title={t.t('Add profile')}>+</button>
+				{#if profilesError}
+					<span class="tabs__status">
+						{t.t('Could not load profiles: {message}', { message: profilesError })}
+					</span>
+				{:else if profiles === null}
+					<span class="tabs__status">{t.t('Loading profiles...')}</span>
+				{:else if profiles.length === 0}
+					<span class="tabs__status">{t.t('No profiles yet')}</span>
+				{:else}
+					{#each profiles as profile (profile.id)}
+						<button
+							class="tab"
+							class:tab--selected={profile.id === selectedProfileId}
+							onclick={() => (selectedProfileId = profile.id)}
+						>
+							{profile.name}
+						</button>
+					{/each}
+					<button class="tab tab--add" title={t.t('Add profile')}>+</button>
+				{/if}
 			</nav>
 			<div class="topbar__actions">
 				<span class="topbar__lastrun">{t.t('Last scan: {time}', { time: 'dnes 10:32' })}</span>
@@ -152,13 +192,11 @@
 		padding: var(--space-2);
 	}
 
-	.tab__count {
-		background: var(--color-amber);
-		color: var(--color-on-amber);
-		border-radius: var(--radius-full);
-		font-size: 0.6875rem;
-		font-weight: 700;
-		padding: 0 var(--space-2);
+	.tabs__status {
+		font-size: 0.8125rem;
+		color: var(--color-bronze);
+		padding: var(--space-2) var(--space-3);
+		white-space: nowrap;
 	}
 
 	.topbar__actions {
