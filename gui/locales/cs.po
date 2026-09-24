@@ -19,6 +19,12 @@ msgstr "Nepodařilo se načíst profily: {message}"
 msgid "No profiles yet"
 msgstr "Zatím žádný profil"
 
+msgid "No new listings"
+msgstr "Žádné nové nabídky"
+
+msgid "Mark all viewed"
+msgstr "Označit vše jako zobrazené"
+
 msgid "Settings"
 msgstr "Nastavení"
 
