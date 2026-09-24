@@ -53,14 +53,13 @@ config are in English.
 ## Install
 
 ```bash
-./install.py            # uv sync, create config from the example, register cron
-./install.py --dry-run  # show exactly what it would do, change nothing
+python3 scripts/bootstrap.py   # checks tools, installs the environments
+cp config.example.yaml ~/.config/rentczecher/config.yaml
 ```
 
-The installer runs `uv sync`, creates `config.yaml` from `config.example.yaml`
-if you don't have one (it never overwrites an existing config), registers a
-single cron entry (every 3 h by default, set with `--interval-hours N`, or skip
-it with `--no-cron`), and smoke-tests the installed entry point.
+For scheduled runs, register a cron entry yourself pointing at
+`.venv/bin/rentczecher` (a packaged desktop app with its own scheduling is
+in the works).
 
 Then edit your config and try a run that changes nothing:
 

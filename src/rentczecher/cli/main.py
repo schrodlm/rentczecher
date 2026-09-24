@@ -38,8 +38,7 @@ def _load_config_or_exit() -> dict:
     try:
         return load_config(Path(CONFIG_PATH))
     except ConfigNotFoundError as error:
-        log.error("%s - run ./install.py, or copy config.example.yaml "
-                  "there and fill in your settings.", error)
+        log.error("%s - copy config.example.yaml there and fill in your settings.", error)
         sys.exit(1)
     except ConfigError as error:
         log.error("Invalid config:\n%s", error)
