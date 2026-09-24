@@ -4,6 +4,7 @@
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
 	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
+	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import ListingFeed from '$lib/components/ListingFeed.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
@@ -51,7 +52,7 @@
 			};
 		} catch (err) {
 			if (profileId !== selectedProfileId) return;
-			listingsError = err instanceof Error ? err.message : String(err);
+			listingsError = errorMessage(err);
 		}
 	}
 
@@ -120,7 +121,7 @@
 		try {
 			await client.triggerRun(selectedProfileId);
 		} catch (err) {
-			runError = err instanceof Error ? err.message : String(err);
+			runError = errorMessage(err);
 		}
 	}
 
@@ -129,7 +130,7 @@
 			try {
 				profiles = await client.listProfiles();
 			} catch (err) {
-				profilesError = err instanceof Error ? err.message : String(err);
+				profilesError = errorMessage(err);
 				return;
 			}
 			if (profiles.length > 0) {

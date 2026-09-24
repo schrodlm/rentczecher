@@ -46,7 +46,7 @@ export class SidecarClient {
 			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
 		);
 		if (!response.ok) {
-			throw new Error(`${response.url} failed: ${response.status} ${response.statusText}`);
+			throw this.httpError(response);
 		}
 	}
 
@@ -66,9 +66,13 @@ export class SidecarClient {
 	throw-based contract its callers are built against. */
 	private require<T>(data: T | undefined, response: Response): T {
 		if (data === undefined) {
-			throw new Error(`${response.url} failed: ${response.status} ${response.statusText}`);
+			throw this.httpError(response);
 		}
 		return data;
+	}
+
+	private httpError(response: Response): Error {
+		return new Error(`${response.url} failed: ${response.status} ${response.statusText}`);
 	}
 
 	/* EventSource cannot set an Authorization header, so the token rides
