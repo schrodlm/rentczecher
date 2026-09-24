@@ -135,6 +135,31 @@ class TestAuth:
         auth(authorization=None, token=TOKEN)
 
 
+class TestCors:
+    def test_preflight_from_an_allowed_origin_is_granted(self, tmp_path):
+        deps = _api_deps(tmp_path)
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile(),
+                         allowed_origins=["http://localhost:5173"])
+        client = TestClient(app)
+        response = client.options("/v1/profiles", headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "authorization",
+        })
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+    def test_preflight_is_refused_without_configured_origins(self, tmp_path):
+        """No origins granted means no CORS surface at all: the preflight
+        dies on the missing OPTIONS route."""
+        client = _client(tmp_path)
+        response = client.options("/v1/profiles", headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        })
+        assert response.status_code == 405
+
+
 class TestListProfiles:
     def test_returns_profiles_from_config_read_only(self, tmp_path):
         client = _client(tmp_path)
