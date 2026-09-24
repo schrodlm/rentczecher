@@ -4,7 +4,9 @@
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
 	import type { components } from '$lib/api/types.gen';
+	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 
 	type ProfileModel = components['schemas']['ProfileModel'];
 
@@ -14,20 +16,56 @@
 		env.PUBLIC_SIDECAR_TOKEN ?? ''
 	);
 
+	type PortalHealthModel = components['schemas']['PortalHealthModel'];
+
+	const runProgress = new RunProgressStore();
+
 	let profiles = $state<ProfileModel[] | null>(null);
 	let profilesError = $state<string | null>(null);
 	let selectedProfileId = $state<string | null>(null);
+	let health = $state<PortalHealthModel[]>([]);
+	let runError = $state<string | null>(null);
 
-	onMount(async () => {
+	async function loadHealth(): Promise<void> {
 		try {
-			profiles = await client.listProfiles();
+			health = await client.health();
+		} catch {
+			health = [];
+		}
+	}
+
+	function selectProfile(profileId: string): void {
+		selectedProfileId = profileId;
+		runProgress.connect(client.eventsUrl(), profileId, () => {
+			void loadHealth();
+		});
+	}
+
+	async function handleRun(): Promise<void> {
+		if (selectedProfileId === null) return;
+		runError = null;
+		try {
+			await client.triggerRun(selectedProfileId);
 		} catch (err) {
-			profilesError = err instanceof Error ? err.message : String(err);
-			return;
+			runError = err instanceof Error ? err.message : String(err);
 		}
-		if (profiles.length > 0) {
-			selectedProfileId = profiles[0].id;
-		}
+	}
+
+	onMount(() => {
+		(async () => {
+			try {
+				profiles = await client.listProfiles();
+			} catch (err) {
+				profilesError = err instanceof Error ? err.message : String(err);
+				return;
+			}
+			if (profiles.length > 0) {
+				selectProfile(profiles[0].id);
+			}
+			await loadHealth();
+		})();
+
+		return () => runProgress.disconnect();
 	});
 </script>
 
@@ -56,7 +94,7 @@
 						<button
 							class="tab"
 							class:tab--selected={profile.id === selectedProfileId}
-							onclick={() => (selectedProfileId = profile.id)}
+							onclick={() => selectProfile(profile.id)}
 						>
 							{profile.name}
 						</button>
@@ -64,10 +102,13 @@
 					<button class="tab tab--add" title={t.t('Add profile')}>+</button>
 				{/if}
 			</nav>
-			<div class="topbar__actions">
-				<span class="topbar__lastrun">{t.t('Last scan: {time}', { time: 'dnes 10:32' })}</span>
-				<button class="topbar__run">{t.t('Run scan')}</button>
-			</div>
+			<InboxHeader
+				{health}
+				runState={runProgress.state}
+				lastFinishedAt={runProgress.lastFinishedAt}
+				triggerError={runError}
+				onrun={handleRun}
+			/>
 		</header>
 
 		<main class="feed">
@@ -197,33 +238,6 @@
 		color: var(--color-bronze);
 		padding: var(--space-2) var(--space-3);
 		white-space: nowrap;
-	}
-
-	.topbar__actions {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.topbar__lastrun {
-		font-size: 0.8125rem;
-		color: var(--color-bronze);
-		white-space: nowrap;
-	}
-
-	.topbar__run {
-		background: var(--color-amber);
-		color: var(--color-on-amber);
-		border: none;
-		border-radius: var(--radius-md);
-		padding: var(--space-2) var(--space-4);
-		font-weight: 600;
-		cursor: pointer;
-		margin-bottom: var(--space-2);
-	}
-
-	.topbar__run:hover {
-		background: var(--color-amber-bright);
 	}
 
 	.feed {
