@@ -46,10 +46,6 @@
 			// overwrite the tab they are on.
 			if (profileId !== selectedProfileId) return;
 			listings = fetched;
-			newCounts = {
-				...newCounts,
-				[profileId]: fetched.filter((l) => l.viewed_at === null).length
-			};
 		} catch (err) {
 			if (profileId !== selectedProfileId) return;
 			listingsError = errorMessage(err);
@@ -83,10 +79,6 @@
 		const marked = listings?.find((l) => l.id === listingId);
 		if (marked && marked.viewed_at === null) {
 			marked.viewed_at = new Date().toISOString();
-			newCounts = {
-				...newCounts,
-				[selectedProfileId]: Math.max(0, (newCounts[selectedProfileId] ?? 1) - 1)
-			};
 		}
 	}
 
@@ -106,6 +98,10 @@
 	}
 
 	function selectProfile(profileId: string): void {
+		if (profileId === selectedProfileId) return;
+		if (selectedProfileId !== null) {
+			newCounts = { ...newCounts, [selectedProfileId]: newListings.length };
+		}
 		selectedProfileId = profileId;
 		listings = null;
 		void loadListings(profileId);
@@ -135,9 +131,8 @@
 			}
 			if (profiles.length > 0) {
 				selectProfile(profiles[0].id);
-				await loadAllNewCounts(profiles);
 			}
-			await loadHealth();
+			await Promise.all([loadAllNewCounts(profiles ?? []), loadHealth()]);
 		})();
 
 		return () => runProgress.disconnect();
