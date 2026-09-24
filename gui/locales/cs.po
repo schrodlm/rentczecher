@@ -30,3 +30,15 @@ msgstr[2] "{count} profilů"
 
 msgid "{name} ({status})"
 msgstr "{name} ({status})"
+
+msgid "Score {score}"
+msgstr "Skóre {score}"
+
+msgid "working"
+msgstr "v pořádku"
+
+msgid "no results"
+msgstr "bez výsledků"
+
+msgid "unreachable"
+msgstr "nedostupný"
