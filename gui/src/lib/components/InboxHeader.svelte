@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import PortalHealthDot from './PortalHealthDot.svelte';
-	import type { components } from '$lib/api/types.gen';
+	import type { PortalHealthModel } from '$lib/api/client';
 	import type { RunState } from '$lib/stores/run-progress.svelte';
-
-	type PortalHealthModel = components['schemas']['PortalHealthModel'];
 
 	let {
 		health,

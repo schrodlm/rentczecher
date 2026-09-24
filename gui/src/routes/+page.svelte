@@ -3,22 +3,17 @@
 	import { env } from '$env/dynamic/public';
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
-	import type { components } from '$lib/api/types.gen';
+	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import ListingFeed from '$lib/components/ListingFeed.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
-
-	type ProfileModel = components['schemas']['ProfileModel'];
 
 	const t = getTranslatorContext();
 	const client = new SidecarClient(
 		env.PUBLIC_SIDECAR_BASE_URL ?? '',
 		env.PUBLIC_SIDECAR_TOKEN ?? ''
 	);
-
-	type PortalHealthModel = components['schemas']['PortalHealthModel'];
-	type ListingModel = components['schemas']['ListingModel'];
 
 	const runProgress = new RunProgressStore();
 

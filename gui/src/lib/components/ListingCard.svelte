@@ -2,9 +2,7 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { daysSince, formatPrice, formatPricePerM2 } from '$lib/format';
 	import SourceChip from './SourceChip.svelte';
-	import type { components } from '$lib/api/types.gen';
-
-	type ListingModel = components['schemas']['ListingModel'];
+	import type { ListingModel } from '$lib/api/client';
 
 	let {
 		listing,
