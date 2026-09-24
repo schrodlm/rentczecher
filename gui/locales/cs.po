@@ -7,29 +7,26 @@ msgstr ""
 "Language: cs\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-msgid "Could not load profiles"
-msgstr "Nepovedlo se načíst profily"
-
-msgid "Loading..."
-msgstr "Načítání..."
-
 msgid "Profiles"
 msgstr "Profily"
 
-msgid "disabled"
-msgstr "vypnuto"
+msgid "Settings"
+msgstr "Nastavení"
 
-msgid "enabled"
-msgstr "zapnuto"
+msgid "Add profile"
+msgstr "Přidat profil"
 
-msgid "{count} profile"
-msgid_plural "{count} profiles"
-msgstr[0] "{count} profil"
-msgstr[1] "{count} profily"
-msgstr[2] "{count} profilů"
+msgid "Run scan"
+msgstr "Spustit scan"
 
-msgid "{name} ({status})"
-msgstr "{name} ({status})"
+msgid "Last scan: {time}"
+msgstr "Poslední scan: {time}"
+
+msgid "New"
+msgstr "Nové"
+
+msgid "Viewed"
+msgstr "Už zobrazené"
 
 msgid "Score {score}"
 msgstr "Skóre {score}"
