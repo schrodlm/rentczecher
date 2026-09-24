@@ -6,3 +6,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: cs\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgid "Could not load profiles"
+msgstr "Nepovedlo se načíst profily"
+
+msgid "Loading..."
+msgstr "Načítání..."
+
+msgid "Profiles"
+msgstr "Profily"
+
+msgid "disabled"
+msgstr "vypnuto"
+
+msgid "enabled"
+msgstr "zapnuto"
+
+msgid "{count} profile"
+msgid_plural "{count} profiles"
+msgstr[0] "{count} profil"
+msgstr[1] "{count} profily"
+msgstr[2] "{count} profilů"
+
+msgid "{name} ({status})"
+msgstr "{name} ({status})"
