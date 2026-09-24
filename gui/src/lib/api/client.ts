@@ -11,7 +11,7 @@ type ListingFilter = NonNullable<
 
 /* Talks to the sidecar's loopback API through openapi-fetch, so every
 path, parameter, and body below is compile-checked against the generated
-contract (ADR 2). The base URL and token are constructor inputs on
+contract. The base URL and token are constructor inputs on
 purpose: the page constructing a client owns where they come from. In dev
 they are read from gui/.env, which Vite exposes to page code through its
 PUBLIC_ env var convention. */
