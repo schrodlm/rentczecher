@@ -28,8 +28,26 @@ msgstr "Přidat profil"
 msgid "Run scan"
 msgstr "Spustit scan"
 
+msgid "Scan running..."
+msgstr "Scan běží..."
+
+msgid "{count} portal done"
+msgid_plural "{count} portals done"
+msgstr[0] "Hotovo {count} portál"
+msgstr[1] "Hotovo {count} portály"
+msgstr[2] "Hotovo {count} portálů"
+
+msgid "Scan failed: {error}"
+msgstr "Scan selhal: {error}"
+
+msgid "Scan failed"
+msgstr "Scan selhal"
+
 msgid "Last scan: {time}"
 msgstr "Poslední scan: {time}"
+
+msgid "No scan yet"
+msgstr "Ještě nespuštěno"
 
 msgid "New"
 msgstr "Nové"
