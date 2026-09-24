@@ -68,7 +68,7 @@ def migrate_db() -> int:
     return 0
 
 
-def serve(port: int) -> int:
+def serve(port: int, allowed_origins: list[str]) -> int:
     """Runs the sidecar API on 127.0.0.1:port. The shell spawns this exact
     subcommand, so its stdout/stderr are the only supervision signal a
     parent process has."""
@@ -82,7 +82,7 @@ def serve(port: int) -> int:
     migrate.apply_pending_at(db_file)
 
     api_deps = ApiDeps(config=config, db_path=db_file, scrapers=scraper_registry())
-    app = create_app(token, api_deps)
+    app = create_app(token, api_deps, allowed_origins=allowed_origins)
 
     uvicorn.run(app, host="127.0.0.1", port=port)
     return 0
@@ -221,6 +221,8 @@ def main():
     serve_parser = subparsers.add_parser("serve", help="Run the sidecar API server")
     serve_parser.add_argument("--port", type=int, default=8734,
                               help="Port to bind on 127.0.0.1 (default: 8734)")
+    serve_parser.add_argument("--allow-origin", action="append", default=[],
+                              help="Browser origin allowed to call the API (repeatable)")
     args = parser.parse_args()
 
     if args.command == "config":
@@ -232,7 +234,7 @@ def main():
             sys.exit(migrate_db())
         db_parser.error("expected a subcommand: migrate")
     if args.command == "serve":
-        sys.exit(serve(args.port))
+        sys.exit(serve(args.port, args.allow_origin))
     run(dry_run=args.dry_run, profile_filter=args.profile)
 
 

@@ -42,7 +42,11 @@ def main() -> None:
     # so terminating npm alone would orphan the actual server. Teardown
     # kills the whole group instead.
     sidecar = subprocess.Popen(
-        ["uv", "run", "rentczecher", "serve", "--port", port],
+        [
+            "uv", "run", "rentczecher", "serve", "--port", port,
+            "--allow-origin", "http://localhost:5173",
+            "--allow-origin", "http://127.0.0.1:5173",
+        ],
         cwd=REPO,
         env={**os.environ, "RENTCZECHER_API_TOKEN": token},
         start_new_session=True,
