@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "create": false,
         "title": "rentczecher",
         "width": 1200,
         "height": 800,

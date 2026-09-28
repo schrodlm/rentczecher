@@ -3,12 +3,17 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use tauri::{Manager, RunEvent};
 
 // How long the engine may take to announce its port before the shell gives up.
 const PORT_ANNOUNCE_TIMEOUT: Duration = Duration::from_secs(10);
+
+// How long the engine may take, after announcing its port, to answer its
+// health check, and how often the shell asks.
+const HEALTH_TIMEOUT: Duration = Duration::from_secs(10);
+const HEALTH_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
 // The origin the window's page runs on in a debug build, served by Vite.
 const DEV_WINDOW_ORIGIN: &str = "http://localhost:5173";
@@ -99,6 +104,26 @@ fn start_engine() -> Result<Sidecar, String> {
     })
 }
 
+/// Waits until the engine answers an authenticated health check. A bound
+/// port only proves the socket exists, the answer proves the app behind it
+/// is serving.
+fn wait_for_health(connection: &SidecarConnection) -> Result<(), String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(HEALTH_POLL_INTERVAL))
+        .build()
+        .into();
+    let url = format!("{}/v1/health", connection.base_url);
+    let authorization = format!("Bearer {}", connection.token);
+    let deadline = Instant::now() + HEALTH_TIMEOUT;
+    while Instant::now() < deadline {
+        if agent.get(&url).header("Authorization", &authorization).call().is_ok() {
+            return Ok(());
+        }
+        thread::sleep(HEALTH_POLL_INTERVAL);
+    }
+    Err("the engine did not become healthy in time".to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -110,7 +135,25 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            app.manage(start_engine()?);
+            let sidecar = start_engine()?;
+            if let Err(error) = wait_for_health(&sidecar.connection) {
+                if let Ok(mut process) = sidecar.process.lock() {
+                    let _ = process.kill();
+                }
+                return Err(error.into());
+            }
+            app.manage(sidecar);
+
+            // The window is declared in tauri.conf.json but created only now,
+            // so the panel never loads before the engine can answer it.
+            let window_config = app
+                .config()
+                .app
+                .windows
+                .first()
+                .ok_or("tauri.conf.json declares no window")?
+                .clone();
+            tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?.build()?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![sidecar_connection])
