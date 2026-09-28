@@ -83,14 +83,22 @@ def serve(port: int, allowed_origins: list[str]) -> int:
     migrate.apply_pending_at(db_file)
 
     api_deps = ApiDeps(config=config, db_path=db_file, scrapers=scraper_registry())
-    app = create_app(token, api_deps, allowed_origins=allowed_origins)
+    # Called from a shutdown request, long after the server below exists.
+    def request_shutdown() -> None:
+        server.should_exit = True
+
+    app = create_app(token, api_deps, allowed_origins=allowed_origins,
+                     request_shutdown=request_shutdown)
 
     # Binding before announcing makes the announced port a promise: the
     # socket already holds it, so nothing else can take it in between.
-    server_config = uvicorn.Config(app, host="127.0.0.1", port=port)
+    # Open event streams never close by themselves, so a graceful shutdown
+    # stops waiting for them after two seconds.
+    server_config = uvicorn.Config(app, host="127.0.0.1", port=port, timeout_graceful_shutdown=2)
     sock = server_config.bind_socket()
     print(f"PORT={sock.getsockname()[1]}", flush=True)
-    uvicorn.Server(server_config).run(sockets=[sock])
+    server = uvicorn.Server(server_config)
+    server.run(sockets=[sock])
     return 0
 
 
