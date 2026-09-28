@@ -40,6 +40,7 @@
 		"vitest": "^4.1.11"
 	},
 	"dependencies": {
+		"@tauri-apps/api": "^2.12.0",
 		"openapi-fetch": "^0.17.0"
 	}
 }
