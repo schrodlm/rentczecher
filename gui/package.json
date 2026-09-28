@@ -19,12 +19,14 @@
 		"check:locales": "tsx scripts/extract-locales.ts",
 		"extract:locales": "tsx scripts/extract-locales.ts --write",
 		"generate:api-types": "openapi-typescript ../docs/api/openapi.json -o src/lib/api/types.gen.ts",
-		"test": "npm run codegen && vitest run"
+		"test": "npm run codegen && vitest run",
+		"tauri": "tauri"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@tauri-apps/cli": "^2.12.0",
 		"@testing-library/jest-dom": "^6.9.0",
 		"@testing-library/svelte": "^5.4.2",
 		"@types/gettext-parser": "^9.0.0",
