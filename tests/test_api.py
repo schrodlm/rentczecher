@@ -160,6 +160,32 @@ class TestCors:
         assert response.status_code == 405
 
 
+class TestShutdown:
+    def test_calls_the_spawners_callback(self, tmp_path):
+        """An authenticated shutdown request is accepted and triggers the
+        callback the spawner handed to the app."""
+        requested = []
+        app = create_app(TOKEN, _api_deps(tmp_path), run_profile=_stub_run_profile(),
+                         request_shutdown=lambda: requested.append(True))
+        response = TestClient(app).post("/v1/shutdown", headers=_auth())
+        assert response.status_code == 202
+        assert requested == [True]
+
+    def test_requires_the_token(self, tmp_path):
+        """Without the bearer token the request is refused and nothing stops."""
+        requested = []
+        app = create_app(TOKEN, _api_deps(tmp_path), run_profile=_stub_run_profile(),
+                         request_shutdown=lambda: requested.append(True))
+        response = TestClient(app).post("/v1/shutdown")
+        assert response.status_code == 401
+        assert requested == []
+
+    def test_absent_without_a_callback(self, tmp_path):
+        """An app built without a shutdown callback has no shutdown route."""
+        response = _client(tmp_path).post("/v1/shutdown", headers=_auth())
+        assert response.status_code == 404
+
+
 class TestListProfiles:
     def test_returns_profiles_from_config_read_only(self, tmp_path):
         client = _client(tmp_path)
