@@ -295,6 +295,14 @@ class TestHealth:
         assert body[0]["listing_count"] == 2
 
 
+def _next_event(gen) -> str:
+    """The stream's next real event, skipping keepalive comments."""
+    while True:
+        item = next(gen)
+        if not item.startswith(":"):
+            return item
+
+
 class TestEventStream:
     """The SSE route's generator, driven directly since the TestClient in
     this environment cannot stream a response whose body never ends."""
@@ -308,7 +316,7 @@ class TestEventStream:
             broker.publish(RunEvent(kind="run_started", data={"run_id": "r1", "profile_id": "praha7-byty"}))
 
         threading.Thread(target=publish, daemon=True).start()
-        first = next(gen)
+        first = _next_event(gen)
         gen.close()
 
         assert first.startswith("event: run_started\n")
@@ -343,7 +351,7 @@ class TestEventStream:
         kinds = []
         deadline = time.monotonic() + 3
         while time.monotonic() < deadline and len(kinds) < 3:
-            kinds.append(next(gen).split("\n")[0].removeprefix("event: "))
+            kinds.append(_next_event(gen).split("\n")[0].removeprefix("event: "))
         gen.close()
 
         assert kinds == ["run_started", "run_progress", "run_finished"]
