@@ -9,13 +9,15 @@ outside that per-router loop, so they are disabled outright rather than left
 reachable without the token.
 """
 
+from collections.abc import Callable
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from rentczecher.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.api.events import EventBroker
-from rentczecher.adapters.api.routes import events, health, listings, profiles, runs
+from rentczecher.adapters.api.routes import events, health, listings, profiles, runs, shutdown
 from rentczecher.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher.services.pipeline import run_profile as default_run_profile
 
@@ -26,6 +28,7 @@ def create_app(
     *,
     run_profile: PipelineRunner = default_run_profile,
     allowed_origins: list[str] | None = None,
+    request_shutdown: Callable[[], None] | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="rentczecher sidecar API", version="0",
@@ -54,5 +57,10 @@ def create_app(
     for router in (profiles.router, listings.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])
     app.include_router(events.router, dependencies=[Depends(events_auth)])
+
+    # Only a spawner that can actually stop the process gets a shutdown route.
+    if request_shutdown is not None:
+        app.state.request_shutdown = request_shutdown
+        app.include_router(shutdown.router, dependencies=[Depends(auth)])
 
     return app
