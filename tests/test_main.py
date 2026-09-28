@@ -179,6 +179,35 @@ class TestServe:
         assert capsys.readouterr().out.strip().splitlines()[-1] == f"PORT={port}"
 
 
+    def test_shutdown_callback_stops_the_server(self, monkeypatch, tmp_path):
+        """The callback serve hands to the app sets the running server's
+        exit flag, the same flag uvicorn's own Ctrl-C handler sets."""
+        monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        created = {}
+        real_create_app = main_module.create_app
+
+        def recording_create_app(*args, **kwargs):
+            created["request_shutdown"] = kwargs["request_shutdown"]
+            return real_create_app(*args, **kwargs)
+
+        servers = []
+
+        def fake_run(self, sockets=None):
+            servers.append(self)
+            for sock in sockets:
+                sock.close()
+
+        monkeypatch.setattr(main_module, "create_app", recording_create_app)
+        monkeypatch.setattr(main_module.uvicorn.Server, "run", fake_run)
+
+        main_module.serve(0, allowed_origins=[])
+        created["request_shutdown"]()
+
+        assert servers[0].should_exit is True
+
+
 class TestPidLock:
     """A second invocation against the same resolved data dir must refuse
     to run while the first one is alive."""
