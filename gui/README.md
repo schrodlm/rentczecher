@@ -44,6 +44,18 @@ uv run python scripts/export_openapi_schema.py
 npm run generate:api-types
 ```
 
+## App icons
+
+`src-tauri/icons/` is generated from `src/lib/assets/logo.svg` and committed.
+After changing the logo, regenerate the icons and commit them together:
+
+```sh
+npm run tauri icon src/lib/assets/logo.svg -o src-tauri/icons
+```
+
+The command also writes Android, iOS and Windows Store sizes. Delete those,
+the desktop bundles use only the six files already in the folder.
+
 ## Building
 
 ```sh
