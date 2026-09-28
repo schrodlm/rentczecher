@@ -322,6 +322,16 @@ class TestEventStream:
         assert first.startswith("event: run_started\n")
         assert '"run_id": "r1"' in first
 
+    def test_a_quiet_stream_yields_keepalive_comments(self):
+        """With no events published, the stream yields an SSE comment every
+        poll interval, and closing it there still unsubscribes."""
+        broker = EventBroker()
+        gen = iter_sse_events(broker, poll_seconds=0.02)
+
+        assert next(gen) == ": keepalive\n\n"
+        gen.close()
+        assert broker._subscribers == []
+
     def test_closing_the_generator_unsubscribes_from_the_broker(self):
         broker = EventBroker()
         gen = iter_sse_events(broker, poll_seconds=0.02)
