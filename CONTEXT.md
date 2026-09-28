@@ -87,6 +87,20 @@ The desktop program the user launches. It owns the window showing the GUI
 and the sidecar's lifetime.
 _Avoid_: wrapper, launcher, frontend
 
+**Background watching**:
+The engine keeps running scheduled scans after the window is closed, shown by
+an icon in the system tray. On by default, and off whenever no tray exists.
+_Avoid_: background mode, running in background, minimized
+
+**Close**:
+Hiding the window. With background watching on, the engine keeps watching.
+_Avoid_: exit, minimize
+
+**Quit**:
+Ending the app entirely: the shell and the sidecar both exit, and any running
+scan stops.
+_Avoid_: close, exit
+
 **Sidecar**:
 The Python process the shell spawns at launch. It serves the loopback API,
 executes runs, and dies with the shell.
