@@ -8,21 +8,26 @@ from rentczecher.adapters.api.events import EventBroker
 
 router = APIRouter()
 
-# How often the generator wakes up with nothing to send, so a dropped
-# connection is noticed instead of blocking the worker forever.
+# A generator only learns that its stream ended (a dropped connection, a
+# server shutdown) when it yields. On a quiet stream it would never yield and
+# its worker thread would block until the next event, so it yields an SSE
+# comment every poll interval. EventSource ignores comment lines.
 _POLL_SECONDS = 1.0
+_KEEPALIVE = ": keepalive\n\n"
 
 
 def iter_sse_events(broker: EventBroker, *, poll_seconds: float = _POLL_SECONDS) -> Iterator[str]:
-    """The event stream's body as SSE-formatted text, one item per
-    published event. Runs until the caller stops iterating (a dropped
-    connection raises GeneratorExit here, which the subscription's __exit__
-    turns into an unsubscribe)."""
+    """The event stream's body as SSE-formatted text: one item per published
+    event, and a keepalive comment whenever poll_seconds pass without one.
+    Runs until the caller stops iterating (a dropped connection raises
+    GeneratorExit here, which the subscription's __exit__ turns into an
+    unsubscribe)."""
     with broker.subscribe() as subscriber:
         while True:
             try:
                 event = subscriber.get(timeout=poll_seconds)
             except queue.Empty:
+                yield _KEEPALIVE
                 continue
             yield event.to_sse()
 
