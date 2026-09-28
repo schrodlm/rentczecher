@@ -71,7 +71,8 @@ def migrate_db() -> int:
 def serve(port: int, allowed_origins: list[str]) -> int:
     """Runs the sidecar API on 127.0.0.1:port. The shell spawns this exact
     subcommand, so its stdout/stderr are the only supervision signal a
-    parent process has."""
+    parent process has. Port 0 lets the OS pick a free port, and the port
+    actually bound is announced on stdout as PORT=<n>."""
     token = os.environ.get("RENTCZECHER_API_TOKEN")
     if not token:
         log.error("RENTCZECHER_API_TOKEN must be set to run the API server")
@@ -84,7 +85,12 @@ def serve(port: int, allowed_origins: list[str]) -> int:
     api_deps = ApiDeps(config=config, db_path=db_file, scrapers=scraper_registry())
     app = create_app(token, api_deps, allowed_origins=allowed_origins)
 
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    # Binding before announcing makes the announced port a promise: the
+    # socket already holds it, so nothing else can take it in between.
+    server_config = uvicorn.Config(app, host="127.0.0.1", port=port)
+    sock = server_config.bind_socket()
+    print(f"PORT={sock.getsockname()[1]}", flush=True)
+    uvicorn.Server(server_config).run(sockets=[sock])
     return 0
 
 
@@ -220,7 +226,7 @@ def main():
     db_subparsers.add_parser("migrate", help="Create or upgrade the database schema")
     serve_parser = subparsers.add_parser("serve", help="Run the sidecar API server")
     serve_parser.add_argument("--port", type=int, default=8734,
-                              help="Port to bind on 127.0.0.1 (default: 8734)")
+                              help="Port to bind on 127.0.0.1, 0 picks a free one (default: 8734)")
     serve_parser.add_argument("--allow-origin", action="append", default=[],
                               help="Browser origin allowed to call the API (repeatable)")
     args = parser.parse_args()
