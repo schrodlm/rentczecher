@@ -161,6 +161,24 @@ class TestServe:
         assert any("RENTCZECHER_API_TOKEN" in r.message for r in caplog.records)
 
 
+    def test_announces_the_bound_port_on_stdout(self, monkeypatch, capsys, tmp_path):
+        """With port 0, serve binds a free port and prints it as PORT=<n>
+        before serving on that same socket."""
+        monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        served = []
+        monkeypatch.setattr(main_module.uvicorn.Server, "run",
+                            lambda self, sockets=None: served.extend(sockets))
+
+        assert main_module.serve(0, allowed_origins=[]) == 0
+
+        port = served[0].getsockname()[1]
+        served[0].close()
+        assert port > 0
+        assert capsys.readouterr().out.strip().splitlines()[-1] == f"PORT={port}"
+
+
 class TestPidLock:
     """A second invocation against the same resolved data dir must refuse
     to run while the first one is alive."""
