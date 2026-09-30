@@ -26,6 +26,25 @@ def require(tool: str, install_hint: str) -> None:
         sys.exit(f"bootstrap: {tool} not found. Install it: {install_hint}")
 
 
+# The system libraries the desktop shell compiles against on Linux, by their
+# pkg-config names. Windows and macOS ship their webview with the OS.
+LINUX_SHELL_LIBRARIES = ["webkit2gtk-4.1", "ayatana-appindicator3-0.1", "librsvg-2.0"]
+DEBIAN_SHELL_PACKAGES = "libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev"
+
+
+def require_linux_shell_libraries() -> None:
+    if not sys.platform.startswith("linux"):
+        return
+    require("pkg-config", "your distribution's pkg-config package")
+    missing = [library for library in LINUX_SHELL_LIBRARIES
+               if subprocess.run(["pkg-config", "--exists", library]).returncode != 0]
+    if missing:
+        sys.exit(
+            f"bootstrap: the desktop shell needs {', '.join(missing)}. On Debian or Ubuntu: "
+            f"sudo apt install {DEBIAN_SHELL_PACKAGES}. Other distributions: "
+            "https://v2.tauri.app/start/prerequisites/")
+
+
 def npm_floor() -> tuple[int, int]:
     declared = json.loads((GUI / "package.json").read_text())["engines"]["npm"]
     if not declared.startswith(">="):
@@ -48,6 +67,8 @@ def npm_ci_command() -> list[str]:
 def main() -> None:
     require("uv", "https://docs.astral.sh/uv/getting-started/installation/")
     require("node", "https://nodejs.org (20 or newer)")
+    require("cargo", "https://rustup.rs")
+    require_linux_shell_libraries()
     require("npm", "ships with node")
 
     run("uv", "sync", cwd=REPO)
