@@ -12,15 +12,17 @@ python3 ../scripts/bootstrap.py
 
 Bootstrap installs both environments and creates `.env` from the example.
 `.env` sets `PUBLIC_SIDECAR_BASE_URL` (where the sidecar listens) and
-`PUBLIC_SIDECAR_TOKEN` (its bearer token). dev.py starts the sidecar with
-the same values, so the two sides always agree.
+`PUBLIC_SIDECAR_TOKEN` (its bearer token).
 
 ## Developing
 
 ```sh
-python3 ../scripts/dev.py   # the sidecar and this panel together, one Ctrl-C
-npm run dev                 # panel alone, when a sidecar is already running
+npm run tauri dev
 ```
+
+One command starts Vite, compiles and opens the shell, and the shell starts
+the engine from source. Panel edits reload instantly, since the window loads
+from Vite. Rust edits recompile and restart the app. Ctrl-C stops all of it.
 
 ## Locales
 
