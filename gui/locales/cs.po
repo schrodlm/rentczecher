@@ -88,3 +88,6 @@ msgstr "bez výsledků"
 
 msgid "unreachable"
 msgstr "nedostupný"
+
+msgid "rentczecher stopped working. Restart the app to continue."
+msgstr "rentczecher přestal fungovat. Pro pokračování aplikaci restartujte."

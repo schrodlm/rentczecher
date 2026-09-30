@@ -4,7 +4,11 @@ use std::sync::{mpsc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use tauri::{Manager, RunEvent};
+use tauri::{Emitter, Manager, RunEvent};
+
+// The event the window receives when the engine's process ends. The panel's
+// onEngineStopped() listens for exactly this name.
+const ENGINE_STOPPED_EVENT: &str = "engine-stopped";
 
 // How long the engine may take to announce its port before the shell gives up.
 const PORT_ANNOUNCE_TIMEOUT: Duration = Duration::from_secs(10);
@@ -100,11 +104,15 @@ fn start_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
         .spawn()
         .map_err(|error| format!("could not start the engine: {error}"))?;
 
+    let parent_link = process.stdin.take().expect("stdin was piped");
+
     // The reader keeps draining stdout after the PORT line. A pipe nobody
     // reads fills up, and the engine would then block on its next print.
-    let parent_link = process.stdin.take().expect("stdin was piped");
+    // The pipe closes when the engine's process ends, however it ends, so the
+    // loop finishing is the shell's signal that the engine is gone.
     let stdout = process.stdout.take().expect("stdout was piped");
     let (port_sender, port_receiver) = mpsc::channel();
+    let app_handle = app.clone();
     thread::spawn(move || {
         for line in BufReader::new(stdout).lines().map_while(Result::ok) {
             match line.strip_prefix("PORT=") {
@@ -114,6 +122,8 @@ fn start_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
                 None => log::info!("engine: {line}"),
             }
         }
+        log::warn!("the engine stopped");
+        let _ = app_handle.emit(ENGINE_STOPPED_EVENT, ());
     });
 
     let port = match port_receiver.recv_timeout(PORT_ANNOUNCE_TIMEOUT) {

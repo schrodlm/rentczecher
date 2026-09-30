@@ -3,6 +3,7 @@
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
 	import { sidecarConnection } from '$lib/api/connection';
+	import { onEngineStopped } from '$lib/api/engine';
 	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
 	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
@@ -14,6 +15,7 @@
 	// Built on mount, once the connection is known. Every use below runs
 	// after that, from the mount sequence or from user actions.
 	let client: SidecarClient;
+	let engineStopped = $state(false);
 
 	const runProgress = new RunProgressStore();
 
@@ -121,6 +123,7 @@
 	}
 
 	onMount(() => {
+		const stopListening = onEngineStopped(() => (engineStopped = true));
 		(async () => {
 			try {
 				const connection = await sidecarConnection();
@@ -136,7 +139,10 @@
 			await Promise.all([loadAllNewCounts(profiles ?? []), loadHealth()]);
 		})();
 
-		return () => runProgress.disconnect();
+		return () => {
+			runProgress.disconnect();
+			void stopListening.then((unlisten) => unlisten());
+		};
 	});
 </script>
 
@@ -184,6 +190,12 @@
 				onrun={handleRun}
 			/>
 		</header>
+
+		{#if engineStopped}
+			<p class="engine-stopped" role="alert">
+				{t.t('rentczecher stopped working. Restart the app to continue.')}
+			</p>
+		{/if}
 
 		{#if listingsError}
 			<p class="shell__status">{t.t('Could not load listings: {message}', { message: listingsError })}</p>
@@ -237,6 +249,15 @@
 
 	.sidebar__settings:hover {
 		background: var(--color-line);
+	}
+
+	.engine-stopped {
+		margin: var(--space-3) var(--space-4) 0;
+		padding: var(--space-2) var(--space-3);
+		border-left: 3px solid var(--color-amber);
+		background: var(--color-card);
+		color: var(--color-bronze);
+		font-weight: 600;
 	}
 
 	.shell__main {
