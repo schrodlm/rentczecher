@@ -57,11 +57,6 @@ def main() -> None:
     # needs one codegen pass before the editor sees a consistent tree.
     run("npm", "run", "codegen", cwd=GUI)
 
-    env_file = GUI / ".env"
-    if not env_file.exists():
-        shutil.copy(GUI / ".env.example", env_file)
-        print(f"\nCreated {env_file.relative_to(REPO)} from .env.example, adjust as needed.")
-
     print("\nbootstrap: ready.")
 
 
