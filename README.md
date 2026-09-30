@@ -217,7 +217,7 @@ line that changes is `generated_at`.
 
 ```bash
 python3 scripts/bootstrap.py     # one-time setup: tools, both environments, hooks
-python3 scripts/dev.py           # run the sidecar and the panel together
+(cd gui && npm run tauri dev)    # the app in its window: Vite, the shell and the engine
 uv run python scripts/freeze_sidecar.py   # freeze the engine for the desktop app
 uv run pytest                    # offline test suite (fast, no network)
 uv run pytest -m live            # live portal tests, hits the real sites, run deliberately
