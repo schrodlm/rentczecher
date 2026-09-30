@@ -1,5 +1,4 @@
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::thread;
@@ -15,8 +14,12 @@ const PORT_ANNOUNCE_TIMEOUT: Duration = Duration::from_secs(10);
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(10);
 const HEALTH_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
-// The origin the window's page runs on in a debug build, served by Vite.
-const DEV_WINDOW_ORIGIN: &str = "http://localhost:5173";
+// The origins the window's page runs on. A debug build loads it from Vite, a
+// release build from inside the app, whose origin differs on Windows.
+#[cfg(debug_assertions)]
+const WINDOW_ORIGINS: &[&str] = &["http://localhost:5173"];
+#[cfg(not(debug_assertions))]
+const WINDOW_ORIGINS: &[&str] = &["tauri://localhost", "http://tauri.localhost"];
 
 /// Where the engine listens and the token it expects. The panel's
 /// sidecarConnection() reads exactly these two camelCase fields.
@@ -52,18 +55,37 @@ fn generate_token() -> String {
 /// A debug build runs the engine from source, so engine edits show on the
 /// next launch without re-freezing.
 #[cfg(debug_assertions)]
-fn engine_command() -> Command {
-    let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
+    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut command = Command::new("uv");
     command.args(["run", "rentczecher", "serve"]).current_dir(repo);
-    command
+    Ok(command)
 }
 
-fn start_engine() -> Result<Sidecar, String> {
+/// A release build runs the frozen engine the bundle ships as a resource.
+#[cfg(not(debug_assertions))]
+fn engine_command(app: &tauri::AppHandle) -> Result<Command, String> {
+    let executable = if cfg!(windows) { "rentczecher-sidecar.exe" } else { "rentczecher-sidecar" };
+    let path = app
+        .path()
+        .resource_dir()
+        .map_err(|error| format!("could not locate the app's resources: {error}"))?
+        .join("sidecar")
+        .join("rentczecher-sidecar")
+        .join(executable);
+    let mut command = Command::new(path);
+    command.arg("serve");
+    Ok(command)
+}
+
+fn start_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
     let token = generate_token();
-    let mut command = engine_command();
+    let mut command = engine_command(app)?;
+    command.args(["--port", "0", "--exit-with-parent"]);
+    for origin in WINDOW_ORIGINS {
+        command.args(["--allow-origin", origin]);
+    }
     command
-        .args(["--port", "0", "--allow-origin", DEV_WINDOW_ORIGIN, "--exit-with-parent"])
         .env("RENTCZECHER_API_TOKEN", &token)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped());
@@ -142,7 +164,7 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let sidecar = start_engine()?;
+            let sidecar = start_engine(app.handle())?;
             if let Err(error) = wait_for_health(&sidecar.connection) {
                 if let Ok(mut process) = sidecar.process.lock() {
                     let _ = process.kill();
