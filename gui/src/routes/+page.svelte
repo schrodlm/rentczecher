@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { env } from '$env/dynamic/public';
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
+	import { sidecarConnection } from '$lib/api/connection';
 	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
 	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
@@ -11,10 +11,9 @@
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 
 	const t = getTranslatorContext();
-	const client = new SidecarClient(
-		env.PUBLIC_SIDECAR_BASE_URL ?? '',
-		env.PUBLIC_SIDECAR_TOKEN ?? ''
-	);
+	// Built on mount, once the connection is known. Every use below runs
+	// after that, from the mount sequence or from user actions.
+	let client: SidecarClient;
 
 	const runProgress = new RunProgressStore();
 
@@ -124,6 +123,8 @@
 	onMount(() => {
 		(async () => {
 			try {
+				const connection = await sidecarConnection();
+				client = new SidecarClient(connection.baseUrl, connection.token);
 				profiles = await client.listProfiles();
 			} catch (err) {
 				profilesError = errorMessage(err);
