@@ -5,6 +5,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use tauri::{Emitter, Manager, RunEvent};
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 // The event the window receives when the engine's process ends. The panel's
 // onEngineStopped() listens for exactly this name.
@@ -163,9 +164,36 @@ fn wait_for_health(connection: &SidecarConnection) -> Result<(), String> {
     Err("the engine did not become healthy in time".to_string())
 }
 
+/// Starts the engine and waits until it is healthy, killing it again when it
+/// never becomes healthy so no half-started engine is left behind.
+fn start_healthy_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
+    let sidecar = start_engine(app)?;
+    if let Err(error) = wait_for_health(&sidecar.connection) {
+        if let Ok(mut process) = sidecar.process.lock() {
+            let _ = process.kill();
+        }
+        return Err(error);
+    }
+    Ok(sidecar)
+}
+
+/// Tells the user startup failed, then exits once they dismiss the message.
+/// The text is English, because the panel's translations load with the
+/// window, and no window exists yet.
+fn report_startup_failure(app: &tauri::AppHandle, error: &str) {
+    log::error!("startup failed: {error}");
+    let app_handle = app.clone();
+    app.dialog()
+        .message(format!("rentczecher could not start.\n\n{error}"))
+        .title("rentczecher")
+        .kind(MessageDialogKind::Error)
+        .show(move |_| app_handle.exit(1));
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -174,13 +202,14 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let sidecar = start_engine(app.handle())?;
-            if let Err(error) = wait_for_health(&sidecar.connection) {
-                if let Ok(mut process) = sidecar.process.lock() {
-                    let _ = process.kill();
+            let sidecar = match start_healthy_engine(app.handle()) {
+                Ok(sidecar) => sidecar,
+                Err(error) => {
+                    // No window opens. The dialog's callback ends the app.
+                    report_startup_failure(app.handle(), &error);
+                    return Ok(());
                 }
-                return Err(error.into());
-            }
+            };
             app.manage(sidecar);
 
             // The window is declared in tauri.conf.json but created only now,
