@@ -5,6 +5,8 @@ import argparse
 import logging
 import os
 import sys
+import threading
+from collections.abc import Callable
 from pathlib import Path
 
 import uvicorn
@@ -68,11 +70,15 @@ def migrate_db() -> int:
     return 0
 
 
-def serve(port: int, allowed_origins: list[str]) -> int:
+def serve(port: int, allowed_origins: list[str], exit_with_parent: bool = False) -> int:
     """Runs the sidecar API on 127.0.0.1:port. The shell spawns this exact
     subcommand, so its stdout/stderr are the only supervision signal a
     parent process has. Port 0 lets the OS pick a free port, and the port
-    actually bound is announced on stdout as PORT=<n>."""
+    actually bound is announced on stdout as PORT=<n>.
+
+    With exit_with_parent, the server shuts down once stdin reaches end of
+    input. The spawner holds stdin open and never writes to it. When the
+    spawner exits for any reason, crashes included, the OS closes the pipe."""
     token = os.environ.get("RENTCZECHER_API_TOKEN")
     if not token:
         log.error("RENTCZECHER_API_TOKEN must be set to run the API server")
@@ -98,8 +104,16 @@ def serve(port: int, allowed_origins: list[str]) -> int:
     sock = server_config.bind_socket()
     print(f"PORT={sock.getsockname()[1]}", flush=True)
     server = uvicorn.Server(server_config)
+    if exit_with_parent:
+        threading.Thread(target=_shutdown_at_end_of_stdin, args=(request_shutdown,),
+                         name="parent-watch", daemon=True).start()
     server.run(sockets=[sock])
     return 0
+
+
+def _shutdown_at_end_of_stdin(request_shutdown: Callable[[], None]) -> None:
+    sys.stdin.buffer.read()
+    request_shutdown()
 
 
 def _acquire_pidlock() -> bool:
@@ -237,6 +251,8 @@ def main():
                               help="Port to bind on 127.0.0.1, 0 picks a free one (default: 8734)")
     serve_parser.add_argument("--allow-origin", action="append", default=[],
                               help="Browser origin allowed to call the API (repeatable)")
+    serve_parser.add_argument("--exit-with-parent", action="store_true",
+                              help="Shut down when stdin closes, the spawner holds it open")
     args = parser.parse_args()
 
     if args.command == "config":
@@ -248,7 +264,7 @@ def main():
             sys.exit(migrate_db())
         db_parser.error("expected a subcommand: migrate")
     if args.command == "serve":
-        sys.exit(serve(args.port, args.allow_origin))
+        sys.exit(serve(args.port, args.allow_origin, args.exit_with_parent))
     run(dry_run=args.dry_run, profile_filter=args.profile)
 
 
