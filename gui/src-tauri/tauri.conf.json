@@ -29,6 +29,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Utility",
+    "shortDescription": "Watches Czech real-estate portals for new listings and price drops.",
+    "longDescription": "rentczecher follows Sreality, Bezrealitky and RE/MAX for your searches, recognizes the same property posted on several portals, and shows new listings and price drops in one inbox. Everything runs on your computer, with no account and no cloud.",
     "resources": [
       "sidecar/"
     ],
