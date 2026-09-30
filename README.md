@@ -232,6 +232,17 @@ pair, run it before and after any tuning.
 [ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout.
 `CLAUDE.md` records the coding stances this repo holds to.
 
+## Building the desktop app
+
+```bash
+(cd gui && npm run tauri build)                  # every installer format for this OS
+(cd gui && npm run tauri build -- --bundles deb) # only the .deb on Linux
+```
+
+One command builds the panel, freezes the engine and compiles the shell. The
+installers land in `gui/src-tauri/target/release/bundle/`. Each OS builds only
+its own installers, since the frozen engine cannot be cross-compiled.
+
 ## Troubleshooting
 
 - **A scraper suddenly returns 0 results.** Usually the portal changed its page
