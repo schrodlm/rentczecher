@@ -4,3 +4,8 @@ body {
 	color: var(--color-ink);
 	font-variant-numeric: tabular-nums;
 }
+
+/* The wrapper app.html renders pages into, invisible to layout. */
+.app-root {
+	display: contents;
+}
