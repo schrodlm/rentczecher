@@ -10,9 +10,8 @@ directly.
 python3 ../scripts/bootstrap.py
 ```
 
-Bootstrap installs both environments and creates `.env` from the example.
-`.env` sets `PUBLIC_SIDECAR_BASE_URL` (where the sidecar listens) and
-`PUBLIC_SIDECAR_TOKEN` (its bearer token).
+Bootstrap installs both environments and generates the panel's catalog, API
+types and icons.
 
 ## Developing
 
