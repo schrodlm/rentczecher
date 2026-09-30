@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -31,6 +31,10 @@ struct SidecarConnection {
 struct Sidecar {
     connection: SidecarConnection,
     process: Mutex<Child>,
+    // The write end of the engine's stdin, never written to. The engine runs
+    // with --exit-with-parent, so when this shell dies for any reason the OS
+    // closes the pipe and the engine shuts itself down.
+    _parent_link: ChildStdin,
 }
 
 #[tauri::command]
@@ -59,8 +63,9 @@ fn start_engine() -> Result<Sidecar, String> {
     let token = generate_token();
     let mut command = engine_command();
     command
-        .args(["--port", "0", "--allow-origin", DEV_WINDOW_ORIGIN])
+        .args(["--port", "0", "--allow-origin", DEV_WINDOW_ORIGIN, "--exit-with-parent"])
         .env("RENTCZECHER_API_TOKEN", &token)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped());
     #[cfg(windows)]
     {
@@ -75,6 +80,7 @@ fn start_engine() -> Result<Sidecar, String> {
 
     // The reader keeps draining stdout after the PORT line. A pipe nobody
     // reads fills up, and the engine would then block on its next print.
+    let parent_link = process.stdin.take().expect("stdin was piped");
     let stdout = process.stdout.take().expect("stdout was piped");
     let (port_sender, port_receiver) = mpsc::channel();
     thread::spawn(move || {
@@ -101,6 +107,7 @@ fn start_engine() -> Result<Sidecar, String> {
             token,
         },
         process: Mutex::new(process),
+        _parent_link: parent_link,
     })
 }
 
