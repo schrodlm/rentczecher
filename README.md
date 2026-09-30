@@ -47,6 +47,9 @@ config are in English.
 
 - Python 3.10 or newer
 - [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- Node.js 20 or newer, and Rust via [rustup](https://rustup.rs), for the desktop app
+- On Linux, the webview development libraries the desktop app compiles against
+  (`scripts/bootstrap.py` names the missing ones and how to install them)
 - `cron` for scheduled runs, or schedule it yourself
 - An SMTP account for sending mail (Gmail with an app password works)
 
