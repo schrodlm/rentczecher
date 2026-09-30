@@ -3,7 +3,9 @@
 Run: python3 -m pytest tests/test_main.py -v
 """
 
+import io
 import sys
+import time
 
 import pytest
 
@@ -206,6 +208,30 @@ class TestServe:
         created["request_shutdown"]()
 
         assert servers[0].should_exit is True
+
+
+    def test_exit_with_parent_stops_the_server_at_end_of_stdin(self, monkeypatch, tmp_path):
+        """With exit_with_parent, stdin reaching end of input makes the
+        running server exit, as when the spawner dies."""
+        monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        monkeypatch.setattr(main_module.sys, "stdin", io.TextIOWrapper(io.BytesIO(b"")))
+        exited = []
+
+        def fake_run(self, sockets=None):
+            for sock in sockets:
+                sock.close()
+            deadline = time.monotonic() + 2
+            while not self.should_exit and time.monotonic() < deadline:
+                time.sleep(0.01)
+            exited.append(self.should_exit)
+
+        monkeypatch.setattr(main_module.uvicorn.Server, "run", fake_run)
+
+        main_module.serve(0, allowed_origins=[], exit_with_parent=True)
+
+        assert exited == [True]
 
 
 class TestPidLock:
