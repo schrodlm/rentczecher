@@ -21,7 +21,7 @@ def apply_pending(conn: sqlite3.Connection) -> list[int]:
     for version, path in _pending(current):
         conn.execute("BEGIN")
         try:
-            for statement in _split_statements(path.read_text()):
+            for statement in _split_statements(path.read_text(encoding="utf-8")):
                 conn.execute(statement)
             # user_version takes no bound parameter; version is a validated
             # filename integer, not user input.

@@ -52,7 +52,7 @@ def resolve(place: str) -> PlaceParams:
 
 @cache
 def _index() -> dict[str, PlaceParams]:
-    places = json.loads(PLACES_PATH.read_text())
+    places = json.loads(PLACES_PATH.read_text(encoding="utf-8"))
     sreality_region_by_slug = {r["slug"]: r["sreality_region_id"] for r in places["regions"]}
 
     index: dict[str, PlaceParams] = {}
