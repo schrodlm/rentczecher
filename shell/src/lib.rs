@@ -58,13 +58,39 @@ fn generate_token() -> String {
 }
 
 /// A debug build runs the engine from source, so engine edits show on the
-/// next launch without re-freezing.
+/// next launch without re-freezing. With RENTCZECHER_SCENARIO set, it first
+/// replays that scenario into a scratch folder and runs the engine there, so
+/// development never touches the real config and data.
 #[cfg(debug_assertions)]
 fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
-    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine");
+    let engine = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine");
     let mut command = Command::new("uv");
-    command.args(["run", "rentczecher", "serve"]).current_dir(repo);
+    command.args(["run", "rentczecher", "serve"]).current_dir(&engine);
+    if let Ok(scenario) = std::env::var("RENTCZECHER_SCENARIO") {
+        let home = replay_scenario(&engine, &scenario)?;
+        command
+            .env("RENTCZECHER_CONFIG", home.join("config.yaml"))
+            .env("RENTCZECHER_DATA_DIR", home.join("data"));
+    }
     Ok(command)
+}
+
+/// Replays the named scenario into a scratch folder of its own, replacing
+/// any earlier replay, and returns that folder.
+#[cfg(debug_assertions)]
+fn replay_scenario(engine: &std::path::Path, scenario: &str) -> Result<std::path::PathBuf, String> {
+    let home = std::env::temp_dir().join("rentczecher-scenarios").join(scenario);
+    let status = Command::new("uv")
+        .args(["run", "python", "-m", "tests.scenarios", scenario])
+        .arg(&home)
+        .current_dir(engine)
+        .status()
+        .map_err(|error| format!("could not replay scenario {scenario}: {error}"))?;
+    if !status.success() {
+        return Err(format!("scenario {scenario} did not replay, see the terminal for why"));
+    }
+    log::info!("running on scenario {scenario} in {}", home.display());
+    Ok(home)
 }
 
 /// A release build runs the frozen engine the bundle ships as a resource.
