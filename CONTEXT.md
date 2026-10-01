@@ -71,15 +71,21 @@ A listing the user marked to keep. A favourite and its price history are
 never pruned.
 _Avoid_: starred, saved, bookmarked
 
+**rentczecher**:
+The product as a whole: the engine that scrapes and tracks listings, and the
+desktop app that puts a face on it, plus the command line for power users.
+The engine, panel and shell are its parts.
+_Avoid_: using it for the engine alone
+
 **Engine**:
 The Python application as a whole: pipeline, storage, scrapers, API. The
-sidecar is the engine in its serving role, a cron run is the same engine
-in its batch role.
-_Avoid_: backend, server, core
+sidecar is the engine in its serving role, a command-line run is the same
+engine in its batch role.
+_Avoid_: backend, server, core, rentczecher (the whole product)
 
 **Panel**:
-The SvelteKit web application in gui/. It renders in the shell's webview,
-or in a browser tab during development, and talks only to the sidecar.
+The SvelteKit web application. It renders in the shell's webview and talks
+only to the sidecar.
 _Avoid_: frontend, webapp, GUI (the whole desktop experience, not this app)
 
 **Shell**:
