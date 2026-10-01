@@ -1,0 +1,62 @@
+# Builds the desktop app's installers on every OS it ships for. PyInstaller
+# cannot cross-compile, so each OS freezes its own engine on its own runner.
+# A build takes long, so it runs only for release tags and for whatever is
+# pushed to build-test: git push --force origin HEAD:build-test
+name: build
+
+on:
+  push:
+    tags: ['v*']
+    branches: [build-test]
+
+jobs:
+  app:
+    strategy:
+      # One OS failing must not hide whether the others build.
+      fail-fast: false
+      matrix:
+        # The oldest supported Ubuntu, so the AppImage and .deb link against
+        # a glibc that newer distributions still run.
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the webview libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential file libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gui/package-lock.json
+      - run: npm ci
+        working-directory: gui
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: gui/src-tauri
+
+      # Builds the panel, freezes the engine and compiles the shell, through
+      # the beforeBuildCommand in tauri.conf.json.
+      - run: npm run tauri build
+        working-directory: gui
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rentczecher-${{ runner.os }}
+          path: |
+            gui/src-tauri/target/release/bundle/deb/*.deb
+            gui/src-tauri/target/release/bundle/appimage/*.AppImage
+            gui/src-tauri/target/release/bundle/msi/*.msi
+            gui/src-tauri/target/release/bundle/nsis/*.exe
+            gui/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
