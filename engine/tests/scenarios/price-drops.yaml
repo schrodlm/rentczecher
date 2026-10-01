@@ -1,0 +1,13 @@
+# Two flats seen three days ago, one of which has since dropped its price.
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: praha-7, max_price: 30000}
+scans:
+  - at: -3d
+    listings:
+      - {id: "sreality:1101", price: 25000, location: "Milady Horákové, Praha 7", size_m2: 58}
+      - {id: "bezrealitky:2101", price: 21000, location: "Letohradská, Praha 7", size_m2: 47}
+  - at: -1h
+    listings:
+      - {id: "sreality:1101", price: 22500, location: "Milady Horákové, Praha 7", size_m2: 58}
+      - {id: "bezrealitky:2101", price: 21000, location: "Letohradská, Praha 7", size_m2: 47}
