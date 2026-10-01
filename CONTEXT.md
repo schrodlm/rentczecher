@@ -123,6 +123,12 @@ One execution of the pipeline for one profile, identified by a run id. Runs
 are queued and execute strictly one at a time.
 _Avoid_: job, task, sync
 
+**Scenario**:
+A named story of runs for one profile, each run listing what it saw,
+replayed through the engine to set up a known inbox. Development opens the
+app on one, and tests start from one.
+_Avoid_: fixture (one scenario feeds many fixtures), seed, mock data
+
 **Event**:
 A fact the sidecar announces the moment it happens: a run started, a portal
 finished, a run finished, new listings arrived.
