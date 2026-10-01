@@ -1,7 +1,7 @@
 """Live integration tests for scrapers - hit real websites.
 
 Excluded from the default pytest run. Run deliberately with:
-python3 -m pytest -m live tests/test_scrapers_live.py -v
+python3 -m pytest -m live tests/live/test_scrapers.py -v
 These tests hit real APIs so they may be slow and results change over time.
 """
 import pytest
@@ -25,7 +25,7 @@ from rentczecher_engine.domain.search import SearchSpec  # noqa: E402
 if paths.config_path().exists():
     CONFIG = yaml.safe_load(paths.config_path().read_text())
 else:
-    CONFIG = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "config.example.yaml")))
+    CONFIG = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "..", "config.example.yaml")))
 
 
 def _get_profile(profile_id: str) -> dict:
