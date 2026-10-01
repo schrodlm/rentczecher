@@ -8,8 +8,6 @@ import pytest
 import yaml
 import os
 
-pytestmark = pytest.mark.live
-
 from rentczecher_engine.adapters.scrapers.client import build_client  # noqa: E402
 
 

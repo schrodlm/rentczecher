@@ -26,7 +26,6 @@ def places():
     return json.loads(PLACES_PATH.read_text())
 
 
-@pytest.mark.live
 class TestShippedIdsLive:
     """Sampled proof that shipped ids still work on the real portals - the
     test that catches a portal renumbering its taxonomy (like RE/MAX retiring
