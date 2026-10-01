@@ -15,7 +15,7 @@ REPO = Path(__file__).resolve().parent.parent
 def main() -> None:
     PyInstaller.__main__.run([
         str(REPO / "scripts" / "sidecar.spec"),
-        "--distpath", str(REPO / "gui" / "src-tauri" / "sidecar"),
+        "--distpath", str(REPO / "shell" / "sidecar"),
         "--workpath", str(REPO / "build" / "pyinstaller"),
         "--noconfirm",
     ])

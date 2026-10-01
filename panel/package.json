@@ -1,5 +1,5 @@
 {
-	"name": "gui",
+	"name": "panel",
 	"private": true,
 	"type": "module",
 	"engines": {
@@ -19,7 +19,7 @@
 		"extract:locales": "tsx scripts/extract-locales.ts --write",
 		"generate:api-types": "openapi-typescript ../docs/api/openapi.json -o src/lib/api/types.gen.ts",
 		"test": "npm run codegen && vitest run",
-		"tauri": "tauri"
+		"tauri": "cross-env TAURI_APP_PATH=../shell tauri"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.10",
@@ -29,6 +29,7 @@
 		"@testing-library/jest-dom": "^6.9.0",
 		"@testing-library/svelte": "^5.4.2",
 		"@types/gettext-parser": "^9.0.0",
+		"cross-env": "^10.1.0",
 		"gettext-parser": "^9.1.1",
 		"jsdom": "^26.1.0",
 		"openapi-typescript": "^7.13.0",
