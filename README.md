@@ -45,7 +45,7 @@ config are in English.
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Node.js 20 or newer, and Rust via [rustup](https://rustup.rs), for the desktop app
 - On Linux, the webview development libraries the desktop app compiles against
