@@ -4,11 +4,11 @@ import os
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
-REPO = os.path.dirname(SPECPATH)
+ENGINE = os.path.dirname(SPECPATH)
 
 a = Analysis(
-    [os.path.join(REPO, "src", "rentczecher", "cli", "main.py")],
-    pathex=[os.path.join(REPO, "src")],
+    [os.path.join(ENGINE, "src", "rentczecher", "cli", "main.py")],
+    pathex=[os.path.join(ENGINE, "src")],
     # The gazetteer, the SQL migrations and the location data are package
     # files, not imports, so PyInstaller only ships them when told.
     datas=collect_data_files("rentczecher"),

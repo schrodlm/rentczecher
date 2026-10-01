@@ -18,7 +18,7 @@ from rentczecher.adapters.api.deps import ApiDeps
 from rentczecher.adapters.api.events import EVENT_PAYLOADS
 from rentczecher.adapters.scrapers import scraper_registry
 
-OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "api" / "openapi.json"
+OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "api" / "openapi.json"
 
 
 def build_schema_text() -> str:

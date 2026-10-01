@@ -7,7 +7,7 @@
     "frontendDist": "../panel/build",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build && uv run python ../scripts/freeze_sidecar.py"
+    "beforeBuildCommand": "npm run build && uv run --directory ../engine python scripts/freeze_sidecar.py"
   },
   "app": {
     "windows": [
