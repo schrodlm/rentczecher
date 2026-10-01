@@ -14,6 +14,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
+from typing import NoReturn
 
 import pytest
 
@@ -50,14 +51,19 @@ class RunningSidecar:
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=env, text=True)
         self._lines: queue.Queue[str | None] = queue.Queue()
+        self.output: list[str] = []
         threading.Thread(target=self._drain_stdout, daemon=True).start()
         self.port = self._wait_for_port()
 
     def _drain_stdout(self) -> None:
         assert self.process.stdout is not None
         for line in self.process.stdout:
+            self.output.append(line.rstrip("\n"))
             self._lines.put(line.rstrip("\n"))
         self._lines.put(None)
+
+    def fail(self, reason: str) -> NoReturn:
+        pytest.fail(reason + "\nsidecar output:\n" + "\n".join(self.output))
 
     def _wait_for_port(self) -> int:
         deadline = time.monotonic() + PORT_TIMEOUT_S
@@ -67,10 +73,10 @@ class RunningSidecar:
             except queue.Empty:
                 break
             if line is None:
-                pytest.fail(f"the sidecar exited with {self.process.wait()} before announcing a port")
+                self.fail(f"the sidecar exited with {self.process.wait()} before announcing a port")
             if line.startswith("PORT="):
                 return int(line.removeprefix("PORT="))
-        pytest.fail(f"no PORT line within {PORT_TIMEOUT_S:.0f} s")
+        self.fail(f"no PORT line within {PORT_TIMEOUT_S:.0f} s")
 
     def get(self, path: str) -> object:
         request = urllib.request.Request(
@@ -83,12 +89,12 @@ class RunningSidecar:
         deadline = time.monotonic() + HEALTH_TIMEOUT_S
         while time.monotonic() < deadline:
             if self.process.poll() is not None:
-                pytest.fail(f"the sidecar exited with {self.process.returncode} before answering health")
+                self.fail(f"the sidecar exited with {self.process.returncode} before answering health")
             try:
                 return self.get("/v1/health")
             except urllib.error.URLError:
                 time.sleep(HEALTH_POLL_INTERVAL_S)
-        pytest.fail(f"health did not answer within {HEALTH_TIMEOUT_S:.0f} s")
+        self.fail(f"health did not answer within {HEALTH_TIMEOUT_S:.0f} s")
 
     def close_stdin(self) -> None:
         assert self.process.stdin is not None
