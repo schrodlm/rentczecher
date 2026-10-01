@@ -1,5 +1,5 @@
 /*
-Converts every gui/locales/<lang>.po catalog into gui/src/lib/i18n/<lang>.json,
+Converts every panel/locales/<lang>.po catalog into panel/src/lib/i18n/<lang>.json,
 consumed at runtime by the translation helper. A catalog entry with a
 msgid_plural becomes a JSON array of its ordered plural forms. A plain entry
 becomes a JSON string. Each plural entry's form count is validated against

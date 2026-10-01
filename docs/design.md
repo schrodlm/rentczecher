@@ -1,7 +1,7 @@
 # Design
 
 The visual rules behind the panel. The color values live in
-`gui/src/lib/styles/tokens.css`, and this page says how they are used.
+`panel/src/lib/styles/tokens.css`, and this page says how they are used.
 
 ## Palette roles
 
@@ -31,7 +31,7 @@ these or a derived neutral.
 
 ## Logo
 
-`gui/src/lib/assets/logo.svg` is a detective in a round amber badge, whose
+`panel/src/lib/assets/logo.svg` is a detective in a round amber badge, whose
 fedora is a roof with a chimney and whose brim is the eaves, with shades, a
 smirk and a magnifying glass. The glyphs are always charcoal. On dark or
 charcoal grounds, the badge fill becomes bright amber. The minimum size is

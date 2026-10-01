@@ -26,7 +26,7 @@ is whether it's on the live path or ahead of its consumer.
 A single installable package with light hexagonal layering:
 
 ```
-src/rentczecher/
+src/rentczecher_engine/
   domain/        frozen dataclasses, pure. no I/O, no deps on adapters
   adapters/      the edges: scrapers, notifiers, config, storage, geocoding
   services/      use-cases and orchestration over the domain
@@ -42,7 +42,8 @@ src/rentczecher/
 - `adapters/` and `cli/` may depend on everything. `cli/main.py` is where the
   wiring happens.
 
-`pyproject.toml` defines the package and the `rentczecher` entry point. `uv`
+`pyproject.toml` defines the package, `rentczecher_engine`, and the product's
+`rentczecher` command. `uv`
 manages the lockfile and the dev environment. Lint, type, and test are ruff (a
 pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
 

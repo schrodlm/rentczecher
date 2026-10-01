@@ -12,7 +12,7 @@ and a library built around an event bus.
 
 ## Decision
 
-The engine is one installable Python package, `src/rentczecher/`, in light
+The engine is one installable Python package, `rentczecher_engine`, in light
 hexagonal layers:
 
 - `domain/` holds frozen dataclasses and no I/O.

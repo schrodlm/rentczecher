@@ -1,5 +1,5 @@
 /*
-The msgid extractor: scans gui/src call sites and keeps gui/locales/cs.po
+The msgid extractor: scans panel/src call sites and keeps panel/locales/cs.po
 honest against them.
 
 Default mode checks and exits nonzero when the catalog and the source
@@ -142,7 +142,7 @@ function main(): void {
 		}
 		process.exit(1);
 	}
-	console.log(`cs.po covers all ${sites.size} msgid(s) in gui/src.`);
+	console.log(`cs.po covers all ${sites.size} msgid(s) in panel/src.`);
 }
 
 main();
