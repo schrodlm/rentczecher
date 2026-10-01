@@ -25,13 +25,13 @@ repos:
       # hunk wedges prek's stash/restore into an unrecoverable retry loop.
       - id: ruff-check
         name: ruff check
-        entry: uv run ruff check
+        entry: uv run --project engine ruff check --config engine/pyproject.toml
         language: system
         types: [python]
 
       - id: mypy
         name: mypy
-        entry: uv run mypy src/
+        entry: uv run --directory engine mypy src/
         language: system
         pass_filenames: false
         types: [python]
@@ -42,7 +42,7 @@ repos:
       # hit real portals even if pyproject's addopts changes.
       - id: pytest-offline
         name: pytest (offline suite)
-        entry: uv run pytest tests/ -q -m "not live"
+        entry: uv run --directory engine pytest tests/ -q -m "not live"
         language: system
         pass_filenames: false
         always_run: true
@@ -51,10 +51,10 @@ repos:
       # or the GUI builds its types against a stale contract.
       - id: schema-freshness
         name: openapi.json matches the API code
-        entry: uv run python scripts/export_openapi_schema.py --check
+        entry: uv run --directory engine python scripts/export_openapi_schema.py --check
         language: system
         pass_filenames: false
-        files: ^(src/rentczecher/|scripts/export_openapi_schema\.py|docs/api/openapi\.json)
+        files: ^(engine/src/rentczecher/|engine/scripts/export_openapi_schema\.py|docs/api/openapi\.json)
 
       # Every t()/tn() msgid in panel/src must carry a Czech translation.
       # Needs panel/node_modules installed (npm ci in panel/).

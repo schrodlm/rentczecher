@@ -9,14 +9,14 @@ from pathlib import Path
 
 import PyInstaller.__main__
 
-REPO = Path(__file__).resolve().parent.parent
+ENGINE = Path(__file__).resolve().parent.parent
 
 
 def main() -> None:
     PyInstaller.__main__.run([
-        str(REPO / "scripts" / "sidecar.spec"),
-        "--distpath", str(REPO / "shell" / "sidecar"),
-        "--workpath", str(REPO / "build" / "pyinstaller"),
+        str(ENGINE / "scripts" / "sidecar.spec"),
+        "--distpath", str(ENGINE.parent / "shell" / "sidecar"),
+        "--workpath", str(ENGINE / "build" / "pyinstaller"),
         "--noconfirm",
     ])
 

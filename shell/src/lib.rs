@@ -61,7 +61,7 @@ fn generate_token() -> String {
 /// next launch without re-freezing.
 #[cfg(debug_assertions)]
 fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
-    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine");
     let mut command = Command::new("uv");
     command.args(["run", "rentczecher", "serve"]).current_dir(repo);
     Ok(command)

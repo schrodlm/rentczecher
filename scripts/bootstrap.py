@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+ENGINE = REPO / "engine"
 PANEL = REPO / "panel"
 
 
@@ -71,8 +72,8 @@ def main() -> None:
     require_linux_shell_libraries()
     require("npm", "ships with node")
 
-    run("uv", "sync", cwd=REPO)
-    run("uv", "run", "prek", "install", cwd=REPO)
+    run("uv", "sync", cwd=ENGINE)
+    run("uv", "run", "prek", "install", cwd=ENGINE)
     run(*npm_ci_command(), cwd=PANEL)
     # The generated catalog and API types are gitignored, so a fresh clone
     # needs one codegen pass before the editor sees a consistent tree.

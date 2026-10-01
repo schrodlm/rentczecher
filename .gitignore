@@ -10,4 +10,4 @@ venv/
 .venv/
 
 # PyInstaller scratch files from scripts/freeze_sidecar.py
-/build/
+/engine/build/
