@@ -181,8 +181,8 @@ agree positive, disagree negative, missing exactly zero), gated by an evidence
 floor. Pairs merge only above the confident-match threshold. An **uncertain
 band** below it is scored and recorded but never merges: a wrong merge hides a
 listing, a missed one only repeats it. The weights and thresholds are calibrated
-against owner-labeled real cross-portal pairs. `scripts/matcher_eval.py` replays
-the matcher over every reviewed pair and runs before and after any tuning.
+against owner-labeled real cross-portal pairs, and move only with boundary
+tests pinning current outcomes first.
 
 ### Config
 
@@ -302,7 +302,7 @@ enough to orient a contributor.
   milestone-themed catch-all. Scoring thresholds are tuned-by-feel production
   values, pin them with boundary tests before touching them. The dedup
   matcher's weights and thresholds are calibrated against owner-labeled pairs,
-  move them only with `scripts/matcher_eval.py` evidence.
+  move them only with boundary tests pinning current outcomes first.
 - **User-facing strings are Czech. Code and internal strings are English.**
 
 `CLAUDE.md` has the full text of these stances.

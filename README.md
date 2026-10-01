@@ -229,8 +229,7 @@ uv run prek run --all-files      # ruff, mypy, offline pytest, file hygiene (the
 
 Commits are gated by the pre-commit hooks, and the offline suite must be green.
 The dedup matcher's weights and thresholds are calibrated against owner-labeled
-listing pairs: `scripts/matcher_eval.py` replays the matcher over every reviewed
-pair, run it before and after any tuning.
+listing pairs. Pin current outcomes with boundary tests before moving them.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout.
 `CLAUDE.md` records the coding stances this repo holds to.
