@@ -51,6 +51,10 @@ jobs:
       - run: npm run tauri build
         working-directory: panel
 
+      # Runs the engine this OS just froze, the way the shell runs it.
+      - run: uv run pytest -m smoke -v
+        working-directory: engine
+
       - uses: actions/upload-artifact@v4
         with:
           name: rentczecher-${{ runner.os }}
