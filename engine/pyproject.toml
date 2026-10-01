@@ -36,8 +36,9 @@ packages = ["src/rentczecher_engine"]
 [tool.pytest.ini_options]
 markers = [
     "live: hits real portals; excluded from the default run",
+    "smoke: runs the frozen sidecar, needs a freeze first; excluded from the default run",
 ]
-addopts = "-m 'not live'"
+addopts = "-m 'not live and not smoke'"
 
 [tool.ruff]
 line-length = 120
