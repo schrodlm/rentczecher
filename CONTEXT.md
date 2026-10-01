@@ -18,7 +18,7 @@ _Avoid_: estate, home
 
 **Profile**:
 One person's saved search: portals, filters, scoring weights, recipients.
-Every pipeline run is per-profile.
+Every scan is per-profile.
 _Avoid_: search, watch, subscription
 
 **Seen entry**:
@@ -32,7 +32,7 @@ from one scrape stops being active but is not yet disappeared.
 _Avoid_: live, current
 
 **Observed**:
-A scrape returned the listing in a run. Says nothing about whether any
+A scrape returned the listing in a scan. Says nothing about whether any
 person knows it exists.
 _Avoid_: seen, found
 
@@ -79,8 +79,8 @@ _Avoid_: using it for the engine alone
 
 **Engine**:
 The Python application as a whole: pipeline, storage, scrapers, API. The
-sidecar is the engine in its serving role, a command-line run is the same
-engine in its batch role.
+sidecar is the engine in its serving role, a command-line invocation is the
+same engine in its batch role.
 _Avoid_: backend, server, core, rentczecher (the whole product)
 
 **Panel**:
@@ -109,7 +109,7 @@ _Avoid_: close, exit
 
 **Sidecar**:
 The Python process the shell spawns at launch. It serves the loopback API,
-executes runs, and dies with the shell.
+executes scans, and dies with the shell.
 _Avoid_: server, backend, daemon
 
 **Token**:
@@ -118,20 +118,21 @@ at spawn. Every API request must present it back. It is never persisted and
 dies with the process.
 _Avoid_: API key, credential, session
 
-**Run**:
-One execution of the pipeline for one profile, identified by a run id. Runs
-are queued and execute strictly one at a time.
-_Avoid_: job, task, sync
+**Scan**:
+One execution of the pipeline for one profile: scrape its portals, dedup,
+diff against what it has seen, notify. Scans are queued and execute strictly
+one at a time.
+_Avoid_: run, job, task, sync
 
 **Scenario**:
-A named story of runs for one profile, each run listing what it saw,
+A named story of scans for one profile, each scan listing what it saw,
 replayed through the engine to set up a known inbox. Development opens the
 app on one, and tests start from one.
 _Avoid_: fixture (one scenario feeds many fixtures), seed, mock data
 
 **Event**:
-A fact the sidecar announces the moment it happens: a run started, a portal
-finished, a run finished, new listings arrived.
+A fact the sidecar announces the moment it happens: a scan started, a portal
+finished, a scan finished, new listings arrived.
 _Avoid_: notification (reserved for listing delivery), message
 
 **Broker**:
