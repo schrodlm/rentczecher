@@ -1,10 +1,10 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "$schema": "../panel/node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "rentczecher",
   "version": "0.1.0",
   "identifier": "io.github.schrodlm.rentczecher",
   "build": {
-    "frontendDist": "../build",
+    "frontendDist": "../panel/build",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build && uv run python ../scripts/freeze_sidecar.py"

@@ -10,6 +10,6 @@ REPO = Path(__file__).resolve().parent.parent
 
 def test_engine_version_matches_the_app_version():
     """pyproject.toml's version equals the app version in tauri.conf.json."""
-    app_version = json.loads((REPO / "gui" / "src-tauri" / "tauri.conf.json").read_text())["version"]
+    app_version = json.loads((REPO / "shell" / "tauri.conf.json").read_text())["version"]
     engine_version = tomllib.loads((REPO / "pyproject.toml").read_text())["project"]["version"]
     assert engine_version == app_version

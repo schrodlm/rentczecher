@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """One-command dev setup: checks required tools, then installs the Python
-and GUI environments. Idempotent, rerun anytime.
+and panel environments. Idempotent, rerun anytime.
 
 Run: python3 scripts/bootstrap.py
 """
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-GUI = REPO / "gui"
+PANEL = REPO / "panel"
 
 
 def run(*command: str, cwd: Path) -> None:
@@ -46,9 +46,9 @@ def require_linux_shell_libraries() -> None:
 
 
 def npm_floor() -> tuple[int, int]:
-    declared = json.loads((GUI / "package.json").read_text())["engines"]["npm"]
+    declared = json.loads((PANEL / "package.json").read_text())["engines"]["npm"]
     if not declared.startswith(">="):
-        sys.exit(f'bootstrap: cannot read gui/package.json engines.npm {declared!r}, expected ">=X.Y"')
+        sys.exit(f'bootstrap: cannot read panel/package.json engines.npm {declared!r}, expected ">=X.Y"')
     major, minor = (int(part) for part in declared.removeprefix(">=").split(".")[:2])
     return major, minor
 
@@ -59,7 +59,7 @@ def npm_ci_command() -> list[str]:
     major, minor = (int(part) for part in version.split(".")[:2])
     if (major, minor) >= npm_floor():
         return ["npm", "ci"]
-    # gui/.npmrc makes the engines floor fatal, so a system npm below it
+    # panel/.npmrc makes the engines floor fatal, so a system npm below it
     # borrows a current one for the install.
     return ["npx", "-y", "npm@10", "ci"]
 
@@ -73,10 +73,10 @@ def main() -> None:
 
     run("uv", "sync", cwd=REPO)
     run("uv", "run", "prek", "install", cwd=REPO)
-    run(*npm_ci_command(), cwd=GUI)
+    run(*npm_ci_command(), cwd=PANEL)
     # The generated catalog and API types are gitignored, so a fresh clone
     # needs one codegen pass before the editor sees a consistent tree.
-    run("npm", "run", "codegen", cwd=GUI)
+    run("npm", "run", "codegen", cwd=PANEL)
 
     print("\nbootstrap: ready.")
 
