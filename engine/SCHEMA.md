@@ -2,7 +2,7 @@
 
 State lives in one embedded SQLite file, `rentczecher.db`, in the data
 directory. Numbered migrations under
-`src/rentczecher/adapters/repositories/sqlite/migrations/` are the live DDL,
+`src/rentczecher_engine/adapters/repositories/sqlite/migrations/` are the live DDL,
 this document explains the model behind them.
 
 ## The model in one picture

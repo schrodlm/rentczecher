@@ -13,7 +13,7 @@ config are in English.
 
 > **Status:** actively developed, single-maintainer hobby project. What's below
 > is what runs today. A desktop GUI is in design on top of the same pipeline.
-> See [ARCHITECTURE.md](ARCHITECTURE.md) if you want to work on the code
+> See [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md) if you want to work on the code
 > rather than just run it.
 
 ## What it does
@@ -57,11 +57,11 @@ config are in English.
 
 ```bash
 python3 scripts/bootstrap.py   # checks tools, installs the environments
-cp config.example.yaml ~/.config/rentczecher/config.yaml
+cp engine/config.example.yaml ~/.config/rentczecher/config.yaml
 ```
 
 For scheduled runs, register a cron entry yourself pointing at
-`.venv/bin/rentczecher` (a packaged desktop app with its own scheduling is
+`engine/.venv/bin/rentczecher` (a packaged desktop app with its own scheduling is
 in the works).
 
 Then edit your config and try a run that changes nothing:
@@ -71,7 +71,7 @@ Then edit your config and try a run that changes nothing:
 $EDITOR ~/.config/rentczecher/config.yaml
 
 # 2) check it: typos and bad values are reported with the exact offending key
-.venv/bin/rentczecher config validate
+engine/.venv/bin/rentczecher config validate
 
 # 3) dry run: scrape and print results, send no email, write no state
 .venv/bin/rentczecher --dry-run
@@ -142,7 +142,7 @@ profiles:
       ideal_size_m2: 150
 ```
 
-`config.example.yaml` is the full reference with every option and its default.
+`engine/config.example.yaml` is the full reference with every option and its default.
 
 A few things worth knowing:
 
@@ -168,12 +168,13 @@ rentczecher config validate          # validate config.yaml (--path checks anoth
 rentczecher db migrate               # create/upgrade the SQLite schema (see note below)
 ```
 
-Use `.venv/bin/rentczecher` if `.venv` isn't on your `PATH`.
+Use `engine/.venv/bin/rentczecher` if `engine/.venv` isn't on your `PATH`. The
+command comes from the engine's Python package, `rentczecher_engine`.
 
 > **On `db migrate`:** every run applies pending schema migrations on startup,
 > so you rarely need this command. It exists to create or upgrade the database
 > without scraping (fresh installs, checking a new schema). See
-> [ARCHITECTURE.md](ARCHITECTURE.md).
+> [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md).
 
 ## Where things live
 
@@ -186,7 +187,7 @@ By default rentczecher follows the XDG base directories:
 | Cron log | `~/.local/share/rentczecher/cron.log` |
 
 Override order: the `RENTCZECHER_CONFIG` and `RENTCZECHER_DATA_DIR` environment
-variables win outright. Otherwise, if a `config.yaml` sits at the repo root, both
+variables win outright. Otherwise, if a `config.yaml` sits in `engine/`, both
 config and data resolve there, which is handy for a self-contained checkout.
 Otherwise the XDG defaults above. Data always follows the config anchor, so one
 installation never splits its history across two homes. The installer warns you
@@ -199,14 +200,14 @@ tail -f ~/.local/share/rentczecher/cron.log   # watch the scheduled runs
 ## Locations
 
 `place:` is resolved against a shipped table,
-`src/rentczecher/adapters/scrapers/location_data/places.json`, that maps every
+`engine/src/rentczecher_engine/adapters/scrapers/location_data/places.json`, that maps every
 Czech kraj and district to each portal's own search ids. **It is generated.
 Never hand-edit it.** Regenerate it when a portal renumbers its taxonomy. The
 symptom is a place that used to return listings suddenly returning zero, or the
 `live` id tests failing:
 
 ```bash
-uv run python scripts/refresh_location_data.py places
+(cd engine && uv run python scripts/refresh_location_data.py places)
 ```
 
 The script harvests each portal's own taxonomy, joins the three by place name,
@@ -219,30 +220,31 @@ line that changes is `generated_at`.
 ## Development
 
 ```bash
-python3 scripts/bootstrap.py     # one-time setup: tools, both environments, hooks
-(cd gui && npm run tauri dev)    # the app in its window: Vite, the shell and the engine
-uv run python scripts/freeze_sidecar.py   # freeze the engine for the desktop app
-uv run pytest                    # offline test suite (fast, no network)
-uv run pytest -m live            # live portal tests, hits the real sites, run deliberately
-uv run prek run --all-files      # ruff, mypy, offline pytest, file hygiene (the commit gate)
+python3 scripts/bootstrap.py              # one-time setup: tools, both environments, hooks
+(cd panel && npm run tauri dev)           # the app in its window: Vite, the shell and the engine
+(cd engine && uv run python scripts/freeze_sidecar.py)  # freeze the engine for the desktop app
+(cd engine && uv run pytest)              # offline test suite (fast, no network)
+(cd engine && uv run pytest -m live)      # live portal tests, hits the real sites, run deliberately
+uv run --project engine prek run --all-files  # every commit hook (the commit gate)
 ```
 
 Commits are gated by the pre-commit hooks, and the offline suite must be green.
 The dedup matcher's weights and thresholds are calibrated against owner-labeled
 listing pairs. Pin current outcomes with boundary tests before moving them.
 
-[ARCHITECTURE.md](ARCHITECTURE.md) maps the code and the module layout.
+The repo has three parts: `engine/` (Python), `panel/` (SvelteKit) and `shell/`
+(Tauri). [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md) maps the engine's code.
 `CLAUDE.md` records the coding stances this repo holds to.
 
 ## Building the desktop app
 
 ```bash
-(cd gui && npm run tauri build)                  # every installer format for this OS
-(cd gui && npm run tauri build -- --bundles deb) # only the .deb on Linux
+(cd panel && npm run tauri build)                  # every installer format for this OS
+(cd panel && npm run tauri build -- --bundles deb) # only the .deb on Linux
 ```
 
 One command builds the panel, freezes the engine and compiles the shell. The
-installers land in `gui/src-tauri/target/release/bundle/`. Each OS builds only
+installers land in `shell/target/release/bundle/`. Each OS builds only
 its own installers, since the frozen engine cannot be cross-compiled.
 
 ## Troubleshooting

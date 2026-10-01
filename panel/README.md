@@ -1,4 +1,4 @@
-# gui
+# panel
 
 The panel: the SvelteKit web app the desktop shell renders in its webview.
 Talks to the sidecar API over HTTP, never to the database or the scrapers
@@ -41,17 +41,17 @@ After a route or schema change on the Python side, regenerate the schema and
 the types:
 
 ```sh
-uv run python scripts/export_openapi_schema.py
+(cd ../engine && uv run python scripts/export_openapi_schema.py)
 npm run generate:api-types
 ```
 
 ## App icons
 
-`src-tauri/icons/` is generated from `src/lib/assets/logo.svg` and committed.
+`../shell/icons/` is generated from `src/lib/assets/logo.svg` and committed.
 After changing the logo, regenerate the icons and commit them together:
 
 ```sh
-npm run tauri icon src/lib/assets/logo.svg -o src-tauri/icons
+npm run tauri icon src/lib/assets/logo.svg
 ```
 
 The command also writes Android, iOS and Windows Store sizes. Delete those,

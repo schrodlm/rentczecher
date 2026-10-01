@@ -2,7 +2,7 @@
 
 What the adapter's code does not show: the evidence behind its region ids
 and search URL. The recipe for re-deriving the Prague ids lives in the
-docstring of `scripts/refresh_location_data.py`.
+docstring of `engine/scripts/refresh_location_data.py`.
 
 ## Region ids
 

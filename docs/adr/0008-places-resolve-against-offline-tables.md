@@ -16,7 +16,7 @@ Both kinds of place resolve against tables that ship with the app and need no
 network.
 
 **Search places.** A generated table, `places.json`, holds every region and
-district with each portal's id for it. `scripts/refresh_location_data.py`
+district with each portal's id for it. `engine/scripts/refresh_location_data.py`
 harvests it from the portals' own taxonomies and verifies each id live, and
 it is never hand-edited. `overrides.json` beside it is the only
 hand-maintained part, for ids a portal does not publish. A profile names its
