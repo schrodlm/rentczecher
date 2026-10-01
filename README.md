@@ -236,6 +236,25 @@ The repo has three parts: `engine/` (Python), `panel/` (SvelteKit) and `shell/`
 (Tauri). [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md) maps the engine's code.
 `CLAUDE.md` records the coding stances this repo holds to.
 
+### Scenarios
+
+A scenario opens the app on a known inbox instead of your real data: empty,
+fresh listings, price drops, a disappeared listing, or the same flat on two
+portals.
+
+```bash
+(cd panel && RENTCZECHER_SCENARIO=price-drops npm run tauri dev)    # Linux, macOS
+```
+```powershell
+cd panel; $env:RENTCZECHER_SCENARIO="price-drops"; npm run tauri dev  # Windows
+```
+
+Each scenario is a YAML file in `engine/tests/scenarios/` that states what
+happened: the listings each scan saw, then which ones you viewed. The debug app
+replays it through the engine into a scratch folder and runs there, so your real
+config and data are never touched. Tests start from the same files. To add one,
+write a new file next to the others. `fresh-scrape.yaml` shows every part.
+
 ## Building the desktop app
 
 ```bash
