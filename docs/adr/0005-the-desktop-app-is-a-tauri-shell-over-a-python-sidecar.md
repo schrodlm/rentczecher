@@ -1,6 +1,6 @@
 # 5. The desktop app is a Tauri shell over a Python sidecar
 
-Status: accepted (2026-07), recorded 2026-10-01
+Status: accepted (2026-07), recorded 2026-10-01, gate provisionally passed 2026-10-01
 
 ## Context
 
@@ -51,3 +51,18 @@ fallback.
 - Rejected: the local web app as the primary design, because self-updating it
   would be bespoke. Flet and PySide, for having no updater and no reusable
   web UI.
+
+## Gate outcome (2026-10-01)
+
+The gate is provisionally passed, and the Tauri design stands.
+
+- The app builds and packages on Linux, Windows and macOS in CI, one runner
+  per OS, with the shell outside the panel's folder.
+- On Linux the gate passed in full: the installed app starts the frozen
+  engine, shows the inbox, and the engine dies with the shell.
+- The build workflow's smoke tests start each OS's frozen engine the way the
+  shell does and check its port, token, config and exit on closed stdin.
+  They run on every release tag.
+- Installing the real app on Windows and macOS waits for testers, once the
+  app is usable enough to hand out. Until then the fallback above stays
+  available.
