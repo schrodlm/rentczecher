@@ -15,7 +15,7 @@ from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError, P
 def load_config(path: Path) -> dict:
     if not path.exists():
         raise ConfigNotFoundError(f"config not found at {path}")
-    raw = yaml.safe_load(path.read_text())
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ConfigError(f"{path.name}: expected a mapping at the top level")
     try:
