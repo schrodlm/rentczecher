@@ -1,0 +1,15 @@
+# One scan found six flats across all three portals, and the user already
+# opened two of them: new and viewed side by side.
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: praha-7, max_price: 30000}
+scans:
+  - at: -2h
+    listings:
+      - {id: "sreality:1001", price: 21500, location: "Milady Horákové, Praha 7", size_m2: 54}
+      - {id: "sreality:1002", price: 27900, location: "Veletržní, Praha 7", size_m2: 78, disposition: "3+kk"}
+      - {id: "bezrealitky:2001", price: 18900, location: "Letohradská, Praha 7", size_m2: 41, disposition: "1+kk"}
+      - {id: "bezrealitky:2002", price: 24000, location: "Strojnická, Praha 7", size_m2: 62, disposition: "2+1"}
+      - {id: "remax:3001", price: 29500, location: "Komunardů, Praha 7", size_m2: 85, disposition: "3+1"}
+      - {id: "remax:3002", price: 19900, location: "Jankovcova, Praha 7", size_m2: 45}
+viewed: ["sreality:1002", "remax:3001"]

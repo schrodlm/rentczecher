@@ -1,0 +1,19 @@
+# A flat seen four days ago that the portal stopped returning, missed three
+# scans in a row, while its neighbour kept being seen.
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: praha-7, max_price: 30000}
+scans:
+  - at: -4d
+    listings:
+      - {id: "sreality:1201", price: 23000, location: "Veletržní, Praha 7", size_m2: 55}
+      - {id: "sreality:1202", price: 26000, location: "Komunardů, Praha 7", size_m2: 66, disposition: "3+kk"}
+  - at: -3d
+    listings:
+      - {id: "sreality:1202", price: 26000, location: "Komunardů, Praha 7", size_m2: 66, disposition: "3+kk"}
+  - at: -2d
+    listings:
+      - {id: "sreality:1202", price: 26000, location: "Komunardů, Praha 7", size_m2: 66, disposition: "3+kk"}
+  - at: -1d
+    listings:
+      - {id: "sreality:1202", price: 26000, location: "Komunardů, Praha 7", size_m2: 66, disposition: "3+kk"}
