@@ -17,11 +17,11 @@ os.environ.pop("RENTCZECHER_DATA_DIR", None)
 
 # Imported after the environment redirect above on purpose: repository
 # modules resolve nothing at import time, but the ordering keeps every
-# rentczecher import in this process behind the isolation.
+# rentczecher_engine import in this process behind the isolation.
 import pytest  # noqa: E402
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate  # noqa: E402
-from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore  # noqa: E402
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate  # noqa: E402
+from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore  # noqa: E402
 
 
 @pytest.fixture

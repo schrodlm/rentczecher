@@ -7,7 +7,7 @@ import dataclasses
 
 import pytest
 
-from rentczecher.domain.search import SearchSpec
+from rentczecher_engine.domain.search import SearchSpec
 
 
 class TestFromSearchConfig:

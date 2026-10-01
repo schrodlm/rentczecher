@@ -14,11 +14,11 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.repositories.sqlite.clock import utc_now
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.location import ParsedPlace
-from rentczecher.services.pipeline import PipelineDeps, run_profile
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -189,7 +189,7 @@ def _deps(store, scrapers, notifier):
 
 def test_parity_profile_satisfies_the_config_schema():
     """The golden fixture's profile must stay a valid real-world config."""
-    from rentczecher.adapters.config.schema import ProfileConfig
+    from rentczecher_engine.adapters.config.schema import ProfileConfig
     ProfileConfig.model_validate(PROFILE)
 
 
@@ -219,7 +219,7 @@ def test_pipeline_outcome_matches_golden(run_store):
 def test_run_profile_persists_only_through_the_store(run_store):
     """A pipeline run persists through the store it is handed and writes
     no files of its own."""
-    from rentczecher.adapters.config import paths
+    from rentczecher_engine.adapters.config import paths
 
     store, _conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())

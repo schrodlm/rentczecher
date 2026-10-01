@@ -3,7 +3,7 @@
 Run: python3 -m pytest tests/test_paths.py -v
 """
 
-from rentczecher.adapters.config import paths
+from rentczecher_engine.adapters.config import paths
 
 
 def _isolate(monkeypatch, tmp_path, repo_has_config=False, xdg_has_config=False):

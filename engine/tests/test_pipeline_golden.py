@@ -7,10 +7,10 @@ DROPS, and which ids come out as DISAPPEARED on each run.
 Run: python3 -m pytest tests/test_pipeline_golden.py -v
 """
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.repositories.sqlite.clock import utc_now
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.services.pipeline import PipelineDeps, run_profile
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
 GAZETTEER = Gazetteer()
 

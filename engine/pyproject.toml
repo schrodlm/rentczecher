@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "rentczecher"
+name = "rentczecher_engine"
 version = "0.1.0"
 description = "Multi-portal Czech real-estate watchdog: scrape, dedup, score, notify"
 requires-python = ">=3.10"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rentczecher = "rentczecher.cli.main:main"
+rentczecher = "rentczecher_engine.cli.main:main"
 
 [dependency-groups]
 dev = [
@@ -31,7 +31,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/rentczecher"]
+packages = ["src/rentczecher_engine"]
 
 [tool.pytest.ini_options]
 markers = [

@@ -7,7 +7,7 @@ import dataclasses
 
 import pytest
 
-from rentczecher.domain.listing import Listing
+from rentczecher_engine.domain.listing import Listing
 
 
 def _listing(**overrides):
@@ -97,11 +97,11 @@ class TestScrapedAt:
 
 class TestParsedPlace:
     def test_defaults_to_an_empty_place(self):
-        from rentczecher.domain.location import ParsedPlace
+        from rentczecher_engine.domain.location import ParsedPlace
         assert _listing().parsed_place == ParsedPlace()
 
     def test_round_trips_through_build(self):
-        from rentczecher.domain.location import ParsedPlace
+        from rentczecher_engine.domain.location import ParsedPlace
         place = ParsedPlace(names=("Veletržní", "Praha 7"), district="Domažlice")
         listing = _listing(parsed_place=place)
         assert listing.parsed_place == place

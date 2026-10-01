@@ -5,7 +5,7 @@ Run: python3 -m pytest tests/test_repositories.py -v
 
 import pytest
 
-from rentczecher.adapters.repositories.repositories import (
+from rentczecher_engine.adapters.repositories.repositories import (
     ListingRepository,
     PropertyRepository,
 )

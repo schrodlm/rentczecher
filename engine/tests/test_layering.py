@@ -6,7 +6,7 @@ Run: python3 -m pytest tests/test_layering.py -v
 import ast
 from pathlib import Path
 
-SRC_ROOT = Path(__file__).parent.parent / "src" / "rentczecher"
+SRC_ROOT = Path(__file__).parent.parent / "src" / "rentczecher_engine"
 
 FORBIDDEN_MODULES = ("sqlite3", "httpx", "smtplib")
 
@@ -58,7 +58,7 @@ def _violations(package_dir: Path, forbidden_prefixes: tuple[str, ...]) -> list[
 
 def test_services_never_import_adapters_or_their_libraries():
     violations = _violations(
-        SRC_ROOT / "services", FORBIDDEN_MODULES + ("rentczecher.adapters",)
+        SRC_ROOT / "services", FORBIDDEN_MODULES + ("rentczecher_engine.adapters",)
     )
     assert violations == [], "\n".join(
         f"{path.relative_to(SRC_ROOT.parent.parent)} imports forbidden module {imported!r}"
@@ -68,7 +68,7 @@ def test_services_never_import_adapters_or_their_libraries():
 
 def test_domain_never_imports_adapters_or_services():
     violations = _violations(
-        SRC_ROOT / "domain", ("rentczecher.adapters", "rentczecher.services")
+        SRC_ROOT / "domain", ("rentczecher_engine.adapters", "rentczecher_engine.services")
     )
     assert violations == [], "\n".join(
         f"{path.relative_to(SRC_ROOT.parent.parent)} imports forbidden module {imported!r}"
@@ -82,5 +82,5 @@ def test_relative_imports_resolve_to_their_absolute_dotted_path():
     path = SRC_ROOT / "services" / "dedup.py"
     dotted_form = ast.parse("from ..adapters.geocoding.gazetteer import Gazetteer\n")
     bare_form = ast.parse("from .. import adapters\n")
-    assert "rentczecher.adapters.geocoding.gazetteer" in _imported_names(dotted_form, path)
-    assert "rentczecher.adapters" in _imported_names(bare_form, path)
+    assert "rentczecher_engine.adapters.geocoding.gazetteer" in _imported_names(dotted_form, path)
+    assert "rentczecher_engine.adapters" in _imported_names(bare_form, path)

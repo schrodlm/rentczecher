@@ -7,11 +7,11 @@ import json
 
 import pytest
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.geo import haversine_m
-from rentczecher.domain.location import ParsedPlace, ResolvedPlace
-from rentczecher.services.dedup import (
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.geo import haversine_m
+from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
+from rentczecher_engine.services.dedup import (
     DedupOutcome,
     FactorContribution,
     MatchBand,
@@ -22,7 +22,7 @@ from rentczecher.services.dedup import (
     promote_fields,
     score_match,
 )
-from rentczecher.services.locate import locate_listings
+from rentczecher_engine.services.locate import locate_listings
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -633,7 +633,7 @@ class TestGeocellBoundaries:
     close pair straddling a cell edge still merges."""
 
     def test_pair_straddling_a_cell_edge_merges(self):
-        from rentczecher.domain.geo import CELL_LAT_DEG
+        from rentczecher_engine.domain.geo import CELL_LAT_DEG
         edge = 4640 * CELL_LAT_DEG
         shared = ParsedPlace(names=("U Vody", "Praha"))
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,

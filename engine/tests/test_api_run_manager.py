@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from rentczecher.adapters.api.events import EventBroker
-from rentczecher.adapters.api.run_manager import PortalHealthEntry, RunManager
-from rentczecher.domain.scrape import ScraperHealth
-from rentczecher.services.pipeline import ProfileRunResult, RunCounts
+from rentczecher_engine.adapters.api.events import EventBroker
+from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry, RunManager
+from rentczecher_engine.domain.scrape import ScraperHealth
+from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
 
 BASE = datetime(2026, 9, 1, tzinfo=timezone.utc)
 

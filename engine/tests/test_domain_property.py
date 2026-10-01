@@ -7,7 +7,7 @@ import dataclasses
 
 import pytest
 
-from rentczecher.domain.property import PropertyIdentity
+from rentczecher_engine.domain.property import PropertyIdentity
 
 
 def test_is_immutable():

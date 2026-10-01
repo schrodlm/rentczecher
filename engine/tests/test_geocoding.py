@@ -8,8 +8,8 @@ Run: python3 -m pytest tests/test_geocoding.py -v
 
 import pytest
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer, candidate_names
-from rentczecher.domain.location import ParsedPlace
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer, candidate_names
+from rentczecher_engine.domain.location import ParsedPlace
 
 
 class TestCandidateNames:

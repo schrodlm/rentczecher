@@ -60,11 +60,11 @@ from pathlib import Path
 import httpx
 from pyproj import Transformer
 
-from rentczecher.adapters.scrapers.location_resolver import normalize_name, slugify
-from rentczecher.domain.geo import geocell
+from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name, slugify
+from rentczecher_engine.domain.geo import geocell
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-LOCATION_DATA_DIR = REPO_ROOT / "src" / "rentczecher" / "adapters" / "scrapers" / "location_data"
+LOCATION_DATA_DIR = REPO_ROOT / "src" / "rentczecher_engine" / "adapters" / "scrapers" / "location_data"
 PLACES_PATH = LOCATION_DATA_DIR / "places.json"
 OVERRIDES_PATH = LOCATION_DATA_DIR / "overrides.json"
 
@@ -310,7 +310,7 @@ def refresh_places() -> None:
 # --- gazetteer (RÚIAN) ---
 
 RUIAN_DOWNLOAD_PAGE = "https://nahlizenidokn.cuzk.gov.cz/StahniAdresniMistaRUIAN.aspx"
-GAZETTEER_PATH = REPO_ROOT / "src" / "rentczecher" / "adapters" / "geocoding" / "gazetteer.sqlite"
+GAZETTEER_PATH = REPO_ROOT / "src" / "rentczecher_engine" / "adapters" / "geocoding" / "gazetteer.sqlite"
 
 # RÚIAN address CSV columns (semicolon-separated, cp1250, one file per municipality).
 _MUNI_CODE, _MUNI_NAME = 1, 2

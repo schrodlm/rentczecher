@@ -7,7 +7,7 @@ import dataclasses
 
 import pytest
 
-from rentczecher.domain.price import PriceObservation
+from rentczecher_engine.domain.price import PriceObservation
 
 
 def test_is_immutable():

@@ -5,7 +5,7 @@ Run: python3 -m pytest tests/test_domain_disposition.py -v
 
 import pytest
 
-from rentczecher.domain.disposition import normalize_disposition
+from rentczecher_engine.domain.disposition import normalize_disposition
 
 
 class TestFlatLayouts:

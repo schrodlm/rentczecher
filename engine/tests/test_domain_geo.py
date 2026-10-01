@@ -3,7 +3,7 @@
 Run: python3 -m pytest tests/test_domain_geo.py -v
 """
 
-from rentczecher.domain.geo import CELL_LAT_DEG, CELL_LON_DEG, geocell, haversine_m
+from rentczecher_engine.domain.geo import CELL_LAT_DEG, CELL_LON_DEG, geocell, haversine_m
 
 # Veletržní street, Praha - Holešovice
 PRAHA = (50.101484, 14.429775)

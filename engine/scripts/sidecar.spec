@@ -7,11 +7,11 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 ENGINE = os.path.dirname(SPECPATH)
 
 a = Analysis(
-    [os.path.join(ENGINE, "src", "rentczecher", "cli", "main.py")],
+    [os.path.join(ENGINE, "src", "rentczecher_engine", "cli", "main.py")],
     pathex=[os.path.join(ENGINE, "src")],
     # The gazetteer, the SQL migrations and the location data are package
     # files, not imports, so PyInstaller only ships them when told.
-    datas=collect_data_files("rentczecher"),
+    datas=collect_data_files("rentczecher_engine"),
     # uvicorn picks its event loop and protocol implementations by string at
     # runtime, invisible to PyInstaller's import scan.
     hiddenimports=collect_submodules("uvicorn"),

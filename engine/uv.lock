@@ -945,7 +945,7 @@ wheels = [
 ]
 
 [[package]]
-name = "rentczecher"
+name = "rentczecher-engine"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

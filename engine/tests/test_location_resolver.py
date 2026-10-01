@@ -7,13 +7,13 @@ import dataclasses
 
 import pytest
 
-from rentczecher.adapters.scrapers.location_resolver import (
+from rentczecher_engine.adapters.scrapers.location_resolver import (
     PlaceParams,
     normalize_name,
     resolve,
     slugify,
 )
-from rentczecher.domain.errors import PlaceNotFoundError
+from rentczecher_engine.domain.errors import PlaceNotFoundError
 
 
 class TestNormalizeName:
@@ -105,7 +105,7 @@ class TestResolveFailure:
 
     def test_every_shipped_slug_resolves_to_itself(self):
         import json
-        from rentczecher.adapters.scrapers.location_resolver import PLACES_PATH
+        from rentczecher_engine.adapters.scrapers.location_resolver import PLACES_PATH
         places = json.loads(PLACES_PATH.read_text())
         for row in places["regions"] + places["districts"]:
             assert resolve(row["slug"]).slug == row["slug"]
