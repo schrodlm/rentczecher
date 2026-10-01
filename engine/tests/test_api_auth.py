@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-from rentczecher.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
+from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 
 
 def _rejects(auth, **kwargs) -> None:

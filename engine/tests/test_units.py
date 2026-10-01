@@ -3,7 +3,7 @@
 Run with: python3 -m pytest tests/test_units.py -v
 """
 import os
-from rentczecher.adapters.scrapers.base import Listing
+from rentczecher_engine.adapters.scrapers.base import Listing
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -42,19 +42,19 @@ class TestScoring:
     }
 
     def test_good_rental_scores_high(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing(price=20000, size_m2=50, disposition="2+kk")
         score = compute_score(l, self.RENTAL_PROFILE)
         assert score >= 70, f"Good rental should score 70+, got {score}"
 
     def test_bad_rental_scores_low(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing(price=24000, size_m2=28, disposition="1+kk", location="Praha 7")
         score = compute_score(l, self.RENTAL_PROFILE)
         assert score < 30, f"Bad rental should score <30, got {score}"
 
     def test_preferred_disposition_first_scores_highest(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l1 = _make_listing(price=20000, size_m2=50, disposition="2+kk")
         l2 = _make_listing(price=20000, size_m2=50, disposition="3+kk")
         s1 = compute_score(l1, self.RENTAL_PROFILE)
@@ -62,31 +62,31 @@ class TestScoring:
         assert s1 > s2, "First preferred disposition should score higher"
 
     def test_no_size_doesnt_crash(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing(disposition="2+kk")
         score = compute_score(l, self.RENTAL_PROFILE)
         assert isinstance(score, int)
 
     def test_no_disposition_doesnt_crash(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing(size_m2=50)
         score = compute_score(l, self.RENTAL_PROFILE)
         assert isinstance(score, int)
 
     def test_empty_scoring_config_returns_zero(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing()
         assert compute_score(l, {}) == 0
         assert compute_score(l, {"scoring": {}}) == 0
 
     def test_house_large_land_scores_high(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l = _make_listing(price=2500000, size_m2=150, land_m2=2000)
         score = compute_score(l, self.HOUSE_PROFILE)
         assert score >= 80, f"House with ideal land/price/size should score 80+, got {score}"
 
     def test_house_small_land_scores_lower(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l1 = _make_listing(price=3000000, size_m2=100, land_m2=2000)
         l2 = _make_listing(price=3000000, size_m2=100, land_m2=200)
         s1 = compute_score(l1, self.HOUSE_PROFILE)
@@ -94,7 +94,7 @@ class TestScoring:
         assert s1 > s2, "Larger land should score higher"
 
     def test_house_cheaper_scores_higher(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         l1 = _make_listing(price=1500000, size_m2=100, land_m2=1000)
         l2 = _make_listing(price=4500000, size_m2=100, land_m2=1000)
         s1 = compute_score(l1, self.HOUSE_PROFILE)
@@ -102,7 +102,7 @@ class TestScoring:
         assert s1 > s2, "Cheaper house should score higher"
 
     def test_score_is_0_to_100(self):
-        from rentczecher.services.score import compute_score
+        from rentczecher_engine.services.score import compute_score
         for price in [5000, 20000, 50000]:
             for size in [20, 50, 100]:
                 l = _make_listing(price=price, size_m2=size, disposition="2+kk")
@@ -116,13 +116,13 @@ class TestDB:
     PROFILE = "test_profile"
 
     def setup_method(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         path = db._db_path(self.PROFILE)
         if os.path.exists(path):
             os.unlink(path)
 
     def teardown_method(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         path = db._db_path(self.PROFILE)
         if os.path.exists(path):
             os.unlink(path)
@@ -131,11 +131,11 @@ class TestDB:
             os.unlink(lock)
 
     def test_empty_db_returns_empty(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         assert db.get_seen(self.PROFILE) == {}
 
     def test_mark_seen_persists(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         l = _make_listing(id="test:1")
         db.mark_seen(self.PROFILE, [l])
         seen = db.get_seen(self.PROFILE)
@@ -144,7 +144,7 @@ class TestDB:
         assert seen["test:1"]["title"] == "Test"
 
     def test_separate_profiles_isolated(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         l1 = _make_listing(id="test:1")
         l2 = _make_listing(id="test:2")
         db.mark_seen("profile_a", [l1])
@@ -160,7 +160,7 @@ class TestDB:
                 os.unlink(path)
 
     def test_price_drop_detection(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         l = _make_listing(id="test:1", price=25000)
         db.mark_seen(self.PROFILE, [l])
         # Same listing, lower price
@@ -170,7 +170,7 @@ class TestDB:
         assert drops[0][1] == 25000  # old price
 
     def test_no_false_price_drop(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         l = _make_listing(id="test:1", price=20000)
         db.mark_seen(self.PROFILE, [l])
         l2 = _make_listing(id="test:1", price=20000)  # Same price
@@ -178,7 +178,7 @@ class TestDB:
         assert len(drops) == 0
 
     def test_corrupt_json_handled(self):
-        from rentczecher.adapters import legacy_json_db as db
+        from rentczecher_engine.adapters import legacy_json_db as db
         path = db._db_path(self.PROFILE)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:

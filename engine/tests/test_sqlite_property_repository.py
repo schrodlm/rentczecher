@@ -12,10 +12,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate
-from rentczecher.adapters.repositories.sqlite.properties import SqlitePropertyRepository
-from rentczecher.domain.geo import geocell
-from rentczecher.domain.property import PropertyIdentity
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
+from rentczecher_engine.domain.geo import geocell
+from rentczecher_engine.domain.property import PropertyIdentity
 
 BASE = datetime(2026, 8, 13, 6, 0, 0, tzinfo=timezone.utc)
 CREATED = BASE.isoformat()

@@ -3,9 +3,9 @@
 Run: python3 -m pytest tests/test_assemble.py -v
 """
 
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.location import ResolvedPlace
-from rentczecher.services.assemble import assemble_property
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.location import ResolvedPlace
+from rentczecher_engine.services.assemble import assemble_property
 
 CREATED_AT = "2026-08-13T06:00:00+00:00"
 

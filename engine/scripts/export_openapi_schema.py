@@ -13,10 +13,10 @@ from pathlib import Path
 
 from pydantic.json_schema import models_json_schema
 
-from rentczecher.adapters.api.app import create_app
-from rentczecher.adapters.api.deps import ApiDeps
-from rentczecher.adapters.api.events import EVENT_PAYLOADS
-from rentczecher.adapters.scrapers import scraper_registry
+from rentczecher_engine.adapters.api.app import create_app
+from rentczecher_engine.adapters.api.deps import ApiDeps
+from rentczecher_engine.adapters.api.events import EVENT_PAYLOADS
+from rentczecher_engine.adapters.scrapers import scraper_registry
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent.parent / "docs" / "api" / "openapi.json"
 

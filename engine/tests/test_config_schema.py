@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from rentczecher.adapters.config.loader import load_config
-from rentczecher.adapters.config.schema import Config, ProfileConfig
-from rentczecher.domain.errors import ConfigError, ConfigNotFoundError
+from rentczecher_engine.adapters.config.loader import load_config
+from rentczecher_engine.adapters.config.schema import Config, ProfileConfig
+from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
@@ -104,8 +104,8 @@ class TestScrapersList:
             ProfileConfig.model_validate(profile)
 
     def test_known_names_match_the_shipped_scrapers(self):
-        from rentczecher.adapters.scrapers import ALL_SCRAPERS
-        from rentczecher.adapters.config.schema import KNOWN_SCRAPERS
+        from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS
+        from rentczecher_engine.adapters.config.schema import KNOWN_SCRAPERS
         assert set(KNOWN_SCRAPERS) == set(ALL_SCRAPERS)
 
 

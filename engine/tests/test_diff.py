@@ -4,8 +4,8 @@ disappeared.
 Run: python3 -m pytest tests/test_diff.py -v
 """
 
-from rentczecher.domain.listing import DisappearedListing, Listing
-from rentczecher.services.diff import classify
+from rentczecher_engine.domain.listing import DisappearedListing, Listing
+from rentczecher_engine.services.diff import classify
 
 
 def _make_listing(**kwargs) -> Listing:

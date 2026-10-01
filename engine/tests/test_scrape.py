@@ -5,10 +5,10 @@ Run: python3 -m pytest tests/test_scrape.py -v
 
 import pytest
 
-from rentczecher.domain.errors import PlaceNotFoundError, ScraperBrokenError
-from rentczecher.domain.listing import Listing
-from rentczecher.domain.search import SearchSpec
-from rentczecher.services.scrape import scrape_all
+from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
+from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.services.scrape import scrape_all
 
 SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
 

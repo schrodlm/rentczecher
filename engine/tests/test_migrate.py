@@ -7,7 +7,7 @@ import sqlite3
 
 import pytest
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 
 EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
@@ -151,6 +151,6 @@ class TestPackaging:
 
     def test_migration_is_discoverable_as_package_data(self):
         from importlib.resources import files
-        sql = files("rentczecher.adapters.repositories.sqlite") / "migrations" / "0001_init.sql"
+        sql = files("rentczecher_engine.adapters.repositories.sqlite") / "migrations" / "0001_init.sql"
         assert sql.is_file()
         assert "CREATE TABLE properties" in sql.read_text()

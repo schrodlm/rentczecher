@@ -11,10 +11,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.domain.errors import PlaceNotFoundError, ScraperBrokenError
-from rentczecher.domain.listing import Listing
-from rentczecher.services.pipeline import PipelineDeps, RunCounts, run_profile
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
+from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 GAZETTEER = Gazetteer()

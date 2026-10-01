@@ -1,6 +1,6 @@
-from rentczecher.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
-from rentczecher.adapters.api.run_manager import PortalHealthEntry
-from rentczecher.domain.listing import InboxCard, SiblingSource
+from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
+from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
+from rentczecher_engine.domain.listing import InboxCard, SiblingSource
 
 
 class TestProfileModel:

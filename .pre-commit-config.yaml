@@ -54,7 +54,7 @@ repos:
         entry: uv run --directory engine python scripts/export_openapi_schema.py --check
         language: system
         pass_filenames: false
-        files: ^(engine/src/rentczecher/|engine/scripts/export_openapi_schema\.py|docs/api/openapi\.json)
+        files: ^(engine/src/rentczecher_engine/|engine/scripts/export_openapi_schema\.py|docs/api/openapi\.json)
 
       # Every t()/tn() msgid in panel/src must carry a Czech translation.
       # Needs panel/node_modules installed (npm ci in panel/).

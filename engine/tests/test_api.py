@@ -16,16 +16,16 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from rentczecher.adapters.api.app import create_app
-from rentczecher.adapters.api.auth import BearerOrQueryTokenAuth
-from rentczecher.adapters.api.deps import ApiDeps
-from rentczecher.adapters.api.events import EventBroker, RunEvent
-from rentczecher.adapters.api.routes.events import iter_sse_events
-from rentczecher.adapters.repositories.sqlite import connection, migrate
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.dedup import DedupOutcome
-from rentczecher.domain.scrape import ScraperHealth
-from rentczecher.services.pipeline import ProfileRunResult, RunCounts
+from rentczecher_engine.adapters.api.app import create_app
+from rentczecher_engine.adapters.api.auth import BearerOrQueryTokenAuth
+from rentczecher_engine.adapters.api.deps import ApiDeps
+from rentczecher_engine.adapters.api.events import EventBroker, RunEvent
+from rentczecher_engine.adapters.api.routes.events import iter_sse_events
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.dedup import DedupOutcome
+from rentczecher_engine.domain.scrape import ScraperHealth
+from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
 
 TOKEN = "test-token"
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)

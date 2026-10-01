@@ -272,7 +272,7 @@ class TestBuildPlaces:
         assert places["districts"][0]["bezrealitky_region_id"] == "R20000064250"
 
 
-PLACES_PATH = (Path(__file__).parent.parent / "src" / "rentczecher" / "adapters"
+PLACES_PATH = (Path(__file__).parent.parent / "src" / "rentczecher_engine" / "adapters"
                / "scrapers" / "location_data" / "places.json")
 
 
@@ -643,13 +643,13 @@ class TestGazetteerPackaging:
 
     def test_gazetteer_is_discoverable_as_package_data(self):
         from importlib.resources import files
-        gaz = files("rentczecher.adapters.geocoding") / "gazetteer.sqlite"
+        gaz = files("rentczecher_engine.adapters.geocoding") / "gazetteer.sqlite"
         assert gaz.is_file()
 
     def test_shipped_gazetteer_resolves_a_known_street(self):
         import sqlite3
         from importlib.resources import files
-        gaz = files("rentczecher.adapters.geocoding") / "gazetteer.sqlite"
+        gaz = files("rentczecher_engine.adapters.geocoding") / "gazetteer.sqlite"
         # mode=ro: plain connect() would create an empty file where the
         # shipped one is missing, masking a packaging break.
         conn = sqlite3.connect(f"file:{gaz}?mode=ro", uri=True)

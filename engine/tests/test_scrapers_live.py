@@ -10,7 +10,7 @@ import os
 
 pytestmark = pytest.mark.live
 
-from rentczecher.adapters.scrapers.client import build_client  # noqa: E402
+from rentczecher_engine.adapters.scrapers.client import build_client  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -19,8 +19,8 @@ def client():
         yield c
 
 # Load the resolved config, falling back to the example profiles.
-from rentczecher.adapters.config import paths  # noqa: E402
-from rentczecher.domain.search import SearchSpec  # noqa: E402
+from rentczecher_engine.adapters.config import paths  # noqa: E402
+from rentczecher_engine.domain.search import SearchSpec  # noqa: E402
 
 if paths.config_path().exists():
     CONFIG = yaml.safe_load(paths.config_path().read_text())
@@ -41,14 +41,14 @@ def _scraper(cls, profile_id: str, client):
 
 class TestSrealityLive:
     def test_praha7_returns_listings(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
         # May be 0 transiently, but typically > 0
         assert isinstance(listings, list)
 
     def test_praha7_listings_have_required_fields(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
         if not listings:
@@ -61,7 +61,7 @@ class TestSrealityLive:
         assert l.title
 
     def test_praha7_gps_extracted(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
         if not listings:
@@ -73,7 +73,7 @@ class TestSrealityLive:
         assert 14.0 < l.lon < 15.0, f"Longitude {l.lon} out of Prague range"
 
     def test_praha7_price_in_range(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         profile = _get_profile("praha7-byty")
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
@@ -84,13 +84,13 @@ class TestSrealityLive:
             assert l.price >= min_price, f"Price {l.price} below min {min_price}"
 
     def test_domazlice_returns_houses(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "domazlice-domy", client)
         listings = s.scrape()
         assert len(listings) > 0, "Domazlice should have house listings on Sreality"
 
     def test_domazlice_has_land_area(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "domazlice-domy", client)
         listings = s.scrape()
         assert len(listings) > 0, "No listings"
@@ -100,7 +100,7 @@ class TestSrealityLive:
             assert l.land_m2 > 0
 
     def test_domazlice_prices_are_sale_range(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "domazlice-domy", client)
         listings = s.scrape()
         assert len(listings) > 0
@@ -109,7 +109,7 @@ class TestSrealityLive:
             assert l.price > 50000, f"Price {l.price} too low for sale - looks like rent"
 
     def test_domazlice_location_contains_domazlice(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "domazlice-domy", client)
         listings = s.scrape()
         assert len(listings) > 0
@@ -117,7 +117,7 @@ class TestSrealityLive:
         assert len(with_domazlice) > 0, "No listings mention Domažlice in location"
 
     def test_first_detail_url_resolves(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
         if not listings:
@@ -126,7 +126,7 @@ class TestSrealityLive:
         assert resp.status_code == 200, f"Constructed detail URL broken: {listings[0].url}"
 
     def test_pagination_collects_beyond_one_page(self, client):
-        from rentczecher.adapters.scrapers.sreality import SrealityScraper
+        from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
         spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
                           min_price=0, max_price=0)
         listings = SrealityScraper(spec, client).scrape()
@@ -137,13 +137,13 @@ class TestSrealityLive:
 
 class TestBezrealitkyLive:
     def test_praha7_returns_listings(self, client):
-        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+        from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
         s = _scraper(BezrealitkyScraper, "praha7-byty", client)
         listings = s.scrape()
         assert len(listings) > 0, "Bezrealitky should return Praha 7 rentals"
 
     def test_praha7_gps_and_charges(self, client):
-        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+        from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
         s = _scraper(BezrealitkyScraper, "praha7-byty", client)
         listings = s.scrape()
         assert len(listings) > 0
@@ -153,7 +153,7 @@ class TestBezrealitkyLive:
         assert len(with_charges) > 0, "No charges from Bezrealitky"
 
     def test_praha7_listings_have_images(self, client):
-        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+        from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
         s = _scraper(BezrealitkyScraper, "praha7-byty", client)
         listings = s.scrape()
         assert len(listings) > 0
@@ -161,7 +161,7 @@ class TestBezrealitkyLive:
         assert len(with_img) > 0, "No listings have images"
 
     def test_praha7_dispositions_are_valid(self, client):
-        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+        from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
         s = _scraper(BezrealitkyScraper, "praha7-byty", client)
         listings = s.scrape()
         valid = {"1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1", "6+", "atypicky", "garsoniéra"}
@@ -170,7 +170,7 @@ class TestBezrealitkyLive:
                 assert l.disposition in valid, f"Unknown disposition: {l.disposition}"
 
     def test_domazlice_returns_results(self, client):
-        from rentczecher.adapters.scrapers.bezrealitky import BezrealitkyScraper
+        from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
         s = _scraper(BezrealitkyScraper, "domazlice-domy", client)
         listings = s.scrape()
         # May be 0-few for small district, just ensure no crash
@@ -181,13 +181,13 @@ class TestBezrealitkyLive:
 
 class TestRemaxLive:
     def test_praha7_returns_listings(self, client):
-        from rentczecher.adapters.scrapers.remax import RemaxScraper
+        from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
         assert len(listings) > 0, "RE/MAX should return Praha 7 rentals"
 
     def test_praha7_prices_valid(self, client):
-        from rentczecher.adapters.scrapers.remax import RemaxScraper
+        from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
         profile = _get_profile("praha7-byty")
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
@@ -196,14 +196,14 @@ class TestRemaxLive:
             assert l.price <= profile["search"]["max_price"]
 
     def test_praha7_titles_no_agent_id(self, client):
-        from rentczecher.adapters.scrapers.remax import RemaxScraper
+        from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
         for l in listings:
             assert "(ID " not in l.title, f"Agent ID in title: {l.title}"
 
     def test_praha7_location_normalized(self, client):
-        from rentczecher.adapters.scrapers.remax import RemaxScraper
+        from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
         for l in listings:
@@ -211,7 +211,7 @@ class TestRemaxLive:
             assert "  " not in l.location, f"Double space in location: {repr(l.location)}"
 
     def test_domazlice_no_crash(self, client):
-        from rentczecher.adapters.scrapers.remax import RemaxScraper
+        from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
         s = _scraper(RemaxScraper, "domazlice-domy", client)
         listings = s.scrape()
         # Genuinely 0 results in Domazlice on RE/MAX - just ensure no crash

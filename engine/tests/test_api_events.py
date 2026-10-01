@@ -3,7 +3,7 @@ from typing import get_args
 
 import pytest
 
-from rentczecher.adapters.api.events import (
+from rentczecher_engine.adapters.api.events import (
     EVENT_PAYLOADS,
     EventBroker,
     EventKind,

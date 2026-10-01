@@ -5,10 +5,10 @@ Run: python3 -m pytest tests/test_locate.py -v
 
 import pytest
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.domain.listing import Listing
-from rentczecher.domain.location import ParsedPlace
-from rentczecher.services.locate import locate, locate_listings
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.services.locate import locate, locate_listings
 
 
 @pytest.fixture(scope="module")

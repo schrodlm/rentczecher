@@ -6,11 +6,11 @@ Run: python3 -m pytest tests/test_notifier.py -v
 import email as email_lib
 from email.header import decode_header
 
-from rentczecher.adapters.notifiers.smtp import SmtpNotifier, _render_card
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.search import SearchSpec
-from rentczecher.services.diff import DiffResult
-from rentczecher.services.notify import build_notification
+from rentczecher_engine.adapters.notifiers.smtp import SmtpNotifier, _render_card
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.services.diff import DiffResult
+from rentczecher_engine.services.notify import build_notification
 
 
 def _make_listing(**kwargs):
@@ -72,7 +72,7 @@ class TestSmtpNotifierSend:
     delivered."""
 
     def test_sends_new_and_dropped_listings_with_a_combined_subject(self, monkeypatch):
-        monkeypatch.setattr("rentczecher.adapters.notifiers.smtp.smtplib.SMTP", _RecordingSMTP)
+        monkeypatch.setattr("rentczecher_engine.adapters.notifiers.smtp.smtplib.SMTP", _RecordingSMTP)
         _RecordingSMTP.sent = []
 
         new_listing = _make_listing(id="sreality:new", title="Nový byt")
@@ -107,7 +107,7 @@ class TestSmtpNotifierSend:
         assert "SLEVA" in parts["text/html"]
 
     def test_nothing_notable_sends_no_email(self, monkeypatch):
-        monkeypatch.setattr("rentczecher.adapters.notifiers.smtp.smtplib.SMTP", _RecordingSMTP)
+        monkeypatch.setattr("rentczecher_engine.adapters.notifiers.smtp.smtplib.SMTP", _RecordingSMTP)
         _RecordingSMTP.sent = []
 
         diff = DiffResult(new=[], price_drops=[], disappeared=[])

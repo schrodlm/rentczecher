@@ -10,9 +10,9 @@ Run: python3 -m pytest tests/test_sqlite_listing_repository.py -v
 from datetime import datetime, timedelta, timezone
 
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate
-from rentczecher.adapters.repositories.sqlite.listings import SqliteListingRepository
-from rentczecher.adapters.scrapers.base import Listing
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
+from rentczecher_engine.adapters.scrapers.base import Listing
 
 PROFILE = "praha7-byty"
 OTHER_PROFILE = "letna-byty"
@@ -113,7 +113,7 @@ class TestPriceHistory:
     def test_direct_record_persists_across_a_reopen(self, tmp_path):
         # record_price_observation does not commit. The caller owns that
         # boundary, so this test stands in for one.
-        from rentczecher.domain.price import PriceObservation
+        from rentczecher_engine.domain.price import PriceObservation
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(price=20000))
         repo.record_price_observation(PriceObservation(

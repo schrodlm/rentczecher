@@ -5,8 +5,8 @@ Run: python3 -m pytest tests/test_sqlite_profile_repository.py -v
 
 from datetime import datetime, timezone
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate
-from rentczecher.adapters.repositories.sqlite.profiles import SqliteProfileRepository
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 
 BASE = datetime(2026, 9, 18, 6, 0, 0, tzinfo=timezone.utc)
 

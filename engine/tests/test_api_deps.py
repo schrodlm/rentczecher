@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-from rentczecher.adapters.api.deps import ApiDeps, require_profile
+from rentczecher_engine.adapters.api.deps import ApiDeps, require_profile
 
 CONFIG = {"profiles": {"matej": {"name": "Matěj", "to": []}}}
 

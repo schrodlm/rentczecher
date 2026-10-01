@@ -3,9 +3,9 @@
 Run: python3 -m pytest tests/test_filters.py -v
 """
 
-from rentczecher.domain.listing import Listing
-from rentczecher.domain.search import SearchSpec
-from rentczecher.services.filters import apply_filters
+from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.services.filters import apply_filters
 
 SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
 

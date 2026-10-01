@@ -9,12 +9,12 @@ import time
 
 import pytest
 
-from rentczecher.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
-from rentczecher.adapters.repositories.sqlite.clock import utc_now
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.cli import main as main_module
-from rentczecher.services.pipeline import PipelineDeps, run_profile
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
+from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.cli import main as main_module
+from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
 
 class TestOrphanedRepoDataWarning:

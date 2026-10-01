@@ -11,10 +11,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from rentczecher.adapters.repositories.sqlite import connection, migrate
-from rentczecher.adapters.repositories.sqlite.store import SqliteRunStore
-from rentczecher.adapters.scrapers.base import Listing
-from rentczecher.domain.dedup import DedupOutcome
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
+from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.dedup import DedupOutcome
 
 PROFILE_ID = "praha7-byty"
 BASE = datetime(2026, 9, 19, 6, 0, 0, tzinfo=timezone.utc)
