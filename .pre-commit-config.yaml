@@ -38,11 +38,11 @@ repos:
 
       # Not filtered to Python files: fixture and config changes can break
       # tests too, and the offline suite costs well under a second. The
-      # live-marker exclusion is repeated here so the commit gate cannot
-      # hit real portals even if pyproject's addopts changes.
+      # live and smoke exclusions are repeated here so the commit gate never
+      # hits real portals or needs a freeze, even if pyproject's addopts changes.
       - id: pytest-offline
         name: pytest (offline suite)
-        entry: uv run --directory engine pytest tests/ -q -m "not live"
+        entry: uv run --directory engine pytest tests/ -q -m "not live and not smoke"
         language: system
         pass_filenames: false
         always_run: true
