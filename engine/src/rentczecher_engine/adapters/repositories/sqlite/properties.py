@@ -6,7 +6,7 @@ from datetime import datetime
 from rentczecher_engine.adapters.repositories.repositories import PropertyRepository
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.domain.geo import geocell
-from rentczecher_engine.domain.property import PropertyIdentity
+from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
 
 class SqlitePropertyRepository(PropertyRepository):
@@ -27,6 +27,19 @@ class SqlitePropertyRepository(PropertyRepository):
             lat=row["lat"],
             lon=row["lon"],
             land_m2=row["land_m2"],
+        )
+
+    def _to_location(self, row: sqlite3.Row) -> PropertyLocation:
+        return PropertyLocation(
+            kraj_code=row["kraj_code"],
+            okres_code=row["okres_code"],
+            obec_code=row["obec_code"],
+            obvod_code=row["obvod_code"],
+            mestska_cast_code=row["mestska_cast_code"],
+            cast_obce_code=row["cast_obce_code"],
+            ulice_code=row["ulice_code"],
+            cislo_popisne=row["cislo_popisne"],
+            cislo_orientacni=row["cislo_orientacni"],
         )
 
     def get(self, property_id: str) -> PropertyIdentity | None:
@@ -55,6 +68,38 @@ class SqlitePropertyRepository(PropertyRepository):
             identity.title, identity.location, identity.size_m2,
             identity.disposition, identity.lat, identity.lon, identity.land_m2,
             cell_lat, cell_lon,
+        ))
+
+    def location(self, property_id: str) -> PropertyLocation | None:
+        stmt = """
+            SELECT kraj_code, okres_code, obec_code, obvod_code, mestska_cast_code,
+                   cast_obce_code, ulice_code, cislo_popisne, cislo_orientacni
+            FROM property_locations WHERE property_id = ?
+        """
+        row = self._conn.execute(stmt, (property_id,)).fetchone()
+        return self._to_location(row) if row else None
+
+    def save_location(self, property_id: str, location: PropertyLocation) -> None:
+        stmt = """
+            INSERT INTO property_locations (
+                property_id, kraj_code, okres_code, obec_code, obvod_code, mestska_cast_code,
+                cast_obce_code, ulice_code, cislo_popisne, cislo_orientacni
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (property_id) DO UPDATE SET
+                kraj_code = excluded.kraj_code,
+                okres_code = excluded.okres_code,
+                obec_code = excluded.obec_code,
+                obvod_code = excluded.obvod_code,
+                mestska_cast_code = excluded.mestska_cast_code,
+                cast_obce_code = excluded.cast_obce_code,
+                ulice_code = excluded.ulice_code,
+                cislo_popisne = excluded.cislo_popisne,
+                cislo_orientacni = excluded.cislo_orientacni
+        """
+        self._conn.execute(stmt, (
+            property_id, location.kraj_code, location.okres_code, location.obec_code,
+            location.obvod_code, location.mestska_cast_code, location.cast_obce_code,
+            location.ulice_code, location.cislo_popisne, location.cislo_orientacni,
         ))
 
     def fold_into(self, loser_id: str, winner_id: str) -> None:

@@ -1,7 +1,8 @@
-"""Build a property's canonical identity from one of its listings."""
+"""Build a property's stored identity and location from its listings."""
 
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.property import PropertyIdentity
+from rentczecher_engine.domain.location import Location
+from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
 
 def assemble_property(listing: Listing, property_id: str, created_at: str) -> PropertyIdentity:
@@ -28,4 +29,19 @@ def assemble_property(listing: Listing, property_id: str, created_at: str) -> Pr
         land_m2=listing.land_m2,
         lat=lat,
         lon=lon,
+    )
+
+
+def assemble_location(location: Location) -> PropertyLocation:
+    """The stored form of a resolved location: each unit by its code."""
+    return PropertyLocation(
+        kraj_code=location.kraj.code,
+        okres_code=location.okres.code if location.okres is not None else None,
+        obec_code=location.obec.code if location.obec is not None else None,
+        obvod_code=location.obvod.code if location.obvod is not None else None,
+        mestska_cast_code=location.mestska_cast.code if location.mestska_cast is not None else None,
+        cast_obce_code=location.cast_obce.code if location.cast_obce is not None else None,
+        ulice_code=location.ulice.code if location.ulice is not None else None,
+        cislo_popisne=location.cislo_popisne,
+        cislo_orientacni=location.cislo_orientacni,
     )

@@ -9,7 +9,8 @@ from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfi
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import DisappearedListing, InboxCard
-from rentczecher_engine.services.assemble import assemble_property
+from rentczecher_engine.domain.property import PropertyLocation
+from rentczecher_engine.services.assemble import assemble_location, assemble_property
 from rentczecher_engine.services.dedup import DedupOutcome, match_score_to_json
 
 
@@ -83,6 +84,7 @@ class SqliteRunStore:
             }
 
             for keeper_id, members in members_by_keeper.items():
+                self._record_location(property_by_keeper[keeper_id], members)
                 for listing in members:
                     self._listings.upsert(
                         profile_id, property_by_keeper[keeper_id], listing)
@@ -106,11 +108,24 @@ class SqliteRunStore:
         else:
             self._conn.commit()
 
+    def _record_location(self, property_id: str, members: list[Listing]) -> None:
+        """The property keeps the most detailed location any posting gave,
+        so a detailed posting going away never coarsens it."""
+        for listing in members:
+            if listing.resolved_location is not None:
+                self._offer_location(property_id, assemble_location(listing.resolved_location))
+
+    def _offer_location(self, property_id: str, candidate: PropertyLocation) -> None:
+        stored = self._properties.location(property_id)
+        if stored is None or candidate.is_more_detailed_than(stored):
+            self._properties.save_location(property_id, candidate)
+
     def _property_for(self, members: list[Listing], now: str) -> str:
         """The property a merge group lands on: the keeper's existing one
         when it has one, else any member's existing one, else a new one
         seeded from the keeper. A member's other property folds into the
-        winner as a tombstone. Members arrive keeper first."""
+        winner as a tombstone, and its location is offered to the winner.
+        Members arrive keeper first."""
         existing: list[str] = []
         for listing in members:
             property_id = self._listings.property_id_of(listing.id)
@@ -123,4 +138,7 @@ class SqliteRunStore:
         winner = existing[0]
         for loser in existing[1:]:
             self._properties.fold_into(loser, winner)
+            loser_location = self._properties.location(loser)
+            if loser_location is not None:
+                self._offer_location(winner, loser_location)
         return winner
