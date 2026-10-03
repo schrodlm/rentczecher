@@ -1,7 +1,7 @@
-"""Offline geocoding: scraped place names to coordinates, no network.
+"""Offline geocoding: scraped place names to RÚIAN units, no network.
 
-Lookups run against the shipped gazetteer.sqlite (built by the location
-refresh script from the state address registry).
+Lookups run against the shipped gazetteer.sqlite, built from RÚIAN and a
+live portal harvest by `python -m scripts.gazetteer build`.
 """
 
 import re
