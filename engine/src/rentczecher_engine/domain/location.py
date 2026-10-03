@@ -7,13 +7,17 @@ class ParsedPlace:
 
     Which kind of place a name is (street, town, part) is discovered by
     gazetteer lookup, so names carry no labels. The district (okres) is the
-    one exception lookup cannot discover - a district shares its name with
-    a town - so a portal whose format states the district fills it here,
-    and that name never doubles as a town.
+    one exception lookup cannot discover. A district shares its name with a
+    town, so a portal whose format states the district fills it here, and
+    that name never doubles as a town.
+
+    House numbers, when the portal gives them, are kept as written.
     """
 
     names: tuple[str, ...] = ()
     district: str | None = None
+    cislo_popisne: str | None = None
+    cislo_orientacni: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

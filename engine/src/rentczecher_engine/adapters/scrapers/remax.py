@@ -17,6 +17,23 @@ ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
 OFFER_TYPE_ID = {"sale": 1, "rent": 2}
 
 
+_HOUSE_NUMBERS = re.compile(r"(\d+[a-zA-Z]?)\s*/\s*(\d+[a-zA-Z]?)$")
+
+
+def _house_numbers(street_slot: str) -> tuple[str | None, str | None]:
+    """The číslo popisné and číslo orientační ending the street slot. The
+    portal repeats the popisné when there is no orientační
+    ("U smaltovny 1419 / 1419"). A lone number is skipped, since it could be
+    either."""
+    match = _HOUSE_NUMBERS.search(street_slot)
+    if match is None:
+        return None, None
+    popisne, orientacni = match.group(1), match.group(2)
+    if orientacni == popisne:
+        return popisne, None
+    return popisne, orientacni
+
+
 def _parse_location(location: str, title: str) -> ParsedPlace:
     """The address slot before the kraj holds the okres, not the town - a
     property labeled 'Domažlice' may lie anywhere in that district. Praha
@@ -45,7 +62,9 @@ def _parse_location(location: str, title: str) -> ParsedPlace:
             district = None
         if town not in names:
             names.append(town)
-    return ParsedPlace(names=tuple(names), district=district)
+    cislo_popisne, cislo_orientacni = _house_numbers(segments[0]) if segments else (None, None)
+    return ParsedPlace(names=tuple(names), district=district,
+                       cislo_popisne=cislo_popisne, cislo_orientacni=cislo_orientacni)
 
 
 @dataclass(frozen=True, slots=True)
