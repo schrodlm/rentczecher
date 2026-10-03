@@ -38,6 +38,23 @@ _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 SCHEMA_VERSION = 2
 
 
+def open_gazetteer(db_path: Path | None = None) -> sqlite3.Connection:
+    """A read-only connection to the gazetteer, the shipped one by default.
+    A file built for another schema is refused rather than misread."""
+    if db_path is None:
+        db_path = Path(str(files("rentczecher_engine.adapters.geocoding") / "gazetteer.sqlite"))
+    # mode=ro: a plain connect() would create an empty database file
+    # where the shipped one is missing instead of failing loudly.
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    stmt = "SELECT value FROM meta WHERE key = 'schema_version'"
+    version = conn.execute(stmt).fetchone()
+    if version is None or version["value"] != str(SCHEMA_VERSION):
+        raise RuntimeError(f"the gazetteer at {db_path} has schema {version and version['value']}, "
+                           f"this engine reads schema {SCHEMA_VERSION}: rebuild it")
+    return conn
+
+
 def candidate_names(names: Iterable[str]) -> list[str]:
     """Normalized lookup keys for scraped place names, most specific first.
 
@@ -109,17 +126,7 @@ class Gazetteer:
     """
 
     def __init__(self, db_path: Path | None = None):
-        if db_path is None:
-            db_path = Path(str(files("rentczecher_engine.adapters.geocoding") / "gazetteer.sqlite"))
-        # mode=ro: a plain connect() would create an empty database file
-        # where the shipped one is missing instead of failing loudly.
-        self._conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-        self._conn.row_factory = sqlite3.Row
-        stmt = "SELECT value FROM meta WHERE key = 'schema_version'"
-        version = self._conn.execute(stmt).fetchone()
-        if version is None or version["value"] != str(SCHEMA_VERSION):
-            raise RuntimeError(f"the gazetteer at {db_path} has schema {version and version['value']}, "
-                               f"this engine reads schema {SCHEMA_VERSION}: rebuild it")
+        self._conn = open_gazetteer(db_path)
 
     def _to_place(self, row: sqlite3.Row) -> ResolvedPlace:
         return ResolvedPlace(
