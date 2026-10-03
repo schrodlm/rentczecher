@@ -1,7 +1,7 @@
 # Architecture
 
 This is the map for working on the code. If you only want to run rentczecher,
-[README.md](README.md) is enough. Read this before touching the internals.
+[README.md](../README.md) is enough. Read this before touching the internals.
 
 ## The one thing to understand first
 
@@ -173,10 +173,11 @@ the overlaps, the portals' search ids, and a `places` view over every nameable
 place. `scripts/gazetteer` builds it from the RÚIAN state file and address dump
 plus a live harvest of the portals, and verifies it before it ships. The engine
 refuses a file built for another schema version. Resolution is deliberately
-conservative: ambiguous names resolve to `None` rather than guessing. Name
-lookups are obec-scoped, so another town's street name can never impersonate
-street-level evidence for a Prague neighbourhood. `named()` reads a stored
-location's codes back into names for the API.
+conservative: ambiguous names resolve to `None` rather than guessing. Once a
+name has pinned the obec, the other names and dedup's shared-name tiers are
+looked up only inside it. Another town's street name can therefore never
+impersonate street-level evidence for a Prague neighbourhood. `named()` reads
+a stored location's codes back into names for the API.
 [docs/locating.md](../docs/locating.md) walks through the whole path.
 
 `services/locate.py::locate(listing, gazetteer)` sits on top and resolves the
@@ -296,9 +297,9 @@ in order:
 
 That's why the domain model, the append-only price series, and the location
 resolver exist well before anything uses them the obvious way. Each is a seam a
-later phase consumes. The detailed roadmap and the binding architecture decisions
-live in a separate planning repository outside this tree. The summary above is
-enough to orient a contributor.
+later phase consumes. The binding architecture decisions are the ADRs in
+`docs/adr/`, and the order of upcoming work lives in the GitHub milestones.
+The summary above is enough to orient a contributor.
 
 ## Conventions worth knowing before you send a patch
 
@@ -309,8 +310,8 @@ enough to orient a contributor.
 - **Comments state constraints the code can't express**, like a portal quirk or a
   deliberate trade-off. Not a paraphrase of the line below, and never a pointer to
   a plan, milestone, or commit.
-- **Atomic, one-line commits.** A fix and its regression test go together. Two
-  fixes never do.
+- **Atomic, one-line commits.** Tests land in their own commit right after the
+  change they pin. Two fixes never share a commit.
 - **Tests pin accepted behavior, per module.** A regression test lives in the
   owning module's test file, named for the behavior it pins, not in a bug- or
   milestone-themed catch-all. Scoring thresholds are tuned-by-feel production
