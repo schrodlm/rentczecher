@@ -105,11 +105,16 @@ without corrupting it.
 ### Domain types (live)
 
 - `ScrapedListing` (frozen): the immutable facts of one scrape. id, source,
-  title, price, location, url, optional size/disposition/gps/land/charges, plus a
-  `ParsedPlace` (the raw place names the scraper pulled out).
+  title, price, `location_raw_text` (the portal's own location text), url,
+  optional size/disposition/gps/land/charges, plus a `ParsedPlace` (the place
+  names and house numbers the scraper pulled out).
 - `ListingAnnotations` (frozen): the pipeline's conclusions. score,
-  `price_drop_from`, `cross_source`, and `place` (the gazetteer-resolved
-  location, `None` means unlocatable, not unasked).
+  `price_drop_from`, `cross_source`, and `resolved_location` (the
+  gazetteer-resolved `Location`, `None` means unlocatable, not unasked).
+- `Location` (frozen): one `Place` (RÚIAN code, name, point) per kind, with
+  kraj always set, plus the house numbers. `most_specific()` is the finest
+  unit named, whose centre point dedup uses for a listing without its own GPS.
+  `PropertyLocation` is its stored form, codes only.
 - `Listing`: wraps the two. Construct with `Listing.build(**flat_fields)` and
   never mutate. `with_annotations(...)` returns a new `Listing` sharing the same
   facts. Every field of both inner records is exposed as a read-only property.
@@ -160,8 +165,8 @@ place is a config error before any scraper runs.
 ### Offline geocoder (RÚIAN gazetteer)
 
 `adapters/geocoding/gazetteer.py` resolves a listing's scraped place names to a
-single official place, with its RÚIAN kind and code and a centre point,
-**entirely offline**. The data is a bundled read-only SQLite file
+`Location` (one official unit per kind the text names), **entirely
+offline**. The data is a bundled read-only SQLite file
 (`gazetteer.sqlite`, about 13 MB): one table per kind (kraje, okresy, obce,
 obvody, městské části, části obce, ulice) keyed by RÚIAN code, link tables for
 the overlaps, the portals' search ids, and a `places` view over every nameable
@@ -170,13 +175,17 @@ plus a live harvest of the portals, and verifies it before it ships. The engine
 refuses a file built for another schema version. Resolution is deliberately
 conservative: ambiguous names resolve to `None` rather than guessing. Name
 lookups are obec-scoped, so another town's street name can never impersonate
-street-level evidence for a Prague neighbourhood.
+street-level evidence for a Prague neighbourhood. `named()` reads a stored
+location's codes back into names for the API.
+[docs/locating.md](../docs/locating.md) walks through the whole path.
 
 `services/locate.py::locate(listing, gazetteer)` sits on top and resolves the
 listing's location text. A GPS point never stands in for a place the text does
 not name.
 `locate_listings` runs as a pipeline stage before dedup, landing the result as
-the `place` annotation that dedup and everything after read location from.
+the `resolved_location` annotation that dedup and everything after read
+location from. The run store keeps each property's most detailed location in
+`property_locations`.
 
 ### The scored matcher
 
