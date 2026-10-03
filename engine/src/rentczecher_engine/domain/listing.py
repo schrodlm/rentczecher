@@ -8,6 +8,7 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 from dataclasses import dataclass, fields, replace
 
 from rentczecher_engine.domain.location import Location, ParsedPlace
+from rentczecher_engine.domain.property import PropertyLocation
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +175,7 @@ class InboxCard:
 
     title/location/size_m2/disposition/price are nullable: a card can exist
     before its property has facts or before any price was ever observed.
+    property_location is None until a posting's text resolves to a place.
     """
 
     id: str
@@ -181,6 +183,7 @@ class InboxCard:
     url: str
     title: str | None
     location: str | None
+    property_location: PropertyLocation | None
     size_m2: int | None
     disposition: str | None
     first_seen_at: str

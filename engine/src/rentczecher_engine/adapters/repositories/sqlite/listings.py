@@ -7,6 +7,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import DisappearedListing, InboxCard, SiblingSource
 from rentczecher_engine.domain.price import PriceObservation
+from rentczecher_engine.domain.property import PropertyLocation
 
 
 class SqliteListingRepository(ListingRepository):
@@ -187,9 +188,10 @@ class SqliteListingRepository(ListingRepository):
 
     def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
         """The profile's tracked listings as the GUI's inbox renders them:
-        listing and property facts, this profile's tracking state, the
-        latest price, a price-drop baseline, and sibling postings on other
-        portals. only_new restricts to listings never viewed by the profile.
+        listing and property facts, the property's stored location, this
+        profile's tracking state, the latest price, a price-drop baseline,
+        and sibling postings on other portals. only_new restricts to listings
+        never viewed by the profile.
         """
         # Latest and previous price observation per listing: highest id wins
         # ties on observed_at, since id is monotonic insertion order and
@@ -199,6 +201,15 @@ class SqliteListingRepository(ListingRepository):
                    listings.property_id AS property_id,
                    properties.title AS title, properties.location AS location,
                    properties.size_m2 AS size_m2, properties.disposition AS disposition,
+                   property_locations.kraj_code AS kraj_code,
+                   property_locations.okres_code AS okres_code,
+                   property_locations.obec_code AS obec_code,
+                   property_locations.obvod_code AS obvod_code,
+                   property_locations.mestska_cast_code AS mestska_cast_code,
+                   property_locations.cast_obce_code AS cast_obce_code,
+                   property_locations.ulice_code AS ulice_code,
+                   property_locations.cislo_popisne AS cislo_popisne,
+                   property_locations.cislo_orientacni AS cislo_orientacni,
                    listing_tracking.first_seen_at AS first_seen_at,
                    listing_tracking.viewed_at AS viewed_at,
                    listing_tracking.favourited_at AS favourited_at,
@@ -207,6 +218,7 @@ class SqliteListingRepository(ListingRepository):
             FROM listing_tracking
             JOIN listings ON listings.id = listing_tracking.listing_id
             JOIN properties ON properties.id = listings.property_id
+            LEFT JOIN property_locations ON property_locations.property_id = properties.id
             LEFT JOIN price_observations AS latest_price
                 ON latest_price.id = (
                     SELECT id FROM price_observations
@@ -267,6 +279,7 @@ class SqliteListingRepository(ListingRepository):
             url=row["url"],
             title=row["title"],
             location=row["location"],
+            property_location=self._to_property_location(row) if row["kraj_code"] is not None else None,
             size_m2=row["size_m2"],
             disposition=row["disposition"],
             first_seen_at=row["first_seen_at"],
@@ -275,6 +288,19 @@ class SqliteListingRepository(ListingRepository):
             price=row["price"],
             price_drop_from=price_drop_from,
             sibling_sources=siblings,
+        )
+
+    def _to_property_location(self, row: sqlite3.Row) -> PropertyLocation:
+        return PropertyLocation(
+            kraj_code=row["kraj_code"],
+            okres_code=row["okres_code"],
+            obec_code=row["obec_code"],
+            obvod_code=row["obvod_code"],
+            mestska_cast_code=row["mestska_cast_code"],
+            cast_obce_code=row["cast_obce_code"],
+            ulice_code=row["ulice_code"],
+            cislo_popisne=row["cislo_popisne"],
+            cislo_orientacni=row["cislo_orientacni"],
         )
 
     def _tracked_within_window(self, profile_id: str, max_age_days: int) -> list[sqlite3.Row]:
