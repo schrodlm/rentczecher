@@ -147,13 +147,12 @@ price params, because those params aren't reliable.
 ### Location resolution
 
 `location_resolver.resolve(place)` turns a place slug or free-text name into a
-`PlaceParams` row from the shipped table
-(`adapters/scrapers/location_data/places.json`), or raises `PlaceNotFoundError`
-with did-you-mean suggestions. Each scraper narrows that to its own typed view
-(`SrealityPlace`, `BezrealitkyPlace`, `RemaxPlace`) at construction and keeps no
-other portal's data. `places.json` is generated and live-verified by
-`scripts/refresh_location_data.py`. Never hand-edit it. `overrides.json` beside
-it is the only hand-maintained part (the Bezrealitky Prague id quirk).
+`PlaceParams` row read from the gazetteer's portal tables, or raises
+`PlaceNotFoundError` with did-you-mean suggestions. A search place is a kraj, an
+okres or a Praha obvod, and its slug is computed from its official name. Each
+scraper narrows the row to its own typed view (`SrealityPlace`,
+`BezrealitkyPlace`, `RemaxPlace`) at construction and keeps no other portal's
+data.
 
 Config loading resolves every profile's `place` up front, so an unresolvable
 place is a config error before any scraper runs.
@@ -161,16 +160,21 @@ place is a config error before any scraper runs.
 ### Offline geocoder (RÚIAN gazetteer)
 
 `adapters/geocoding/gazetteer.py` resolves a listing's scraped place names to a
-single Czech place with a centroid (lat/lon), **entirely offline**. The data is a
-bundled read-only SQLite file (`gazetteer.sqlite`, about 21 MB, roughly 105k
-places) generated from the RÚIAN state address registry by
-`scripts/refresh_location_data.py gazetteer`. Resolution is deliberately
-conservative: ambiguous names resolve to `None` rather than guessing. Name-tier
-lookups are municipality-scoped, so another town's street name can never
-impersonate street-level evidence for a Prague neighbourhood.
+single official place, with its RÚIAN kind and code and a centre point,
+**entirely offline**. The data is a bundled read-only SQLite file
+(`gazetteer.sqlite`, about 13 MB): one table per kind (kraje, okresy, obce,
+obvody, městské části, části obce, ulice) keyed by RÚIAN code, link tables for
+the overlaps, the portals' search ids, and a `places` view over every nameable
+place. `scripts/gazetteer` builds it from the RÚIAN state file and address dump
+plus a live harvest of the portals, and verifies it before it ships. The engine
+refuses a file built for another schema version. Resolution is deliberately
+conservative: ambiguous names resolve to `None` rather than guessing. Name
+lookups are obec-scoped, so another town's street name can never impersonate
+street-level evidence for a Prague neighbourhood.
 
-`services/locate.py::locate(listing, gazetteer)` sits on top: text resolution
-first, reverse geocoding when the text is ambiguous but the portal gave GPS.
+`services/locate.py::locate(listing, gazetteer)` sits on top and resolves the
+listing's location text. A GPS point never stands in for a place the text does
+not name.
 `locate_listings` runs as a pipeline stage before dedup, landing the result as
 the `place` annotation that dedup and everything after read location from.
 
