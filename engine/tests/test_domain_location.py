@@ -21,6 +21,8 @@ ONLY_KRAJ = Location(
     mestska_cast=None,
     cast_obce=None,
     ulice=None,
+    cislo_popisne=None,
+    cislo_orientacni=None,
 )
 
 

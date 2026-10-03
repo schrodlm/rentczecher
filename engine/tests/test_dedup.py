@@ -741,6 +741,8 @@ _PRAHA = Location(
     mestska_cast=None,
     cast_obce=None,
     ulice=None,
+    cislo_popisne=None,
+    cislo_orientacni=None,
 )
 _MESTSKA_CAST_PRAHA_7 = replace(_PRAHA, mestska_cast=Place(code=500186, name="Praha 7", lat=50.09, lon=14.42))
 _VELETRZNI = replace(_PRAHA, ulice=Place(code=1, name="Veletržní", lat=50.1005, lon=14.4270))

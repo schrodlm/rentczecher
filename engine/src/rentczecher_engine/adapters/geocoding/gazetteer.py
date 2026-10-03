@@ -169,7 +169,8 @@ class Gazetteer:
                  or self._named_district(rows))
         if match is None:
             return None
-        return self._filled_from_names_inside_obec(self._location_of(match), place.names)
+        location = self._filled_from_names_inside_obec(self._location_of(match), place.names)
+        return replace(location, cislo_popisne=place.cislo_popisne, cislo_orientacni=place.cislo_orientacni)
 
     def _filled_from_names_inside_obec(self, location: Location, names: Iterable[str]) -> Location:
         """The location with each kind the match left open filled from a name
@@ -295,6 +296,8 @@ class Gazetteer:
             mestska_cast=None,
             cast_obce=None,
             ulice=None,
+            cislo_popisne=None,
+            cislo_orientacni=None,
         )
 
     def _obec_location(self, obec_code: int) -> Location:
@@ -308,6 +311,8 @@ class Gazetteer:
             mestska_cast=None,
             cast_obce=None,
             ulice=None,
+            cislo_popisne=None,
+            cislo_orientacni=None,
         )
 
     def _kraj(self, kraj_code: int) -> Place:
