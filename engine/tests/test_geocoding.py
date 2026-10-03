@@ -212,6 +212,45 @@ class TestResolveParents:
         assert location.obec is None
 
 
+class TestResolveFillsNamedUnits:
+    """Each name the text gives besides the resolved unit, looked up inside
+    that unit's obec, fills its kind when exactly one unit there matches."""
+
+    def test_the_other_names_fill_the_cast_obce_and_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Přístavní", "Praha", "Holešovice", "Praha 7")))
+        assert location.ulice.name == "Přístavní"
+        assert location.cast_obce.name == "Holešovice"
+        assert location.obvod.name == "Praha 7"
+        assert location.mestska_cast is None
+
+    def test_a_named_mestska_cast_brings_its_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Trojská", "Praha", "Praha-Troja")))
+        assert location.mestska_cast.name == "Praha-Troja"
+        assert location.obvod.name == "Praha 7"
+
+    def test_a_name_outside_the_obec_fills_nothing(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Přístavní", "Praha", "Kdyně")))
+        assert location.cast_obce is None
+        assert location.mestska_cast is None
+
+    def test_the_obec_name_never_fills_its_same_named_part_even_with_a_number(self, gazetteer):
+        # Kdyně has a část obce named Kdyně.
+        location = gazetteer.resolve(ParsedPlace(names=("Škarmanská 369", "Kdyně 369")))
+        assert location.ulice.name == "Škarmanská"
+        assert location.cast_obce is None
+
+    def test_the_okres_name_never_fills_a_same_named_part(self, gazetteer):
+        # Brno has a část obce named like its okres, Brno-město.
+        location = gazetteer.resolve(ParsedPlace(names=("Veveří", "Brno", "Brno-město")))
+        assert location.okres.name == "Brno-město"
+        assert location.cast_obce is None
+
+    def test_two_names_stating_different_obvody_leave_the_obvod_open(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 6", "Praha 7")))
+        assert location.ulice.name == "Veletržní"
+        assert location.obvod is None
+
+
 class TestNameTiers:
     def test_ambiguous_street_name_still_reports_street_tier(self, gazetteer):
         assert "ulice" in gazetteer.name_tiers("Veletržní")
