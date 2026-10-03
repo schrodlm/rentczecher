@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from rentczecher_engine.adapters.geocoding.gazetteer import SCHEMA_VERSION
-from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name
+from rentczecher_engine.adapters.geocoding.gazetteer import normalize_name
 
 from .model import CastObce, Kraj, MestskaCast, Obec, Obvod, Okres, Overlaps, Ulice
 

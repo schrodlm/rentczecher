@@ -14,7 +14,7 @@ import time
 
 import httpx
 
-from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name
+from rentczecher_engine.adapters.geocoding.gazetteer import normalize_name
 
 from .portal import (
     BROWSER_HEADERS,

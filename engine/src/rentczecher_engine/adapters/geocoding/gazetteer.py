@@ -6,12 +6,26 @@ refresh script from the state address registry).
 
 import re
 import sqlite3
+import unicodedata
 from collections.abc import Iterable
 from importlib.resources import files
 from pathlib import Path
 
-from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name
 from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
+
+# Portals disagree on decoration: sreality "Hlavní město Praha" is remax
+# and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
+# Hyphenated names (Brno-město) stay single words, untouched by this.
+_NOISE_WORDS = {"okres", "kraj", "hlavni", "mesto"}
+
+
+def normalize_name(name: str) -> str:
+    """One key for all portals' (and users') spellings of a place: casefold,
+    strip diacritics, drop the decoration words portals disagree on."""
+    decomposed = unicodedata.normalize("NFD", name.casefold())
+    flat = "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
+    return " ".join(w for w in flat.split() if w not in _NOISE_WORDS)
+
 
 # Portals put a house number after the street name ("Škarmanská 369 / 369");
 # the gazetteer knows streets, not buildings.

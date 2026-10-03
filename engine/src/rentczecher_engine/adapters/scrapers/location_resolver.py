@@ -1,27 +1,13 @@
 import difflib
 import json
-import unicodedata
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
+from rentczecher_engine.adapters.geocoding.gazetteer import normalize_name
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 
 PLACES_PATH = Path(__file__).parent / "location_data" / "places.json"
-
-# Portals disagree on decoration: sreality "Hlavní město Praha" is remax
-# and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
-# Hyphenated names (Brno-město) stay single words, untouched by this.
-_NOISE_WORDS = {"okres", "kraj", "hlavni", "mesto"}
-
-
-def normalize_name(name: str) -> str:
-    """One key for all portals' (and users') spellings of a place: casefold,
-    strip diacritics, drop the decoration words portals disagree on."""
-    decomposed = unicodedata.normalize("NFD", name.casefold())
-    flat = "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
-    return " ".join(w for w in flat.split() if w not in _NOISE_WORDS)
-
 
 def slugify(name: str) -> str:
     return normalize_name(name).replace(" ", "-")
