@@ -1,4 +1,4 @@
-"""Tests for the locate service: text resolution first, geometry as fallback.
+"""Tests for the locate service: a listing's place comes from its text.
 
 Run: python3 -m pytest tests/test_locate.py -v
 """
@@ -27,19 +27,14 @@ class TestLocate:
         assert place.tier == "street"
         assert place.muni_name == "Praha"
 
-    def test_ambiguous_text_with_gps_reverse_geocodes(self, gazetteer):
+    def test_ambiguous_text_stays_unlocated_even_with_gps(self, gazetteer):
+        """A GPS point never stands in for a place the text does not name."""
         place = locate(_listing(lat=50.1, lon=14.43,
                                  parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
-        assert place.muni_name == "Praha"
-        assert place.tier in ("municipality_part", "municipality")
+        assert place is None
 
     def test_ambiguous_text_without_gps_has_no_place(self, gazetteer):
         place = locate(_listing(parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
-        assert place is None
-
-    def test_gps_outside_any_municipality_is_noise(self, gazetteer):
-        place = locate(_listing(lat=40.0, lon=10.0,
-                                 parsed_place=ParsedPlace(names=("blbost",))), gazetteer)
         assert place is None
 
     def test_stated_district_scopes_the_lookup(self, gazetteer):

@@ -11,7 +11,6 @@ from importlib.resources import files
 from pathlib import Path
 
 from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name
-from rentczecher_engine.domain.geo import geocell, haversine_m
 from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
 
 # Portals put a house number after the street name ("Škarmanská 369 / 369");
@@ -154,28 +153,6 @@ class Gazetteer:
             for row in self._conn.execute(stmt, (candidate, *scope)):
                 tiers.add(row["tier"])
         return frozenset(tiers)
-
-    def reverse(self, lat: float, lon: float) -> ResolvedPlace | None:
-        """The municipality or part whose address points surround this point.
-
-        Geometry picks the row where text could not: the point's grid cell
-        (widened one ring for cell-edge points) is matched against each
-        place's cell set, nearest centroid wins. None means the point lies
-        in no Czech municipality's cells - such coordinates are noise."""
-        cell_lat, cell_lon = geocell(lat, lon)
-        stmt = """
-            SELECT p.name, p.name_norm, p.muni_name, p.muni_norm, p.muni_code,
-                   p.okres_name, p.okres_norm, p.tier, p.lat, p.lon
-            FROM places p JOIN place_cells c ON c.place_id = p.id
-            WHERE c.cell_lat BETWEEN ? AND ? AND c.cell_lon BETWEEN ? AND ?
-              AND p.tier IN ('municipality_part', 'municipality')
-        """
-        rows = self._conn.execute(
-            stmt, (cell_lat - 1, cell_lat + 1, cell_lon - 1, cell_lon + 1)).fetchall()
-        if not rows:
-            return None
-        nearest = min(rows, key=lambda r: haversine_m(lat, lon, r["lat"], r["lon"]))
-        return self._to_place(nearest)
 
     def _rows_named(self, names: list[str]) -> list[sqlite3.Row]:
         stmt = """
