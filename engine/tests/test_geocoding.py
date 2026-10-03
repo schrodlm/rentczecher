@@ -251,6 +251,19 @@ class TestResolveFillsNamedUnits:
         assert location.obvod is None
 
 
+class TestResolveHouseNumbers:
+    def test_the_house_numbers_ride_along_as_written(self, gazetteer):
+        place = ParsedPlace(names=("U Vody", "Praha"), cislo_popisne="1401", cislo_orientacni="5a")
+        location = gazetteer.resolve(place)
+        assert location.cislo_popisne == "1401"
+        assert location.cislo_orientacni == "5a"
+
+    def test_a_location_without_house_numbers_leaves_them_open(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("U Vody", "Praha")))
+        assert location.cislo_popisne is None
+        assert location.cislo_orientacni is None
+
+
 class TestNameTiers:
     def test_ambiguous_street_name_still_reports_street_tier(self, gazetteer):
         assert "ulice" in gazetteer.name_tiers("Veletržní")
