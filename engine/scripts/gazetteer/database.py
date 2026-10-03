@@ -4,14 +4,12 @@ import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
 
-from .model import CastObce, Kraj, MestskaCast, Obec, Obvod, Okres, Overlaps, Ulice
+from rentczecher_engine.adapters.geocoding.gazetteer import SCHEMA_VERSION
 from rentczecher_engine.adapters.scrapers.location_resolver import normalize_name
 
-SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+from .model import CastObce, Kraj, MestskaCast, Obec, Obvod, Okres, Overlaps, Ulice
 
-# Bumped on every schema change. The engine refuses a gazetteer whose version
-# differs from the one it was written for.
-SCHEMA_VERSION = 2
+SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 
 class GazetteerDatabase:

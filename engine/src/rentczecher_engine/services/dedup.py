@@ -46,28 +46,28 @@ class NameTierLookup(Protocol):
 
 
 # Tiers a resolved point or a shared name can land at, most specific first.
-# "gps" is a portal-provided point, tied with "street" for the tightest ceiling.
-_TIERS_MOST_SPECIFIC_FIRST = ("gps", "street", "municipality_part", "city_district", "municipality")
+# "gps" is a portal-provided point, tied with "ulice" for the tightest ceiling.
+_TIERS_MOST_SPECIFIC_FIRST = ("gps", "ulice", "cast_obce", "mestska_cast", "obec")
 
 # GPS factor: weight ceiling and (near, far) distance bounds in meters, keyed
 # by the LOOSER of the two points' tiers - a coarse tier earns less trust and
 # tolerates more distance before turning negative.
 _GPS_CEILING = {
-    "gps": 35.0, "street": 35.0,
-    "municipality_part": 20.0, "city_district": 10.0, "municipality": 6.0,
+    "gps": 35.0, "ulice": 35.0,
+    "cast_obce": 20.0, "mestska_cast": 10.0, "obec": 6.0,
 }
 _GPS_BOUNDS_M = {
-    "gps": (100, 1500), "street": (400, 2500),
-    "municipality_part": (1200, 5000), "city_district": (3000, 12000),
-    "municipality": (5000, 25000),
+    "gps": (100, 1500), "ulice": (400, 2500),
+    "cast_obce": (1200, 5000), "mestska_cast": (3000, 12000),
+    "obec": (5000, 25000),
 }
 
 # Shared-name factor: weight by the most specific tier the two listings' place
 # names agree on.
 _SHARED_NAME_WEIGHT = {
-    "street": 30.0,
-    "municipality_part": 5.0, "city_district": 5.0,
-    "municipality": 2.0,
+    "ulice": 30.0,
+    "cast_obce": 5.0, "mestska_cast": 5.0,
+    "obec": 2.0,
 }
 
 _PRICE_NEAR_WEIGHT = 15.0
@@ -220,7 +220,7 @@ def _listing_name_tiers(
     municipality - the whole country only when none resolved. A name found
     at several tiers keeps the coarsest one: an ambiguous name must not
     earn a specific name's credit, nor shield against its penalties."""
-    muni = listing.place.muni_name if listing.place is not None else None
+    muni = listing.place.obec_name if listing.place is not None else None
     tiers: dict[str, str] = {}
     for name in names:
         known = gazetteer.name_tiers(name, muni) & set(_TIERS_MOST_SPECIFIC_FIRST)
@@ -243,7 +243,7 @@ def _shared_tier(tiers_a: dict[str, str], tiers_b: dict[str, str]) -> str | None
 
 
 def _street_names(name_tiers: dict[str, str]) -> set[str]:
-    return {name for name, tier in name_tiers.items() if tier == "street"}
+    return {name for name, tier in name_tiers.items() if tier == "ulice"}
 
 
 def _streets_disagree(street_names_a: set[str], street_names_b: set[str]) -> bool:
@@ -357,7 +357,7 @@ def _location_evidence(listing: Listing) -> tuple[float, float, str] | None:
     if listing.lat is not None and listing.lon is not None:
         return listing.lat, listing.lon, "gps"
     if listing.place is not None:
-        return listing.place.lat, listing.place.lon, listing.place.tier
+        return listing.place.lat, listing.place.lon, listing.place.kind
     return None
 
 

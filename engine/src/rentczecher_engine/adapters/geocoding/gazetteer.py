@@ -17,7 +17,11 @@ from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
 # the gazetteer knows streets, not buildings.
 _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
 
-_TIERS_MOST_SPECIFIC_FIRST = ("street", "municipality_part", "city_district", "municipality")
+_KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
+
+# The schema this code reads. The build stamps it into the file, and a file
+# built for another schema is refused rather than misread.
+SCHEMA_VERSION = 2
 
 
 def candidate_names(names: Iterable[str]) -> list[str]:
@@ -40,9 +44,9 @@ def candidate_names(names: Iterable[str]) -> list[str]:
 class Gazetteer:
     """Answers "where is this?" for scraped place names, offline.
 
-    The bundled file holds one row per Czech place at five tiers - street,
-    municipality part, city district, municipality, district (okres) - each
-    with a normalized name, its municipality, its okres, and a centroid.
+    The bundled file holds every Czech place a listing's text can name -
+    ulice, část obce, městská část, obec and okres - each with its kind and
+    RÚIAN code, a normalized name, its obec, its okres and a centre point.
     Resolving a ParsedPlace means picking exactly one of those rows, or
     refusing: a wrong place silently poisons everything built on top, so
     anything ambiguous resolves to None rather than a guess.
@@ -78,7 +82,7 @@ class Gazetteer:
     4. The named district itself: the give-up-gracefully answer. When
        'Nádražní' repeats inside okres Klatovy no single street can be
        picked, but the okres is still certain - and a coarse true answer
-       beats a precise wrong one. The tier on the result says how coarse;
+       beats a precise wrong one. The kind on the result says how coarse;
        callers gate on it.
 
     A stated district (ParsedPlace.district) changes exactly one thing:
@@ -97,13 +101,19 @@ class Gazetteer:
         # where the shipped one is missing instead of failing loudly.
         self._conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         self._conn.row_factory = sqlite3.Row
+        stmt = "SELECT value FROM meta WHERE key = 'schema_version'"
+        version = self._conn.execute(stmt).fetchone()
+        if version is None or version["value"] != str(SCHEMA_VERSION):
+            raise RuntimeError(f"the gazetteer at {db_path} has schema {version and version['value']}, "
+                               f"this engine reads schema {SCHEMA_VERSION}: rebuild it")
 
     def _to_place(self, row: sqlite3.Row) -> ResolvedPlace:
         return ResolvedPlace(
             name=row["name"],
-            muni_name=row["muni_name"],
+            kind=row["kind"],
+            code=row["code"],
+            obec_name=row["obec_name"],
             okres_name=row["okres_name"],
-            tier=row["tier"],
             lat=row["lat"],
             lon=row["lon"],
         )
@@ -117,9 +127,9 @@ class Gazetteer:
         rows = self._rows_named(lookup)
         # A stated district is context only, never the same-named town.
         rows = [r for r in rows
-                if r["name_norm"] not in stated or r["tier"] == "district"]
-        district_names = {r["name_norm"] for r in rows if r["tier"] == "district"}
-        place_rows = [r for r in rows if r["tier"] != "district"]
+                if r["name_norm"] not in stated or r["kind"] == "okres"]
+        district_names = {r["name_norm"] for r in rows if r["kind"] == "okres"}
+        place_rows = [r for r in rows if r["kind"] != "okres"]
         vouchers = set(candidates) - stated
 
         match = (self._vouched_by_municipality(place_rows, vouchers)
@@ -143,21 +153,21 @@ class Gazetteer:
         after the neighborhood), but scoped to Praha the street reading
         disappears."""
         if muni is None:
-            stmt = "SELECT DISTINCT tier FROM places WHERE name_norm = ?"
+            stmt = "SELECT DISTINCT kind FROM places WHERE name_norm = ?"
             scope: tuple[str, ...] = ()
         else:
-            stmt = "SELECT DISTINCT tier FROM places WHERE name_norm = ? AND muni_norm = ?"
+            stmt = "SELECT DISTINCT kind FROM places WHERE name_norm = ? AND obec_norm = ?"
             scope = (normalize_name(muni),)
         tiers: set[str] = set()
         for candidate in candidate_names([name]):
             for row in self._conn.execute(stmt, (candidate, *scope)):
-                tiers.add(row["tier"])
+                tiers.add(row["kind"])
         return frozenset(tiers)
 
     def _rows_named(self, names: list[str]) -> list[sqlite3.Row]:
         stmt = """
-            SELECT name, name_norm, muni_name, muni_norm, muni_code,
-                   okres_name, okres_norm, tier, lat, lon
+            SELECT kind, code, name, name_norm, obec_code, obec_name, obec_norm,
+                   okres_name, okres_norm, lat, lon
             FROM places WHERE name_norm = ?
         """
         rows: list[sqlite3.Row] = []
@@ -167,17 +177,17 @@ class Gazetteer:
 
     def _vouched_by_municipality(self, place_rows, vouchers) -> sqlite3.Row | None:
         """Did a second name vouch for the row's town?"""
-        for tier in _TIERS_MOST_SPECIFIC_FIRST:
-            agreeing = [r for r in place_rows if r["tier"] == tier
-                        and r["muni_norm"] in vouchers - {r["name_norm"]}]
+        for kind in _KINDS_MOST_SPECIFIC_FIRST:
+            agreeing = [r for r in place_rows if r["kind"] == kind
+                        and r["obec_norm"] in vouchers - {r["name_norm"]}]
             if len(agreeing) == 1:
                 return agreeing[0]
         return None
 
     def _unique_in_named_district(self, place_rows, district_names) -> sqlite3.Row | None:
         """Is the name unique inside a named okres?"""
-        for tier in _TIERS_MOST_SPECIFIC_FIRST:
-            scoped = [r for r in place_rows if r["tier"] == tier
+        for kind in _KINDS_MOST_SPECIFIC_FIRST:
+            scoped = [r for r in place_rows if r["kind"] == kind
                       and r["okres_norm"] in district_names - {r["name_norm"]}]
             if len(scoped) == 1:
                 return scoped[0]
@@ -188,18 +198,18 @@ class Gazetteer:
         by_name: dict[str, list[sqlite3.Row]] = {}
         for row in place_rows:
             by_name.setdefault(row["name_norm"], []).append(row)
-        for tier in _TIERS_MOST_SPECIFIC_FIRST:
+        for kind in _KINDS_MOST_SPECIFIC_FIRST:
             for rows in by_name.values():
-                if len({r["muni_code"] for r in rows}) != 1:
+                if len({r["obec_code"] for r in rows}) != 1:
                     continue
-                in_tier = [r for r in rows if r["tier"] == tier]
-                if len(in_tier) == 1:
-                    return in_tier[0]
+                in_kind = [r for r in rows if r["kind"] == kind]
+                if len(in_kind) == 1:
+                    return in_kind[0]
         return None
 
     def _named_district(self, rows) -> sqlite3.Row | None:
         """Give up gracefully: the named district itself."""
-        districts = [r for r in rows if r["tier"] == "district"]
+        districts = [r for r in rows if r["kind"] == "okres"]
         if len(districts) == 1:
             return districts[0]
         return None
