@@ -9,29 +9,13 @@ import pytest
 
 from rentczecher_engine.adapters.scrapers.location_resolver import (
     PlaceParams,
-    normalize_name,
     resolve,
     slugify,
 )
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 
 
-class TestNormalizeName:
-    """One key for all portals' (and users') spellings of the same place."""
-
-    @pytest.mark.parametrize("variants, expected", [
-        (("Domažlice", "okres Domažlice"), "domazlice"),
-        (("Plzeňský kraj", "Plzeňský"), "plzensky"),
-        (("Hlavní město Praha", "Praha"), "praha"),
-        (("Kraj Vysočina", "Vysočina"), "vysocina"),
-        (("Praha 7",), "praha 7"),
-        (("Praha-východ", "okres Praha-východ"), "praha-vychod"),
-        (("Brno-město",), "brno-mesto"),
-    ])
-    def test_portal_spellings_normalize_identically(self, variants, expected):
-        for variant in variants:
-            assert normalize_name(variant) == expected, variant
-
+class TestSlugify:
     def test_slugify_replaces_spaces(self):
         assert slugify("Praha 7") == "praha-7"
         assert slugify("Hlavní město Praha") == "praha"

@@ -8,8 +8,25 @@ Run: python3 -m pytest tests/test_geocoding.py -v
 
 import pytest
 
-from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer, candidate_names
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer, candidate_names, normalize_name
 from rentczecher_engine.domain.location import ParsedPlace
+
+
+class TestNormalizeName:
+    """One key for all portals' (and users') spellings of the same place."""
+
+    @pytest.mark.parametrize("variants, expected", [
+        (("Domažlice", "okres Domažlice"), "domazlice"),
+        (("Plzeňský kraj", "Plzeňský"), "plzensky"),
+        (("Hlavní město Praha", "Praha"), "praha"),
+        (("Kraj Vysočina", "Vysočina"), "vysocina"),
+        (("Praha 7",), "praha 7"),
+        (("Praha-východ", "okres Praha-východ"), "praha-vychod"),
+        (("Brno-město",), "brno-mesto"),
+    ])
+    def test_portal_spellings_normalize_identically(self, variants, expected):
+        for variant in variants:
+            assert normalize_name(variant) == expected, variant
 
 
 class TestCandidateNames:
