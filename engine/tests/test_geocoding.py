@@ -6,6 +6,8 @@ user's install actually answers for the place names the scrapers emit.
 Run: python3 -m pytest tests/test_geocoding.py -v
 """
 
+from dataclasses import replace
+
 import pytest
 
 from rentczecher_engine.adapters.geocoding.gazetteer import (
@@ -15,6 +17,10 @@ from rentczecher_engine.adapters.geocoding.gazetteer import (
     open_gazetteer,
 )
 from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.services.assemble import assemble_location
+
+# No gazetteer unit holds this code.
+CANCELLED_CODE = 999_999_999
 
 
 class TestNormalizeName:
@@ -262,6 +268,31 @@ class TestResolveHouseNumbers:
         location = gazetteer.resolve(ParsedPlace(names=("U Vody", "Praha")))
         assert location.cislo_popisne is None
         assert location.cislo_orientacni is None
+
+
+class TestNamed:
+    """A stored location, codes only, reads back with its names."""
+
+    @pytest.fixture
+    def stored(self, gazetteer):
+        return assemble_location(gazetteer.resolve(ParsedPlace(names=("Přístavní", "Praha"))))
+
+    @pytest.mark.parametrize("place", [
+        ParsedPlace(names=("Přístavní", "Praha", "Holešovice", "Praha 7"), cislo_popisne="1401"),
+        ParsedPlace(names=("Trojská", "Praha", "Praha-Troja")),
+        ParsedPlace(names=("Škarmanská 369 / 369",), district="Domažlice"),
+    ])
+    def test_a_resolved_location_survives_storage_unchanged(self, gazetteer, place):
+        location = gazetteer.resolve(place)
+        assert gazetteer.named(assemble_location(location)) == location
+
+    def test_a_cancelled_unit_reads_as_unknown(self, gazetteer, stored):
+        location = gazetteer.named(replace(stored, ulice_code=CANCELLED_CODE))
+        assert location.ulice is None
+        assert location.obec.name == "Praha"
+
+    def test_a_cancelled_kraj_reads_as_no_location(self, gazetteer, stored):
+        assert gazetteer.named(replace(stored, kraj_code=CANCELLED_CODE)) is None
 
 
 class TestNameTiers:
