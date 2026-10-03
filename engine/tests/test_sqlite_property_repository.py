@@ -15,7 +15,7 @@ import pytest
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.domain.geo import geocell
-from rentczecher_engine.domain.property import PropertyIdentity
+from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
 BASE = datetime(2026, 8, 13, 6, 0, 0, tzinfo=timezone.utc)
 CREATED = BASE.isoformat()
@@ -31,6 +31,13 @@ def _repo(tmp_path):
 
 def _property(id="prop-1", **kw):
     return PropertyIdentity(id=id, created_at=CREATED, **kw)
+
+
+def _location(**kw):
+    fields = dict(kraj_code=19, okres_code=None, obec_code=554782, obvod_code=78, mestska_cast_code=None,
+                  cast_obce_code=490067, ulice_code=467103, cislo_popisne="1401", cislo_orientacni="5a")
+    fields.update(kw)
+    return PropertyLocation(**fields)
 
 
 def _seed_listing(conn, id="sreality:1", property_id="prop-1", profile_id="p"):
@@ -192,3 +199,24 @@ class TestFoldInto:
         repo.fold_into("prop-loser", "prop-winner")
         assert repo.get("prop-loser").merged_into == "prop-winner"
         assert repo.get("prop-winner").merged_into is None
+
+
+class TestLocation:
+    def test_a_saved_location_reads_back_whole(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.create(_property())
+        repo.save_location("prop-1", _location())
+        assert repo.location("prop-1") == _location()
+
+    def test_saving_again_replaces_the_location(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.create(_property())
+        coarser = _location(ulice_code=None, cislo_popisne=None, cislo_orientacni=None)
+        repo.save_location("prop-1", _location())
+        repo.save_location("prop-1", coarser)
+        assert repo.location("prop-1") == coarser
+
+    def test_a_property_without_a_location_has_none(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.create(_property())
+        assert repo.location("prop-1") is None
