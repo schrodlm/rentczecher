@@ -2,7 +2,8 @@
 
 The Czech territorial units the app searches by, as RÚIAN defines them. Facts
 only, each from a primary source listed at the end. Counts are from the ČÚZK
-address dump of 2026-09-30.
+address dump of 2026-09-30. How a listing's text is matched to these units is
+in [locating.md](locating.md).
 
 ## The units
 
