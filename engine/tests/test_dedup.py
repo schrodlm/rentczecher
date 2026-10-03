@@ -411,10 +411,10 @@ class TestGpsTierWithoutOwnGps:
     """A listing without its own GPS is placed at the finest unit its text
     resolves to, and the GPS factor trusts the pair at that unit's tier."""
 
-    def test_text_resolving_only_to_a_cast_obce_earns_its_tier_ceiling(self, gazetteer):
-        # Sadová repeats inside okres Litoměřice, so the text pins only the
-        # část obce Podviní. The other listing stands on Sadová in Trnovany,
-        # well inside that tier's near bound.
+    def test_a_street_unique_inside_the_resolved_obec_earns_the_street_ceiling(self, gazetteer):
+        # Sadová repeats inside okres Litoměřice, so the text resolves to the
+        # část obce Podviní, and inside its obec Trnovany Sadová is unique.
+        # The other listing stands on that street, inside its near bound.
         without_gps = _make_listing(id="a:1", source="a",
                                     parsed_place=ParsedPlace(names=("Sadová 12", "Podviní", "Litoměřice"),
                                                              district="Litoměřice"))
@@ -422,7 +422,7 @@ class TestGpsTierWithoutOwnGps:
 
         score = _score_pair(without_gps, with_gps, gazetteer)
 
-        assert _factor(score, "gps").contribution == 20.0
+        assert _factor(score, "gps").contribution == 35.0
 
 
 class TestSharedNameFactorWithNoGps:

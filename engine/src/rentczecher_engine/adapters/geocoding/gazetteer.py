@@ -11,6 +11,7 @@ from collections.abc import Iterable
 from dataclasses import replace
 from importlib.resources import files
 from pathlib import Path
+from typing import TypeVar
 
 from rentczecher_engine.domain.location import Location, ParsedPlace, Place
 
@@ -31,6 +32,8 @@ def normalize_name(name: str) -> str:
 # Portals put a house number after the street name ("Škarmanská 369 / 369");
 # the gazetteer knows streets, not buildings.
 _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
+
+T = TypeVar("T")
 
 _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 
@@ -75,6 +78,13 @@ def candidate_names(names: Iterable[str]) -> list[str]:
 
 def _to_place(row: sqlite3.Row) -> Place:
     return Place(code=row["code"], name=row["name"], lat=row["lat"], lon=row["lon"])
+
+
+def _only(items: set[T]) -> T | None:
+    if len(items) != 1:
+        return None
+    (item,) = items
+    return item
 
 
 class Gazetteer:
@@ -128,6 +138,10 @@ class Gazetteer:
     Everything else is pooled: no name is ever routed to a specific pass
     or tier by where it came from, because a name's kind is discovered by
     lookup, never assumed.
+
+    The winning row becomes a Location: its containing units are filled in,
+    and the kinds it leaves open are completed from the other names, each
+    looked up inside its obec.
     """
 
     def __init__(self, db_path: Path | None = None):
@@ -153,7 +167,77 @@ class Gazetteer:
                  or self._unique_in_named_district(place_rows, district_names)
                  or self._unique_name(place_rows)
                  or self._named_district(rows))
-        return self._location_of(match) if match else None
+        if match is None:
+            return None
+        return self._filled_from_names_inside_obec(self._location_of(match), place.names)
+
+    def _filled_from_names_inside_obec(self, location: Location, names: Iterable[str]) -> Location:
+        """The location with each kind the match left open filled from a name
+        inside its obec. A kind two names disagree on stays open."""
+        obec = location.obec
+        if obec is None:
+            return location
+        # A name equal to the town's or the okres's own name states that
+        # unit, never a same-named part inside the town.
+        coarser_names = {normalize_name(obec.name)}
+        if location.okres is not None:
+            coarser_names.add(normalize_name(location.okres.name))
+
+        obvody: set[Place] = set()
+        mestske_casti: set[Place] = set()
+        casti_obce: set[Place] = set()
+        ulice: set[Place] = set()
+        for name in names:
+            candidates = candidate_names([name])
+            # In Praha a district number names the obvod, as in a Czech
+            # address.
+            obvod = self._obvod_named_inside(obec, candidates)
+            if obvod is not None:
+                obvody.add(obvod)
+                continue
+            part_candidates = [c for c in candidates if c not in coarser_names]
+            part = self._part_named_inside(obec, part_candidates)
+            if part is None:
+                continue
+            kind, unit = part
+            if kind == "mestska_cast":
+                mestske_casti.add(unit)
+                obvod_of_part = self._obvod_of_mestska_cast(unit.code)
+                if obvod_of_part is not None:
+                    obvody.add(obvod_of_part)
+            elif kind == "cast_obce":
+                casti_obce.add(unit)
+            elif kind == "ulice":
+                ulice.add(unit)
+            else:
+                raise ValueError(f"no location field for kind {kind!r}")
+        return replace(
+            location,
+            obvod=location.obvod or _only(obvody),
+            mestska_cast=location.mestska_cast or _only(mestske_casti),
+            cast_obce=location.cast_obce or _only(casti_obce),
+            ulice=location.ulice or _only(ulice),
+        )
+
+    def _obvod_named_inside(self, obec: Place, candidates: list[str]) -> Place | None:
+        stmt = "SELECT code, name, lat, lon FROM obvody WHERE obec_code = ? AND name_norm = ?"
+        for candidate in candidates:
+            row = self._conn.execute(stmt, (obec.code, candidate)).fetchone()
+            if row is not None:
+                return _to_place(row)
+        return None
+
+    def _part_named_inside(self, obec: Place, candidates: list[str]) -> tuple[str, Place] | None:
+        """The one městská část, část obce or street of the obec the
+        candidates name, with its kind."""
+        stmt = """
+            SELECT kind, code, name, lat, lon FROM places
+            WHERE obec_code = ? AND kind IN ('mestska_cast', 'cast_obce', 'ulice') AND name_norm = ?
+        """
+        parts = {(row["kind"], _to_place(row))
+                 for candidate in candidates
+                 for row in self._conn.execute(stmt, (obec.code, candidate))}
+        return _only(parts)
 
     def candidate_names(self, names: Iterable[str]) -> list[str]:
         return candidate_names(names)

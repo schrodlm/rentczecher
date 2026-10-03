@@ -29,9 +29,10 @@ class Place:
 
 @dataclass(frozen=True, slots=True)
 class Location:
-    """A gazetteer's answer to a ParsedPlace: the most specific unit the
-    text pins down, with its strict parents filled in. Every other kind
-    stays None. Every place lies in a kraj, and Praha lies in no okres."""
+    """A gazetteer's answer to a ParsedPlace: the unit of each kind the text
+    names, with the strict parents of the most specific one filled in. A
+    kind the text leaves open stays None. Every place lies in a kraj, and
+    Praha lies in no okres."""
 
     kraj: Place
     okres: Place | None
