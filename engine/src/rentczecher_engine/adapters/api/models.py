@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.location import Location, Place
 
 
 class ProfileModel(BaseModel):
@@ -35,12 +36,48 @@ class SiblingSourceModel(BaseModel):
     url: str
 
 
+class PlaceModel(BaseModel):
+    code: int
+    name: str
+
+    @classmethod
+    def from_place(cls, place: Place) -> "PlaceModel":
+        return cls(code=place.code, name=place.name)
+
+
+class LocationModel(BaseModel):
+    kraj: PlaceModel
+    okres: PlaceModel | None
+    obec: PlaceModel | None
+    obvod: PlaceModel | None
+    mestska_cast: PlaceModel | None
+    cast_obce: PlaceModel | None
+    ulice: PlaceModel | None
+    cislo_popisne: str | None
+    cislo_orientacni: str | None
+
+    @classmethod
+    def from_location(cls, location: Location) -> "LocationModel":
+        return cls(
+            kraj=PlaceModel.from_place(location.kraj),
+            okres=PlaceModel.from_place(location.okres) if location.okres else None,
+            obec=PlaceModel.from_place(location.obec) if location.obec else None,
+            obvod=PlaceModel.from_place(location.obvod) if location.obvod else None,
+            mestska_cast=PlaceModel.from_place(location.mestska_cast) if location.mestska_cast else None,
+            cast_obce=PlaceModel.from_place(location.cast_obce) if location.cast_obce else None,
+            ulice=PlaceModel.from_place(location.ulice) if location.ulice else None,
+            cislo_popisne=location.cislo_popisne,
+            cislo_orientacni=location.cislo_orientacni,
+        )
+
+
 class ListingModel(BaseModel):
     id: str
     source: str
     url: str
     title: str | None
     location_raw_text: str | None
+    resolved_location: LocationModel | None
     size_m2: int | None
     disposition: str | None
     first_seen_at: str
@@ -51,13 +88,14 @@ class ListingModel(BaseModel):
     sibling_sources: list[SiblingSourceModel]
 
     @classmethod
-    def from_card(cls, card: InboxCard) -> "ListingModel":
+    def from_card(cls, card: InboxCard, resolved_location: Location | None) -> "ListingModel":
         return cls(
             id=card.id,
             source=card.source,
             url=card.url,
             title=card.title,
             location_raw_text=card.location_raw_text,
+            resolved_location=LocationModel.from_location(resolved_location) if resolved_location else None,
             size_m2=card.size_m2,
             disposition=card.disposition,
             first_seen_at=card.first_seen_at,

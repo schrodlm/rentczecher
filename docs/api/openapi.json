@@ -79,6 +79,16 @@
             ],
             "title": "Price Drop From"
           },
+          "resolved_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocationModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "sibling_sources": {
             "items": {
               "$ref": "#/components/schemas/SiblingSourceModel"
@@ -134,6 +144,7 @@
           "url",
           "title",
           "location_raw_text",
+          "resolved_location",
           "size_m2",
           "disposition",
           "first_seen_at",
@@ -167,6 +178,126 @@
           "new"
         ],
         "title": "ListingsArrivedEvent",
+        "type": "object"
+      },
+      "LocationModel": {
+        "properties": {
+          "cast_obce": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cislo_orientacni": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cislo Orientacni"
+          },
+          "cislo_popisne": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cislo Popisne"
+          },
+          "kraj": {
+            "$ref": "#/components/schemas/PlaceModel"
+          },
+          "mestska_cast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "obec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "obvod": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "okres": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ulice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kraj",
+          "okres",
+          "obec",
+          "obvod",
+          "mestska_cast",
+          "cast_obce",
+          "ulice",
+          "cislo_popisne",
+          "cislo_orientacni"
+        ],
+        "title": "LocationModel",
+        "type": "object"
+      },
+      "PlaceModel": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "PlaceModel",
         "type": "object"
       },
       "PortalHealthModel": {

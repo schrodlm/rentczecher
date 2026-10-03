@@ -1,7 +1,7 @@
 """The long-lived facts every part of the server needs: the loaded config,
-the database path, and the scraper registry. Everything stateful - a
-connection, an HTTP client - is deliberately not held here but opened
-fresh on demand by the two factory methods.
+the database path, and the scraper registry. Everything stateful, such as a
+connection or an HTTP client, is deliberately not held here but opened
+fresh on demand by the factory methods.
 
 A fresh sqlite3.Connection, Gazetteer, and httpx.Client are opened per run
 rather than shared, because the run executes on the worker thread and
@@ -51,6 +51,12 @@ class ApiDeps:
             conn.close()
 
     @contextmanager
+    def open_gazetteer(self) -> Iterator[Gazetteer]:
+        """A gazetteer on its own connection, closed when the caller is done."""
+        with closing(Gazetteer(self.gazetteer_db_path)) as gazetteer:
+            yield gazetteer
+
+    @contextmanager
     def build_pipeline_deps(self, profile_id: str) -> Iterator[PipelineDeps]:
         """A run's own connection, gazetteer and HTTP client, never shared
         with request handlers and all closed when the run finishes."""
@@ -59,7 +65,7 @@ class ApiDeps:
             raise KeyError(profile_id)
         conn = connection.connect(self.db_path)
         try:
-            with closing(Gazetteer(self.gazetteer_db_path)) as gazetteer, build_client() as client:
+            with self.open_gazetteer() as gazetteer, build_client() as client:
                 email_cfg = self.config.get("email", {})
                 notifier = build_smtp_notifier(
                     email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)

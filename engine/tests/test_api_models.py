@@ -35,12 +35,13 @@ class TestListingModel:
             price_drop_from=27000,
             sibling_sources=(SiblingSource(source="bezrealitky", url="https://example.com/b"),),
         )
-        assert ListingModel.from_card(card).model_dump() == {
+        assert ListingModel.from_card(card, None).model_dump() == {
             "id": "sreality:1",
             "source": "sreality",
             "url": "https://example.com/1",
             "title": "Byt 2+kk",
             "location_raw_text": "Praha 7",
+            "resolved_location": None,
             "size_m2": 54,
             "disposition": "2+kk",
             "first_seen_at": "2026-09-01T00:00:00+00:00",
