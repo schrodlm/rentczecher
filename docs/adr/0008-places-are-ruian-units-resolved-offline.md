@@ -38,12 +38,16 @@ keeping no other portal's data. An unknown place fails loudly.
 
 **Listing places.** Each scraper parses its portal's location text into a
 `ParsedPlace`, with the names deliberately unlabeled, since a name's kind is
-discovered by lookup and never assumed. A pipeline stage before dedup locates
-each listing against the gazetteer: text first, then the portal's GPS when the
-text is ambiguous. The property keeps the codes of its ulice, část obce and
-obec, each only when known. Larger units follow from the gazetteer. When a
-place cannot be trusted it stays unknown. The gazetteer refuses rather than
-guesses.
+discovered by lookup and never assumed. The one label is an okres the portal
+states, since an okres shares its name with its capital town. A pipeline
+stage before dedup locates each listing from its text alone, finding the unit
+of each kind the text names, with the larger units containing the most
+specific one filled in. A GPS point never stands in for a place the text does
+not name.
+The property keeps the most detailed location any of its postings gave, as a
+code per kind plus the house numbers as written. When a place cannot be
+trusted it stays unknown. The gazetteer refuses rather than guesses.
+[docs/locating.md](../locating.md) walks through the whole path.
 
 ## Consequences
 
@@ -51,10 +55,11 @@ guesses.
   "is this listing in my preferred place" is a comparison of codes.
 - A renamed street or a rebuilt gazetteer leaves every stored reference valid.
 - The user database refers to the gazetteer by code across two files, which
-  no foreign key can check, so the engine verifies those references itself.
+  no foreign key can check. A code the gazetteer no longer holds reads back as
+  unknown.
 - Adding a searchable place is a table refresh, not reconnaissance in a
   portal's network tab, and portal knowledge stays in each adapter.
-- Dedup never locates. It reads the place the pipeline stage attached.
+- Dedup never locates. It reads the location the pipeline stage attached.
 - Rejected: identifying places by name or slug, which breaks on diacritics,
   renames and repeated names. A nested per-portal payload behind an opaque
   resolver, which would drop typing to dictionary keys mid-chain. Injecting
