@@ -199,23 +199,26 @@ tail -f ~/.local/share/rentczecher/cron.log   # watch the scheduled runs
 
 ## Locations
 
-`place:` is resolved against a shipped table,
-`engine/src/rentczecher_engine/adapters/scrapers/location_data/places.json`, that maps every
-Czech kraj and district to each portal's own search ids. **It is generated.
-Never hand-edit it.** Regenerate it when a portal renumbers its taxonomy. The
-symptom is a place that used to return listings suddenly returning zero, or the
-`live` id tests failing:
+Places come from the gazetteer, a SQLite file shipped with the engine
+(`engine/src/rentczecher_engine/adapters/geocoding/gazetteer.sqlite`). It holds
+every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
+code, and how each portal names the places it can search by. `place:` names a
+kraj, an okres or a Praha obvod (`praha-7`, `domazlice`, `plzensky`).
+[docs/places.md](docs/places.md) describes the units.
+
+**It is built, never hand-edited.** Rebuild it when ČÚZK publishes a new
+registry dump worth picking up, or when a portal renumbers its places. The
+symptom of the latter is a place that used to return listings suddenly returning
+zero, or the `live` search-place tests failing:
 
 ```bash
-(cd engine && uv run python scripts/refresh_location_data.py places)
+(cd engine && uv run python -m scripts.gazetteer build)
 ```
 
-The script harvests each portal's own taxonomy, joins the three by place name,
-live-verifies every id against the portal, and refuses to write on a mismatch, so
-a regeneration takes a few minutes. `overrides.json` beside the table is the only
-hand-maintained part. Its `why` key documents the one Prague id quirk it exists
-for. Review the `places.json` diff before committing. On a no-op run the only
-line that changes is `generated_at`.
+The build downloads the registry, harvests each portal's own list of places,
+joins every portal place to its official one by name, and verifies the result.
+It takes about a minute and needs the portals reachable. Only a fully verified
+file replaces the shipped one.
 
 ## Development
 
@@ -270,7 +273,7 @@ its own installers, since the frozen engine cannot be cross-compiled.
 
 - **A scraper suddenly returns 0 results.** Usually the portal changed its page
   structure or ids. `config validate` and `--dry-run` show which portal. If it's
-  a location taxonomy change, regenerate `places.json` (above).
+  a location taxonomy change, rebuild the gazetteer (above).
 - **Sreality returns all 404s.** Sreality's API blanket-404s some networks
   (datacenter and VPN egress) while its homepage serves 200 fine. This is almost
   always your connection being blocked, not a bug. It works from ordinary
