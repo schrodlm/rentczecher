@@ -219,7 +219,8 @@ zero, or the `live` search-place tests failing:
 The build downloads the registry, harvests each portal's own list of places,
 joins every portal place to its official one by name, and verifies the result.
 It takes about a minute and needs the portals reachable. Only a fully verified
-file replaces the shipped one.
+file replaces the shipped one. [engine/scripts/gazetteer/README.md](engine/scripts/gazetteer/README.md)
+has the details.
 
 ## Development
 
