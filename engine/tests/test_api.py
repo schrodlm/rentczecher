@@ -24,6 +24,7 @@ from rentczecher_engine.adapters.api.routes.events import iter_sse_events
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.dedup import DedupOutcome
+from rentczecher_engine.domain.location import Location, ParsedPlace
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
 
@@ -196,6 +197,16 @@ class TestListProfiles:
         assert disabled["enabled"] is False
 
 
+def _persist_listing(deps: ApiDeps, resolved_location: Location | None = None) -> None:
+    with deps.open_run_store() as store:
+        listing = Listing.build(
+            id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
+            url="https://example.com/1", resolved_location=resolved_location)
+        store.persist_outcome(
+            "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
+            {}, current_ids={"sreality:1"})
+
+
 class TestListListings:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
@@ -204,13 +215,8 @@ class TestListListings:
 
     def test_filter_new_excludes_viewed_listings(self, tmp_path):
         deps = _api_deps(tmp_path)
+        _persist_listing(deps)
         with deps.open_run_store() as store:
-            listing = Listing.build(
-                id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
-                url="https://example.com/1")
-            store.persist_outcome(
-                "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
-                {}, current_ids={"sreality:1"})
             store.mark_viewed("praha7-byty", "sreality:1")
 
         app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
@@ -223,6 +229,38 @@ class TestListListings:
         assert [card["id"] for card in every.json()] == ["sreality:1"]
         assert every.json()[0]["viewed_at"] is not None
 
+    def test_a_listing_carries_its_named_resolved_location(self, tmp_path):
+        deps = _api_deps(tmp_path)
+        place = ParsedPlace(names=("Přístavní", "Praha", "Holešovice", "Praha 7"), cislo_popisne="1401")
+        with deps.open_gazetteer() as gazetteer:
+            _persist_listing(deps, resolved_location=gazetteer.resolve(place))
+
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
+        client = TestClient(app)
+
+        (card,) = client.get("/v1/profiles/praha7-byty/listings", headers=_auth()).json()
+        location = card["resolved_location"]
+        assert location["kraj"]["name"] == "Hlavní město Praha"
+        assert location["okres"] is None
+        assert location["obec"]["name"] == "Praha"
+        assert location["obvod"]["name"] == "Praha 7"
+        assert location["mestska_cast"] is None
+        assert location["cast_obce"]["name"] == "Holešovice"
+        assert location["ulice"]["name"] == "Přístavní"
+        assert location["cislo_popisne"] == "1401"
+        assert location["cislo_orientacni"] is None
+
+    def test_a_listing_whose_text_never_resolved_keeps_only_its_raw_text(self, tmp_path):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps)
+
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
+        client = TestClient(app)
+
+        (card,) = client.get("/v1/profiles/praha7-byty/listings", headers=_auth()).json()
+        assert card["resolved_location"] is None
+        assert card["location_raw_text"] == "l"
+
 
 class TestMarkViewed:
     def test_unknown_profile_is_404(self, tmp_path):
@@ -232,13 +270,7 @@ class TestMarkViewed:
 
     def test_marks_the_listing_viewed(self, tmp_path):
         deps = _api_deps(tmp_path)
-        with deps.open_run_store() as store:
-            listing = Listing.build(
-                id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
-                url="https://example.com/1")
-            store.persist_outcome(
-                "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
-                {}, current_ids={"sreality:1"})
+        _persist_listing(deps)
 
         app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
         client = TestClient(app)
