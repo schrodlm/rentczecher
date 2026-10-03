@@ -32,7 +32,7 @@ SCENARIOS_DIR = Path(__file__).parent
 # only what makes it different, so these stay plain.
 DEFAULT_LISTING = {
     "title": "Pronájem bytu 2+kk 50 m²",
-    "location": "Praha 7",
+    "location_raw_text": "Praha 7",
     "size_m2": 50,
     "disposition": "2+kk",
 }
@@ -209,6 +209,6 @@ def _build_listing(fields: dict, scraped_at: datetime) -> Listing:
         "source": _source_of(merged["id"]),
         "url": f"https://example.invalid/{merged['id']}",
         "scraped_at": scraped_at.isoformat(),
-        "parsed_place": ParsedPlace(names=tuple(part.strip() for part in merged["location"].split(","))),
+        "parsed_place": ParsedPlace(names=tuple(part.strip() for part in merged["location_raw_text"].split(","))),
     }
     return Listing.build(**{**derived, **merged})

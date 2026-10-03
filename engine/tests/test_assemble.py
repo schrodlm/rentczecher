@@ -13,7 +13,7 @@ CREATED_AT = "2026-08-13T06:00:00+00:00"
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Byt 2+kk", price=20000,
-        location="Praha 7 - Holešovice", url="https://example.com",
+        location_raw_text="Praha 7 - Holešovice", url="https://example.com",
         size_m2=50, disposition="2+kk", land_m2=120,
     )
     defaults.update(kwargs)
@@ -28,7 +28,7 @@ def test_uses_listings_own_gps_when_present():
     assert identity.id == "prop-1"
     assert identity.created_at == CREATED_AT
     assert identity.title == "Byt 2+kk"
-    assert identity.location == "Praha 7 - Holešovice"
+    assert identity.location_raw_text == "Praha 7 - Holešovice"
     assert identity.size_m2 == 50
     assert identity.disposition == "2+kk"
     assert identity.land_m2 == 120

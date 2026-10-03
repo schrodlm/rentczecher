@@ -55,7 +55,7 @@ def _seed_listing(conn, id="sreality:1", property_id="prop-1", profile_id="p"):
 class TestCreateAndGet:
     def test_round_trips_canonical_facts(self, tmp_path):
         repo, _ = _repo(tmp_path)
-        repo.create(_property(title="Byt 2+kk", location="Praha 7", size_m2=55,
+        repo.create(_property(title="Byt 2+kk", location_raw_text="Praha 7", size_m2=55,
                               disposition="2+kk", lat=50.1, lon=14.4, land_m2=None))
         got = repo.get("prop-1")
         assert got.title == "Byt 2+kk"

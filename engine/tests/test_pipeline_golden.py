@@ -31,19 +31,19 @@ PROFILE = {
 STABLE = dict(
     id="sreality:stable", source="sreality",
     title="Pronájem bytu 2+kk 50 m²", price=20000,
-    location="Veletržní, Praha 7", url="https://example.com/stable",
+    location_raw_text="Veletržní, Praha 7", url="https://example.com/stable",
     size_m2=50, disposition="2+kk",
 )
 FLAKY = dict(
     id="sreality:flaky", source="sreality",
     title="Pronájem bytu 1+kk 30 m²", price=15000,
-    location="Tusarova, Praha 7", url="https://example.com/flaky",
+    location_raw_text="Tusarova, Praha 7", url="https://example.com/flaky",
     size_m2=30, disposition="1+kk",
 )
 DROPPING = dict(
     id="sreality:dropping", source="sreality",
     title="Pronájem bytu 1+1 40 m²", price=18000,
-    location="Kamenická, Praha 7", url="https://example.com/dropping",
+    location_raw_text="Kamenická, Praha 7", url="https://example.com/dropping",
     size_m2=40, disposition="1+1",
 )
 DROPPING_CHEAPER = {**DROPPING, "price": 16000}

@@ -9,7 +9,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Test", price=20000,
-        location="Praha 7 - Holešovice", url="https://example.com",
+        location_raw_text="Praha 7 - Holešovice", url="https://example.com",
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
@@ -49,7 +49,7 @@ class TestScoring:
 
     def test_bad_rental_scores_low(self):
         from rentczecher_engine.services.score import compute_score
-        l = _make_listing(price=24000, size_m2=28, disposition="1+kk", location="Praha 7")
+        l = _make_listing(price=24000, size_m2=28, disposition="1+kk", location_raw_text="Praha 7")
         score = compute_score(l, self.RENTAL_PROFILE)
         assert score < 30, f"Bad rental should score <30, got {score}"
 

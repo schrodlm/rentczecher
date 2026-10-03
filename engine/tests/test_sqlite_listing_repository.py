@@ -47,7 +47,7 @@ def _repo(tmp_path, now=None):
 
 def _listing(id="sreality:1", price=20000, **kw):
     return Listing.build(id=id, source=id.split(":")[0], title="t", price=price,
-                         location="l", url="u", **kw)
+                         location_raw_text="l", url="u", **kw)
 
 
 class TestUpsert:
@@ -231,19 +231,19 @@ class TestDisappeared:
     def test_carries_the_property_title_and_location(self, tmp_path):
         repo, conn = _repo(tmp_path)
         self._seed_missing(repo, conn, BASE - timedelta(days=1), 3)
-        conn.execute("UPDATE properties SET title = ?, location = ? WHERE id = ?",
+        conn.execute("UPDATE properties SET title = ?, location_raw_text = ? WHERE id = ?",
                      ("Byt 2+kk", "Praha 7", PROPERTY))
         conn.commit()
         (gone,) = repo.get_disappeared(PROFILE, set())
         assert gone.title == "Byt 2+kk"
-        assert gone.location == "Praha 7"
+        assert gone.location_raw_text == "Praha 7"
 
     def test_missing_title_is_none_not_dropped(self, tmp_path):
         repo, conn = _repo(tmp_path)
         self._seed_missing(repo, conn, BASE - timedelta(days=1), 3)
         (gone,) = repo.get_disappeared(PROFILE, set())
         assert gone.title is None
-        assert gone.location is None
+        assert gone.location_raw_text is None
 
     def test_carries_the_latest_of_several_price_observations(self, tmp_path):
         repo, conn = _repo(tmp_path)
@@ -374,7 +374,7 @@ class TestPropertyIdOf:
 class TestInboxListings:
     def test_carries_listing_and_property_facts(self, tmp_path):
         repo, conn = _repo(tmp_path)
-        conn.execute("UPDATE properties SET title = ?, location = ?, size_m2 = ?, "
+        conn.execute("UPDATE properties SET title = ?, location_raw_text = ?, size_m2 = ?, "
                      "disposition = ? WHERE id = ?",
                      ("Byt 2+kk", "Praha 7", 55, "2+kk", PROPERTY))
         conn.commit()
@@ -384,7 +384,7 @@ class TestInboxListings:
         assert card.source == "sreality"
         assert card.url == "u"
         assert card.title == "Byt 2+kk"
-        assert card.location == "Praha 7"
+        assert card.location_raw_text == "Praha 7"
         assert card.size_m2 == 55
         assert card.disposition == "2+kk"
 
@@ -393,7 +393,7 @@ class TestInboxListings:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         (card,) = repo.inbox_listings(PROFILE)
         assert card.title is None
-        assert card.location is None
+        assert card.location_raw_text is None
         assert card.size_m2 is None
         assert card.disposition is None
 

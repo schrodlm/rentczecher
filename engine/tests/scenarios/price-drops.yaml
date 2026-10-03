@@ -5,9 +5,9 @@ profile:
 scans:
   - at: -3d
     listings:
-      - {id: "sreality:1101", price: 25000, location: "Milady Horákové, Praha 7", size_m2: 58}
-      - {id: "bezrealitky:2101", price: 21000, location: "Letohradská, Praha 7", size_m2: 47}
+      - {id: "sreality:1101", price: 25000, location_raw_text: "Milady Horákové, Praha 7", size_m2: 58}
+      - {id: "bezrealitky:2101", price: 21000, location_raw_text: "Letohradská, Praha 7", size_m2: 47}
   - at: -1h
     listings:
-      - {id: "sreality:1101", price: 22500, location: "Milady Horákové, Praha 7", size_m2: 58}
-      - {id: "bezrealitky:2101", price: 21000, location: "Letohradská, Praha 7", size_m2: 47}
+      - {id: "sreality:1101", price: 22500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 58}
+      - {id: "bezrealitky:2101", price: 21000, location_raw_text: "Letohradská, Praha 7", size_m2: 47}

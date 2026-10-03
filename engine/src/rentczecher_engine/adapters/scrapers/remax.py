@@ -245,7 +245,7 @@ class RemaxScraper(BaseScraper):
             source="remax",
             title=title or f"RE/MAX - {disposition or ''} {location}".strip(),
             price=price,
-            location=location,
+            location_raw_text=location,
             parsed_place=parsed_place,
             url=detail_url,
             image_url=image_url,

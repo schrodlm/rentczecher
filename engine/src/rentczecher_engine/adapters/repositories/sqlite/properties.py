@@ -21,7 +21,7 @@ class SqlitePropertyRepository(PropertyRepository):
             created_at=row["created_at"],
             merged_into=row["merged_into"],
             title=row["title"],
-            location=row["location"],
+            location_raw_text=row["location_raw_text"],
             size_m2=row["size_m2"],
             disposition=row["disposition"],
             lat=row["lat"],
@@ -44,7 +44,7 @@ class SqlitePropertyRepository(PropertyRepository):
 
     def get(self, property_id: str) -> PropertyIdentity | None:
         stmt = """
-            SELECT id, created_at, merged_into, title, location,
+            SELECT id, created_at, merged_into, title, location_raw_text,
                    size_m2, disposition, lat, lon, land_m2
             FROM properties WHERE id = ?
         """
@@ -59,13 +59,13 @@ class SqlitePropertyRepository(PropertyRepository):
         )
         stmt = """
             INSERT INTO properties (
-                id, created_at, merged_into, title, location,
+                id, created_at, merged_into, title, location_raw_text,
                 size_m2, disposition, lat, lon, land_m2, cell_lat, cell_lon
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
             identity.id, identity.created_at, identity.merged_into,
-            identity.title, identity.location, identity.size_m2,
+            identity.title, identity.location_raw_text, identity.size_m2,
             identity.disposition, identity.lat, identity.lon, identity.land_m2,
             cell_lat, cell_lon,
         ))
@@ -127,7 +127,7 @@ class SqlitePropertyRepository(PropertyRepository):
 
     def find_candidates(self, cell_lat: int, cell_lon: int) -> list[PropertyIdentity]:
         stmt = """
-            SELECT id, created_at, merged_into, title, location,
+            SELECT id, created_at, merged_into, title, location_raw_text,
                    size_m2, disposition, lat, lon, land_m2
             FROM properties
             WHERE merged_into IS NULL

@@ -131,7 +131,7 @@ class TestDbMigrate:
         assert db.exists()
         import sqlite3
         conn = sqlite3.connect(db)
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 6
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 7
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "properties" in tables and "listings" in tables
 
@@ -254,7 +254,7 @@ def _make_listing(**kwargs):
         source="sreality",
         title="Prodej domu 120 m2",
         price=3_000_000,
-        location="Nekvasovy, okres Plzeň-jih",
+        location_raw_text="Nekvasovy, okres Plzeň-jih",
         url="https://example.com/1",
     )
     defaults.update(kwargs)

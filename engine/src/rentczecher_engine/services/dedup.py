@@ -407,14 +407,14 @@ def promote_fields(kept: Listing, absorbed: Listing) -> tuple[dict, dict]:
     absorbed_tier = absorbed_evidence[2] if absorbed_evidence else None
     if _more_specific_tier(kept_tier, absorbed_tier):
         assert absorbed_evidence is not None
-        canonical["location"] = absorbed.location
+        canonical["location_raw_text"] = absorbed.location_raw_text
         canonical["lat"] = absorbed_evidence[0]
         canonical["lon"] = absorbed_evidence[1]
     else:
-        canonical["location"] = kept.location
+        canonical["location_raw_text"] = kept.location_raw_text
         canonical["lat"] = kept_evidence[0] if kept_evidence else None
         canonical["lon"] = kept_evidence[1] if kept_evidence else None
-    _record_difference(differences, "location", canonical["location"], absorbed.location)
+    _record_difference(differences, "location_raw_text", canonical["location_raw_text"], absorbed.location_raw_text)
 
     canonical_disposition = normalize_disposition(kept.disposition) or normalize_disposition(absorbed.disposition)
     canonical["disposition"] = canonical_disposition

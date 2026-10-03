@@ -41,8 +41,8 @@ def compute_score(listing: Listing, profile: dict) -> int:
     # Neighborhood component
     w_hood = scoring_cfg.get("neighborhood_weight", 0)
     preferred_hoods = scoring_cfg.get("preferred_neighborhoods", [])
-    if w_hood and listing.location and preferred_hoods:
-        loc_lower = listing.location.lower()
+    if w_hood and listing.location_raw_text and preferred_hoods:
+        loc_lower = listing.location_raw_text.lower()
         score = 20.0
         for i, hood in enumerate(preferred_hoods):
             if hood.lower() in loc_lower:

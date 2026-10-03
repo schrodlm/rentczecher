@@ -97,7 +97,7 @@ class TestSrealityParsing:
         assert l.land_m2 is None
         assert abs(l.lat - 50.111328) < 1e-6
         assert abs(l.lon - 14.448094) < 1e-6
-        assert l.location == "U Vody, Praha - Holešovice, Praha 7"
+        assert l.location_raw_text == "U Vody, Praha - Holešovice, Praha 7"
         assert l.parsed_place.names == ("U Vody", "Praha", "Holešovice", "Praha 7")
         assert l.parsed_place.district is None
         assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/1222430796"
@@ -111,14 +111,14 @@ class TestSrealityParsing:
         assert l.disposition == "Rodinný"
         assert l.size_m2 == 142
         assert l.land_m2 == 728
-        assert "Domažlice" in l.location
+        assert "Domažlice" in l.location_raw_text
         assert l.url == "https://www.sreality.cz/detail/prodej/dum/rodinny/horsovsky-tyn-semosice/527867980"
 
     def test_city_equal_to_citypart_is_not_duplicated_in_location(self, monkeypatch):
         # Village listings often have city == citypart (Drahotín/Drahotín).
         listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC)
         l = next(x for x in listings if x.id == "sreality:3870457932")
-        assert l.location == "Drahotín, Domažlice"
+        assert l.location_raw_text == "Drahotín, Domažlice"
 
     def test_request_sends_browser_headers(self, monkeypatch):
         _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_SPEC)
@@ -316,7 +316,7 @@ class TestBezrealitkyParsing:
         assert l.source == "bezrealitky"
         assert l.title == "Pronajem - 2+kk - 55 m2 - Veletržní, Praha 7"
         assert l.price == 20000
-        assert l.location == "Veletržní, Praha 7"
+        assert l.location_raw_text == "Veletržní, Praha 7"
         assert l.parsed_place.names == ("Veletržní", "Praha 7")
         assert l.parsed_place.district is None
         assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
@@ -543,7 +543,7 @@ class TestRemaxParsing:
         assert l.source == "remax"
         assert l.title == "Prodej rodinného domu"
         assert l.price == 3000000
-        assert l.location == "Domažlice - Týnské Předměstí"
+        assert l.location_raw_text == "Domažlice - Týnské Předměstí"
         # The portal's bare-name slot holds the okres, not the town.
         assert l.parsed_place.district == "Domažlice"
         assert l.parsed_place.names == ("Týnské Předměstí",)
