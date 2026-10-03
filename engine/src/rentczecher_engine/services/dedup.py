@@ -106,24 +106,12 @@ def _looser_tier(tier_a: str, tier_b: str) -> str | None:
     return max((tier_a, tier_b), key=_TIERS_MOST_SPECIFIC_FIRST.index)
 
 
-def _coords_and_tier(listing: Listing) -> tuple[float, float, str]:
-    """The listing's own GPS when given (the more precise source), else the
-    resolved place's centroid at its tier.
-
-    Callers only reach here once listing.place has been confirmed present.
-    """
-    if listing.lat is not None and listing.lon is not None:
-        return listing.lat, listing.lon, "gps"
-    place = listing.place
-    assert place is not None
-    return place.lat, place.lon, place.tier
-
-
 def _gps_factor(a: Listing, b: Listing) -> FactorResult:
-    if a.place is None or b.place is None:
+    evidence_a, evidence_b = _location_evidence(a), _location_evidence(b)
+    if evidence_a is None or evidence_b is None:
         return 0.0, False
-    lat_a, lon_a, tier_a = _coords_and_tier(a)
-    lat_b, lon_b, tier_b = _coords_and_tier(b)
+    lat_a, lon_a, tier_a = evidence_a
+    lat_b, lon_b, tier_b = evidence_b
     tier = _looser_tier(tier_a, tier_b)
     if tier is None:
         return 0.0, False
