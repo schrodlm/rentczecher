@@ -204,7 +204,8 @@ Places come from the gazetteer, a SQLite file shipped with the engine
 every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
 code, and how each portal names the places it can search by. `place:` names a
 kraj, an okres or a Praha obvod (`praha-7`, `domazlice`, `plzensky`).
-[docs/places.md](docs/places.md) describes the units.
+[docs/places.md](docs/places.md) describes the units, and
+[docs/locating.md](docs/locating.md) how a listing's location text becomes them.
 
 **It is built, never hand-edited.** Rebuild it when ČÚZK publishes a new
 registry dump worth picking up, or when a portal renumbers its places. The
