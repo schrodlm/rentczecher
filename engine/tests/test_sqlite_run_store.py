@@ -18,6 +18,7 @@ from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.dedup import DedupOutcome, MatchBand, MatchScore, MergeDecision
 from rentczecher_engine.domain.location import Location, Place
+from rentczecher_engine.domain.property import PropertyLocation
 
 PROFILE_ID = "praha7-byty"
 BASE = datetime(2026, 9, 19, 6, 0, 0, tzinfo=timezone.utc)
@@ -116,6 +117,31 @@ class TestInboxListings:
                               {}, current_ids={"sreality:1"})
         store.mark_viewed(PROFILE_ID, "sreality:1")
         assert store.inbox_listings(PROFILE_ID, only_new=True) == []
+
+    def test_a_card_carries_the_stored_property_location(self, tmp_path):
+        store, conn = _store(tmp_path)
+        listing = _listing(resolved_location=replace(PRAHA, ulice=PRISTAVNI, cislo_popisne="1401",
+                                                     cislo_orientacni="5a"))
+        store.persist_outcome(PROFILE_ID, "P", _outcome(listing), {}, current_ids={listing.id})
+        (card,) = store.inbox_listings(PROFILE_ID)
+        assert card.property_location == PropertyLocation(
+            kraj_code=19,
+            okres_code=None,
+            obec_code=554782,
+            obvod_code=None,
+            mestska_cast_code=None,
+            cast_obce_code=None,
+            ulice_code=PRISTAVNI.code,
+            cislo_popisne="1401",
+            cislo_orientacni="5a",
+        )
+
+    def test_a_card_whose_property_has_no_location_carries_none(self, tmp_path):
+        store, conn = _store(tmp_path)
+        listing = _listing()
+        store.persist_outcome(PROFILE_ID, "P", _outcome(listing), {}, current_ids={listing.id})
+        (card,) = store.inbox_listings(PROFILE_ID)
+        assert card.property_location is None
 
 
 class TestPersistOutcomeRollsBackOnFailure:
