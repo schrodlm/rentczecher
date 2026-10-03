@@ -16,10 +16,9 @@ for a listing.
 A few pieces still ship ahead of their consumer, tested but unwired: the
 geocell candidate query (for future cross-run property matching), the
 `notification_state` and `scrape_runs` tables, and field-level promotion of
-canonical property values (`services/dedup.py::promote_fields`). The legacy
-JSON store module is unused by the pipeline (kept only for its own tests) and
-is scheduled for removal. When you read a module, the first question to ask
-is whether it's on the live path or ahead of its consumer.
+canonical property values (`services/dedup.py::promote_fields`). When you
+read a module, the first question to ask is whether it's on the live path or
+ahead of its consumer.
 
 ## Layout
 
