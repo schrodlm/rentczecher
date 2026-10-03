@@ -120,10 +120,6 @@ class TestResolve:
         assert location is not None
         assert location.obec.name == "Kdyně"
 
-    def test_a_location_carries_the_okres(self, gazetteer):
-        location = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
-        assert location.okres.name == "Domažlice"
-
     def test_ambiguous_municipality_resolves_to_none(self, gazetteer):
         # 14 municipalities are named Nová Ves (plus an Ostrava city
         # district); guessing one would put a property in the wrong corner
@@ -183,6 +179,37 @@ class TestResolveStatedDistrict:
         # Kdyně is a town, not an okres; a statement the data refutes means
         # the caller's split cannot be trusted at all.
         assert gazetteer.resolve(ParsedPlace(district="Kdyně")) is None
+
+
+class TestResolveParents:
+    """A resolved location carries the strict parents of its unit."""
+
+    def test_an_obec_carries_its_okres_and_kraj(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Domažlice",)))
+        assert location.okres.name == "Domažlice"
+        assert location.kraj.name == "Plzeňský kraj"
+
+    def test_praha_lies_in_its_kraj_and_no_okres(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Praha",)))
+        assert location.obec.name == "Praha"
+        assert location.okres is None
+        assert location.kraj.name == "Hlavní město Praha"
+
+    def test_a_prague_mestska_cast_carries_its_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Praha-Troja",)))
+        assert location.mestska_cast.name == "Praha-Troja"
+        assert location.obvod.name == "Praha 7"
+
+    def test_a_mestska_cast_outside_praha_has_no_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Brno-Královo Pole",)))
+        assert location.mestska_cast.name == "Brno-Královo Pole"
+        assert location.obvod is None
+        assert location.obec.name == "Brno"
+
+    def test_an_okres_carries_its_kraj_and_no_obec(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(district="Domažlice"))
+        assert location.kraj.name == "Plzeňský kraj"
+        assert location.obec is None
 
 
 class TestNameTiers:
