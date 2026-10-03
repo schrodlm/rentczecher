@@ -3,20 +3,20 @@
 from typing import Protocol
 
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
+from rentczecher_engine.domain.location import Location, ParsedPlace
 
 
 class PlaceResolver(Protocol):
-    def resolve(self, place: ParsedPlace) -> ResolvedPlace | None:
+    def resolve(self, place: ParsedPlace) -> Location | None:
         ...
 
 
-def locate(listing: Listing, gazetteer: PlaceResolver) -> ResolvedPlace | None:
-    """The place the listing's text names, or None when the text cannot be
-    resolved to one place. A GPS point never stands in: it would claim a
-    place the portal did not name."""
+def locate(listing: Listing, gazetteer: PlaceResolver) -> Location | None:
+    """Where the listing's text says it lies, or None when the text cannot
+    be resolved. A GPS point never stands in: it would claim a place the
+    portal did not name."""
     return gazetteer.resolve(listing.parsed_place)
 
 
 def locate_listings(listings: list[Listing], gazetteer: PlaceResolver) -> list[Listing]:
-    return [listing.with_annotations(place=locate(listing, gazetteer)) for listing in listings]
+    return [listing.with_annotations(resolved_location=locate(listing, gazetteer)) for listing in listings]

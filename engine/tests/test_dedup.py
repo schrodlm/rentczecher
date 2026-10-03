@@ -4,13 +4,14 @@ Run: python3 -m pytest tests/test_dedup.py -v
 """
 
 import json
+from dataclasses import replace
 
 import pytest
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.geo import haversine_m
-from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
+from rentczecher_engine.domain.location import Location, ParsedPlace, Place
 from rentczecher_engine.services.dedup import (
     DedupOutcome,
     FactorContribution,
@@ -703,6 +704,19 @@ class TestStreetsDisagreeVetoesASharedPart:
         assert len(result) == 2
 
 
+_PRAHA = Location(
+    kraj=Place(code=19, name="Hlavní město Praha", lat=50.07, lon=14.45),
+    okres=None,
+    obec=Place(code=554782, name="Praha", lat=50.07, lon=14.45),
+    obvod=None,
+    mestska_cast=None,
+    cast_obce=None,
+    ulice=None,
+)
+_MESTSKA_CAST_PRAHA_7 = replace(_PRAHA, mestska_cast=Place(code=500186, name="Praha 7", lat=50.09, lon=14.42))
+_VELETRZNI = replace(_PRAHA, ulice=Place(code=1, name="Veletržní", lat=50.1005, lon=14.4270))
+
+
 class TestPromoteFields:
     """promote_fields is a pure function with no pipeline caller yet - tests
     are its only consumer. Kept's value wins wherever present; absorbed only
@@ -736,12 +750,8 @@ class TestPromoteFields:
         assert differences == {}
 
     def test_location_prefers_the_more_specific_tier_regardless_of_which_side_kept_is(self):
-        kept = _make_listing(location="Praha 7", lat=None, lon=None,
-                              place=ResolvedPlace(name="Praha 7", kind="mestska_cast", code=500186, obec_name="Praha",
-                                                   okres_name=None, lat=50.09, lon=14.42))
-        absorbed = _make_listing(location="Veletržní 1", lat=None, lon=None,
-                                  place=ResolvedPlace(name="Veletržní", kind="ulice", code=1, obec_name="Praha",
-                                                       okres_name=None, lat=50.1005, lon=14.4270))
+        kept = _make_listing(location="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
+        absorbed = _make_listing(location="Veletržní 1", lat=None, lon=None, resolved_location=_VELETRZNI)
 
         canonical, _ = promote_fields(kept, absorbed)
 
@@ -751,9 +761,7 @@ class TestPromoteFields:
 
     def test_location_keeps_kept_when_kept_tier_is_already_the_more_specific(self):
         kept = _make_listing(location="Veletržní 1", lat=50.1005, lon=14.4270)
-        absorbed = _make_listing(location="Praha 7", lat=None, lon=None,
-                                  place=ResolvedPlace(name="Praha 7", kind="mestska_cast", code=500186, obec_name="Praha",
-                                                       okres_name=None, lat=50.09, lon=14.42))
+        absorbed = _make_listing(location="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
 
         canonical, _ = promote_fields(kept, absorbed)
 

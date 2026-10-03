@@ -220,7 +220,10 @@ def _listing_name_tiers(
     municipality - the whole country only when none resolved. A name found
     at several tiers keeps the coarsest one: an ambiguous name must not
     earn a specific name's credit, nor shield against its penalties."""
-    muni = listing.place.obec_name if listing.place is not None else None
+    muni = None
+    location = listing.resolved_location
+    if location is not None and location.obec is not None:
+        muni = location.obec.name
     tiers: dict[str, str] = {}
     for name in names:
         known = gazetteer.name_tiers(name, muni) & set(_TIERS_MOST_SPECIFIC_FIRST)
@@ -356,8 +359,9 @@ def _location_evidence(listing: Listing) -> tuple[float, float, str] | None:
     neither source has anything to offer."""
     if listing.lat is not None and listing.lon is not None:
         return listing.lat, listing.lon, "gps"
-    if listing.place is not None:
-        return listing.place.lat, listing.place.lon, listing.place.kind
+    if listing.resolved_location is not None:
+        kind, place = listing.resolved_location.most_specific()
+        return place.lat, place.lon, kind
     return None
 
 

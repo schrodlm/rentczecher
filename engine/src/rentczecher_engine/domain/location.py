@@ -17,14 +17,42 @@ class ParsedPlace:
 
 
 @dataclass(frozen=True, slots=True)
-class ResolvedPlace:
-    """A gazetteer's answer to a ParsedPlace: exactly one place, or a
-    caller would have gotten None instead."""
+class Place:
+    """One RÚIAN unit, at the mean position of its address points. Its code
+    is unique only within its kind, which the field holding it states."""
 
-    name: str
-    kind: str
     code: int
-    obec_name: str | None  # an okres belongs to no obec
-    okres_name: str | None
+    name: str
     lat: float
     lon: float
+
+
+@dataclass(frozen=True, slots=True)
+class Location:
+    """A gazetteer's answer to a ParsedPlace: the most specific unit the
+    text pins down, with its strict parents filled in. Every other kind
+    stays None. Every place lies in a kraj, and Praha lies in no okres."""
+
+    kraj: Place
+    okres: Place | None
+    obec: Place | None
+    obvod: Place | None
+    mestska_cast: Place | None
+    cast_obce: Place | None
+    ulice: Place | None
+
+    def most_specific(self) -> tuple[str, Place]:
+        """The finest unit named, with its kind."""
+        if self.ulice is not None:
+            return "ulice", self.ulice
+        if self.cast_obce is not None:
+            return "cast_obce", self.cast_obce
+        if self.mestska_cast is not None:
+            return "mestska_cast", self.mestska_cast
+        if self.obvod is not None:
+            return "obvod", self.obvod
+        if self.obec is not None:
+            return "obec", self.obec
+        if self.okres is not None:
+            return "okres", self.okres
+        return "kraj", self.kraj

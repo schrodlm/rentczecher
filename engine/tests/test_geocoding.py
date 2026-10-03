@@ -63,66 +63,66 @@ class TestResolve:
     def test_street_with_city_and_part(self, gazetteer):
         # 'U Vody' exists in 12 municipalities; 'Praha' must disambiguate.
         # The registry's official spelling is 'U vody', unlike the portal's.
-        place = gazetteer.resolve(ParsedPlace(names=("U Vody", "Praha", "Holešovice", "Praha 7")))
-        assert place.kind == "ulice"
-        assert place.name == "U vody"
-        assert place.obec_name == "Praha"
+        location = gazetteer.resolve(ParsedPlace(names=("U Vody", "Praha", "Holešovice", "Praha 7")))
+        assert location.most_specific()[0] == "ulice"
+        assert location.ulice.name == "U vody"
+        assert location.obec.name == "Praha"
 
     def test_street_with_city_district(self, gazetteer):
         # 'Veletržní' also exists in Brno; the bare-city variant of
         # 'Praha 7' must carry the municipality agreement.
-        place = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 7")))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Praha"
-        assert abs(place.lat - 50.10) < 0.02
-        assert abs(place.lon - 14.43) < 0.02
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 7")))
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Praha"
+        assert abs(location.ulice.lat - 50.10) < 0.02
+        assert abs(location.ulice.lon - 14.43) < 0.02
 
     def test_street_repeated_across_the_country(self, gazetteer):
         # 'U Studánky' exists 49 times countrywide.
-        place = gazetteer.resolve(ParsedPlace(names=("U Studánky", "Praha", "Bubeneč")))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Praha"
+        location = gazetteer.resolve(ParsedPlace(names=("U Studánky", "Praha", "Bubeneč")))
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Praha"
 
     def test_okres_scope_rescues_a_street_missing_from_the_named_town(self, gazetteer):
         # No town named Domažlice has a Škarmanská; the okres of the same
         # name contains exactly one, in Kdyně.
-        place = gazetteer.resolve(ParsedPlace(names=("Škarmanská 369 / 369", "Domažlice")))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Kdyně"
-        assert abs(place.lat - 49.396) < 0.01
+        location = gazetteer.resolve(ParsedPlace(names=("Škarmanská 369 / 369", "Domažlice")))
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Kdyně"
+        assert abs(location.ulice.lat - 49.396) < 0.01
 
     def test_street_plus_town_means_the_town(self, gazetteer):
         # Sreality/Bezrealitky name the municipality, and it vouches for
         # its own street.
-        place = gazetteer.resolve(ParsedPlace(names=("Nádražní 10", "Klatovy")))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Klatovy"
+        location = gazetteer.resolve(ParsedPlace(names=("Nádražní 10", "Klatovy")))
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Klatovy"
 
     def test_bare_municipality(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(names=("Domažlice",)))
-        assert place.kind == "obec"
-        assert place.name == "Domažlice"
+        location = gazetteer.resolve(ParsedPlace(names=("Domažlice",)))
+        assert location.most_specific()[0] == "obec"
+        assert location.obec.name == "Domažlice"
 
     def test_bare_city_district(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(names=("Praha 7",)))
-        assert place.kind == "mestska_cast"
-        assert place.obec_name == "Praha"
+        location = gazetteer.resolve(ParsedPlace(names=("Praha 7",)))
+        assert location.most_specific()[0] == "mestska_cast"
+        assert location.obec.name == "Praha"
 
     def test_bare_capital_resolves(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(names=("Praha",)))
-        assert place.kind == "obec"
-        assert place.name == "Praha"
+        location = gazetteer.resolve(ParsedPlace(names=("Praha",)))
+        assert location.most_specific()[0] == "obec"
+        assert location.obec.name == "Praha"
 
     def test_town_with_self_named_part_resolves(self, gazetteer):
         # Kdyně the municipality contains a part also named Kdyně; one
         # municipality at two tiers is one place, not an ambiguity.
-        place = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
-        assert place is not None
-        assert place.obec_name == "Kdyně"
+        location = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
+        assert location is not None
+        assert location.obec.name == "Kdyně"
 
-    def test_resolved_places_carry_the_okres(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
-        assert place.okres_name == "Domažlice"
+    def test_a_location_carries_the_okres(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
+        assert location.okres.name == "Domažlice"
 
     def test_ambiguous_municipality_resolves_to_none(self, gazetteer):
         # 14 municipalities are named Nová Ves (plus an Ostrava city
@@ -146,38 +146,38 @@ class TestResolveStatedDistrict:
     them: the stated name resolves only as a district."""
 
     def test_unique_street_in_the_okres_resolves(self, gazetteer):
-        place = gazetteer.resolve(
+        location = gazetteer.resolve(
             ParsedPlace(names=("Škarmanská 369 / 369",), district="Domažlice"))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Kdyně"
-        assert place.okres_name == "Domažlice"
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Kdyně"
+        assert location.okres.name == "Domažlice"
 
     def test_repeated_street_in_the_okres_degrades_to_district(self, gazetteer):
         # Nádražní exists in Klatovy town AND elsewhere in okres Klatovy;
         # picking the town's street would sit ~25 km wrong at full
         # confidence. The honest answer is the district.
-        place = gazetteer.resolve(ParsedPlace(names=("Nádražní 10",), district="Klatovy"))
-        assert place.kind == "okres"
-        assert place.name == "Klatovy"
+        location = gazetteer.resolve(ParsedPlace(names=("Nádražní 10",), district="Klatovy"))
+        assert location.most_specific()[0] == "okres"
+        assert location.okres.name == "Klatovy"
 
     def test_bare_okres_resolves_to_the_district(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(district="Domažlice"))
-        assert place.kind == "okres"
-        assert place.name == "Domažlice"
+        location = gazetteer.resolve(ParsedPlace(district="Domažlice"))
+        assert location.most_specific()[0] == "okres"
+        assert location.okres.name == "Domažlice"
 
     def test_okres_only_name_resolves_to_the_district(self, gazetteer):
-        place = gazetteer.resolve(ParsedPlace(district="Brno-venkov"))
-        assert place.kind == "okres"
-        assert place.name == "Brno-venkov"
+        location = gazetteer.resolve(ParsedPlace(district="Brno-venkov"))
+        assert location.most_specific()[0] == "okres"
+        assert location.okres.name == "Brno-venkov"
 
     def test_town_evidence_upgrades_the_district_fallback(self, gazetteer):
         # Five towns in okres Cheb have a Dlouhá; the town name in the pool
         # picks one at street tier where the district alone could only
         # answer coarsely.
-        place = gazetteer.resolve(ParsedPlace(
+        location = gazetteer.resolve(ParsedPlace(
             names=("Dlouhá 2534 / 2534", "Aš"), district="Cheb"))
-        assert place.kind == "ulice"
-        assert place.obec_name == "Aš"
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Aš"
 
     def test_stated_district_that_is_no_district_resolves_to_none(self, gazetteer):
         # Kdyně is a town, not an okres; a statement the data refutes means
@@ -208,13 +208,13 @@ class TestNameTiers:
         assert gazetteer.name_tiers("U studánky", muni="Lenešice") == frozenset()
 
 
-class TestKindAndCode:
-    def test_a_resolved_place_carries_its_kind_and_ruian_code(self, gazetteer):
+class TestRuianCode:
+    def test_a_resolved_unit_carries_its_ruian_code(self, gazetteer):
         """The code is the one the gazetteer stores for that street."""
-        place = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha")))
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha")))
         conn = open_gazetteer()
         stmt = "SELECT u.code FROM ulice u JOIN obce o ON o.code = u.obec_code WHERE u.name = 'Veletržní' AND o.name = 'Praha'"
-        assert (place.kind, place.code) == ("ulice", conn.execute(stmt).fetchone()["code"])
+        assert location.ulice.code == conn.execute(stmt).fetchone()["code"]
         conn.close()
 
 
