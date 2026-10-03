@@ -150,6 +150,9 @@ class Gazetteer:
     def __init__(self, db_path: Path | None = None):
         self._conn = open_gazetteer(db_path)
 
+    def close(self) -> None:
+        self._conn.close()
+
     def resolve(self, place: ParsedPlace) -> Location | None:
         """The location the parsed names point to, or None when they are
         unknown or ambiguous."""

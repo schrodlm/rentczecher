@@ -10,7 +10,7 @@ threads.
 """
 
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -52,15 +52,14 @@ class ApiDeps:
 
     @contextmanager
     def build_pipeline_deps(self, profile_id: str) -> Iterator[PipelineDeps]:
-        """A run's own connection and HTTP client, both closed when the run
-        finishes - a fresh pair per call, never shared with the
-        request-handling thread's connections."""
+        """A run's own connection, gazetteer and HTTP client, never shared
+        with request handlers and all closed when the run finishes."""
         profile = self.profile_config(profile_id)
         if profile is None:
             raise KeyError(profile_id)
         conn = connection.connect(self.db_path)
         try:
-            with build_client() as client:
+            with closing(Gazetteer(self.gazetteer_db_path)) as gazetteer, build_client() as client:
                 email_cfg = self.config.get("email", {})
                 notifier = build_smtp_notifier(
                     email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)
@@ -69,7 +68,7 @@ class ApiDeps:
                     clock=utc_now,
                     client=client,
                     scrapers=self.scrapers,
-                    gazetteer=Gazetteer(self.gazetteer_db_path),
+                    gazetteer=gazetteer,
                     notifier=notifier,
                 )
         finally:
