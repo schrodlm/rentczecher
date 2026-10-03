@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import DisappearedListing, InboxCard
 from rentczecher_engine.domain.price import PriceObservation
-from rentczecher_engine.domain.property import PropertyIdentity
+from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
 
 class PropertyRepository(ABC):
@@ -21,6 +21,15 @@ class PropertyRepository(ABC):
     @abstractmethod
     def fold_into(self, loser_id: str, winner_id: str) -> None:
         ...
+
+    @abstractmethod
+    def location(self, property_id: str) -> PropertyLocation | None:
+        """The property's stored location, or None while none of its listings
+        has resolved."""
+
+    @abstractmethod
+    def save_location(self, property_id: str, location: PropertyLocation) -> None:
+        """Replace the property's location with this one."""
 
     @abstractmethod
     def attach_listing(self, property_id: str, listing_id: str) -> None:
