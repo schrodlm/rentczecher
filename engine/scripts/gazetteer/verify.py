@@ -60,7 +60,27 @@ def _failures(conn: sqlite3.Connection) -> list[str]:
     if without_okres != ["Praha"]:
         failures.append(f"obce without an okres: {without_okres}, expected only Praha")
 
+    failures.extend(_portal_coverage(conn))
     failures.extend(_known_places(conn))
+    return failures
+
+
+def _portal_coverage(conn: sqlite3.Connection) -> list[str]:
+    """Every portal maps every kraj, okres and obvod, since a profile may
+    search any of them."""
+    kraje = conn.execute("SELECT count(*) FROM kraje").fetchone()[0]
+    districts = conn.execute("SELECT (SELECT count(*) FROM okresy) + (SELECT count(*) FROM obvody)").fetchone()[0]
+    stmt = """
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND (name GLOB '*_regions' OR name GLOB '*_districts')
+        ORDER BY name
+    """
+    failures = []
+    for row in conn.execute(stmt).fetchall():
+        expected = kraje if row["name"].endswith("_regions") else districts
+        count = conn.execute(f"SELECT count(*) FROM {row['name']}").fetchone()[0]
+        if count != expected:
+            failures.append(f"{row['name']}: {count} rows, expected {expected}")
     return failures
 
 
