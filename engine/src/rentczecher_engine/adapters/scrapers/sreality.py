@@ -40,12 +40,20 @@ def _slugify(text: str) -> str:
 def _parse_location(locality: dict) -> ParsedPlace:
     """The portal's "district" field is a city district ("Praha 7"), never an
     okres, so everything belongs in names."""
-    names = []
+    names: list[str] = []
     for key in ("street", "city", "citypart", "district"):
-        value = (locality.get(key) or "").strip()
-        if value and value not in names:
+        value = _text(locality, key)
+        if value is not None and value not in names:
             names.append(value)
-    return ParsedPlace(names=tuple(names))
+    # "housenumber" is the číslo popisné, "streetnumber" the číslo orientační.
+    return ParsedPlace(names=tuple(names),
+                       cislo_popisne=_text(locality, "housenumber"),
+                       cislo_orientacni=_text(locality, "streetnumber"))
+
+
+def _text(locality: dict, key: str) -> str | None:
+    """A locality field as text, or None when null or empty."""
+    return str(locality.get(key) or "").strip() or None
 
 
 @dataclass(frozen=True, slots=True)
