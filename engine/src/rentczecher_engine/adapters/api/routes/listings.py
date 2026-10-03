@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, Request
 
 from rentczecher_engine.adapters.api.deps import resolve_profile
 from rentczecher_engine.adapters.api.models import ListingModel
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.location import Location
 
 router = APIRouter()
 
@@ -16,7 +19,14 @@ def list_listings(
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         cards = store.inbox_listings(profile_id, only_new=filter == "new")
-    return [ListingModel.from_card(card) for card in cards]
+    with deps.open_gazetteer() as gazetteer:
+        return [ListingModel.from_card(card, _resolved_location(card, gazetteer)) for card in cards]
+
+
+def _resolved_location(card: InboxCard, gazetteer: Gazetteer) -> Location | None:
+    if card.property_location is None:
+        return None
+    return gazetteer.named(card.property_location)
 
 
 @router.patch("/v1/profiles/{profile_id}/listings/{listing_id}/viewed", status_code=204)
