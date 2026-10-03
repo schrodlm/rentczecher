@@ -87,7 +87,7 @@ def mark_seen(profile_id: str, listings: list) -> None:
                 entry["last_seen"] = now
                 entry["price"] = item.price
                 entry["title"] = item.title
-                entry["location"] = item.location
+                entry["location"] = item.location_raw_text
                 entry["url"] = item.url
                 entry["source"] = item.source
                 entry["size_m2"] = item.size_m2

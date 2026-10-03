@@ -46,7 +46,7 @@
             "title": "Id",
             "type": "string"
           },
-          "location": {
+          "location_raw_text": {
             "anyOf": [
               {
                 "type": "string"
@@ -55,7 +55,7 @@
                 "type": "null"
               }
             ],
-            "title": "Location"
+            "title": "Location Raw Text"
           },
           "price": {
             "anyOf": [
@@ -133,7 +133,7 @@
           "source",
           "url",
           "title",
-          "location",
+          "location_raw_text",
           "size_m2",
           "disposition",
           "first_seen_at",

@@ -29,7 +29,7 @@ from rentczecher_engine.services.locate import locate_listings
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Test", price=20000,
-        location="Praha 7 - Holešovice", url="https://example.com",
+        location_raw_text="Praha 7 - Holešovice", url="https://example.com",
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
@@ -156,13 +156,13 @@ class TestDedupThreeSources:
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1, lon=14.4,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
             _make_listing(id="bezrealitky:200", source="bezrealitky", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1001, lon=14.4001,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
             _make_listing(id="remax:300", source="remax", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1002, lon=14.4002,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
         ]
 
         result = _locate_and_dedup(listings)
@@ -172,13 +172,13 @@ class TestDedupThreeSources:
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1, lon=14.4,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
             _make_listing(id="bezrealitky:200", source="bezrealitky", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1001, lon=14.4001,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
             _make_listing(id="remax:300", source="remax", price=22000,
                           size_m2=55, disposition="2+kk", lat=50.1002, lon=14.4002,
-                          location="Praha 7"),
+                          location_raw_text="Praha 7"),
         ]
 
         result = _locate_and_dedup(listings)
@@ -438,11 +438,11 @@ class TestGpsTierWithoutOwnGps:
 
 class TestSharedNameFactorWithNoGps:
     """With neither listing carrying GPS, a shared gazetteer-resolved name is the only path
-    to the evidence floor: the free-text `.location` string itself carries no weight."""
+    to the evidence floor: the free-text `.location_raw_text` string itself carries no weight."""
 
     def test_no_parsed_place_names_on_either_side_never_matches(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, location="")
-        l2 = _make_listing(id="b:1", source="b", price=20000, location="Praha 7")
+        l1 = _make_listing(id="a:1", source="a", price=20000, location_raw_text="")
+        l2 = _make_listing(id="b:1", source="b", price=20000, location_raw_text="Praha 7")
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
 
@@ -507,7 +507,7 @@ class TestOrderingMechanics:
                           size_m2=50, lat=50.10, lon=14.40)
         y = _make_listing(id="y:1", source="y", price=20000, disposition="2+kk",
                           size_m2=50, lat=50.1001, lon=14.4001)
-        z = _make_listing(id="z:1", source="z", price=99999, location="Nowhere special zzz")
+        z = _make_listing(id="z:1", source="z", price=99999, location_raw_text="Nowhere special zzz")
 
         result = _locate_and_dedup([x, y, z])
         assert [listing.id for listing in result] == ["x:1", "z:1"]
@@ -519,9 +519,9 @@ class TestNoTransitiveGrouping:
     is removed. Whether that happens is entirely a function of input order."""
 
     def test_three_mutually_non_matching_survive_all(self):
-        a = _make_listing(id="a:1", source="a", price=15000, location="Alpha Nowhere")
-        b = _make_listing(id="b:1", source="b", price=25000, location="Beta Elsewhere")
-        c = _make_listing(id="c:1", source="c", price=99999, location="Gamma Faraway")
+        a = _make_listing(id="a:1", source="a", price=15000, location_raw_text="Alpha Nowhere")
+        b = _make_listing(id="b:1", source="b", price=25000, location_raw_text="Beta Elsewhere")
+        c = _make_listing(id="c:1", source="c", price=99999, location_raw_text="Gamma Faraway")
         result = _locate_and_dedup([a, b, c])
         assert len(result) == 3
 
@@ -648,10 +648,10 @@ class TestVeletrzniShapedMatch:
         assert 400 < dist < 1500, "must land in the GPS mid-band, not an immediate accept/reject"
 
         a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
-                          lat=lat_a, lon=lon_a, location="Veletržní 1<>2",
+                          lat=lat_a, lon=lon_a, location_raw_text="Veletržní 1<>2",
                           parsed_place=ParsedPlace(names=("Veletržní", "Praha")))
         b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
-                          lat=lat_b, lon=lon_b, location="Praha 7 - Bubeneč",
+                          lat=lat_b, lon=lon_b, location_raw_text="Praha 7 - Bubeneč",
                           parsed_place=ParsedPlace(names=("Veletržní", "Bubeneč")))
 
         result = _locate_and_dedup([a, b], gazetteer)
@@ -751,7 +751,7 @@ _VELETRZNI = replace(_PRAHA, ulice=Place(code=1, name="Veletržní", lat=50.1005
 class TestPromoteFields:
     """promote_fields is a pure function with no pipeline caller yet - tests
     are its only consumer. Kept's value wins wherever present; absorbed only
-    fills a gap kept left; location (and lat/lon with it) follows whichever
+    fills a gap kept left; location_raw_text (and lat/lon with it) follows whichever
     side's place evidence sits at the more specific tier."""
 
     def test_kept_value_wins_over_a_present_absorbed_value(self):
@@ -781,22 +781,22 @@ class TestPromoteFields:
         assert differences == {}
 
     def test_location_prefers_the_more_specific_tier_regardless_of_which_side_kept_is(self):
-        kept = _make_listing(location="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
-        absorbed = _make_listing(location="Veletržní 1", lat=None, lon=None, resolved_location=_VELETRZNI)
+        kept = _make_listing(location_raw_text="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
+        absorbed = _make_listing(location_raw_text="Veletržní 1", lat=None, lon=None, resolved_location=_VELETRZNI)
 
         canonical, _ = promote_fields(kept, absorbed)
 
-        assert canonical["location"] == "Veletržní 1"
+        assert canonical["location_raw_text"] == "Veletržní 1"
         assert canonical["lat"] == 50.1005
         assert canonical["lon"] == 14.4270
 
     def test_location_keeps_kept_when_kept_tier_is_already_the_more_specific(self):
-        kept = _make_listing(location="Veletržní 1", lat=50.1005, lon=14.4270)
-        absorbed = _make_listing(location="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
+        kept = _make_listing(location_raw_text="Veletržní 1", lat=50.1005, lon=14.4270)
+        absorbed = _make_listing(location_raw_text="Praha 7", lat=None, lon=None, resolved_location=_MESTSKA_CAST_PRAHA_7)
 
         canonical, _ = promote_fields(kept, absorbed)
 
-        assert canonical["location"] == "Veletržní 1"
+        assert canonical["location_raw_text"] == "Veletržní 1"
         assert canonical["lat"] == 50.1005
         assert canonical["lon"] == 14.4270
 
@@ -810,9 +810,9 @@ class TestPromoteFields:
         assert differences["size_m2"] == {"canonical": 50, "listing": 48}
 
     def test_no_differences_when_every_field_is_identical(self):
-        kept = _make_listing(title="Same", location="Praha 7", size_m2=50, disposition="2+kk",
+        kept = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition="2+kk",
                               land_m2=10, lat=50.1, lon=14.4)
-        absorbed = _make_listing(title="Same", location="Praha 7", size_m2=50, disposition="2+kk",
+        absorbed = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition="2+kk",
                                   land_m2=10, lat=50.1, lon=14.4)
 
         _, differences = promote_fields(kept, absorbed)

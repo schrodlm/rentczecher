@@ -17,7 +17,7 @@ class ScrapedListing:
     source: str
     title: str
     price: int
-    location: str
+    location_raw_text: str
     url: str
     image_url: str | None = None
     size_m2: int | None = None
@@ -27,8 +27,8 @@ class ScrapedListing:
     charges: int | None = None
     land_m2: int | None = None
     scraped_at: str | None = None
-    # location, parsed into place names by the scraper - the only code
-    # that knows its portal's format.
+    # The location text, parsed by the scraper, the only code that knows its
+    # portal's format.
     parsed_place: ParsedPlace = ParsedPlace()
 
 
@@ -79,8 +79,8 @@ class Listing:
         return self.scraped.price
 
     @property
-    def location(self) -> str:
-        return self.scraped.location
+    def location_raw_text(self) -> str:
+        return self.scraped.location_raw_text
 
     @property
     def url(self) -> str:
@@ -144,7 +144,7 @@ class DisappearedListing:
     """A listing judged gone, with the property facts and latest price the
     disappeared-listings email needs to render it.
 
-    title/location/price are nullable: a listing can disappear before its
+    title/location_raw_text/price are nullable: a listing can disappear before its
     property has a title or before any price observation was ever recorded.
     """
 
@@ -154,7 +154,7 @@ class DisappearedListing:
     first_seen_at: str
     miss_count: int
     title: str | None
-    location: str | None
+    location_raw_text: str | None
     price: int | None
 
 
@@ -173,7 +173,7 @@ class InboxCard:
     baseline when the previous observation was higher, and sibling postings
     of the same property on other portals.
 
-    title/location/size_m2/disposition/price are nullable: a card can exist
+    title/location_raw_text/size_m2/disposition/price are nullable: a card can exist
     before its property has facts or before any price was ever observed.
     property_location is None until a posting's text resolves to a place.
     """
@@ -182,7 +182,7 @@ class InboxCard:
     source: str
     url: str
     title: str | None
-    location: str | None
+    location_raw_text: str | None
     property_location: PropertyLocation | None
     size_m2: int | None
     disposition: str | None

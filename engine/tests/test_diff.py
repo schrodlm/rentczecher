@@ -11,7 +11,7 @@ from rentczecher_engine.services.diff import classify
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="sreality:1", source="sreality", title="Pronájem bytu 2+kk 50 m²",
-        price=20000, location="Veletržní, Praha 7", url="https://example.com/1",
+        price=20000, location_raw_text="Veletržní, Praha 7", url="https://example.com/1",
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
@@ -62,7 +62,7 @@ def test_disappeared_records_pass_through_unchanged():
     gone = DisappearedListing(
         id="sreality:gone", source="sreality", url="https://example.com/gone",
         first_seen_at="2026-09-01T00:00:00+00:00", miss_count=3,
-        title="Pronájem bytu 1+kk 30 m²", location="Tusarova, Praha 7", price=15000,
+        title="Pronájem bytu 1+kk 30 m²", location_raw_text="Tusarova, Praha 7", price=15000,
     )
 
     diff = classify([], seen_ids=set(), latest_prices={}, disappeared=[gone])

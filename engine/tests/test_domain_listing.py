@@ -13,7 +13,7 @@ from rentczecher_engine.domain.listing import Listing
 def _listing(**overrides):
     base = dict(
         id="sreality:1", source="sreality", title="Pronájem bytu 2+kk 55 m²",
-        price=21000, location="U Vody, Praha - Holešovice",
+        price=21000, location_raw_text="U Vody, Praha - Holešovice",
         url="https://example.com/1",
     )
     base.update(overrides)

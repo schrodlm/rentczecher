@@ -169,7 +169,7 @@ class SrealityScraper(BaseScraper):
             source="sreality",
             title=name,
             price=price,
-            location=location,
+            location_raw_text=location,
             parsed_place=_parse_location(locality),
             url=self._build_detail_url(estate, hash_id, disposition, locality),
             image_url=image_url,

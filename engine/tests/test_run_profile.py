@@ -48,7 +48,7 @@ class FakeRunStore:
 
 
 def _listing(id, source, **kw):
-    defaults = dict(title="t", price=20000, location="l", url=f"https://example.com/{id}")
+    defaults = dict(title="t", price=20000, location_raw_text="l", url=f"https://example.com/{id}")
     defaults.update(kw)
     return Listing.build(id=f"{source}:{id}", source=source, **defaults)
 

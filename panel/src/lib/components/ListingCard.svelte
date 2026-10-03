@@ -57,8 +57,8 @@
 			{#if listing.size_m2 !== null}<span>{listing.size_m2}&nbsp;m²</span>{/if}
 		</div>
 
-		{#if listing.location}
-			<div class="card__location">{listing.location}</div>
+		{#if listing.location_raw_text}
+			<div class="card__location">{listing.location_raw_text}</div>
 		{/if}
 
 		<div class="card__chips">

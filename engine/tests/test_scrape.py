@@ -19,7 +19,7 @@ def _make_listing(**kwargs):
         source="sreality",
         title="Prodej domu 120 m2",
         price=3_000_000,
-        location="Nekvasovy, okres Plzeň-jih",
+        location_raw_text="Nekvasovy, okres Plzeň-jih",
         url="https://example.com/1",
     )
     defaults.update(kwargs)

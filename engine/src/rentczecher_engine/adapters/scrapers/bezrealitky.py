@@ -221,7 +221,7 @@ class BezrealitkyScraper(BaseScraper):
             source="bezrealitky",
             title=title,
             price=price,
-            location=address,
+            location_raw_text=address,
             parsed_place=_parse_location(address),
             url=f"{DETAIL_BASE}/{uri}",
             image_url=image_url,

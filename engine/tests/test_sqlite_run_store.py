@@ -31,7 +31,7 @@ def _store(tmp_path, now=None):
 
 def _listing(id="sreality:1", **kw):
     return Listing.build(id=id, source=id.split(":")[0], title="t", price=20000,
-                         location="l", url="u", **kw)
+                         location_raw_text="l", url="u", **kw)
 
 
 def _outcome(*listings):

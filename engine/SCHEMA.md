@@ -12,7 +12,7 @@ this document explains the model behind them.
   under a new id.
 - A **listing** is one portal's posting of a property, a thin pointer. The same
   flat on Sreality and Bezrealitky is one property with two listings.
-- The property **owns the canonical facts** (title, location, size, disposition,
+- The property **owns the canonical facts** (title, location text, size, disposition,
   GPS, land) and the **superset of images**. The first listing to create a
   property seeds those facts.
 - When a later listing is judged the same property but its facts *differ*, the

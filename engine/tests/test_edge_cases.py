@@ -11,7 +11,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Test", price=20000,
-        location="Praha 7 - Holesovice", url="https://example.com",
+        location_raw_text="Praha 7 - Holesovice", url="https://example.com",
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
@@ -80,7 +80,7 @@ class TestNotifierAllNoneOptionals:
 
         listing = Listing.build(
             id="test:bare", source="test", title="Bare listing",
-            price=15000, location="Praha", url="https://example.com",
+            price=15000, location_raw_text="Praha", url="https://example.com",
         )
 
         html = _render_card(listing, is_rent=True)
@@ -92,7 +92,7 @@ class TestNotifierAllNoneOptionals:
 
         listing = Listing.build(
             id="test:noimg", source="test", title="No image",
-            price=10000, location="Praha", url="https://example.com",
+            price=10000, location_raw_text="Praha", url="https://example.com",
         )
         html = _render_card(listing, is_rent=True)
         assert "<img" not in html
@@ -102,7 +102,7 @@ class TestNotifierAllNoneOptionals:
 
         listing = Listing.build(
             id="test:nogps", source="test", title="No GPS",
-            price=10000, location="", url="https://example.com",
+            price=10000, location_raw_text="", url="https://example.com",
         )
         html = _render_card(listing, is_rent=True)
         assert "maps.google.com" not in html
@@ -112,7 +112,7 @@ class TestNotifierAllNoneOptionals:
 
         listing = Listing.build(
             id="test:loc", source="test", title="Test",
-            price=10000, location="Umělecká, Praha - Holešovice", url="https://example.com",
+            price=10000, location_raw_text="Umělecká, Praha - Holešovice", url="https://example.com",
         )
         html = _render_card(listing, is_rent=True)
         assert "maps.google.com" in html
@@ -133,7 +133,7 @@ class TestNotifierMapsLinkUniqueness:
 
         map_urls = []
         for i, loc in enumerate(locations):
-            listing = _make_listing(id=f"test:{i}", location=loc)
+            listing = _make_listing(id=f"test:{i}", location_raw_text=loc)
             html = _render_card(listing, is_rent=True)
             match = re.search(r'https://maps\.google\.com/\?q=[^"]+', html)
             assert match is not None, f"No maps URL found for listing {i}"
@@ -146,7 +146,7 @@ class TestNotifierMapsLinkUniqueness:
     def test_gps_fallback_when_no_location(self):
         from rentczecher_engine.adapters.notifiers.smtp import _render_card
 
-        listing = _make_listing(location="", lat=50.10199, lon=14.42769)
+        listing = _make_listing(location_raw_text="", lat=50.10199, lon=14.42769)
         html = _render_card(listing, is_rent=True)
         assert "50.10199" in html, "GPS fallback should be used when no location"
 
@@ -169,7 +169,7 @@ class TestScoringAllZeroWeights:
         }
         listing = _make_listing(
             price=20000, size_m2=50, disposition="2+kk",
-            land_m2=500, location="Praha 7 - Holesovice",
+            land_m2=500, location_raw_text="Praha 7 - Holesovice",
         )
         score = compute_score(listing, profile)
         assert score == 0, f"All-zero weights should yield 0, got {score}"
@@ -313,7 +313,7 @@ class TestConfigMissingOptionalKeys:
                 "ideal_size_m2": 55,
             }
         }
-        listing = _make_listing(location="Praha 7 - Holesovice", size_m2=50)
+        listing = _make_listing(location_raw_text="Praha 7 - Holesovice", size_m2=50)
         score = compute_score(listing, profile)
         assert isinstance(score, int)
 
@@ -348,7 +348,7 @@ class TestConfigMissingOptionalKeys:
 
         listing = _make_listing(
             price=20000, size_m2=50, disposition="2+kk",
-            location="Praha 7 - Holesovice",
+            location_raw_text="Praha 7 - Holesovice",
         )
         # Empty scoring dict
         assert compute_score(listing, {"scoring": {}}) == 0

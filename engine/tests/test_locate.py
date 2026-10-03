@@ -18,7 +18,7 @@ def gazetteer():
 
 def _listing(parsed_place=ParsedPlace(names=("Veletržní", "Praha 7")), **kw):
     return Listing.build(id="sreality:1", source="sreality", title="t", price=20000,
-                         location="l", parsed_place=parsed_place, url="u", **kw)
+                         location_raw_text="l", parsed_place=parsed_place, url="u", **kw)
 
 
 class TestLocate:

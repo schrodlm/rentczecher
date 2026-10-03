@@ -6,7 +6,7 @@ export function listing(id: string, overrides: Partial<ListingModel> = {}): List
 		source: 'sreality',
 		url: `https://sreality.cz/detail/${id}`,
 		title: 'Byt 2+kk',
-		location: 'Praha 7',
+		location_raw_text: 'Praha 7',
 		size_m2: 52,
 		disposition: '2+kk',
 		first_seen_at: new Date().toISOString(),

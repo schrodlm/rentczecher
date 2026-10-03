@@ -38,7 +38,7 @@ class SqliteListingRepository(ListingRepository):
             first_seen_at=row["first_seen_at"],
             miss_count=row["miss_count"],
             title=row["title"],
-            location=row["location"],
+            location_raw_text=row["location_raw_text"],
             price=row["price"],
         )
 
@@ -199,7 +199,7 @@ class SqliteListingRepository(ListingRepository):
         stmt = """
             SELECT listings.id AS id, listings.source AS source, listings.url AS url,
                    listings.property_id AS property_id,
-                   properties.title AS title, properties.location AS location,
+                   properties.title AS title, properties.location_raw_text AS location_raw_text,
                    properties.size_m2 AS size_m2, properties.disposition AS disposition,
                    property_locations.kraj_code AS kraj_code,
                    property_locations.okres_code AS okres_code,
@@ -278,7 +278,7 @@ class SqliteListingRepository(ListingRepository):
             source=row["source"],
             url=row["url"],
             title=row["title"],
-            location=row["location"],
+            location_raw_text=row["location_raw_text"],
             property_location=self._to_property_location(row) if row["kraj_code"] is not None else None,
             size_m2=row["size_m2"],
             disposition=row["disposition"],
@@ -319,7 +319,7 @@ class SqliteListingRepository(ListingRepository):
             SELECT listings.id AS id, listings.source AS source, listings.url AS url,
                    listing_tracking.first_seen_at AS first_seen_at,
                    listing_tracking.miss_count AS miss_count,
-                   properties.title AS title, properties.location AS location,
+                   properties.title AS title, properties.location_raw_text AS location_raw_text,
                    latest_price.price AS price
             FROM listing_tracking
             JOIN listings ON listings.id = listing_tracking.listing_id

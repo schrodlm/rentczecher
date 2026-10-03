@@ -41,7 +41,7 @@ def _format_price_plain(price: int, is_rent: bool) -> str:
 def _render_card(listing: Listing, is_rent: bool) -> str:
     source = escape(listing.source)
     title = escape(listing.title)
-    location = escape(listing.location)
+    location = escape(listing.location_raw_text)
     disposition = escape(listing.disposition) if listing.disposition else ""
     url = _safe_url(listing.url)
 
@@ -56,7 +56,7 @@ def _render_card(listing: Listing, is_rent: bool) -> str:
     img_html = ""
     if listing.image_url:
         img_url = _safe_url(listing.image_url)
-        alt_text = escape(f"{listing.title} - {listing.disposition or ''} {listing.location}".strip(" -"))
+        alt_text = escape(f"{listing.title} - {listing.disposition or ''} {listing.location_raw_text}".strip(" -"))
         img_html = (
             f'<div style="width:100%;background:#f0f0f0;">'
             f'<img src="{img_url}" alt="{alt_text}" width="660" '
@@ -129,9 +129,9 @@ def _render_card(listing: Listing, is_rent: bool) -> str:
 
     # Maps link - prefer address search for accuracy (GPS from some sources is approximate)
     maps_html = ""
-    if listing.location:
+    if listing.location_raw_text:
         from urllib.parse import quote as url_quote
-        maps_query = url_quote(f"{listing.location}, Česko")
+        maps_query = url_quote(f"{listing.location_raw_text}, Česko")
         maps_url = f"https://maps.google.com/?q={maps_query}"
         maps_html = f' <a href="{escape(maps_url, quote=True)}" style="font-size:12px;color:#1a73e8;text-decoration:none;">[mapa]</a>'
     elif listing.lat is not None and listing.lon is not None:

@@ -40,7 +40,7 @@ class ListingModel(BaseModel):
     source: str
     url: str
     title: str | None
-    location: str | None
+    location_raw_text: str | None
     size_m2: int | None
     disposition: str | None
     first_seen_at: str
@@ -57,7 +57,7 @@ class ListingModel(BaseModel):
             source=card.source,
             url=card.url,
             title=card.title,
-            location=card.location,
+            location_raw_text=card.location_raw_text,
             size_m2=card.size_m2,
             disposition=card.disposition,
             first_seen_at=card.first_seen_at,

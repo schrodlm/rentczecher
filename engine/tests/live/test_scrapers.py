@@ -111,7 +111,7 @@ class TestSrealityLive:
         s = _scraper(SrealityScraper, "domazlice-domy", client)
         listings = s.scrape()
         assert len(listings) > 0
-        with_domazlice = [l for l in listings if "Domažlice" in l.location or "domažlice" in l.location.lower()]
+        with_domazlice = [l for l in listings if "Domažlice" in l.location_raw_text or "domažlice" in l.location_raw_text.lower()]
         assert len(with_domazlice) > 0, "No listings mention Domažlice in location"
 
     def test_first_detail_url_resolves(self, client):
@@ -205,8 +205,8 @@ class TestRemaxLive:
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
         for l in listings:
-            assert "\n" not in l.location, f"Newline in location: {repr(l.location)}"
-            assert "  " not in l.location, f"Double space in location: {repr(l.location)}"
+            assert "\n" not in l.location_raw_text, f"Newline in location: {repr(l.location_raw_text)}"
+            assert "  " not in l.location_raw_text, f"Double space in location: {repr(l.location_raw_text)}"
 
     def test_domazlice_no_crash(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper

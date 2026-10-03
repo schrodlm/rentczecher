@@ -13,7 +13,7 @@ SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
 def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="sreality:1", source="sreality", title="Pronájem bytu 2+kk 50 m²",
-        price=20000, location="Veletržní, Praha 7", url="https://example.com/1",
+        price=20000, location_raw_text="Veletržní, Praha 7", url="https://example.com/1",
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)

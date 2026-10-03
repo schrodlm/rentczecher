@@ -12,7 +12,7 @@ class PropertyIdentity:
     created_at: str
     merged_into: str | None = None
     title: str | None = None
-    location: str | None = None
+    location_raw_text: str | None = None
     size_m2: int | None = None
     disposition: str | None = None
     lat: float | None = None

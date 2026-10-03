@@ -206,7 +206,7 @@ class TestListListings:
         deps = _api_deps(tmp_path)
         with deps.open_run_store() as store:
             listing = Listing.build(
-                id="sreality:1", source="sreality", title="t", price=20000, location="l",
+                id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
                 url="https://example.com/1")
             store.persist_outcome(
                 "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
@@ -234,7 +234,7 @@ class TestMarkViewed:
         deps = _api_deps(tmp_path)
         with deps.open_run_store() as store:
             listing = Listing.build(
-                id="sreality:1", source="sreality", title="t", price=20000, location="l",
+                id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
                 url="https://example.com/1")
             store.persist_outcome(
                 "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
