@@ -407,6 +407,24 @@ class TestGpsGate:
         assert len(result) == 2
 
 
+class TestGpsTierWithoutOwnGps:
+    """A listing without its own GPS is placed at the finest unit its text
+    resolves to, and the GPS factor trusts the pair at that unit's tier."""
+
+    def test_text_resolving_only_to_a_cast_obce_earns_its_tier_ceiling(self, gazetteer):
+        # Sadová repeats inside okres Litoměřice, so the text pins only the
+        # část obce Podviní. The other listing stands on Sadová in Trnovany,
+        # well inside that tier's near bound.
+        without_gps = _make_listing(id="a:1", source="a",
+                                    parsed_place=ParsedPlace(names=("Sadová 12", "Podviní", "Litoměřice"),
+                                                             district="Litoměřice"))
+        with_gps = _make_listing(id="b:1", source="b", lat=50.547548, lon=14.173174)
+
+        score = _score_pair(without_gps, with_gps, gazetteer)
+
+        assert _factor(score, "gps").contribution == 20.0
+
+
 class TestSharedNameFactorWithNoGps:
     """With neither listing carrying GPS, a shared gazetteer-resolved name is the only path
     to the evidence floor: the free-text `.location` string itself carries no weight."""
