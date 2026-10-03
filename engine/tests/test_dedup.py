@@ -424,15 +424,16 @@ class TestGpsTierWithoutOwnGps:
 
         assert _factor(score, "gps").contribution == 35.0
 
-    def test_a_bare_town_name_earns_the_cast_obce_ceiling(self, gazetteer):
-        # Kdyně's central část obce shares the town's name and centroid, and
-        # the other listing stands on that centroid.
+    def test_a_bare_town_name_earns_the_obec_ceiling(self, gazetteer):
+        # Kdyně's central část obce shares the town's name and centroid, but
+        # a bare town name resolves to the obec. The other listing stands on
+        # that centroid.
         without_gps = _make_listing(id="a:1", source="a", parsed_place=ParsedPlace(names=("Kdyně",)))
         with_gps = _make_listing(id="b:1", source="b", lat=49.390767, lon=13.039675)
 
         score = _score_pair(without_gps, with_gps, gazetteer)
 
-        assert _factor(score, "gps").contribution == 20.0
+        assert _factor(score, "gps").contribution == 6.0
 
 
 class TestSharedNameFactorWithNoGps:

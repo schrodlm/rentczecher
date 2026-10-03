@@ -275,6 +275,10 @@ class Gazetteer:
         if row["kind"] == "ulice":
             return replace(location, ulice=_to_place(row))
         if row["kind"] == "cast_obce":
+            # A část obce named after its obec: that name in a listing states
+            # the obec, not the part.
+            if row["name_norm"] == row["obec_norm"]:
+                return location
             return replace(location, cast_obce=_to_place(row))
         if row["kind"] == "mestska_cast":
             return replace(location, mestska_cast=_to_place(row), obvod=self._obvod_of_mestska_cast(row["code"]))
