@@ -146,6 +146,16 @@ class TestSrealityLocationParsing:
     def test_empty_locality(self):
         assert _sreality_parse_location({}) == ParsedPlace()
 
+    def test_housenumber_is_popisne_and_streetnumber_is_orientacni(self):
+        place = _sreality_parse_location({"housenumber": "1401", "streetnumber": "5"})
+        assert place.cislo_popisne == "1401"
+        assert place.cislo_orientacni == "5"
+
+    def test_null_or_empty_house_numbers_are_unknown(self):
+        place = _sreality_parse_location({"housenumber": None, "streetnumber": ""})
+        assert place.cislo_popisne is None
+        assert place.cislo_orientacni is None
+
 
 class TestSrealityPagination:
     """Paging continues until the reported total is collected or a page is empty."""
@@ -472,6 +482,21 @@ class TestRemaxLocationParsing:
                                       "Prodej bytu 2+kk 45 m², Praha 2")
         assert place.names == ("Vinohradská 12", "Praha 2")
         assert place.district is None
+
+    def test_a_repeated_house_number_is_the_cislo_popisne_alone(self):
+        place = _remax_parse_location("U smaltovny 1419 / 1419, Praha 7", "Pronájem bytu 2+kk")
+        assert place.cislo_popisne == "1419"
+        assert place.cislo_orientacni is None
+
+    def test_two_different_house_numbers_are_popisne_then_orientacni(self):
+        place = _remax_parse_location("Veletržní 1401 / 5a, Praha 7", "Pronájem bytu 2+kk")
+        assert place.cislo_popisne == "1401"
+        assert place.cislo_orientacni == "5a"
+
+    def test_a_lone_number_is_no_house_number(self):
+        place = _remax_parse_location("Vinohradská 12, Praha 2", "")
+        assert place.cislo_popisne is None
+        assert place.cislo_orientacni is None
 
     def test_street_and_okres(self):
         place = _remax_parse_location("Škarmanská 369 / 369, Domažlice, Plzeňský kraj", "")
