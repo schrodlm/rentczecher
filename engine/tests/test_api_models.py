@@ -25,6 +25,7 @@ class TestListingModel:
             url="https://example.com/1",
             title="Byt 2+kk",
             location="Praha 7",
+            property_location=None,
             size_m2=54,
             disposition="2+kk",
             first_seen_at="2026-09-01T00:00:00+00:00",
