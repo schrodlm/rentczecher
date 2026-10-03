@@ -113,12 +113,12 @@ class TestResolve:
         assert location.most_specific()[0] == "obec"
         assert location.obec.name == "Praha"
 
-    def test_town_with_self_named_part_resolves(self, gazetteer):
+    def test_a_bare_town_name_resolves_to_the_town_not_its_central_part(self, gazetteer):
         # Kdyně the municipality contains a part also named Kdyně; one
         # municipality at two tiers is one place, not an ambiguity.
         location = gazetteer.resolve(ParsedPlace(names=("Kdyně",)))
-        assert location is not None
         assert location.obec.name == "Kdyně"
+        assert location.cast_obce is None
 
     def test_ambiguous_municipality_resolves_to_none(self, gazetteer):
         # 14 municipalities are named Nová Ves (plus an Ostrava city
