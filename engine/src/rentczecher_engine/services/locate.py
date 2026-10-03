@@ -1,4 +1,4 @@
-"""Where is this listing? Text resolution first, geometry when text fails."""
+"""Where is this listing? Its location text, resolved against the gazetteer."""
 
 from typing import Protocol
 
@@ -10,22 +10,12 @@ class PlaceResolver(Protocol):
     def resolve(self, place: ParsedPlace) -> ResolvedPlace | None:
         ...
 
-    def reverse(self, lat: float, lon: float) -> ResolvedPlace | None:
-        ...
-
 
 def locate(listing: Listing, gazetteer: PlaceResolver) -> ResolvedPlace | None:
-    """The place a listing belongs to, or None when nothing trustworthy exists.
-
-    Text resolution runs first, when it is ambiguous but the portal gave
-    GPS, reverse geocoding steps in instead. None means neither source can
-    be trusted - unresolvable text, or GPS outside every Czech municipality
-    (noise) alike.
-    """
-    place = gazetteer.resolve(listing.parsed_place)
-    if place is None and listing.lat is not None and listing.lon is not None:
-        place = gazetteer.reverse(listing.lat, listing.lon)
-    return place
+    """The place the listing's text names, or None when the text cannot be
+    resolved to one place. A GPS point never stands in: it would claim a
+    place the portal did not name."""
+    return gazetteer.resolve(listing.parsed_place)
 
 
 def locate_listings(listings: list[Listing], gazetteer: PlaceResolver) -> list[Listing]:
