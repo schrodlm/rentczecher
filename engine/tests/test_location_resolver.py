@@ -1,4 +1,4 @@
-"""Tests for the place resolver over the shipped location table.
+"""Tests for the place resolver over the gazetteer's portal tables.
 
 Run: python3 -m pytest tests/test_location_resolver.py -v
 """
@@ -87,12 +87,16 @@ class TestResolveFailure:
             resolve("xyzzy quux")
         assert excinfo.value.suggestions == ()
 
-    def test_every_shipped_slug_resolves_to_itself(self):
-        import json
-        from rentczecher_engine.adapters.scrapers.location_resolver import PLACES_PATH
-        places = json.loads(PLACES_PATH.read_text())
-        for row in places["regions"] + places["districts"]:
-            assert resolve(row["slug"]).slug == row["slug"]
+    def test_every_search_place_resolves_by_its_name(self):
+        """Each kraj, okres and obvod in the gazetteer is a search place."""
+        from rentczecher_engine.adapters.geocoding.gazetteer import open_gazetteer
+        conn = open_gazetteer()
+        stmt = "SELECT name FROM kraje UNION ALL SELECT name FROM okresy UNION ALL SELECT name FROM obvody"
+        names = [row["name"] for row in conn.execute(stmt)]
+        conn.close()
+        assert len(names) == 100
+        for name in names:
+            assert resolve(name).name == name
 
 
 class TestPlaceParamsImmutability:
