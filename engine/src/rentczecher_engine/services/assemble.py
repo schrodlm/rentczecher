@@ -7,13 +7,14 @@ from rentczecher_engine.domain.property import PropertyIdentity
 def assemble_property(listing: Listing, property_id: str, created_at: str) -> PropertyIdentity:
     """The property row a located listing seeds.
 
-    lat/lon come from the listing's own GPS when present, else its
-    resolved place's centroid, else neither is set.
+    lat/lon come from the listing's own GPS when present, else its most
+    specific resolved unit's position, else neither is set.
     """
     if listing.lat is not None and listing.lon is not None:
         lat, lon = listing.lat, listing.lon
-    elif listing.place is not None:
-        lat, lon = listing.place.lat, listing.place.lon
+    elif listing.resolved_location is not None:
+        _, place = listing.resolved_location.most_specific()
+        lat, lon = place.lat, place.lon
     else:
         lat, lon = None, None
 

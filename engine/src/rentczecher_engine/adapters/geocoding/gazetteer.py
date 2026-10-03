@@ -8,10 +8,11 @@ import re
 import sqlite3
 import unicodedata
 from collections.abc import Iterable
+from dataclasses import replace
 from importlib.resources import files
 from pathlib import Path
 
-from rentczecher_engine.domain.location import ParsedPlace, ResolvedPlace
+from rentczecher_engine.domain.location import Location, ParsedPlace, Place
 
 # Portals disagree on decoration: sreality "Hlavní město Praha" is remax
 # and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
@@ -72,6 +73,10 @@ def candidate_names(names: Iterable[str]) -> list[str]:
     return candidates
 
 
+def _to_place(row: sqlite3.Row) -> Place:
+    return Place(code=row["code"], name=row["name"], lat=row["lat"], lon=row["lon"])
+
+
 class Gazetteer:
     """Answers "where is this?" for scraped place names, offline.
 
@@ -112,9 +117,9 @@ class Gazetteer:
 
     4. The named district itself: the give-up-gracefully answer. When
        'Nádražní' repeats inside okres Klatovy no single street can be
-       picked, but the okres is still certain - and a coarse true answer
-       beats a precise wrong one. The kind on the result says how coarse;
-       callers gate on it.
+       picked, but the okres is still certain, and a coarse true answer
+       beats a precise wrong one. The result's most specific unit says
+       how coarse. Callers gate on its kind.
 
     A stated district (ParsedPlace.district) changes exactly one thing:
     that name may scope (pass 2) and be the answer (pass 4) but never
@@ -128,18 +133,9 @@ class Gazetteer:
     def __init__(self, db_path: Path | None = None):
         self._conn = open_gazetteer(db_path)
 
-    def _to_place(self, row: sqlite3.Row) -> ResolvedPlace:
-        return ResolvedPlace(
-            name=row["name"],
-            kind=row["kind"],
-            code=row["code"],
-            obec_name=row["obec_name"],
-            okres_name=row["okres_name"],
-            lat=row["lat"],
-            lon=row["lon"],
-        )
-
-    def resolve(self, place: ParsedPlace) -> ResolvedPlace | None:
+    def resolve(self, place: ParsedPlace) -> Location | None:
+        """The location the parsed names point to, or None when they are
+        unknown or ambiguous."""
         candidates = candidate_names(place.names)
         stated = frozenset(candidate_names([place.district]) if place.district else ())
         lookup = candidates + [name for name in stated if name not in candidates]
@@ -157,7 +153,7 @@ class Gazetteer:
                  or self._unique_in_named_district(place_rows, district_names)
                  or self._unique_name(place_rows)
                  or self._named_district(rows))
-        return self._to_place(match) if match else None
+        return self._location_of(match) if match else None
 
     def candidate_names(self, names: Iterable[str]) -> list[str]:
         return candidate_names(names)
@@ -185,10 +181,68 @@ class Gazetteer:
                 tiers.add(row["kind"])
         return frozenset(tiers)
 
+    def _location_of(self, row: sqlite3.Row) -> Location:
+        """The matched unit in its kind's field, with its strict parents."""
+        if row["kind"] == "okres":
+            return self._okres_location(row["code"])
+        location = self._obec_location(row["obec_code"])
+        if row["kind"] == "obec":
+            return location
+        if row["kind"] == "ulice":
+            return replace(location, ulice=_to_place(row))
+        if row["kind"] == "cast_obce":
+            return replace(location, cast_obce=_to_place(row))
+        if row["kind"] == "mestska_cast":
+            return replace(location, mestska_cast=_to_place(row), obvod=self._obvod_of_mestska_cast(row["code"]))
+        raise ValueError(f"no location field for kind {row['kind']!r}")
+
+    def _okres_location(self, okres_code: int) -> Location:
+        stmt = "SELECT code, name, lat, lon, kraj_code FROM okresy WHERE code = ?"
+        row = self._conn.execute(stmt, (okres_code,)).fetchone()
+        return Location(
+            kraj=self._kraj(row["kraj_code"]),
+            okres=_to_place(row),
+            obec=None,
+            obvod=None,
+            mestska_cast=None,
+            cast_obce=None,
+            ulice=None,
+        )
+
+    def _obec_location(self, obec_code: int) -> Location:
+        stmt = "SELECT code, name, lat, lon, okres_code, kraj_code FROM obce WHERE code = ?"
+        row = self._conn.execute(stmt, (obec_code,)).fetchone()
+        return Location(
+            kraj=self._kraj(row["kraj_code"]),
+            okres=self._okres(row["okres_code"]) if row["okres_code"] is not None else None,
+            obec=_to_place(row),
+            obvod=None,
+            mestska_cast=None,
+            cast_obce=None,
+            ulice=None,
+        )
+
+    def _kraj(self, kraj_code: int) -> Place:
+        stmt = "SELECT code, name, lat, lon FROM kraje WHERE code = ?"
+        return _to_place(self._conn.execute(stmt, (kraj_code,)).fetchone())
+
+    def _okres(self, okres_code: int) -> Place:
+        stmt = "SELECT code, name, lat, lon FROM okresy WHERE code = ?"
+        return _to_place(self._conn.execute(stmt, (okres_code,)).fetchone())
+
+    def _obvod_of_mestska_cast(self, mestska_cast_code: int) -> Place | None:
+        """The obvod a městská část lies in. Only Praha's do."""
+        stmt = """
+            SELECT ob.code, ob.name, ob.lat, ob.lon
+            FROM mestske_casti m JOIN obvody ob ON ob.code = m.obvod_code
+            WHERE m.code = ?
+        """
+        row = self._conn.execute(stmt, (mestska_cast_code,)).fetchone()
+        return _to_place(row) if row is not None else None
+
     def _rows_named(self, names: list[str]) -> list[sqlite3.Row]:
         stmt = """
-            SELECT kind, code, name, name_norm, obec_code, obec_name, obec_norm,
-                   okres_name, okres_norm, lat, lon
+            SELECT kind, code, name, name_norm, obec_code, obec_norm, okres_norm, lat, lon
             FROM places WHERE name_norm = ?
         """
         rows: list[sqlite3.Row] = []

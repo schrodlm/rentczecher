@@ -22,35 +22,35 @@ def _listing(parsed_place=ParsedPlace(names=("Veletržní", "Praha 7")), **kw):
 
 
 class TestLocate:
-    def test_text_resolution_supplies_the_place(self, gazetteer):
-        place = locate(_listing(), gazetteer)
-        assert place.kind == "ulice"
-        assert place.obec_name == "Praha"
+    def test_text_resolution_supplies_the_location(self, gazetteer):
+        location = locate(_listing(), gazetteer)
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Praha"
 
     def test_ambiguous_text_stays_unlocated_even_with_gps(self, gazetteer):
         """A GPS point never stands in for a place the text does not name."""
-        place = locate(_listing(lat=50.1, lon=14.43,
-                                 parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
-        assert place is None
+        location = locate(_listing(lat=50.1, lon=14.43,
+                                   parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
+        assert location is None
 
-    def test_ambiguous_text_without_gps_has_no_place(self, gazetteer):
-        place = locate(_listing(parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
-        assert place is None
+    def test_ambiguous_text_without_gps_has_no_location(self, gazetteer):
+        location = locate(_listing(parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
+        assert location is None
 
     def test_stated_district_scopes_the_lookup(self, gazetteer):
-        place = locate(_listing(parsed_place=ParsedPlace(
+        location = locate(_listing(parsed_place=ParsedPlace(
             names=("Škarmanská 369 / 369",), district="Domažlice")), gazetteer)
-        assert place.kind == "ulice"
-        assert place.obec_name == "Kdyně"
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Kdyně"
 
 
 class TestLocateListings:
-    def test_every_listing_comes_back_with_its_place_annotation(self, gazetteer):
+    def test_every_listing_comes_back_with_its_location_annotation(self, gazetteer):
         locatable = _listing()
         unlocatable = _listing(parsed_place=ParsedPlace(names=("Nová Ves",)))
 
         located = locate_listings([locatable, unlocatable], gazetteer)
 
-        assert located[0].place is not None
-        assert located[0].place.obec_name == "Praha"
-        assert located[1].place is None
+        assert located[0].resolved_location is not None
+        assert located[0].resolved_location.obec.name == "Praha"
+        assert located[1].resolved_location is None
