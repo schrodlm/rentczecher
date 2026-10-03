@@ -37,8 +37,8 @@ def test_uses_listings_own_gps_when_present():
 
 
 def test_falls_back_to_the_resolved_places_centroid_when_no_gps():
-    place = ResolvedPlace(name="Holešovice", muni_name="Praha", okres_name=None,
-                           tier="city_district", lat=50.09, lon=14.42)
+    place = ResolvedPlace(name="Holešovice", kind="cast_obce", code=490229, obec_name="Praha",
+                           okres_name=None, lat=50.09, lon=14.42)
     listing = _make_listing(lat=None, lon=None, place=place)
 
     identity = assemble_property(listing, property_id="prop-1", created_at=CREATED_AT)

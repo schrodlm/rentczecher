@@ -600,7 +600,7 @@ class TestGazetteerPackaging:
         conn = sqlite3.connect(f"file:{gaz}?mode=ro", uri=True)
         stmt = """
             SELECT lat, lon FROM places
-            WHERE name_norm = 'veletrzni' AND muni_norm = 'praha' AND tier = 'street'
+            WHERE name_norm = 'veletrzni' AND obec_norm = 'praha' AND kind = 'ulice'
         """
         rows = conn.execute(stmt).fetchall()
         assert len(rows) == 1

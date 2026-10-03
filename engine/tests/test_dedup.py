@@ -737,11 +737,11 @@ class TestPromoteFields:
 
     def test_location_prefers_the_more_specific_tier_regardless_of_which_side_kept_is(self):
         kept = _make_listing(location="Praha 7", lat=None, lon=None,
-                              place=ResolvedPlace(name="Praha 7", muni_name="Praha", okres_name=None,
-                                                   tier="city_district", lat=50.09, lon=14.42))
+                              place=ResolvedPlace(name="Praha 7", kind="mestska_cast", code=500186, obec_name="Praha",
+                                                   okres_name=None, lat=50.09, lon=14.42))
         absorbed = _make_listing(location="Veletržní 1", lat=None, lon=None,
-                                  place=ResolvedPlace(name="Veletržní", muni_name="Praha", okres_name=None,
-                                                       tier="street", lat=50.1005, lon=14.4270))
+                                  place=ResolvedPlace(name="Veletržní", kind="ulice", code=1, obec_name="Praha",
+                                                       okres_name=None, lat=50.1005, lon=14.4270))
 
         canonical, _ = promote_fields(kept, absorbed)
 
@@ -752,8 +752,8 @@ class TestPromoteFields:
     def test_location_keeps_kept_when_kept_tier_is_already_the_more_specific(self):
         kept = _make_listing(location="Veletržní 1", lat=50.1005, lon=14.4270)
         absorbed = _make_listing(location="Praha 7", lat=None, lon=None,
-                                  place=ResolvedPlace(name="Praha 7", muni_name="Praha", okres_name=None,
-                                                       tier="city_district", lat=50.09, lon=14.42))
+                                  place=ResolvedPlace(name="Praha 7", kind="mestska_cast", code=500186, obec_name="Praha",
+                                                       okres_name=None, lat=50.09, lon=14.42))
 
         canonical, _ = promote_fields(kept, absorbed)
 

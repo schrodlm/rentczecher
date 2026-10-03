@@ -22,8 +22,9 @@ class ResolvedPlace:
     caller would have gotten None instead."""
 
     name: str
-    muni_name: str | None  # a resolved district has no municipality
+    kind: str
+    code: int
+    obec_name: str | None  # an okres belongs to no obec
     okres_name: str | None
-    tier: str
     lat: float
     lon: float

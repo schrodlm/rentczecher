@@ -24,8 +24,8 @@ def _listing(parsed_place=ParsedPlace(names=("Veletržní", "Praha 7")), **kw):
 class TestLocate:
     def test_text_resolution_supplies_the_place(self, gazetteer):
         place = locate(_listing(), gazetteer)
-        assert place.tier == "street"
-        assert place.muni_name == "Praha"
+        assert place.kind == "ulice"
+        assert place.obec_name == "Praha"
 
     def test_ambiguous_text_stays_unlocated_even_with_gps(self, gazetteer):
         """A GPS point never stands in for a place the text does not name."""
@@ -40,8 +40,8 @@ class TestLocate:
     def test_stated_district_scopes_the_lookup(self, gazetteer):
         place = locate(_listing(parsed_place=ParsedPlace(
             names=("Škarmanská 369 / 369",), district="Domažlice")), gazetteer)
-        assert place.tier == "street"
-        assert place.muni_name == "Kdyně"
+        assert place.kind == "ulice"
+        assert place.obec_name == "Kdyně"
 
 
 class TestLocateListings:
@@ -52,5 +52,5 @@ class TestLocateListings:
         located = locate_listings([locatable, unlocatable], gazetteer)
 
         assert located[0].place is not None
-        assert located[0].place.muni_name == "Praha"
+        assert located[0].place.obec_name == "Praha"
         assert located[1].place is None
