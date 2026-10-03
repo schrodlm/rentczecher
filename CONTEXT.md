@@ -16,6 +16,27 @@ The inferred real-world housing unit behind one or more listings. The same
 flat posted on two portals is one property with two listings.
 _Avoid_: estate, home
 
+**Place**:
+One official territorial unit from RÚIAN, the state register of addresses: a
+kraj, okres, obec, obvod, městská část, část obce or ulice. Identified by its
+kind and code, never by its name.
+_Avoid_: area, region, locality
+
+**Location**:
+Where a property lies: the place of each kind its listing's text names, plus
+the house numbers as written.
+_Avoid_: address
+
+**Location text**:
+The portal's own words for where a listing is, kept as written. The location
+is resolved from it.
+_Avoid_: address, location
+
+**Gazetteer**:
+The register of every Czech place, used offline. It turns location text into
+a location.
+_Avoid_: geocoder, place database
+
 **Profile**:
 One person's saved search: portals, filters, scoring weights, recipients.
 Every scan is per-profile.
