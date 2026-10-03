@@ -49,8 +49,9 @@ class RunStore(Protocol):
 
 
 class Gazetteer(PlaceResolver, NameTierLookup, Protocol):
-    """The offline-geocoding surface the pipeline drives: text/GPS place
-    resolution for locate_listings, name-tier lookup for cross_source_dedup."""
+    """The offline-geocoding surface the pipeline drives: resolving a
+    listing's text for locate_listings, name-tier lookup for
+    cross_source_dedup."""
 
 
 @dataclass(frozen=True, slots=True)
