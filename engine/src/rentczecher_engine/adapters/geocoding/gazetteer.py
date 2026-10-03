@@ -11,9 +11,10 @@ from collections.abc import Iterable
 from dataclasses import replace
 from importlib.resources import files
 from pathlib import Path
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 from rentczecher_engine.domain.location import Location, ParsedPlace, Place
+from rentczecher_engine.domain.property import PropertyLocation
 
 # Portals disagree on decoration: sreality "Hlavní město Praha" is remax
 # and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
@@ -34,6 +35,8 @@ def normalize_name(name: str) -> str:
 _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
 
 T = TypeVar("T")
+
+_UnitTable = Literal["kraje", "okresy", "obce", "obvody", "mestske_casti", "casti_obce", "ulice"]
 
 _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 
@@ -239,6 +242,31 @@ class Gazetteer:
                  for candidate in candidates
                  for row in self._conn.execute(stmt, (obec.code, candidate))}
         return _only(parts)
+
+    def named(self, stored: PropertyLocation) -> Location | None:
+        """Turns a stored location, which holds only codes, back into one
+        with names. A unit RÚIAN has since cancelled comes back empty."""
+        kraj = self._unit("kraje", stored.kraj_code)
+        if kraj is None:
+            return None
+        return Location(
+            kraj=kraj,
+            okres=self._unit("okresy", stored.okres_code),
+            obec=self._unit("obce", stored.obec_code),
+            obvod=self._unit("obvody", stored.obvod_code),
+            mestska_cast=self._unit("mestske_casti", stored.mestska_cast_code),
+            cast_obce=self._unit("casti_obce", stored.cast_obce_code),
+            ulice=self._unit("ulice", stored.ulice_code),
+            cislo_popisne=stored.cislo_popisne,
+            cislo_orientacni=stored.cislo_orientacni,
+        )
+
+    def _unit(self, table: _UnitTable, code: int | None) -> Place | None:
+        if code is None:
+            return None
+        stmt = f"SELECT code, name, lat, lon FROM {table} WHERE code = ?"
+        row = self._conn.execute(stmt, (code,)).fetchone()
+        return _to_place(row) if row is not None else None
 
     def candidate_names(self, names: Iterable[str]) -> list[str]:
         return candidate_names(names)
