@@ -33,10 +33,9 @@ class Place:
 
 @dataclass(frozen=True, slots=True)
 class Location:
-    """A gazetteer's answer to a ParsedPlace: the unit of each kind the text
-    names, with the strict parents of the most specific one filled in. A
-    kind the text leaves open stays None. Every place lies in a kraj, and
-    Praha lies in no okres."""
+    """Where something lies: the RÚIAN unit of each kind, kraj to ulice, plus
+    the house numbers as written. A kind left open is None, and Praha lies
+    in no okres."""
 
     kraj: Place
     okres: Place | None
@@ -45,6 +44,8 @@ class Location:
     mestska_cast: Place | None
     cast_obce: Place | None
     ulice: Place | None
+    cislo_popisne: str | None
+    cislo_orientacni: str | None
 
     def most_specific(self) -> tuple[str, Place]:
         """The finest unit named, with its kind."""

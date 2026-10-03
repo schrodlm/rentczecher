@@ -45,6 +45,8 @@ def test_falls_back_to_the_most_specific_resolved_units_centroid_when_no_gps():
         mestska_cast=None,
         cast_obce=Place(code=490229, name="Holešovice", lat=50.09, lon=14.42),
         ulice=None,
+        cislo_popisne=None,
+        cislo_orientacni=None,
     )
     listing = _make_listing(lat=None, lon=None, resolved_location=location)
 
