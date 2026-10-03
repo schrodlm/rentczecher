@@ -42,7 +42,7 @@ _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 
 # The schema this code reads. The build stamps it into the file, and a file
 # built for another schema is refused rather than misread.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def open_gazetteer(db_path: Path | None = None) -> sqlite3.Connection:

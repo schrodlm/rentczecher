@@ -210,8 +210,8 @@ class TestDatabase:
 class TestBuild:
     def test_every_place_is_reachable_by_name_with_its_kind_and_code(self, built):
         """The places view answers a name with the kind, code and obec."""
-        stmt = "SELECT kind, code, obec_name FROM places WHERE name_norm = 'pristavni'"
-        assert [tuple(row) for row in built.execute(stmt)] == [("ulice", 467103, "Praha")]
+        stmt = "SELECT kind, code, obec_code FROM places WHERE name_norm = 'pristavni'"
+        assert [tuple(row) for row in built.execute(stmt)] == [("ulice", 467103, 554782)]
 
     def test_an_obec_and_its_cast_obce_with_one_name_are_two_places(self, built):
         """Kdyně is both an obec and a část obce: two rows, two kinds."""
