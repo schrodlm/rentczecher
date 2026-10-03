@@ -153,32 +153,33 @@ CREATE TABLE bezrealitky_districts (
 );
 
 -- Every place a listing's text can name, by name, for the resolver: each
--- row with its kind and code, its obec and its okres.
+-- row with its kind and code, its obec code, and its obec and okres names for
+-- context matching.
 CREATE VIEW places AS
     SELECT 'ulice' AS kind, u.code, u.name, u.name_norm,
-           o.code AS obec_code, o.name AS obec_name, o.name_norm AS obec_norm,
-           ok.name AS okres_name, ok.name_norm AS okres_norm, u.lat, u.lon
+           o.code AS obec_code, o.name_norm AS obec_norm,
+           ok.name_norm AS okres_norm, u.lat, u.lon
     FROM ulice u
     JOIN obce o ON o.code = u.obec_code
     LEFT JOIN okresy ok ON ok.code = o.okres_code
 UNION ALL
     SELECT 'cast_obce' AS kind, c.code, c.name, c.name_norm,
-           o.code, o.name, o.name_norm, ok.name, ok.name_norm, c.lat, c.lon
+           o.code, o.name_norm, ok.name_norm, c.lat, c.lon
     FROM casti_obce c
     JOIN obce o ON o.code = c.obec_code
     LEFT JOIN okresy ok ON ok.code = o.okres_code
 UNION ALL
     SELECT 'mestska_cast' AS kind, m.code, m.name, m.name_norm,
-           o.code, o.name, o.name_norm, ok.name, ok.name_norm, m.lat, m.lon
+           o.code, o.name_norm, ok.name_norm, m.lat, m.lon
     FROM mestske_casti m
     JOIN obce o ON o.code = m.obec_code
     LEFT JOIN okresy ok ON ok.code = o.okres_code
 UNION ALL
     SELECT 'obec' AS kind, o.code, o.name, o.name_norm,
-           o.code, o.name, o.name_norm, ok.name, ok.name_norm, o.lat, o.lon
+           o.code, o.name_norm, ok.name_norm, o.lat, o.lon
     FROM obce o
     LEFT JOIN okresy ok ON ok.code = o.okres_code
 UNION ALL
     SELECT 'okres' AS kind, ok.code, ok.name, ok.name_norm,
-           NULL, NULL, NULL, ok.name, ok.name_norm, ok.lat, ok.lon
+           NULL, NULL, ok.name_norm, ok.lat, ok.lon
     FROM okresy ok;
