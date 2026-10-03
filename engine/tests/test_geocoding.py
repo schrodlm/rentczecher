@@ -8,7 +8,12 @@ Run: python3 -m pytest tests/test_geocoding.py -v
 
 import pytest
 
-from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer, candidate_names, normalize_name
+from rentczecher_engine.adapters.geocoding.gazetteer import (
+    Gazetteer,
+    candidate_names,
+    normalize_name,
+    open_gazetteer,
+)
 from rentczecher_engine.domain.location import ParsedPlace
 
 
@@ -201,6 +206,32 @@ class TestNameTiers:
 
     def test_municipality_scope_with_no_local_bearer_reports_nothing(self, gazetteer):
         assert gazetteer.name_tiers("U studánky", muni="Lenešice") == frozenset()
+
+
+class TestKindAndCode:
+    def test_a_resolved_place_carries_its_kind_and_ruian_code(self, gazetteer):
+        """The code is the one the gazetteer stores for that street."""
+        place = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha")))
+        conn = open_gazetteer()
+        stmt = "SELECT u.code FROM ulice u JOIN obce o ON o.code = u.obec_code WHERE u.name = 'Veletržní' AND o.name = 'Praha'"
+        assert (place.kind, place.code) == ("ulice", conn.execute(stmt).fetchone()["code"])
+        conn.close()
+
+
+class TestSchemaVersion:
+    def test_a_gazetteer_built_for_another_schema_is_refused(self, tmp_path):
+        """A stale file fails at open with a hint, not later with missing columns."""
+        import shutil
+        import sqlite3
+        from importlib.resources import files
+        stale = tmp_path / "gazetteer.sqlite"
+        shutil.copyfile(str(files("rentczecher_engine.adapters.geocoding") / "gazetteer.sqlite"), stale)
+        conn = sqlite3.connect(stale)
+        conn.execute("UPDATE meta SET value = '1' WHERE key = 'schema_version'")
+        conn.commit()
+        conn.close()
+        with pytest.raises(RuntimeError, match="rebuild it"):
+            Gazetteer(db_path=stale)
 
 
 class TestReadOnly:
