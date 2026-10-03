@@ -4,7 +4,6 @@ Run with: python3 -m pytest tests/test_edge_cases.py -v
 """
 import re
 
-import pytest
 from rentczecher_engine.adapters.scrapers.base import Listing
 
 
@@ -186,70 +185,6 @@ class TestScoringAllZeroWeights:
         listing = _make_listing()
         score = compute_score(listing, profile)
         assert isinstance(score, int)
-
-
-# ─── 8. DB mark_seen twice ───────────────────────────────────
-
-class TestDBMarkSeenTwice:
-    PROFILE = "test_edge_double_seen"
-
-    @pytest.fixture(autouse=True)
-    def _isolated_data_dir(self, tmp_path, monkeypatch):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        monkeypatch.setattr(db, "DATA_DIR", str(tmp_path))
-
-    def test_mark_seen_twice_no_duplicate(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-
-        listing = _make_listing(id="test:dup1", price=20000)
-        db.mark_seen(self.PROFILE, [listing])
-        db.mark_seen(self.PROFILE, [listing])
-
-        seen = db.get_seen(self.PROFILE)
-        # Should have exactly one entry, not two
-        matching = [k for k in seen if k == "test:dup1"]
-        assert len(matching) == 1, f"Expected 1 entry, found {len(matching)}"
-
-    def test_mark_seen_twice_updates_last_seen(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        import time
-
-        listing = _make_listing(id="test:dup2", price=20000)
-        db.mark_seen(self.PROFILE, [listing])
-
-        seen_before = db.get_seen(self.PROFILE)
-        first_last_seen = seen_before["test:dup2"]["last_seen"]
-
-        # Tiny delay to ensure timestamp differs
-        time.sleep(0.05)
-
-        db.mark_seen(self.PROFILE, [listing])
-        seen_after = db.get_seen(self.PROFILE)
-        second_last_seen = seen_after["test:dup2"]["last_seen"]
-
-        assert second_last_seen >= first_last_seen, (
-            f"last_seen should be updated: {first_last_seen} -> {second_last_seen}"
-        )
-
-    def test_mark_seen_twice_preserves_first_seen(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        import time
-
-        listing = _make_listing(id="test:dup3", price=20000)
-        db.mark_seen(self.PROFILE, [listing])
-
-        seen_before = db.get_seen(self.PROFILE)
-        first_seen_orig = seen_before["test:dup3"]["first_seen"]
-
-        time.sleep(0.05)
-        db.mark_seen(self.PROFILE, [listing])
-
-        seen_after = db.get_seen(self.PROFILE)
-        first_seen_after = seen_after["test:dup3"]["first_seen"]
-
-        assert first_seen_orig == first_seen_after, (
-            f"first_seen should be preserved: {first_seen_orig} != {first_seen_after}"
-        )
 
 
 # ─── 9. Large price formatting ───────────────────────────────

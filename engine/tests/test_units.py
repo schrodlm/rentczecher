@@ -2,7 +2,6 @@
 
 Run with: python3 -m pytest tests/test_units.py -v
 """
-import os
 from rentczecher_engine.adapters.scrapers.base import Listing
 
 
@@ -108,80 +107,3 @@ class TestScoring:
                 l = _make_listing(price=price, size_m2=size, disposition="2+kk")
                 score = compute_score(l, self.RENTAL_PROFILE)
                 assert 0 <= score <= 100, f"Score {score} out of range"
-
-
-# ─── DB ─────────────────────────────────────────────────────
-
-class TestDB:
-    PROFILE = "test_profile"
-
-    def setup_method(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        path = db._db_path(self.PROFILE)
-        if os.path.exists(path):
-            os.unlink(path)
-
-    def teardown_method(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        path = db._db_path(self.PROFILE)
-        if os.path.exists(path):
-            os.unlink(path)
-        lock = db._lock_path(self.PROFILE)
-        if os.path.exists(lock):
-            os.unlink(lock)
-
-    def test_empty_db_returns_empty(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        assert db.get_seen(self.PROFILE) == {}
-
-    def test_mark_seen_persists(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        l = _make_listing(id="test:1")
-        db.mark_seen(self.PROFILE, [l])
-        seen = db.get_seen(self.PROFILE)
-        assert "test:1" in seen
-        assert seen["test:1"]["price"] == 20000
-        assert seen["test:1"]["title"] == "Test"
-
-    def test_separate_profiles_isolated(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        l1 = _make_listing(id="test:1")
-        l2 = _make_listing(id="test:2")
-        db.mark_seen("profile_a", [l1])
-        db.mark_seen("profile_b", [l2])
-        assert "test:1" in db.get_seen("profile_a")
-        assert "test:1" not in db.get_seen("profile_b")
-        assert "test:2" in db.get_seen("profile_b")
-        assert "test:2" not in db.get_seen("profile_a")
-        # Cleanup
-        for p in ["profile_a", "profile_b"]:
-            path = db._db_path(p)
-            if os.path.exists(path):
-                os.unlink(path)
-
-    def test_price_drop_detection(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        l = _make_listing(id="test:1", price=25000)
-        db.mark_seen(self.PROFILE, [l])
-        # Same listing, lower price
-        l2 = _make_listing(id="test:1", price=22000)
-        drops = db.update_prices(self.PROFILE, [l2])
-        assert len(drops) == 1
-        assert drops[0][1] == 25000  # old price
-
-    def test_no_false_price_drop(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        l = _make_listing(id="test:1", price=20000)
-        db.mark_seen(self.PROFILE, [l])
-        l2 = _make_listing(id="test:1", price=20000)  # Same price
-        drops = db.update_prices(self.PROFILE, [l2])
-        assert len(drops) == 0
-
-    def test_corrupt_json_handled(self):
-        from rentczecher_engine.adapters import legacy_json_db as db
-        path = db._db_path(self.PROFILE)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            f.write("{broken json")
-        seen = db.get_seen(self.PROFILE)
-        assert seen == {}, "Corrupt JSON should return empty dict"

@@ -1,7 +1,7 @@
 """Test-suite-wide isolation from real config and data paths.
 
 Some modules resolve a config/data path into a module-level constant at
-import time (e.g. legacy_json_db.DATA_DIR), so a per-test env fixture would
+import time (e.g. cli.main.CONFIG_PATH), so a per-test env fixture would
 apply too late. Setting the environment here, at module scope, runs before
 pytest imports any test module.
 """
