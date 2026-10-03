@@ -27,14 +27,14 @@ is a foreign key. Overlaps, such as a část obce crossing two Prague obvody,
 are link tables computed from address points, since every address belongs to
 exactly one unit of each kind. It needs no network.
 
-**Search places.** A profile names its search place by kind and code. A
-generated table, `places.json`, maps each searchable place to each portal's
-own id for it. `engine/scripts/refresh_location_data.py` harvests it from the
-portals' taxonomies and verifies each id live, and it is never hand-edited.
-`overrides.json` beside it is the only hand-maintained part, for ids a portal
-does not publish. Each scraper resolves the place at construction and narrows
-the row to its own frozen view, keeping no other portal's data. An unknown
-place fails loudly.
+**Search places.** A profile names its search place by kind and code. Until
+profiles move into the database (#16), the config still names it by slug.
+The gazetteer's portal tables map each searchable place (every kraj, okres
+and Praha obvod) to each portal's own id for it. The gazetteer build harvests
+the ids from the portals, joins each to its official place by name and
+verifies the result. The tables are never hand-edited. Each scraper resolves
+the place at construction and narrows the row to its own frozen view,
+keeping no other portal's data. An unknown place fails loudly.
 
 **Listing places.** Each scraper parses its portal's location text into a
 `ParsedPlace`, with the names deliberately unlabeled, since a name's kind is
