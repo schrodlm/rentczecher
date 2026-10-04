@@ -18,7 +18,7 @@ from rentczecher_engine.adapters.scrapers.remax import _parse_location as _remax
 from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
 from rentczecher_engine.adapters.scrapers.sreality import _parse_location as _sreality_parse_location
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
-from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.domain.search import SearchSpec
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
@@ -30,10 +30,10 @@ def _refusing_client() -> httpx.Client:
 
     return build_client(transport=httpx.MockTransport(refuse))
 
-FLATS_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+FLATS_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                         min_price=0, max_price=25000)
 
-HOUSES_SPEC = SearchSpec(offer_type="sale", estate_type="house", place="domazlice",
+HOUSES_SPEC = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
                          min_price=0, max_price=5000000, min_land_m2=500)
 
 
@@ -225,7 +225,7 @@ class TestSrealityPlaceBasedParams:
     spec's typed estate/offer types instead of raw portal codes."""
 
     def test_district_place_supplies_location_and_categories(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", max_price=25000)
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
         scraper = SrealityScraper(spec, _refusing_client())
         params = scraper._build_params(offset=0)
         assert params["locality_district_id"] == 5007
@@ -234,7 +234,7 @@ class TestSrealityPlaceBasedParams:
         assert params["category_type_cb"] == 2
 
     def test_kraj_place_searches_by_region(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place="plzensky", max_price=5000000)
+        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43), max_price=5000000)
         scraper = SrealityScraper(spec, _refusing_client())
         params = scraper._build_params(offset=0)
         assert params["locality_region_id"] == 2
@@ -257,7 +257,7 @@ class TestSrealityContract:
             SrealityScraper(FLATS_SPEC, client).scrape()
 
 
-BEZ_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+BEZ_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                       min_price=0, max_price=25000)
 
 
@@ -396,7 +396,7 @@ class TestBezrealitkyPlaceBasedParams:
     region id the scraper refuses to run rather than search elsewhere."""
 
     def test_place_and_spec_drive_the_url(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice", max_price=5000000)
+        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
         scraper = BezrealitkyScraper(spec, _refusing_client())
         url = scraper._build_url()
         assert "regionOsmIds=R441864" in url
@@ -406,7 +406,7 @@ class TestBezrealitkyPlaceBasedParams:
 
 
     def test_place_based_title_labels_follow_the_spec(self, monkeypatch):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice", max_price=5000000)
+        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
         client, _ = _serve_bez_pages(monkeypatch, {
             1: _bez_page([_bez_advert(1, price=3000000)], total_count=1),
         })
@@ -414,7 +414,7 @@ class TestBezrealitkyPlaceBasedParams:
         assert listings[0].title.startswith("Prodej - ")
 
 
-REMAX_SPEC = SearchSpec(offer_type="sale", estate_type="house", place="domazlice",
+REMAX_SPEC = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
                         min_price=0, max_price=5000000)
 
 
@@ -581,7 +581,7 @@ class TestRemaxPlaceBasedUrl:
     unnecessary."""
 
     def test_district_place_builds_the_full_url(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                           min_price=17000, max_price=25000)
         scraper = RemaxScraper(spec, _refusing_client())
         url = scraper._build_url()
@@ -592,7 +592,7 @@ class TestRemaxPlaceBasedUrl:
         assert "price_from=17000" in url and "price_to=25000" in url
 
     def test_sale_house_maps_types_and_hledani(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice", max_price=5000000)
+        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
         url = RemaxScraper(spec, _refusing_client())._build_url()
         assert "hledani=1" in url
         assert "types%5B6%5D=on" in url
@@ -600,7 +600,7 @@ class TestRemaxPlaceBasedUrl:
         assert "price_from" not in url
 
     def test_kraj_place_checks_every_district_of_the_region(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place="plzensky")
+        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43))
         url = RemaxScraper(spec, _refusing_client())._build_url()
         assert url.count("regions%5B43%5D") == 7
         assert "regions%5B43%5D%5B3401%5D=on" in url
@@ -614,7 +614,7 @@ class TestEstateOfferTypeCoverage:
     @pytest.mark.parametrize("offer_type", ["rent", "sale"])
     def test_every_combination_builds_portal_params(self, estate_type, offer_type):
         spec = SearchSpec(offer_type=offer_type, estate_type=estate_type,
-                          place="praha-7", max_price=25000)
+                          place=PlaceRef("obvod", 78), max_price=25000)
         SrealityScraper(spec, _refusing_client())._build_params(offset=0)
         BezrealitkyScraper(spec, _refusing_client())._build_url()
         RemaxScraper(spec, _refusing_client())._build_url()
@@ -627,26 +627,26 @@ class TestNarrowPlaceViews:
     def test_sreality_view_carries_only_sreality_fields(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import resolve
         from rentczecher_engine.adapters.scrapers.sreality import SrealityPlace
-        view = SrealityPlace.from_params(resolve("praha-7"))
+        view = SrealityPlace.from_params(resolve(PlaceRef("obvod", 78)))
         assert view == SrealityPlace(district_id=5007, region_id=10)
 
     def test_bezrealitky_view_carries_only_its_region_id(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import resolve
         from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyPlace
-        view = BezrealitkyPlace.from_params(resolve("domazlice"))
+        view = BezrealitkyPlace.from_params(resolve(PlaceRef("okres", 3401)))
         assert view == BezrealitkyPlace(region_id="R441864")
 
     def test_remax_view_tells_the_single_region_truth(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import resolve
         from rentczecher_engine.adapters.scrapers.remax import RemaxPlace
-        assert RemaxPlace.from_params(resolve("domazlice")) == RemaxPlace(
+        assert RemaxPlace.from_params(resolve(PlaceRef("okres", 3401))) == RemaxPlace(
             region_id=43, district_ids=(3401,))
-        kraj = RemaxPlace.from_params(resolve("plzensky"))
+        kraj = RemaxPlace.from_params(resolve(PlaceRef("kraj", 43)))
         assert kraj.region_id == 43 and len(kraj.district_ids) == 7
 
     def test_scrapers_hold_no_full_place_params(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", max_price=25000)
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
             scraper = scraper_cls(spec, _refusing_client())
             assert not any(isinstance(value, PlaceParams)
@@ -657,9 +657,9 @@ class TestPlaceResolutionFailure:
     """A scraper built for an unresolvable place raises PlaceNotFoundError
     instead of silently searching nowhere."""
 
-    def test_unknown_slug_raises_at_construction(self):
+    def test_unknown_place_raises_at_construction(self):
         spec = SearchSpec(offer_type="rent", estate_type="flat",
-                          place="not-a-real-place", max_price=25000)
+                          place=PlaceRef("okres", 999999), max_price=25000)
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
             with pytest.raises(PlaceNotFoundError):
                 scraper_cls(spec, _refusing_client())

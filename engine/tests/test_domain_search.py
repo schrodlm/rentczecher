@@ -7,6 +7,7 @@ import dataclasses
 
 import pytest
 
+from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.search import SearchSpec
 
 
@@ -17,7 +18,7 @@ class TestFromSearchConfig:
         spec = SearchSpec.from_search_config({
             "offer_type": "rent",
             "estate_type": "flat",
-            "place": "praha-7",
+            "place": PlaceRef("obvod", 78),
             "min_price": 17000,
             "max_price": 25000,
             "min_size_m2": 30,
@@ -26,7 +27,7 @@ class TestFromSearchConfig:
         })
         assert spec.offer_type == "rent"
         assert spec.estate_type == "flat"
-        assert spec.place == "praha-7"
+        assert spec.place == PlaceRef("obvod", 78)
         assert spec.min_price == 17000
         assert spec.max_price == 25000
         assert spec.min_size_m2 == 30
@@ -35,7 +36,7 @@ class TestFromSearchConfig:
 
     def test_absent_bounds_mean_unbounded(self):
         spec = SearchSpec.from_search_config(
-            {"offer_type": "sale", "estate_type": "house", "place": "domazlice"})
+            {"offer_type": "sale", "estate_type": "house", "place": PlaceRef("okres", 3401)})
         assert spec.min_price == 0
         assert spec.max_price == 0
         assert spec.min_size_m2 == 0
@@ -44,9 +45,9 @@ class TestFromSearchConfig:
 
     def test_offer_estate_type_and_place_are_required(self):
         with pytest.raises(KeyError):
-            SearchSpec.from_search_config({"estate_type": "flat", "place": "praha-7"})
+            SearchSpec.from_search_config({"estate_type": "flat", "place": PlaceRef("obvod", 78)})
         with pytest.raises(KeyError):
-            SearchSpec.from_search_config({"offer_type": "rent", "place": "praha-7"})
+            SearchSpec.from_search_config({"offer_type": "rent", "place": PlaceRef("obvod", 78)})
         with pytest.raises(KeyError):
             SearchSpec.from_search_config({"offer_type": "rent", "estate_type": "flat"})
 
@@ -55,13 +56,13 @@ class TestImmutability:
     """The spec is frozen: search intent cannot drift mid-run."""
 
     def test_fields_cannot_be_reassigned(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
         with pytest.raises(dataclasses.FrozenInstanceError):
             spec.max_price = 1  # type: ignore[misc]
 
     def test_dispositions_are_a_tuple_even_from_a_list(self):
         spec = SearchSpec.from_search_config({
-            "offer_type": "rent", "estate_type": "flat", "place": "praha-7",
+            "offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78),
             "dispositions": ["2+kk"],
         })
         assert isinstance(spec.dispositions, tuple)

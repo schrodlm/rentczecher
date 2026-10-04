@@ -4,10 +4,11 @@ Run: python3 -m pytest tests/test_filters.py -v
 """
 
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.search import SearchSpec
 from rentczecher_engine.services.filters import apply_filters
 
-SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
+SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -25,7 +26,7 @@ def test_no_constraints_passes_everything_through():
 
 
 def test_disposition_filter_excludes_non_matching_and_keeps_unknown():
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                       dispositions=("2+kk",))
     matching = _make_listing(id="match", disposition_raw_text="2+kk")
     other = _make_listing(id="other", disposition_raw_text="3+1")
@@ -37,7 +38,7 @@ def test_disposition_filter_excludes_non_matching_and_keeps_unknown():
 
 
 def test_disposition_filter_is_case_insensitive():
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                       dispositions=("2+KK",))
     listing = _make_listing(disposition_raw_text="2+kk")
     assert apply_filters([listing], spec) == [listing]
@@ -45,7 +46,7 @@ def test_disposition_filter_is_case_insensitive():
 
 def test_disposition_filter_accepts_a_studio_for_1kk():
     """The criterion compares layouts, so a garsoniéra is a 1+kk."""
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                       dispositions=("1+kk",))
     studio = _make_listing(disposition_raw_text="garsoniéra")
     assert apply_filters([studio], spec) == [studio]
@@ -54,14 +55,14 @@ def test_disposition_filter_accepts_a_studio_for_1kk():
 def test_disposition_filter_keeps_an_unparseable_label():
     """A label that names no layout leaves the disposition unknown, and an
     unknown disposition does not fail the criterion."""
-    spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice",
+    spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
                       dispositions=("4+1",))
     house = _make_listing(disposition_raw_text="Rodinný")
     assert apply_filters([house], spec) == [house]
 
 
 def test_min_size_excludes_smaller_and_keeps_unknown():
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", min_size_m2=40)
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_size_m2=40)
     big_enough = _make_listing(id="big", size_m2=50)
     too_small = _make_listing(id="small", size_m2=30)
     unknown = _make_listing(id="unknown", size_m2=None)
@@ -72,7 +73,7 @@ def test_min_size_excludes_smaller_and_keeps_unknown():
 
 
 def test_min_land_excludes_smaller_and_keeps_unknown():
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", min_land_m2=200)
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_land_m2=200)
     big_enough = _make_listing(id="big", land_m2=300)
     too_small = _make_listing(id="small", land_m2=100)
     unknown = _make_listing(id="unknown", land_m2=None)
@@ -83,7 +84,7 @@ def test_min_land_excludes_smaller_and_keeps_unknown():
 
 
 def test_filters_combine():
-    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                       dispositions=("2+kk",), min_size_m2=40)
     keeper = _make_listing(id="keeper", disposition_raw_text="2+kk", size_m2=50)
     wrong_disposition = _make_listing(id="wrong-disp", disposition_raw_text="3+1", size_m2=50)

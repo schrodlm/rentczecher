@@ -7,10 +7,11 @@ import pytest
 
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.search import SearchSpec
 from rentczecher_engine.services.scrape import scrape_all
 
-SPEC = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7")
+SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
 
 
 def _make_listing(**kwargs):
@@ -60,7 +61,7 @@ class CrashingScraper:
 
 class UnresolvablePlaceScraper:
     def __init__(self, spec, client):
-        raise PlaceNotFoundError(spec.place, ())
+        raise PlaceNotFoundError("obvod 78")
 
 
 def test_a_working_scraper_is_recorded_ok_with_its_listing_count():

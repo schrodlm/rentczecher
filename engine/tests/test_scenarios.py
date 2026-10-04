@@ -101,7 +101,7 @@ def test_an_unknown_listing_field_fails_loudly(tmp_path):
     scenario = Scenario.from_text("typo", """
 profile:
   name: Typo
-  search: {offer_type: rent, estate_type: flat, place: praha-7}
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7}
 scans:
   - at: -1h
     listings:

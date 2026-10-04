@@ -11,10 +11,16 @@ import httpx
 import pytest
 
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher_engine.domain.location import PlaceRef
 from scripts.gazetteer.portals.bezrealitky import heading_names
 from scripts.gazetteer.portals.portal import BROWSER_HEADERS, REQUEST_SPACING_S
 
-SAMPLE = ["Praha 1", "Praha 7", "Domažlice", "Olomouc"]
+SAMPLE = [
+    PlaceRef("obvod", 19),
+    PlaceRef("obvod", 78),
+    PlaceRef("okres", 3401),
+    PlaceRef("okres", 3805),
+]
 
 
 @pytest.fixture(scope="module")
@@ -25,7 +31,7 @@ def client():
 
 @pytest.fixture(scope="module")
 def sample() -> list[PlaceParams]:
-    return [resolve(name) for name in SAMPLE]
+    return [resolve(place) for place in SAMPLE]
 
 
 def test_sreality_district_ids_return_listings(sample, client):
