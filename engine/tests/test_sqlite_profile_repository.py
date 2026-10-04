@@ -31,25 +31,6 @@ def _repo(tmp_path, now=None):
     return SqliteProfileRepository(conn, now=now or (lambda: BASE)), conn
 
 
-class TestEnsure:
-    def test_creates_the_row_once(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        repo.ensure("praha7-byty", "Praha 7")
-        repo.ensure("praha7-byty", "Praha 7")
-        rows = conn.execute("SELECT id, name, paused_at, created_at FROM profiles").fetchall()
-        assert len(rows) == 1
-        assert rows[0]["id"] == "praha7-byty"
-        assert rows[0]["paused_at"] is None
-        assert rows[0]["created_at"] == BASE.isoformat()
-
-    def test_existing_row_is_left_untouched(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        repo.ensure("praha7-byty", "Original")
-        repo.ensure("praha7-byty", "Renamed")
-        row = conn.execute("SELECT name FROM profiles WHERE id = 'praha7-byty'").fetchone()
-        assert row["name"] == "Original"
-
-
 class TestAdd:
     def test_a_profile_reads_back_as_it_was_added(self, tmp_path):
         repo, _ = _repo(tmp_path)

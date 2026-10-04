@@ -18,17 +18,6 @@ class SqliteProfileRepository:
         self._conn.row_factory = sqlite3.Row
         self._now = now
 
-    def ensure(self, profile_id: str, name: str) -> None:
-        stmt = "SELECT id FROM profiles WHERE id = ?"
-        existing = self._conn.execute(stmt, (profile_id,)).fetchone()
-        if existing is not None:
-            return
-        insert = """
-            INSERT INTO profiles (id, name, created_at)
-            VALUES (?, ?, ?)
-        """
-        self._conn.execute(insert, (profile_id, name, self._now().isoformat()))
-
     def add(self, name: str, portals: tuple[str, ...], criteria: Criteria, preferences: Preferences) -> Profile:
         """Stores a new, unpaused profile and returns it as it reads back:
         with its generated id, and its portals, which have no order, sorted."""

@@ -1,7 +1,7 @@
-"""The long-lived facts every part of the server needs: the profiles, the
-database path, and the scraper registry. Everything stateful, such as a
-connection or an HTTP client, is deliberately not held here but opened
-fresh on demand by the factory methods.
+"""The long-lived facts every part of the server needs: the database path
+and the scraper registry. Everything stateful, such as a connection or an
+HTTP client, is deliberately not held here but opened fresh on demand by
+the factory methods. Profiles are read from the database on every request.
 
 A fresh sqlite3.Connection, Gazetteer, and httpx.Client are opened per run
 rather than shared, because the run executes on the worker thread and
@@ -19,6 +19,7 @@ from fastapi import HTTPException, Request
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.client import build_client
 from rentczecher_engine.domain.profile import Criteria, Profile
@@ -28,16 +29,17 @@ from rentczecher_engine.services.scrape import Scraper
 
 @dataclass(frozen=True, slots=True)
 class ApiDeps:
-    profiles: tuple[Profile, ...]
     db_path: Path
     scrapers: dict[str, Callable[[Criteria, object], Scraper]]
     gazetteer_db_path: Path | None = None
 
+    def list_profiles(self) -> list[Profile]:
+        with closing(connection.connect(self.db_path)) as conn:
+            return SqliteProfileRepository(conn).list_profiles()
+
     def profile(self, profile_id: str) -> Profile | None:
-        for profile in self.profiles:
-            if profile.id == profile_id:
-                return profile
-        return None
+        with closing(connection.connect(self.db_path)) as conn:
+            return SqliteProfileRepository(conn).get(profile_id)
 
     @contextmanager
     def open_run_store(self) -> Iterator[SqliteRunStore]:

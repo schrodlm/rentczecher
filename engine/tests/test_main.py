@@ -6,15 +6,17 @@ Run: python3 -m pytest tests/test_main.py -v
 import io
 import sys
 import time
+from contextlib import closing
 
 import pytest
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.cli import main as main_module
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import profile
+from tests.profiles import profile, stored_profile
 
 
 class TestOrphanedRepoDataWarning:
@@ -90,23 +92,15 @@ class TestValidateConfig:
 
 
 class TestEmptyScraperList:
-    """A profile whose scrapers list resolves to zero enabled scrapers is
-    valid config, but must not run silently."""
+    """A profile whose scrapers list resolves to zero enabled scrapers must
+    not run silently."""
 
     def test_warns_and_skips_the_profile(self, tmp_path, monkeypatch, caplog):
-        import yaml
-
-        config = {
-            "profiles": {"empty": {
-                "name": "Empty",
-                "search": {"offer_type": "rent", "estate_type": "flat", "place": "obvod Praha 7"},
-                "scrapers": [],
-            }},
-        }
-        config_path = tmp_path / "config.yaml"
-        config_path.write_text(yaml.safe_dump(config))
-        monkeypatch.setattr(main_module, "CONFIG_PATH", str(config_path))
-        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        db_path = tmp_path / "t.db"
+        with closing(connection.connect(db_path)) as conn:
+            migrate.apply_pending(conn)
+            stored_profile(conn, name="Empty", portals=())
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: db_path)
         monkeypatch.setattr(main_module, "PID_PATH", str(tmp_path / "watchdog.pid"))
 
         with caplog.at_level("WARNING", logger="rentczecher"):
@@ -161,7 +155,6 @@ class TestServe:
         """With port 0, serve binds a free port and prints it as PORT=<n>
         before serving on that same socket."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         served = []
         monkeypatch.setattr(main_module.uvicorn.Server, "run",
@@ -179,7 +172,6 @@ class TestServe:
         """The callback serve hands to the app sets the running server's
         exit flag, the same flag uvicorn's own Ctrl-C handler sets."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         created = {}
         real_create_app = main_module.create_app
@@ -208,7 +200,6 @@ class TestServe:
         """With exit_with_parent, stdin reaching end of input makes the
         running server exit, as when the spawner dies."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         monkeypatch.setattr(main_module.sys, "stdin", io.TextIOWrapper(io.BytesIO(b"")))
         exited = []

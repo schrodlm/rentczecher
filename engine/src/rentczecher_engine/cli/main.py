@@ -18,11 +18,11 @@ from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers import scraper_registry
 from rentczecher_engine.adapters.scrapers.client import build_client
-from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
-from rentczecher_engine.domain.profile import Profile
+from rentczecher_engine.domain.errors import ConfigError
 from rentczecher_engine.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 
 logging.basicConfig(
@@ -34,17 +34,6 @@ log = logging.getLogger("rentczecher")
 
 CONFIG_PATH = str(paths.config_path())
 PID_PATH = str(paths.pid_lock_path())
-
-
-def _load_config_or_exit() -> list[Profile]:
-    try:
-        return load_config(Path(CONFIG_PATH))
-    except ConfigNotFoundError as error:
-        log.error("%s - copy config.example.yaml there and fill in your settings.", error)
-        sys.exit(1)
-    except ConfigError as error:
-        log.error("Invalid config:\n%s", error)
-        sys.exit(1)
 
 
 def validate_config(path: Path | None = None) -> int:
@@ -83,11 +72,10 @@ def serve(port: int, allowed_origins: list[str], exit_with_parent: bool = False)
         log.error("RENTCZECHER_API_TOKEN must be set to run the API server")
         return 1
 
-    profiles = _load_config_or_exit()
     db_file = paths.db_path()
     migrate.apply_pending_at(db_file)
 
-    api_deps = ApiDeps(profiles=tuple(profiles), db_path=db_file, scrapers=scraper_registry())
+    api_deps = ApiDeps(db_path=db_file, scrapers=scraper_registry())
     # Called from a shutdown request, long after the server below exists.
     def request_shutdown() -> None:
         server.should_exit = True
@@ -147,7 +135,7 @@ def _log_run_result(profile_id: str, result: ProfileRunResult) -> None:
             log.info("  %s: %d listing(s)", name, health.listing_count)
 
     if result.status == "failed":
-        log.error("Profile %s failed: %s", profile_id, result.error or "check search.place")
+        log.error("Profile %s failed: %s", profile_id, result.error or "check its search place")
         return
 
     counts = result.counts
@@ -169,9 +157,8 @@ def _warn_if_repo_data_orphaned():
 
 
 def run(dry_run: bool = False, profile_filter: str | None = None):
-    log.info("Using config: %s, data: %s", CONFIG_PATH, paths.data_dir())
+    log.info("Using data: %s", paths.data_dir())
     _warn_if_repo_data_orphaned()
-    profiles = _load_config_or_exit()
 
     db_file = paths.db_path()
     db_file.parent.mkdir(parents=True, exist_ok=True)
@@ -183,9 +170,10 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
     try:
         migrate.apply_pending(conn)
         store = SqliteRunStore(conn)
+        profiles = SqliteProfileRepository(conn).list_profiles()
 
         if not profiles:
-            log.error("No profiles defined in config.yaml")
+            log.error("No profiles in the database at %s", db_file)
             return
 
         gazetteer = Gazetteer()

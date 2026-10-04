@@ -42,7 +42,7 @@ class RunStore(Protocol):
     def prune(self, profile_id: str) -> None:
         ...
 
-    def persist_outcome(self, profile_id: str, profile_name: str, outcome: DedupOutcome,
+    def persist_outcome(self, profile_id: str, outcome: DedupOutcome,
                         located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
         ...
 
@@ -125,7 +125,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
 
     if not dry_run:
         deps.store.persist_outcome(
-            profile_id, profile.name, outcome, located_by_id, current_ids)
+            profile_id, outcome, located_by_id, current_ids)
         deps.store.prune(profile_id)
 
     finished_at = deps.clock()

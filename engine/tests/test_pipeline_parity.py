@@ -18,35 +18,37 @@ from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
+from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, layouts, preferences, profile
+from tests.profiles import criteria, layouts, preferences, stored_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
 
 GAZETTEER = Gazetteer()
 
-PROFILE_ID = "parity"
-PROFILE = profile(
-    id=PROFILE_ID,
-    name="Parity profile",
-    portals=("sreality", "bezrealitky", "remax"),
-    criteria=criteria(
-        max_price=25000,
-        max_rooms=2,
-        min_size_m2=30,
-    ),
-    preferences=preferences(
-        price_per_m2_weight=40,
-        disposition_weight=30,
-        preferred_dispositions=layouts("2+kk", "1+1"),
-        size_weight=15,
-        ideal_size_m2=55,
-        place_weight=15,
-        preferred_places=(PlaceRef("cast_obce", 490067), PlaceRef("cast_obce", 490024)),
-    ),
-)
+
+def _stored_parity_profile(conn) -> Profile:
+    return stored_profile(
+        conn,
+        name="Parity profile",
+        portals=("sreality", "bezrealitky", "remax"),
+        criteria=criteria(
+            max_price=25000,
+            max_rooms=2,
+            min_size_m2=30,
+        ),
+        preferences=preferences(
+            price_per_m2_weight=40,
+            disposition_weight=30,
+            preferred_dispositions=layouts("2+kk", "1+1"),
+            size_weight=15,
+            ideal_size_m2=55,
+            place_weight=15,
+            preferred_places=(PlaceRef("cast_obce", 490067), PlaceRef("cast_obce", 490024)),
+        ),
+    )
 
 
 def _build_fixture_listing(record):
@@ -73,13 +75,10 @@ def _fake_scrapers(listing_data):
     return scrapers
 
 
-def _seed_seen_state(conn):
+def _seed_seen_state(conn, profile_id):
     """Previously-seen state: one price-drop candidate and one listing at the
     disappearance threshold."""
     recent = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-    conn.execute(
-        "INSERT INTO profiles (id, name, created_at) VALUES (?, ?, ?)",
-        (PROFILE_ID, "Parity profile", recent))
     seeded = [
         # Already seen at a higher price -> must surface as a price drop.
         ("prop-1002", "sreality:1002", "Pronájem bytu 1+1 40 m²",
@@ -100,7 +99,7 @@ def _seed_seen_state(conn):
         conn.execute(
             "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, "
             "last_seen_at, miss_count) VALUES (?, ?, ?, ?, ?)",
-            (PROFILE_ID, listing_id, recent, recent, misses))
+            (profile_id, listing_id, recent, recent, misses))
         conn.execute(
             "INSERT INTO price_observations (listing_id, price, observed_at) VALUES (?, ?, ?)",
             (listing_id, price, recent))
@@ -172,7 +171,8 @@ def _deps(store, scrapers):
 def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
-    _seed_seen_state(conn)
+    profile = _stored_parity_profile(conn)
+    _seed_seen_state(conn, profile.id)
 
     captured = {}
     real_pending_disappeared = store.pending_disappeared
@@ -189,7 +189,7 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
     monkeypatch.setattr(pipeline, "classify", spying_classify)
     deps = _deps(store, _fake_scrapers(listing_data))
-    run_profile(PROFILE, deps, dry_run=False)
+    run_profile(profile, deps, dry_run=False)
 
     diff = captured["diff"]
     snapshot = {
@@ -211,11 +211,12 @@ def test_run_profile_persists_only_through_the_store(run_store):
     no files of its own."""
     from rentczecher_engine.adapters.config import paths
 
-    store, _conn = run_store
+    store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
+    profile = _stored_parity_profile(conn)
 
     deps = _deps(store, _fake_scrapers(listing_data))
-    run_profile(PROFILE, deps, dry_run=False)
+    run_profile(profile, deps, dry_run=False)
 
-    assert store.seen_ids(PROFILE_ID)
+    assert store.seen_ids(profile.id)
     assert not list(paths.data_dir().glob("seen-*.json"))

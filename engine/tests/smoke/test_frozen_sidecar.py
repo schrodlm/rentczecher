@@ -5,7 +5,6 @@ import json
 import os
 import queue
 import secrets
-import shutil
 import subprocess
 import sys
 import threading
@@ -13,11 +12,14 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterator
+from contextlib import closing
 from pathlib import Path
 from typing import NoReturn
 
 import pytest
 
+from rentczecher_engine.adapters.repositories.sqlite import connection
+from tests.profiles import stored_profile
 
 ENGINE = Path(__file__).resolve().parent.parent.parent
 FROZEN = ENGINE.parent / "shell" / "sidecar" / "rentczecher-sidecar"
@@ -33,18 +35,16 @@ EXIT_TIMEOUT_S = 10.0
 
 
 class RunningSidecar:
-    """The frozen engine with a fresh token, a throwaway data directory and
-    the example config, its stdin held open like the shell's."""
+    """The frozen engine with a fresh token and an empty throwaway data
+    directory, its stdin held open like the shell's."""
 
     def __init__(self, home: Path) -> None:
-        config = home / "config.yaml"
-        shutil.copy(ENGINE / "config.example.yaml", config)
+        self.db_path = home / "data" / "rentczecher.db"
         self.token = secrets.token_hex(32)
         env = {
             **os.environ,
             "RENTCZECHER_API_TOKEN": self.token,
-            "RENTCZECHER_CONFIG": str(config),
-            "RENTCZECHER_DATA_DIR": str(home / "data"),
+            "RENTCZECHER_DATA_DIR": str(self.db_path.parent),
         }
         self.process = subprocess.Popen(
             [str(EXECUTABLE), "serve", "--port", "0", "--exit-with-parent"],
@@ -127,12 +127,15 @@ def test_the_sidecar_answers_health_with_its_token(sidecar):
     assert sidecar.wait_for_health() == []
 
 
-def test_the_sidecar_serves_the_configured_profiles(sidecar):
-    """The frozen engine reads its config and serves it, which needs the
-    config schema, the migrations and the location table inside the freeze."""
+def test_the_sidecar_serves_the_stored_profiles(sidecar):
+    """The frozen engine builds its database from an empty data directory
+    and serves the profiles stored in it, which needs the migrations inside
+    the freeze."""
     sidecar.wait_for_health()
+    with closing(connection.connect(sidecar.db_path)) as conn:
+        stored_profile(conn, name="Praha 7")
     profiles = sidecar.get("/v1/profiles")
-    assert isinstance(profiles, list) and len(profiles) > 0
+    assert isinstance(profiles, list) and len(profiles) == 1
 
 
 def test_the_sidecar_exits_when_its_stdin_closes(sidecar):
