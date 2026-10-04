@@ -161,7 +161,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     log.info("DRY RUN - no DB updates")
 
                 if not profile.portals:
-                    log.warning("Profile %s has no enabled scrapers", profile.id)
+                    log.warning("Profile %s scans no portals, skipping", profile.id)
                     continue
 
                 scrapers = scraper_registry(profile.portals)
