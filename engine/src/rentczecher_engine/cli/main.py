@@ -7,14 +7,12 @@ import os
 import sys
 import threading
 from collections.abc import Callable
-from pathlib import Path
 
 import uvicorn
 
 from rentczecher_engine.adapters.api.app import create_app
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.config import paths
-from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
@@ -22,7 +20,6 @@ from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfi
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers import scraper_registry
 from rentczecher_engine.adapters.scrapers.client import build_client
-from rentczecher_engine.domain.errors import ConfigError
 from rentczecher_engine.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 
 logging.basicConfig(
@@ -32,20 +29,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("rentczecher")
 
-CONFIG_PATH = str(paths.config_path())
 PID_PATH = str(paths.pid_lock_path())
-
-
-def validate_config(path: Path | None = None) -> int:
-    config_file = path if path is not None else Path(CONFIG_PATH)
-    try:
-        profiles = load_config(config_file)
-    except ConfigError as error:
-        print(error, file=sys.stderr)
-        return 1
-    enabled = sum(len(profile.portals) for profile in profiles)
-    print(f"OK - {len(profiles)} profile(s), {enabled} scraper(s) enabled")
-    return 0
 
 
 def migrate_db() -> int:
@@ -144,21 +128,8 @@ def _log_run_result(profile_id: str, result: ProfileRunResult) -> None:
              counts.price_drops, counts.disappeared)
 
 
-def _warn_if_repo_data_orphaned():
-    repo_data = paths.repo_root() / "data"
-    if repo_data == paths.data_dir() or os.environ.get("RENTCZECHER_DATA_DIR"):
-        return
-    if any(repo_data.glob("seen-*.json")):
-        log.warning(
-            "Repo-local seen-*.json files at %s are not in use. "
-            "Runs now store data in %s.",
-            repo_data, paths.data_dir(),
-        )
-
-
 def run(dry_run: bool = False, profile_filter: str | None = None):
     log.info("Using data: %s", paths.data_dir())
-    _warn_if_repo_data_orphaned()
 
     db_file = paths.db_path()
     db_file.parent.mkdir(parents=True, exist_ok=True)
@@ -219,11 +190,6 @@ def main():
     parser.add_argument("--profile", type=str, default=None,
                         help="Run only a specific profile (by ID)")
     subparsers = parser.add_subparsers(dest="command")
-    config_parser = subparsers.add_parser("config", help="Configuration utilities")
-    config_subparsers = config_parser.add_subparsers(dest="config_command")
-    validate_parser = config_subparsers.add_parser("validate", help="Validate the config file")
-    validate_parser.add_argument("--path", type=Path, default=None,
-                                 help="Config file to validate (default: the resolved config)")
     db_parser = subparsers.add_parser("db", help="Database utilities")
     db_subparsers = db_parser.add_subparsers(dest="db_command")
     db_subparsers.add_parser("migrate", help="Create or upgrade the database schema")
@@ -236,10 +202,6 @@ def main():
                               help="Shut down when stdin closes, the spawner holds it open")
     args = parser.parse_args()
 
-    if args.command == "config":
-        if args.config_command == "validate":
-            sys.exit(validate_config(args.path))
-        config_parser.error("expected a subcommand: validate")
     if args.command == "db":
         if args.db_command == "migrate":
             sys.exit(migrate_db())

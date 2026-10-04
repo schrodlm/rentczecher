@@ -1,8 +1,8 @@
-"""Test-suite-wide isolation from real config and data paths.
+"""Test-suite-wide isolation from the real data directory.
 
-Some modules resolve a config/data path into a module-level constant at
-import time (e.g. cli.main.CONFIG_PATH), so a per-test env fixture would
-apply too late. Setting the environment here, at module scope, runs before
+Some modules resolve a data path into a module-level constant at import
+time (e.g. cli.main.PID_PATH), so a per-test env fixture would apply too
+late. Setting the environment here, at module scope, runs before
 pytest imports any test module.
 """
 
@@ -10,10 +10,9 @@ import os
 import tempfile
 
 _root = tempfile.mkdtemp(prefix="rentczecher-test-")
-os.environ["XDG_CONFIG_HOME"] = os.path.join(_root, "config")
-os.environ["XDG_DATA_HOME"] = os.path.join(_root, "data")
-os.environ.pop("RENTCZECHER_CONFIG", None)
-os.environ.pop("RENTCZECHER_DATA_DIR", None)
+# A repo-local database would win over the XDG home, so the override is set
+# outright rather than left to resolution.
+os.environ["RENTCZECHER_DATA_DIR"] = os.path.join(_root, "data")
 
 # Imported after the environment redirect above on purpose: repository
 # modules resolve nothing at import time, but the ordering keeps every

@@ -1,10 +1,6 @@
 __pycache__/
 *.pyc
-data/seen*.json
-data/seen*.json.lock
-data/watchdog.pid
-data/cron.log
-config.yaml
+/engine/data/
 venv/
 .env
 .venv/
