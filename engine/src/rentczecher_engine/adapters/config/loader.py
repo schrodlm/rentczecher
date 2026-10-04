@@ -26,6 +26,15 @@ from rentczecher_engine.domain.location import PlaceKind, PlaceRef
 from rentczecher_engine.domain.profile import Criteria, Preferences, Profile
 
 _SEARCHABLE_KINDS: dict[str, PlaceKind] = {"kraj": "kraj", "okres": "okres", "obvod": "obvod"}
+_PLACE_KINDS: dict[str, PlaceKind] = {
+    "kraj": "kraj",
+    "okres": "okres",
+    "obec": "obec",
+    "obvod": "obvod",
+    "mestska_cast": "mestska_cast",
+    "cast_obce": "cast_obce",
+    "ulice": "ulice",
+}
 
 
 def load_config(path: Path) -> list[Profile]:
@@ -55,7 +64,7 @@ def _profile(gazetteer: Gazetteer, profile_id: str, written: ProfileConfig, wher
         enabled=written.enabled,
         portals=tuple(written.scrapers),
         criteria=_criteria(written.search, place),
-        preferences=_preferences(written.scoring),
+        preferences=_preferences(gazetteer, written.scoring, where),
     )
 
 
@@ -73,6 +82,19 @@ def _search_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:
     return place
 
 
+def _preferred_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:
+    """A preferred place written as its kind and name, like 'cast_obce Bubeneč'."""
+    written_kind, _, name = text.partition(" ")
+    kind = _PLACE_KINDS.get(written_kind.casefold())
+    if kind is None:
+        raise ConfigError(f"{where}.scoring.preferred_places: start {text!r} with its kind, "
+                          f"one of {', '.join(_PLACE_KINDS)}")
+    try:
+        return gazetteer.place_named(kind, name)
+    except (PlaceNotFoundError, AmbiguousPlaceError) as error:
+        raise ConfigError(f"{where}.scoring.preferred_places: {error}") from error
+
+
 def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
     return Criteria(
         offer_type=search.offer_type,
@@ -88,15 +110,15 @@ def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
     )
 
 
-def _preferences(scoring: ScoringConfig) -> Preferences:
+def _preferences(gazetteer: Gazetteer, scoring: ScoringConfig, where: str) -> Preferences:
     return Preferences(
         price_per_m2_weight=scoring.price_per_m2_weight,
         disposition_weight=scoring.disposition_weight,
         preferred_dispositions=tuple(_disposition(code) for code in scoring.preferred_dispositions),
         size_weight=scoring.size_weight,
         ideal_size_m2=scoring.ideal_size_m2,
-        neighborhood_weight=scoring.neighborhood_weight,
-        preferred_neighborhoods=tuple(scoring.preferred_neighborhoods),
+        place_weight=scoring.place_weight,
+        preferred_places=tuple(_preferred_place(gazetteer, text, where) for text in scoring.preferred_places),
         land_weight=scoring.land_weight,
         ideal_land_m2=scoring.ideal_land_m2,
         price_weight=scoring.price_weight,

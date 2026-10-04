@@ -31,8 +31,8 @@ class Preferences:
     preferred_dispositions: tuple[Disposition, ...]
     size_weight: float
     ideal_size_m2: int
-    neighborhood_weight: float
-    preferred_neighborhoods: tuple[str, ...]
+    place_weight: float
+    preferred_places: tuple[PlaceRef, ...]
     land_weight: float
     ideal_land_m2: int
     price_weight: float

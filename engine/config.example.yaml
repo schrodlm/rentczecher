@@ -33,11 +33,10 @@ profiles:
         - "1+1"
       size_weight: 15
       ideal_size_m2: 55
-      neighborhood_weight: 15
-      preferred_neighborhoods:
-        - "Holesovice"
-        - "Letna"
-        - "Bubenec"
+      place_weight: 15
+      preferred_places:         # any place by its kind and name, best first
+        - cast_obce Bubeneč
+        - obvod Praha 7
 
   # Profile 2: Domazlice houses/cottages for sale
   domazlice-domy:
@@ -61,8 +60,8 @@ profiles:
       preferred_dispositions: []
       size_weight: 30
       ideal_size_m2: 150
-      neighborhood_weight: 0
-      preferred_neighborhoods: []
+      place_weight: 0
+      preferred_places: []
       land_weight: 40             # Bigger land = better
       ideal_land_m2: 2000
       price_weight: 30            # Lower total price = better

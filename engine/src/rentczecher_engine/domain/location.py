@@ -59,6 +59,27 @@ class Location:
     cislo_popisne: str | None
     cislo_orientacni: str | None
 
+    def lies_in(self, place: PlaceRef) -> bool:
+        """Whether this location is the place or lies inside it."""
+        unit = self._unit(place.kind)
+        return unit is not None and unit.code == place.code
+
+    def _unit(self, kind: PlaceKind) -> Place | None:
+        """The unit of the given kind, or None when the kind is left open."""
+        if kind == "kraj":
+            return self.kraj
+        if kind == "okres":
+            return self.okres
+        if kind == "obec":
+            return self.obec
+        if kind == "obvod":
+            return self.obvod
+        if kind == "mestska_cast":
+            return self.mestska_cast
+        if kind == "cast_obce":
+            return self.cast_obce
+        return self.ulice
+
     def most_specific(self) -> tuple[str, Place]:
         """The finest unit named, with its kind."""
         if self.ulice is not None:
