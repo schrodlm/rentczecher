@@ -60,6 +60,10 @@ class TestParsedLayout:
     def test_second_number_other_than_one_names_no_kitchen(self, raw):
         assert parse_disposition(raw) is None
 
+    def test_rooms_run_from_one_to_nine(self):
+        assert parse_disposition("9+1") == Disposition(rooms=9, kitchen="separate")
+        assert parse_disposition("0+kk") is None
+
 
 class TestDisposition:
     def test_half_filled_disposition_is_refused(self):
