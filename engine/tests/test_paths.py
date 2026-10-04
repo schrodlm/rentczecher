@@ -17,11 +17,24 @@ def _isolate(monkeypatch, tmp_path):
     return xdg_data
 
 
+def _seed_repo_database(tmp_path):
+    repo_data = tmp_path / "repo" / "data"
+    repo_data.mkdir(parents=True)
+    (repo_data / "rentczecher.db").touch()
+    return repo_data
+
+
 class TestEnvOverride:
     def test_data_override_wins(self, monkeypatch, tmp_path):
         _isolate(monkeypatch, tmp_path)
         monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path / "explicit" / "data"))
         assert paths.data_dir() == tmp_path / "explicit" / "data"
+
+    def test_data_override_wins_over_repo_data(self, monkeypatch, tmp_path):
+        _isolate(monkeypatch, tmp_path)
+        _seed_repo_database(tmp_path)
+        monkeypatch.setenv("RENTCZECHER_DATA_DIR", str(tmp_path / "explicit"))
+        assert paths.data_dir() == tmp_path / "explicit"
 
     def test_empty_string_env_vars_are_ignored(self, monkeypatch, tmp_path):
         xdg_data = _isolate(monkeypatch, tmp_path)
@@ -38,6 +51,21 @@ class TestEnvOverride:
 class TestXdgTier:
     def test_fresh_machine_defaults_to_xdg(self, monkeypatch, tmp_path):
         xdg_data = _isolate(monkeypatch, tmp_path)
+        assert paths.data_dir() == xdg_data / "rentczecher"
+
+
+class TestRepoLocalTier:
+    """The repository's data/ is used once it holds a database, so a leftover
+    or empty folder never takes over from the XDG data home."""
+
+    def test_repo_data_holding_a_database_is_used(self, monkeypatch, tmp_path):
+        _isolate(monkeypatch, tmp_path)
+        repo_data = _seed_repo_database(tmp_path)
+        assert paths.data_dir() == repo_data
+
+    def test_repo_data_without_a_database_falls_through_to_xdg(self, monkeypatch, tmp_path):
+        xdg_data = _isolate(monkeypatch, tmp_path)
+        (tmp_path / "repo" / "data").mkdir(parents=True)
         assert paths.data_dir() == xdg_data / "rentczecher"
 
 
