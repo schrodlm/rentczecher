@@ -12,9 +12,8 @@ from datetime import datetime, timezone
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
-from tests.profiles import preferences
+from tests.profiles import criteria, preferences
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 GAZETTEER = Gazetteer()
@@ -69,7 +68,7 @@ def _scraper(listings=(), error=None):
 def _profile_config(scrapers=("sreality",), **overrides):
     config = dict(
         id="praha7-byty", name="Praha 7 byty",
-        search={"offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78)},
+        search=criteria(),
         scrapers=list(scrapers),
         scoring=preferences(),
     )

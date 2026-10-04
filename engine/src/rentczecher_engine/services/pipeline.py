@@ -102,7 +102,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
     profile_id = profile_config["id"]
     run_id = str(uuid4())
     started_at = deps.clock()
-    criteria = Criteria.from_search_config(profile_config["search"])
+    criteria = profile_config["search"]
 
     enabled = {name: cls for name, cls in deps.scrapers.items()
               if name in profile_config["scrapers"]}

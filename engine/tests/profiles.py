@@ -1,9 +1,17 @@
-"""Scoring preferences for tests: everything off unless a test turns it on."""
+"""Search criteria and scoring preferences for tests: a plain rent/flat search
+of obvod Praha 7 with no bounds, and every preference off unless a test turns
+it on."""
 
 from dataclasses import replace
 
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
-from rentczecher_engine.domain.profile import Preferences
+from rentczecher_engine.domain.location import PlaceRef
+from rentczecher_engine.domain.profile import Criteria, Preferences
+
+
+def criteria(**overrides) -> Criteria:
+    defaults = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+    return replace(defaults, **overrides)
 
 
 def preferences(**overrides) -> Preferences:

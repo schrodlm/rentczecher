@@ -61,7 +61,7 @@ them.
 config.yaml
    │  load + strict pydantic validation (adapters/config)
    ▼
-Criteria.from_search_config(profile["search"])          # portal-neutral intent
+Criteria, Preferences                                   # typed, portal-neutral
    │
    ▼
 scrape_all(scrapers, criteria, client)                  # services/scrape, per scraper:
