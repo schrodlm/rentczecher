@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.disposition import Disposition
 
 PROFILE = "praha7-byty"
 OTHER_PROFILE = "letna-byty"
@@ -281,6 +282,14 @@ class TestInboxListings:
         assert card.size_m2 == 55
         assert card.disposition_raw_text == "2+kk"
 
+    def test_carries_the_property_disposition(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("UPDATE properties SET disposition_code = '3+1' WHERE id = ?", (PROPERTY,))
+        conn.commit()
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.disposition == Disposition(rooms=3, kitchen="separate")
+
     def test_missing_property_facts_are_none_not_dropped(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
@@ -289,6 +298,7 @@ class TestInboxListings:
         assert card.location_raw_text is None
         assert card.size_m2 is None
         assert card.disposition_raw_text is None
+        assert card.disposition is None
 
     def test_carries_tracking_state(self, tmp_path):
         repo, conn = _repo(tmp_path)
