@@ -64,7 +64,7 @@ class TestSrealitySearchParams:
         assert params["offset"] == 100
         assert "page" not in params
         assert params["lang"] == "cs"
-        assert params["price_from"] == 0
+        assert "price_from" not in params
         assert params["price_to"] == 25000
         assert "estate_area_from" not in params
 
