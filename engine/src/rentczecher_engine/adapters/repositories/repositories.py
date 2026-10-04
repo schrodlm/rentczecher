@@ -80,15 +80,11 @@ class ListingRepository(ABC):
         ...
 
     @abstractmethod
-    def get_disappeared(self, profile_id: str, current_ids: set[str],
-                        max_age_days: int = 7, min_misses: int = 3) -> set[str]:
-        ...
-
-    @abstractmethod
     def pending_disappeared(self, profile_id: str, current_ids: set[str],
                             max_age_days: int = 7, min_misses: int = 3) -> set[str]:
-        """The disappearances get_disappeared would report once this run's
-        miss counts land, without writing them."""
+        """Listings this run makes disappeared, without writing anything:
+        absent from it, first seen within the window, and missed at least
+        min_misses times once this run's miss is counted."""
 
     @abstractmethod
     def prune(self, profile_id: str, max_age_days: int = 90) -> int:

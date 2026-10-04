@@ -179,54 +179,9 @@ class TestMarkViewed:
         assert row["viewed_at"] is None
 
 
-class TestDisappeared:
-    def _seed_missing(self, repo, conn, first_seen, miss_count):
-        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:9"))
-        conn.execute(
-            "UPDATE listing_tracking SET first_seen_at = ?, miss_count = ? "
-            "WHERE profile_id = ? AND listing_id = 'sreality:9'",
-            (first_seen.isoformat(), miss_count, PROFILE))
-        conn.commit()
-
-    def test_recently_first_seen_disappears(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=6), 3)
-        assert repo.get_disappeared(PROFILE, set()) == {"sreality:9"}
-
-    def test_first_seen_before_window_is_excluded(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=8), 3)
-        assert repo.get_disappeared(PROFILE, set()) == set()
-
-    def test_threshold_is_three_misses(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=1), 2)
-        assert repo.get_disappeared(PROFILE, set()) == set()
-        conn.execute("UPDATE listing_tracking SET miss_count = 3 "
-                     "WHERE listing_id = 'sreality:9'")
-        conn.commit()
-        assert repo.get_disappeared(PROFILE, set()) == {"sreality:9"}
-
-    def test_still_present_is_not_disappeared(self, tmp_path):
-        repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=1), 5)
-        assert repo.get_disappeared(PROFILE, {"sreality:9"}) == set()
-
-    def test_only_the_missing_profile_reports_it(self, tmp_path):
-        """A listing another profile still tracks with zero misses is
-        disappeared only for the profile that lost it."""
-        repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=1), 3)
-        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:9"))
-        assert repo.get_disappeared(PROFILE, set()) == {"sreality:9"}
-        assert repo.get_disappeared(OTHER_PROFILE, set()) == set()
-
-
 class TestPendingDisappeared:
-    """pending_disappeared must report exactly what get_disappeared reports
-    once increment_miss_counts has landed the same run's counts - the
-    pairing the pipeline relies on to count disappearances before any
-    write."""
+    """A listing disappears when it is absent from a run, was first seen
+    within the window, and reaches three misses counting that run."""
 
     def _seed_missing(self, repo, conn, first_seen, miss_count):
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:9"))
@@ -236,36 +191,25 @@ class TestPendingDisappeared:
             (first_seen.isoformat(), miss_count, PROFILE))
         conn.commit()
 
-    def _matches_post_increment_get_disappeared(self, repo, profile_id, current_ids):
-        pending = repo.pending_disappeared(profile_id, current_ids)
-        repo.increment_miss_counts(profile_id, current_ids)
-        after = repo.get_disappeared(profile_id, current_ids)
-        assert pending == after
-        return pending
-
-    def test_absent_listing_one_miss_from_threshold_is_reported_ahead_of_the_write(self, tmp_path):
+    def test_absent_listing_one_miss_from_threshold_is_reported(self, tmp_path):
         repo, conn = _repo(tmp_path)
-        self._seed_missing(repo, conn, BASE - timedelta(days=1), 2)
-        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
-        assert pending == {"sreality:9"}
+        self._seed_missing(repo, conn, BASE - timedelta(days=6), 2)
+        assert repo.pending_disappeared(PROFILE, set()) == {"sreality:9"}
 
     def test_absent_listing_still_short_of_threshold_is_not_reported(self, tmp_path):
         repo, conn = _repo(tmp_path)
         self._seed_missing(repo, conn, BASE - timedelta(days=1), 1)
-        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
-        assert pending == set()
+        assert repo.pending_disappeared(PROFILE, set()) == set()
 
     def test_present_listing_is_never_reported_even_at_a_stale_miss_count(self, tmp_path):
         repo, conn = _repo(tmp_path)
         self._seed_missing(repo, conn, BASE - timedelta(days=1), 5)
-        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, {"sreality:9"})
-        assert pending == set()
+        assert repo.pending_disappeared(PROFILE, {"sreality:9"}) == set()
 
     def test_first_seen_before_window_is_excluded_even_one_miss_from_threshold(self, tmp_path):
         repo, conn = _repo(tmp_path)
         self._seed_missing(repo, conn, BASE - timedelta(days=8), 2)
-        pending = self._matches_post_increment_get_disappeared(repo, PROFILE, set())
-        assert pending == set()
+        assert repo.pending_disappeared(PROFILE, set()) == set()
 
     def test_only_the_missing_profile_reports_it(self, tmp_path):
         repo, conn = _repo(tmp_path)
