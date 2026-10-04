@@ -4,7 +4,7 @@ lives behind them."""
 from abc import ABC, abstractmethod
 
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import DisappearedListing, InboxCard
+from rentczecher_engine.domain.listing import InboxCard
 from rentczecher_engine.domain.price import PriceObservation
 from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
@@ -81,12 +81,12 @@ class ListingRepository(ABC):
 
     @abstractmethod
     def get_disappeared(self, profile_id: str, current_ids: set[str],
-                        max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+                        max_age_days: int = 7, min_misses: int = 3) -> set[str]:
         ...
 
     @abstractmethod
     def pending_disappeared(self, profile_id: str, current_ids: set[str],
-                            max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+                            max_age_days: int = 7, min_misses: int = 3) -> set[str]:
         """The disappearances get_disappeared would report once this run's
         miss counts land, without writing them."""
 

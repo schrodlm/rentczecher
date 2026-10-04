@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from rentczecher_engine.adapters.repositories.repositories import ListingRepository
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import DisappearedListing, InboxCard, SiblingSource
+from rentczecher_engine.domain.listing import InboxCard, SiblingSource
 from rentczecher_engine.domain.price import PriceObservation
 from rentczecher_engine.domain.property import PropertyLocation
 
@@ -28,18 +28,6 @@ class SqliteListingRepository(ListingRepository):
             charges=row["charges"],
             observed_at=row["observed_at"],
             observed_in_run_id=row["observed_in_run_id"],
-        )
-
-    def _to_disappeared_listing(self, row: sqlite3.Row) -> DisappearedListing:
-        return DisappearedListing(
-            id=row["id"],
-            source=row["source"],
-            url=row["url"],
-            first_seen_at=row["first_seen_at"],
-            miss_count=row["miss_count"],
-            title=row["title"],
-            location_raw_text=row["location_raw_text"],
-            price=row["price"],
         )
 
     def seen_ids(self, profile_id: str) -> set[str]:
@@ -162,29 +150,26 @@ class SqliteListingRepository(ListingRepository):
                     (profile_id, row["listing_id"]))
 
     def get_disappeared(self, profile_id: str, current_ids: set[str],
-                        max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+                        max_age_days: int = 7, min_misses: int = 3) -> set[str]:
         candidates = self._tracked_within_window(profile_id, max_age_days)
-        return [
-            self._to_disappeared_listing(row)
+        return {
+            row["listing_id"]
             for row in candidates
-            if row["id"] not in current_ids and row["miss_count"] >= min_misses
-        ]
+            if row["listing_id"] not in current_ids and row["miss_count"] >= min_misses
+        }
 
     def pending_disappeared(self, profile_id: str, current_ids: set[str],
-                            max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
+                            max_age_days: int = 7, min_misses: int = 3) -> set[str]:
         """The disappearances get_disappeared would report once this run's
         miss counts land, without writing them: absent listings evaluated
         one miss ahead, present ones at zero. Lets the pipeline count this
         run's disappearances before it persists the run."""
         candidates = self._tracked_within_window(profile_id, max_age_days)
-        result = []
-        for row in candidates:
-            if row["id"] in current_ids:
-                continue
-            pending_miss_count = row["miss_count"] + 1
-            if pending_miss_count >= min_misses:
-                result.append(self._to_disappeared_listing(row))
-        return result
+        return {
+            row["listing_id"]
+            for row in candidates
+            if row["listing_id"] not in current_ids and row["miss_count"] + 1 >= min_misses
+        }
 
     def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
         """The profile's tracked listings as the GUI's inbox renders them:
@@ -305,33 +290,16 @@ class SqliteListingRepository(ListingRepository):
 
     def _tracked_within_window(self, profile_id: str, max_age_days: int) -> list[sqlite3.Row]:
         """Every listing_tracking row for the profile whose first_seen_at is
-        recent enough to ever qualify as disappeared, joined with the
-        listing, property, and latest-price facts a report needs.
+        recent enough to ever qualify as disappeared, with its miss count.
 
         Reported only while recently first seen: an old listing that finally
         drops off is stale, not news.
         """
         cutoff = (self._now() - timedelta(days=max_age_days)).isoformat()
-        # Latest price observation per listing: highest id wins ties on
-        # observed_at, since id is monotonic insertion order and observed_at
-        # is not guaranteed distinct.
         stmt = """
-            SELECT listings.id AS id, listings.source AS source, listings.url AS url,
-                   listing_tracking.first_seen_at AS first_seen_at,
-                   listing_tracking.miss_count AS miss_count,
-                   properties.title AS title, properties.location_raw_text AS location_raw_text,
-                   latest_price.price AS price
+            SELECT listing_id, miss_count
             FROM listing_tracking
-            JOIN listings ON listings.id = listing_tracking.listing_id
-            JOIN properties ON properties.id = listings.property_id
-            LEFT JOIN price_observations AS latest_price
-                ON latest_price.id = (
-                    SELECT id FROM price_observations
-                    WHERE listing_id = listings.id
-                    ORDER BY observed_at DESC, id DESC
-                    LIMIT 1
-                )
-            WHERE listing_tracking.profile_id = ? AND listing_tracking.first_seen_at >= ?
+            WHERE profile_id = ? AND first_seen_at >= ?
         """
         return self._conn.execute(stmt, (profile_id, cutoff)).fetchall()
 

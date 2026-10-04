@@ -8,7 +8,7 @@ from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListi
 from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import DisappearedListing, InboxCard
+from rentczecher_engine.domain.listing import InboxCard
 from rentczecher_engine.domain.property import PropertyLocation
 from rentczecher_engine.services.assemble import assemble_location, assemble_property
 from rentczecher_engine.services.dedup import DedupOutcome, match_score_to_json
@@ -34,7 +34,7 @@ class SqliteRunStore:
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         return self._listings.latest_prices(profile_id)
 
-    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
+    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> set[str]:
         return self._listings.pending_disappeared(profile_id, current_ids)
 
     def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:

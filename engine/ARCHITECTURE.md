@@ -77,7 +77,7 @@ cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
 compute_score(listing, profile)                         # services/score
    ▼
-classify(survivors, seen_ids, latest_prices, disappeared)  # services/diff
+classify(survivors, seen_ids, latest_prices)            # services/diff
    ▼
 build_notification(diff, profile, spec)   then   notifier.send(...)
    ▼

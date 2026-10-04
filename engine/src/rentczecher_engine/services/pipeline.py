@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.errors import PlaceNotFoundError
-from rentczecher_engine.domain.listing import DisappearedListing, Listing
+from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.domain.search import SearchSpec
 from rentczecher_engine.services.dedup import NameTierLookup, cross_source_dedup
@@ -36,7 +36,7 @@ class RunStore(Protocol):
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         ...
 
-    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> list[DisappearedListing]:
+    def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> set[str]:
         ...
 
     def prune(self, profile_id: str) -> None:
@@ -122,8 +122,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
 
     current_ids = {listing.id for listing in survivors} | {m.absorbed_id for m in outcome.merges}
     disappeared = deps.store.pending_disappeared(profile_id, current_ids)
-    diff = classify(survivors, deps.store.seen_ids(profile_id),
-                    deps.store.latest_prices(profile_id), disappeared)
+    diff = classify(survivors, deps.store.seen_ids(profile_id), deps.store.latest_prices(profile_id))
 
     if not dry_run:
         deps.store.persist_outcome(
@@ -132,7 +131,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
 
     finished_at = deps.clock()
     counts = RunCounts(total=len(survivors), new=len(diff.new),
-                       price_drops=len(diff.price_drops), disappeared=len(diff.disappeared))
+                       price_drops=len(diff.price_drops), disappeared=len(disappeared))
     return ProfileRunResult(
         profile_id=profile_id, run_id=run_id, started_at=started_at, finished_at=finished_at,
         status=_status_for(scraper_health), scraper_health=scraper_health, counts=counts,
