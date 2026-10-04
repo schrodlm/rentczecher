@@ -9,10 +9,10 @@ from rentczecher_engine.domain.profile import Criteria
 def apply_filters(listings: list[Listing], criteria: Criteria) -> list[Listing]:
     result = [l for l in listings if _fits_layout(l.disposition, criteria)]
 
-    if criteria.min_size_m2 > 0:
+    if criteria.min_size_m2 is not None:
         result = [l for l in result if l.size_m2 is None or l.size_m2 >= criteria.min_size_m2]
 
-    if criteria.min_land_m2 > 0:
+    if criteria.min_land_m2 is not None:
         result = [l for l in result if l.land_m2 is None or l.land_m2 >= criteria.min_land_m2]
 
     return result

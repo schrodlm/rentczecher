@@ -63,7 +63,7 @@ def _profile(gazetteer: Gazetteer, profile_id: str, written: ProfileConfig, wher
         name=written.name,
         enabled=written.enabled,
         portals=tuple(written.scrapers),
-        criteria=_criteria(written.search, place),
+        criteria=_criteria(written.search, place, where),
         preferences=_preferences(gazetteer, written.scoring, where),
     )
 
@@ -95,19 +95,22 @@ def _preferred_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:
         raise ConfigError(f"{where}.scoring.preferred_places: {error}") from error
 
 
-def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
-    return Criteria(
-        offer_type=search.offer_type,
-        estate_type=search.estate_type,
-        place=place,
-        min_price=search.min_price,
-        max_price=search.max_price,
-        min_size_m2=search.min_size_m2,
-        min_land_m2=search.min_land_m2,
-        min_rooms=search.min_rooms,
-        max_rooms=search.max_rooms,
-        kitchen=search.kitchen,
-    )
+def _criteria(search: SearchConfig, place: PlaceRef, where: str) -> Criteria:
+    try:
+        return Criteria(
+            offer_type=search.offer_type,
+            estate_type=search.estate_type,
+            place=place,
+            min_price=search.min_price,
+            max_price=search.max_price,
+            min_size_m2=search.min_size_m2,
+            min_land_m2=search.min_land_m2,
+            min_rooms=search.min_rooms,
+            max_rooms=search.max_rooms,
+            kitchen=search.kitchen,
+        )
+    except ValueError as error:
+        raise ConfigError(f"{where}.search: {error}") from error
 
 
 def _preferences(gazetteer: Gazetteer, scoring: ScoringConfig, where: str) -> Preferences:

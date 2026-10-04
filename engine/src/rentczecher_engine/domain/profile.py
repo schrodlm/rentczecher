@@ -12,13 +12,19 @@ class Criteria:
     offer_type: str
     estate_type: str
     place: PlaceRef
-    min_price: int = 0
-    max_price: int = 0
-    min_size_m2: int = 0
-    min_land_m2: int = 0
+    min_price: int | None = None
+    max_price: int | None = None
+    min_size_m2: int | None = None
+    min_land_m2: int | None = None
     min_rooms: int | None = None
     max_rooms: int | None = None
     kitchen: Kitchen | None = None
+
+    def __post_init__(self) -> None:
+        for name, bound in (("min_price", self.min_price), ("max_price", self.max_price),
+                            ("min_size_m2", self.min_size_m2), ("min_land_m2", self.min_land_m2)):
+            if bound is not None and bound <= 0:
+                raise ValueError(f"{name} must be positive, or left unset for no bound")
 
 
 @dataclass(frozen=True, slots=True)
