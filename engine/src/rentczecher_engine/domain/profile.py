@@ -24,19 +24,32 @@ class Criteria:
 @dataclass(frozen=True, slots=True)
 class Preferences:
     """A profile's weighted wishes. They raise a listing's score and never
-    hide it. A weight of 0 leaves its preference out of the score."""
+    hide it. A weight of 0 leaves its preference out of the score, and only
+    then may the preference's setting be empty."""
 
     price_per_m2_weight: float
     disposition_weight: float
     preferred_dispositions: tuple[Disposition, ...]
     size_weight: float
-    ideal_size_m2: int
+    ideal_size_m2: int | None
     place_weight: float
     preferred_places: tuple[PlaceRef, ...]
     land_weight: float
-    ideal_land_m2: int
+    ideal_land_m2: int | None
     price_weight: float
-    max_good_price: int
+    max_good_price: int | None
+
+    def __post_init__(self) -> None:
+        if self.disposition_weight and not self.preferred_dispositions:
+            raise ValueError("disposition_weight needs preferred_dispositions")
+        if self.size_weight and (self.ideal_size_m2 is None or self.ideal_size_m2 <= 0):
+            raise ValueError("size_weight needs a positive ideal_size_m2")
+        if self.place_weight and not self.preferred_places:
+            raise ValueError("place_weight needs preferred_places")
+        if self.land_weight and (self.ideal_land_m2 is None or self.ideal_land_m2 <= 0):
+            raise ValueError("land_weight needs a positive ideal_land_m2")
+        if self.price_weight and (self.max_good_price is None or self.max_good_price <= 0):
+            raise ValueError("price_weight needs a positive max_good_price")
 
 
 @dataclass(frozen=True, slots=True)

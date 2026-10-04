@@ -27,32 +27,3 @@ class TestScoringAllZeroWeights:
         )
         score = compute_score(listing, preferences())
         assert score == 0, f"All-zero weights should yield 0, got {score}"
-
-
-# ─── 10. Default preferences ─────────────────────────────────
-
-class TestScoringDefaultPreferences:
-    """Scoring does not crash when a weighted preference keeps its default,
-    such as an empty preferred list."""
-
-    def test_empty_preferred_dispositions(self):
-        from rentczecher_engine.services.score import compute_score
-
-        listing = _make_listing(disposition_raw_text="2+kk", size_m2=50)
-        score = compute_score(listing, preferences(disposition_weight=30))
-        assert isinstance(score, int)
-
-    def test_a_place_weight_without_places_scores(self):
-        from rentczecher_engine.services.score import compute_score
-
-        listing = _make_listing(size_m2=50)
-        score = compute_score(listing, preferences(place_weight=15))
-        assert isinstance(score, int)
-
-    def test_default_ideal_land(self):
-        from rentczecher_engine.services.score import compute_score
-
-        listing = _make_listing(land_m2=1500)
-        score = compute_score(listing, preferences(land_weight=40))
-        assert isinstance(score, int)
-        assert score > 0
