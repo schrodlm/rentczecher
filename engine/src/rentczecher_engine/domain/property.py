@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from rentczecher_engine.domain.disposition import Disposition
+
 
 @dataclass(frozen=True, slots=True)
 class PropertyIdentity:
@@ -15,6 +17,7 @@ class PropertyIdentity:
     location_raw_text: str | None = None
     size_m2: int | None = None
     disposition_raw_text: str | None = None
+    disposition: Disposition | None = None
     lat: float | None = None
     lon: float | None = None
     land_m2: int | None = None

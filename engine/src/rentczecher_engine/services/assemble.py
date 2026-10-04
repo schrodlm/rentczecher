@@ -26,6 +26,7 @@ def assemble_property(listing: Listing, property_id: str, created_at: str) -> Pr
         location_raw_text=listing.location_raw_text,
         size_m2=listing.size_m2,
         disposition_raw_text=listing.disposition_raw_text,
+        disposition=listing.disposition,
         land_m2=listing.land_m2,
         lat=lat,
         lon=lon,

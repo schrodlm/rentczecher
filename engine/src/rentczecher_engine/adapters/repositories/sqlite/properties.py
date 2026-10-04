@@ -5,6 +5,7 @@ from datetime import datetime
 
 from rentczecher_engine.adapters.repositories.repositories import PropertyRepository
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.geo import geocell
 from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
@@ -24,6 +25,7 @@ class SqlitePropertyRepository(PropertyRepository):
             location_raw_text=row["location_raw_text"],
             size_m2=row["size_m2"],
             disposition_raw_text=row["disposition_raw_text"],
+            disposition=parse_disposition(row["disposition_code"]),
             lat=row["lat"],
             lon=row["lon"],
             land_m2=row["land_m2"],
@@ -45,7 +47,7 @@ class SqlitePropertyRepository(PropertyRepository):
     def get(self, property_id: str) -> PropertyIdentity | None:
         stmt = """
             SELECT id, created_at, merged_into, title, location_raw_text,
-                   size_m2, disposition_raw_text, lat, lon, land_m2
+                   size_m2, disposition_raw_text, disposition_code, lat, lon, land_m2
             FROM properties WHERE id = ?
         """
         row = self._conn.execute(stmt, (property_id,)).fetchone()
@@ -60,13 +62,15 @@ class SqlitePropertyRepository(PropertyRepository):
         stmt = """
             INSERT INTO properties (
                 id, created_at, merged_into, title, location_raw_text,
-                size_m2, disposition_raw_text, lat, lon, land_m2, cell_lat, cell_lon
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                size_m2, disposition_raw_text, disposition_code, lat, lon, land_m2, cell_lat, cell_lon
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
             identity.id, identity.created_at, identity.merged_into,
             identity.title, identity.location_raw_text, identity.size_m2,
-            identity.disposition_raw_text, identity.lat, identity.lon, identity.land_m2,
+            identity.disposition_raw_text,
+            identity.disposition.code if identity.disposition is not None else None,
+            identity.lat, identity.lon, identity.land_m2,
             cell_lat, cell_lon,
         ))
 
@@ -128,7 +132,7 @@ class SqlitePropertyRepository(PropertyRepository):
     def find_candidates(self, cell_lat: int, cell_lon: int) -> list[PropertyIdentity]:
         stmt = """
             SELECT id, created_at, merged_into, title, location_raw_text,
-                   size_m2, disposition_raw_text, lat, lon, land_m2
+                   size_m2, disposition_raw_text, disposition_code, lat, lon, land_m2
             FROM properties
             WHERE merged_into IS NULL
               AND cell_lat BETWEEN ? - 1 AND ? + 1
