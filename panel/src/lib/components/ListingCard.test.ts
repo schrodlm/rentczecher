@@ -14,13 +14,12 @@ describe('ListingCard', () => {
 		expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 	});
 
-	test('shows price, price per m², disposition, and size', async () => {
+	test('shows price and price per m²', async () => {
 		const { getByText } = await renderWithTranslator(ListingCard, {
-			listing: listing('sreality:1', { price: 21000, size_m2: 52, disposition_raw_text: '2+kk' })
+			listing: listing('sreality:1', { price: 21000, size_m2: 52 })
 		});
 		expect(getByText('21 000 Kč')).toBeInTheDocument();
 		expect(getByText('404 Kč/m²')).toBeInTheDocument();
-		expect(getByText('2+kk')).toBeInTheDocument();
 	});
 
 	test('shows a price-drop badge naming the previous price when dropped', async () => {
@@ -47,4 +46,34 @@ describe('ListingCard', () => {
 		expect(getByText('bezrealitky')).toBeInTheDocument();
 	});
 
+	describe('disposition', () => {
+		test('shows the disposition code rather than the raw text', async () => {
+			const { getByText, queryByText } = await renderWithTranslator(ListingCard, {
+				listing: listing('sreality:1', { disposition_raw_text: 'Garsoniéra', disposition: '1+kk' })
+			});
+			expect(getByText('1+kk')).toBeInTheDocument();
+			expect(queryByText('Garsoniéra')).not.toBeInTheDocument();
+		});
+
+		test('names an atypical layout in words', async () => {
+			const { getByText } = await renderWithTranslator(ListingCard, {
+				listing: listing('sreality:1', { disposition_raw_text: 'Atypický', disposition: 'atypicky' })
+			});
+			expect(getByText('atypická dispozice')).toBeInTheDocument();
+		});
+
+		test('falls back to the raw text when it names no layout', async () => {
+			const { getByText } = await renderWithTranslator(ListingCard, {
+				listing: listing('sreality:1', { disposition_raw_text: 'Rodinný', disposition: null })
+			});
+			expect(getByText('Rodinný')).toBeInTheDocument();
+		});
+
+		test('shows no disposition when none was scraped', async () => {
+			const { container } = await renderWithTranslator(ListingCard, {
+				listing: listing('sreality:1', { disposition_raw_text: null, disposition: null, size_m2: null })
+			});
+			expect(container.querySelector('.card__detail-line')?.children).toHaveLength(0);
+		});
+	});
 });
