@@ -35,14 +35,12 @@ PROFILE_CONFIG = {
     "praha7-byty": {
         "name": "Praha 7 byty",
         "enabled": True,
-        "to": [],
         "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
         "scrapers": ["sreality"],
     },
     "domazlice-domy": {
         "name": "Domazlice domy",
         "enabled": False,
-        "to": [],
         "search": {"offer_type": "sale", "estate_type": "house", "place": "domazlice"},
         "scrapers": ["sreality"],
     },

@@ -38,7 +38,7 @@ a location.
 _Avoid_: geocoder, place database
 
 **Profile**:
-One person's saved search: portals, filters, scoring weights, recipients.
+One person's saved search: portals, filters, scoring weights.
 Every scan is per-profile.
 _Avoid_: search, watch, subscription
 

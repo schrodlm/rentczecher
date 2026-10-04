@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Multi-profile Czech real-estate watchdog: scrapes portals (Sreality, Bezrealitky, RE/MAX), dedups across them, scores against per-profile preferences, emails new listings and price drops. The binding architecture decisions are the ADRs in `docs/adr/`; read the ones touching an area before architectural work there. The order and scope of upcoming work live in the GitHub milestones.
+Multi-profile Czech real-estate watchdog: scrapes portals (Sreality, Bezrealitky, RE/MAX), dedups across them, scores against per-profile preferences, and serves new listings and price drops through its API for notification channels to consume. The binding architecture decisions are the ADRs in `docs/adr/`. Read the ones touching an area before architectural work there. The order and scope of upcoming work live in the GitHub milestones.
 
 Standard clean open-source development practices are the baseline everywhere; the rules below are hard stances on top of that.
 

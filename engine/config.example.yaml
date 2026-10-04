@@ -1,12 +1,5 @@
-# Byt Watchdog - Multi-profile configuration
-# Each profile is an independent search with its own scrapers, filters, and recipients.
-
-email:
-  smtp_host: "smtp.gmail.com"
-  smtp_port: 587
-  smtp_user: "your-email@gmail.com"
-  smtp_password: "your-app-password"
-  from: "your-email@gmail.com"
+# rentczecher - multi-profile configuration
+# Each profile is an independent search with its own scrapers, filters, and scoring.
 
 schedule:
   cron_interval_hours: 3
@@ -16,9 +9,6 @@ profiles:
   praha7-byty:
     name: "Praha 7 - byty k pronajmu"
     enabled: true
-    to:
-      - "you@gmail.com"
-      - "partner@gmail.com"
 
     search:
       offer_type: rent          # rent | sale
@@ -51,8 +41,6 @@ profiles:
   domazlice-domy:
     name: "Domazlicko - domy a chalupy"
     enabled: true
-    to:
-      - "father@gmail.com"
 
     search:
       offer_type: sale

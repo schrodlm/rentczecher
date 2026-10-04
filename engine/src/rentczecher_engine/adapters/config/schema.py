@@ -3,7 +3,7 @@ normalization. Everything downstream consumes the validated result."""
 
 import difflib
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Literal
 
 KNOWN_SCRAPERS = ("sreality", "bezrealitky", "remax")
@@ -12,14 +12,6 @@ KNOWN_SCRAPERS = ("sreality", "bezrealitky", "remax")
 class StrictModel(BaseModel):
     # Unknown keys are errors: a typo must fail at load time, never no-op.
     model_config = ConfigDict(extra="forbid")
-
-
-class EmailConfig(StrictModel):
-    smtp_host: str
-    smtp_port: int = 587
-    smtp_user: str
-    smtp_password: SecretStr
-    from_: str = Field(alias="from")
 
 
 class ScheduleConfig(StrictModel):
@@ -54,22 +46,9 @@ class ScoringConfig(StrictModel):
 class ProfileConfig(StrictModel):
     name: str
     enabled: bool = True
-    to: list[str]
     search: SearchConfig
     scrapers: list[str]
     scoring: ScoringConfig = ScoringConfig()
-
-    @field_validator("to", mode="before")
-    @classmethod
-    def _string_becomes_list(cls, value):
-        return [value] if isinstance(value, str) else value
-
-    @field_validator("to")
-    @classmethod
-    def _no_empty_recipients(cls, value):
-        if any(not recipient.strip() for recipient in value):
-            raise ValueError("recipient addresses must not be empty")
-        return value
 
     @field_validator("scrapers")
     @classmethod
@@ -85,11 +64,5 @@ class ProfileConfig(StrictModel):
 
 
 class Config(StrictModel):
-    email: EmailConfig
     profiles: dict[str, ProfileConfig]
     schedule: ScheduleConfig = ScheduleConfig()
-
-
-def field_aliases(model: type[BaseModel]) -> list[str]:
-    """The key names a user may actually write for a model (aliases win)."""
-    return [field.alias or name for name, field in model.model_fields.items()]

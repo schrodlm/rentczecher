@@ -36,15 +36,6 @@ DEFAULT_LISTING = {
     "disposition": "2+kk",
 }
 
-# An address the config loader accepts. Scenario profiles have no
-# recipients, so nothing is ever sent.
-PLACEHOLDER_EMAIL = {
-    "smtp_host": "localhost",
-    "smtp_user": "scenario",
-    "smtp_password": "scenario",
-    "from": "scenario@localhost",
-}
-
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
 
@@ -134,8 +125,8 @@ class Scenario:
 
     def config(self) -> dict:
         """The config file a scenario's data folder runs under."""
-        profile = {**self.profile, "to": [], "scrapers": self.portals()}
-        return {"email": PLACEHOLDER_EMAIL, "profiles": {self.profile_id: profile}}
+        profile = {**self.profile, "scrapers": self.portals()}
+        return {"profiles": {self.profile_id: profile}}
 
     def replay_into(self, home: Path, now: datetime) -> None:
         """Writes home/config.yaml and replays every scan, then every view,

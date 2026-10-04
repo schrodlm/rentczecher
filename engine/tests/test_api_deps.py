@@ -3,7 +3,7 @@ from fastapi import HTTPException
 
 from rentczecher_engine.adapters.api.deps import ApiDeps, require_profile
 
-CONFIG = {"profiles": {"matej": {"name": "Matěj", "to": []}}}
+CONFIG = {"profiles": {"matej": {"name": "Matěj"}}}
 
 
 def _deps(tmp_path) -> ApiDeps:
@@ -14,7 +14,7 @@ class TestProfileConfig:
     def test_returns_the_profile_with_its_id_folded_in(self, tmp_path):
         """profile_config returns the config entry with the profile id added."""
         deps = _deps(tmp_path)
-        assert deps.profile_config("matej") == {"name": "Matěj", "to": [], "id": "matej"}
+        assert deps.profile_config("matej") == {"name": "Matěj", "id": "matej"}
 
     def test_unknown_profile_is_none(self, tmp_path):
         """An id absent from the config resolves to None, not an error."""

@@ -30,7 +30,6 @@ PROFILE_ID = "parity"
 PROFILE = {
     "name": "Parity profile",
     "enabled": True,
-    "to": ["parity@example.com"],
     "search": {
         "offer_type": "rent",
         "estate_type": "flat",

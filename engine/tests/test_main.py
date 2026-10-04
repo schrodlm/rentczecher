@@ -60,10 +60,8 @@ class TestValidateConfig:
     def test_validate_reports_profile_and_scraper_counts(self, tmp_path, capsys):
         import yaml
         config = {
-            "email": {"smtp_host": "h", "smtp_user": "u",
-                      "smtp_password": "p", "from": "u@example.com"},
             "profiles": {"p": {
-                "name": "P", "to": ["a@example.com"],
+                "name": "P",
                 "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
                 "scrapers": ["sreality", "bezrealitky", "remax"],
             }},
@@ -76,10 +74,8 @@ class TestValidateConfig:
     def test_validate_reports_error_for_a_legacy_config(self, tmp_path, capsys):
         import yaml
         config = {
-            "email": {"smtp_host": "h", "smtp_user": "u",
-                      "smtp_password": "p", "from": "u@example.com"},
             "profiles": {"p": {
-                "name": "P", "to": ["a@example.com"],
+                "name": "P",
                 "search": {"offer_type": "rent", "estate_type": "flat"},
                 "scrapers": {"sreality": {"enabled": True, "locality_district_id": 5007}},
             }},
@@ -100,10 +96,8 @@ class TestEmptyScraperList:
         import yaml
 
         config = {
-            "email": {"smtp_host": "h", "smtp_user": "u",
-                      "smtp_password": "p", "from": "u@example.com"},
             "profiles": {"empty": {
-                "name": "Empty", "to": ["a@example.com"],
+                "name": "Empty",
                 "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
                 "scrapers": [],
             }},

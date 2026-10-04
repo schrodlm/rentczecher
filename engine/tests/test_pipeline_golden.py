@@ -20,7 +20,6 @@ PROFILE = {
     "id": PROFILE_ID,
     "name": "Golden profile",
     "enabled": True,
-    "to": ["golden@example.com"],
     "search": {
         "offer_type": "rent",
         "estate_type": "flat",

@@ -2,14 +2,11 @@
 
 A local-first watchdog for the Czech rental and property market. It scrapes the
 major Czech portals on a schedule, folds the same property listed on several of
-them into one, scores each result against your preferences, and emails you the
-new listings and price drops. Nothing else. No daily digest of things you've
-already seen.
+them into one, scores each result against your preferences, and tracks the new
+listings and price drops.
 
 It runs as a cron one-shot on your own machine. No account, no server, nothing
-hosted. Your searches and your history stay on your disk. The emails are in
-Czech (the product still calls itself **Byt Watchdog** there). The code and
-config are in English.
+hosted. Your searches and your history stay on your disk.
 
 > **Status:** actively developed, single-maintainer hobby project. What's below
 > is what runs today. A desktop GUI is in design on top of the same pipeline.
@@ -20,7 +17,7 @@ config are in English.
 
 - **Three portals.** Sreality.cz (JSON API), Bezrealitky.cz (server-rendered
   Next.js data), RE/MAX Czech (HTML). Each is a separate scraper. If one breaks
-  or a site is down, the others still run and you still get email.
+  or a site is down, the others still run.
 - **Any search, described once.** A profile says what you're looking for (offer
   type, estate type, a place, price bounds, minimum size or land) and which
   portals to ask. You never paste portal-specific URLs or region ids. A place
@@ -29,19 +26,19 @@ config are in English.
   `place: "okres Beroun"`, `place: plzensky`. Any Czech kraj or district as a
   slug or free text. A typo fails loudly with a did-you-mean suggestion instead
   of silently searching the wrong place.
-- **Multiple independent profiles.** Flat rentals in Praha 7 to you and your
-  partner, houses for sale in Domažlice to your father. Each has its own portals,
-  filters, scoring, and recipients, all from one config file and one cron entry.
+- **Multiple independent profiles.** Flat rentals in Praha 7, houses for sale in
+  Domažlice. Each has its own portals, filters, and scoring, all from one config
+  file and one cron entry.
 - **Cross-portal dedup.** The same flat posted on Sreality and Bezrealitky is
-  reported once, with a "také na: …" badge, keeping whichever copy carries more
-  detail.
+  shown once, with links to its other portals, keeping whichever copy carries
+  more detail.
 - **Preference scoring.** A 0–100 score per listing from weights you set (price
-  per m², disposition, size, neighbourhood, land area, total price). The email is
-  sorted best-first and shows the score on each card.
-- **Price drops and disappearances.** A listing whose price fell since you last
-  saw it comes back flagged with the old price. A listing gone for three
-  consecutive runs is reported as disappeared. Three misses filters out portal
-  API flicker.
+  per m², disposition, size, neighbourhood, land area, total price). It is
+  computed but not shown anywhere yet.
+- **Price drops and disappearances.** A listing whose price fell shows its old
+  price next to the new one. A listing gone for three consecutive runs counts
+  as disappeared in the scan's results. Three misses filters out portal API
+  flicker.
 
 ## Requirements
 
@@ -51,7 +48,6 @@ config are in English.
 - On Linux, the webview development libraries the desktop app compiles against
   (`scripts/bootstrap.py` names the missing ones and how to install them)
 - `cron` for scheduled runs, or schedule it yourself
-- An SMTP account for sending mail (Gmail with an app password works)
 
 ## Install
 
@@ -67,30 +63,23 @@ in the works).
 Then edit your config and try a run that changes nothing:
 
 ```bash
-# 1) fill in SMTP credentials and your search profiles
+# 1) fill in your search profiles
 $EDITOR ~/.config/rentczecher/config.yaml
 
 # 2) check it: typos and bad values are reported with the exact offending key
 engine/.venv/bin/rentczecher config validate
 
-# 3) dry run: scrape and print results, send no email, write no state
+# 3) dry run: scrape and print results, write no state
 .venv/bin/rentczecher --dry-run
 .venv/bin/rentczecher --dry-run --profile praha7-byty   # just one profile
 ```
 
 ## Configuring your search
 
-The config has one shared `email` block, an optional `schedule`, and any number
-of named `profiles`. Each profile is a self-contained search.
+The config has an optional `schedule` and any number of named `profiles`. Each
+profile is a self-contained search.
 
 ```yaml
-email:
-  smtp_host: "smtp.gmail.com"
-  smtp_port: 587
-  smtp_user: "you@gmail.com"
-  smtp_password: "your-app-password"
-  from: "you@gmail.com"
-
 schedule:
   cron_interval_hours: 3          # informational, the cron entry is what runs
 
@@ -98,7 +87,6 @@ profiles:
   praha7-byty:
     name: "Praha 7 – byty k pronájmu"
     enabled: true
-    to: ["you@gmail.com", "partner@gmail.com"]
 
     search:
       offer_type: rent            # rent | sale
@@ -122,7 +110,6 @@ profiles:
 
   domazlice-domy:
     name: "Domažlicko – domy a chalupy"
-    to: ["father@gmail.com"]
 
     search:
       offer_type: sale
@@ -162,7 +149,7 @@ A few things worth knowing:
 ```bash
 rentczecher                          # run every enabled profile (what cron calls)
 rentczecher --profile praha7-byty    # run one profile
-rentczecher --dry-run                # scrape + print, no email, no state written
+rentczecher --dry-run                # scrape + print, no state written
 rentczecher --dry-run --profile X    # dry-run a single profile
 rentczecher config validate          # validate config.yaml (--path checks another file)
 rentczecher db migrate               # create/upgrade the SQLite schema (see note below)
@@ -280,10 +267,6 @@ its own installers, since the frozen engine cannot be cross-compiled.
   (datacenter and VPN egress) while its homepage serves 200 fine. This is almost
   always your connection being blocked, not a bug. It works from ordinary
   residential connections.
-- **No email arrived but the log shows new listings.** Check the SMTP block.
-  Gmail needs an app password, not your account password. The email is only sent
-  when there's something new or a price drop. A run that finds only already-seen
-  or only disappeared listings sends nothing by design.
 
 ## License
 

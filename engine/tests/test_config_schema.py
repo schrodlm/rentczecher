@@ -15,16 +15,9 @@ from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
 VALID = {
-    "email": {
-        "smtp_host": "smtp.example.com",
-        "smtp_user": "u@example.com",
-        "smtp_password": "secret",
-        "from": "u@example.com",
-    },
     "profiles": {
         "p": {
             "name": "P",
-            "to": ["a@example.com"],
             "search": {"offer_type": "rent", "estate_type": "flat",
                        "place": "praha-7", "max_price": 25000},
             "scrapers": ["sreality"],
@@ -51,18 +44,6 @@ class TestSchemaShape:
         """The shipped example must never drift from the schema."""
         Config.model_validate(yaml.safe_load(EXAMPLE.read_text()))
 
-    def test_string_recipient_becomes_list(self):
-        profile = ProfileConfig.model_validate({**VALID["profiles"]["p"], "to": "one@example.com"})
-        assert profile.to == ["one@example.com"]
-
-    def test_empty_recipient_is_rejected(self):
-        with pytest.raises(Exception, match="must not be empty"):
-            ProfileConfig.model_validate({**VALID["profiles"]["p"], "to": ""})
-
-    def test_secret_never_appears_in_repr(self):
-        config = Config.model_validate(VALID)
-        assert "secret" not in repr(config)
-
 
 class TestPlaceRequired:
     """search.place is the only location source: it is required, must
@@ -70,7 +51,7 @@ class TestPlaceRequired:
 
     def test_missing_place_is_rejected(self):
         profile = {
-            "name": "P", "to": ["a@example.com"],
+            "name": "P",
             "search": {"offer_type": "rent", "estate_type": "flat"},
             "scrapers": ["sreality"],
         }
@@ -119,9 +100,6 @@ class TestLoader:
 
     def test_valid_config_loads_as_plain_dict(self, tmp_path):
         config = load_config(_write(tmp_path, VALID))
-        assert config["email"]["from"] == "u@example.com"
-        assert config["email"]["smtp_password"] == "secret"
-        assert config["email"]["smtp_port"] == 587
         assert config["profiles"]["p"]["search"]["min_price"] == 0
         assert config["profiles"]["p"]["scrapers"] == ["sreality"]
 
@@ -146,21 +124,7 @@ class TestLoader:
         with pytest.raises(ConfigError, match="unknown scraper 'idnes'"):
             load_config(_write(tmp_path, broken))
 
-
-
-    def test_missing_email_section_fails_at_load(self, tmp_path):
-        broken = _broken(lambda c: c.pop("email"))
-        with pytest.raises(ConfigError, match="email"):
-            load_config(_write(tmp_path, broken))
-
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))
         with pytest.raises(ConfigError, match=r"profiles\.p\.search\.offer_type"):
-            load_config(_write(tmp_path, broken))
-
-
-
-    def test_aliased_field_suggestion_offers_the_yaml_key(self, tmp_path):
-        broken = _broken(lambda c: (c["email"].pop("from"), c["email"].update(form="u@example.com")))
-        with pytest.raises(ConfigError, match=r"email\.form: unknown key \(did you mean 'from'\?\)"):
             load_config(_write(tmp_path, broken))
