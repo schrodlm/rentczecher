@@ -92,3 +92,52 @@ class TestRead:
         added = repo.add("P", (), criteria(), preferences())
         conn.execute("UPDATE profiles SET paused_at = ? WHERE id = ?", (BASE.isoformat(), added.id))
         assert repo.get(added.id).paused_at == BASE.isoformat()
+
+
+class TestUpdate:
+    def test_everything_but_the_criteria_changes(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        added = repo.add("Before", ("sreality",), FULL_CRITERIA, FULL_PREFERENCES)
+        updated = repo.update(added.id, "After", False, ("remax", "bezrealitky"), preferences())
+        assert updated == repo.get(added.id)
+        assert (updated.name, updated.portals, updated.preferences) == (
+            "After", ("bezrealitky", "remax"), preferences())
+        assert updated.criteria == FULL_CRITERIA
+
+    def test_pausing_stamps_the_time_once_and_resuming_clears_it(self, tmp_path):
+        times = iter([BASE, BASE.replace(hour=7), BASE.replace(hour=8)])
+        repo, _ = _repo(tmp_path, now=lambda: next(times))
+        added = repo.add("P", (), criteria(), preferences())
+        paused = repo.update(added.id, "P", True, (), preferences())
+        assert repo.get(added.id).paused_at == BASE.replace(hour=7).isoformat()
+        repo.update(added.id, "P", True, (), preferences())
+        assert repo.get(added.id).paused_at == paused.paused_at
+        repo.update(added.id, "P", False, (), preferences())
+        assert repo.get(added.id).paused_at is None
+
+    def test_an_unknown_id_updates_nothing(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        assert repo.update("nope", "P", False, (), preferences()) is None
+
+
+class TestDelete:
+    def test_a_deleted_profile_is_gone_with_its_tracking(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        doomed = repo.add("Doomed", ("sreality",), FULL_CRITERIA, FULL_PREFERENCES)
+        kept = repo.add("Kept", (), criteria(), preferences())
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (BASE.isoformat(),))
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('sreality:1', 'x', 'sreality', 'u', ?)", (BASE.isoformat(),))
+        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
+                     "VALUES (?, 'sreality:1', ?, ?)", (doomed.id, BASE.isoformat(), BASE.isoformat()))
+        assert repo.delete(doomed.id) is True
+        assert repo.list_profiles() == [kept]
+        for table in ("profile_criteria", "profile_portals", "profile_preferences",
+                      "preferred_dispositions", "preferred_places", "listing_tracking"):
+            stmt = f"SELECT count(*) FROM {table} WHERE profile_id = ?"
+            assert conn.execute(stmt, (doomed.id,)).fetchone()[0] == 0, table
+        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
+
+    def test_an_unknown_id_deletes_nothing(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        assert repo.delete("nope") is False
