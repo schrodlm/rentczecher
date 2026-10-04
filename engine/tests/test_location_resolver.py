@@ -60,6 +60,10 @@ class TestResolveFailure:
         with pytest.raises(PlaceNotFoundError):
             resolve(PlaceRef("okres", 999999))
 
+    def test_a_place_no_portal_searches_raises(self):
+        with pytest.raises(PlaceNotFoundError):
+            resolve(PlaceRef("obec", 553786))
+
     def test_every_search_place_resolves_by_its_kind_and_code(self):
         """Each kraj, okres and obvod in the gazetteer is a search place."""
         from rentczecher_engine.adapters.geocoding.gazetteer import open_gazetteer
