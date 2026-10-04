@@ -17,6 +17,13 @@ def _make_listing(**kwargs) -> Listing:
 # ─── Scoring ────────────────────────────────────────────────
 
 class TestScoring:
+    DISPOSITION_ONLY = {
+        "scoring": {
+            "disposition_weight": 100,
+            "preferred_dispositions": ["1+kk", "2+kk"],
+        },
+    }
+
     RENTAL_PROFILE = {
         "scoring": {
             "price_per_m2_weight": 40,
@@ -107,3 +114,39 @@ class TestScoring:
                 l = _make_listing(price=price, size_m2=size, disposition="2+kk")
                 score = compute_score(l, self.RENTAL_PROFILE)
                 assert 0 <= score <= 100, f"Score {score} out of range"
+
+    def test_a_preferred_disposition_scores_by_its_rank(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(disposition="1+kk"), self.DISPOSITION_ONLY) == 100
+        assert compute_score(_make_listing(disposition="2+kk"), self.DISPOSITION_ONLY) == 80
+
+    def test_disposition_preference_is_case_insensitive(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(disposition="2+KK"), self.DISPOSITION_ONLY) == 80
+
+    def test_a_studio_label_scores_as_not_preferred(self):
+        """Scoring compares raw labels, so a garsoniéra is not a preferred 1+kk."""
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(disposition="garsoniéra"), self.DISPOSITION_ONLY) == 10
+
+    def test_an_unparseable_disposition_scores_as_not_preferred(self):
+        """An unparseable label scores like any disposition outside the list."""
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(disposition="Rodinný"), self.DISPOSITION_ONLY) == 10
+
+    def test_a_missing_disposition_adds_nothing(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(disposition=None), self.DISPOSITION_ONLY) == 0
+
+    def test_a_late_preferred_rank_scores_no_lower_than_twenty(self):
+        from rentczecher_engine.services.score import compute_score
+        profile = {"scoring": {"disposition_weight": 100, "preferred_dispositions": [
+            "1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1"]}}
+        assert compute_score(_make_listing(disposition="3+kk"), profile) == 20
+        assert compute_score(_make_listing(disposition="3+1"), profile) == 20
+
+    def test_a_preferred_list_compares_its_raw_labels(self):
+        """A garsoniéra in the preferred list does not stand for a 1+kk."""
+        from rentczecher_engine.services.score import compute_score
+        profile = {"scoring": {"disposition_weight": 100, "preferred_dispositions": ["garsoniéra", "1+kk"]}}
+        assert compute_score(_make_listing(disposition="1+kk"), profile) == 80

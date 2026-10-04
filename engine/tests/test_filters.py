@@ -43,6 +43,21 @@ def test_disposition_filter_is_case_insensitive():
     assert apply_filters([listing], spec) == [listing]
 
 
+def test_disposition_filter_rejects_a_studio_label_for_1kk():
+    """The criterion compares raw labels, so a garsoniéra is not a 1+kk."""
+    spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+                      dispositions=("1+kk",))
+    assert apply_filters([_make_listing(disposition="garsoniéra")], spec) == []
+
+
+def test_disposition_filter_rejects_an_unparseable_label():
+    """An unparseable label is not a missing disposition, so it fails the
+    criterion while a missing one passes."""
+    spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice",
+                      dispositions=("4+1",))
+    assert apply_filters([_make_listing(disposition="Rodinný")], spec) == []
+
+
 def test_min_size_excludes_smaller_and_keeps_unknown():
     spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7", min_size_m2=40)
     big_enough = _make_listing(id="big", size_m2=50)
