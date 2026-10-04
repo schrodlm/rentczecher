@@ -67,25 +67,25 @@ class BezrealitkyPlace:
 class BezrealitkyScraper(BaseScraper):
     name = "bezrealitky"
 
-    def __init__(self, spec, client):
-        super().__init__(spec, client)
-        self.place = BezrealitkyPlace.from_params(resolve(spec.place))
+    def __init__(self, criteria, client):
+        super().__init__(criteria, client)
+        self.place = BezrealitkyPlace.from_params(resolve(criteria.place))
 
     def _build_url(self) -> str:
         params = [
             "currency=CZK",
-            f"estateType={ESTATE_TYPE_PARAM[self.spec.estate_type]}",
-            f"offerType={OFFER_TYPE_PARAM[self.spec.offer_type]}",
+            f"estateType={ESTATE_TYPE_PARAM[self.criteria.estate_type]}",
+            f"offerType={OFFER_TYPE_PARAM[self.criteria.offer_type]}",
             f"regionOsmIds={self.place.region_id}",
             # The server applies search filters only when this param is
             # present; without it the page renders the place name but
             # serves unfiltered countrywide results.
             "location=exact",
         ]
-        if self.spec.min_price > 0:
-            params.append(f"priceFrom={self.spec.min_price}")
-        if self.spec.max_price > 0:
-            params.append(f"priceTo={self.spec.max_price}")
+        if self.criteria.min_price > 0:
+            params.append(f"priceFrom={self.criteria.min_price}")
+        if self.criteria.max_price > 0:
+            params.append(f"priceTo={self.criteria.max_price}")
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
     def scrape(self) -> list[Listing]:
@@ -163,9 +163,9 @@ class BezrealitkyScraper(BaseScraper):
         uri = advert.get("uri", "")
         price = advert.get("price", 0)
 
-        if self.spec.max_price > 0 and price > self.spec.max_price:
+        if self.criteria.max_price > 0 and price > self.criteria.max_price:
             return None
-        if price < self.spec.min_price:
+        if price < self.criteria.min_price:
             return None
         if advert.get("reserved", False):
             return None
@@ -204,7 +204,7 @@ class BezrealitkyScraper(BaseScraper):
             image_url = _apollo_get(img_obj, "url")
 
         # Build title
-        offer_label = "Pronajem" if OFFER_TYPE_PARAM[self.spec.offer_type] == "PRONAJEM" else "Prodej"
+        offer_label = "Pronajem" if OFFER_TYPE_PARAM[self.criteria.offer_type] == "PRONAJEM" else "Prodej"
         title_parts = [offer_label]
         if disposition:
             title_parts.append(disposition)

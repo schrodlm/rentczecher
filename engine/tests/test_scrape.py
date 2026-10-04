@@ -8,10 +8,10 @@ import pytest
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.domain.location import PlaceRef
-from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.services.scrape import scrape_all
 
-SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
 
 
 def _make_listing(**kwargs):
@@ -28,7 +28,7 @@ def _make_listing(**kwargs):
 
 
 class WorkingScraper:
-    def __init__(self, spec, client):
+    def __init__(self, criteria, client):
         pass
 
     def scrape(self):
@@ -36,7 +36,7 @@ class WorkingScraper:
 
 
 class EmptyScraper:
-    def __init__(self, spec, client):
+    def __init__(self, criteria, client):
         pass
 
     def scrape(self):
@@ -44,7 +44,7 @@ class EmptyScraper:
 
 
 class BrokenScraper:
-    def __init__(self, spec, client):
+    def __init__(self, criteria, client):
         pass
 
     def scrape(self):
@@ -52,7 +52,7 @@ class BrokenScraper:
 
 
 class CrashingScraper:
-    def __init__(self, spec, client):
+    def __init__(self, criteria, client):
         pass
 
     def scrape(self):
@@ -60,12 +60,12 @@ class CrashingScraper:
 
 
 class UnresolvablePlaceScraper:
-    def __init__(self, spec, client):
+    def __init__(self, criteria, client):
         raise PlaceNotFoundError("obvod 78")
 
 
 def test_a_working_scraper_is_recorded_ok_with_its_listing_count():
-    listings, health = scrape_all({"sreality": WorkingScraper}, SPEC, client=None)
+    listings, health = scrape_all({"sreality": WorkingScraper}, CRITERIA, client=None)
     assert [l.id for l in listings] == ["sreality:1"]
     assert health["sreality"].status == "ok"
     assert health["sreality"].error is None
@@ -73,7 +73,7 @@ def test_a_working_scraper_is_recorded_ok_with_its_listing_count():
 
 
 def test_zero_results_are_recorded_distinctly_from_a_broken_scraper():
-    listings, health = scrape_all({"sreality": EmptyScraper}, SPEC, client=None)
+    listings, health = scrape_all({"sreality": EmptyScraper}, CRITERIA, client=None)
     assert listings == []
     assert health["sreality"].status == "zero_results"
     assert health["sreality"].listing_count == 0
@@ -81,7 +81,7 @@ def test_zero_results_are_recorded_distinctly_from_a_broken_scraper():
 
 def test_a_scraper_broken_error_is_recorded_with_its_error_text_and_does_not_raise(caplog):
     with caplog.at_level("ERROR", logger="rentczecher"):
-        listings, health = scrape_all({"bezrealitky": BrokenScraper}, SPEC, client=None)
+        listings, health = scrape_all({"bezrealitky": BrokenScraper}, CRITERIA, client=None)
     assert listings == []
     assert health["bezrealitky"].status == "broken"
     assert "__NEXT_DATA__" in health["bezrealitky"].error
@@ -90,7 +90,7 @@ def test_a_scraper_broken_error_is_recorded_with_its_error_text_and_does_not_rai
 
 def test_a_generic_exception_is_isolated_and_recorded_as_broken(caplog):
     with caplog.at_level("ERROR", logger="rentczecher"):
-        listings, health = scrape_all({"sreality": CrashingScraper}, SPEC, client=None)
+        listings, health = scrape_all({"sreality": CrashingScraper}, CRITERIA, client=None)
     assert listings == []
     assert health["sreality"].status == "broken"
     assert any(r.exc_info for r in caplog.records), "a generic failure logs its traceback"
@@ -98,7 +98,7 @@ def test_a_generic_exception_is_isolated_and_recorded_as_broken(caplog):
 
 def test_one_broken_scraper_does_not_prevent_others_listings():
     listings, health = scrape_all(
-        {"sreality": WorkingScraper, "bezrealitky": BrokenScraper}, SPEC, client=None,
+        {"sreality": WorkingScraper, "bezrealitky": BrokenScraper}, CRITERIA, client=None,
     )
     assert [l.id for l in listings] == ["sreality:1"]
     assert health["sreality"].status == "ok"
@@ -107,7 +107,7 @@ def test_one_broken_scraper_does_not_prevent_others_listings():
 
 def test_place_not_found_error_propagates_instead_of_being_isolated():
     with pytest.raises(PlaceNotFoundError):
-        scrape_all({"sreality": UnresolvablePlaceScraper}, SPEC, client=None)
+        scrape_all({"sreality": UnresolvablePlaceScraper}, CRITERIA, client=None)
 
 
 class TestOnScraperDone:
@@ -117,7 +117,7 @@ class TestOnScraperDone:
     def test_called_once_per_scraper_with_its_recorded_health(self):
         calls = []
         scrape_all(
-            {"sreality": WorkingScraper, "bezrealitky": EmptyScraper}, SPEC, client=None,
+            {"sreality": WorkingScraper, "bezrealitky": EmptyScraper}, CRITERIA, client=None,
             on_scraper_done=lambda name, health: calls.append((name, health.status)),
         )
         assert calls == [("sreality", "ok"), ("bezrealitky", "zero_results")]
@@ -126,7 +126,7 @@ class TestOnScraperDone:
         calls = []
         with caplog.at_level("ERROR", logger="rentczecher"):
             scrape_all(
-                {"bezrealitky": BrokenScraper}, SPEC, client=None,
+                {"bezrealitky": BrokenScraper}, CRITERIA, client=None,
                 on_scraper_done=lambda name, health: calls.append((name, health.status)),
             )
         assert calls == [("bezrealitky", "broken")]
@@ -135,7 +135,7 @@ class TestOnScraperDone:
         calls = []
         with caplog.at_level("ERROR", logger="rentczecher"):
             scrape_all(
-                {"sreality": CrashingScraper}, SPEC, client=None,
+                {"sreality": CrashingScraper}, CRITERIA, client=None,
                 on_scraper_done=lambda name, health: calls.append((name, health.status)),
             )
         assert calls == [("sreality", "broken")]
@@ -144,7 +144,7 @@ class TestOnScraperDone:
         calls = []
         with pytest.raises(PlaceNotFoundError):
             scrape_all(
-                {"sreality": UnresolvablePlaceScraper}, SPEC, client=None,
+                {"sreality": UnresolvablePlaceScraper}, CRITERIA, client=None,
                 on_scraper_done=lambda name, health: calls.append((name, health.status)),
             )
         assert calls == []

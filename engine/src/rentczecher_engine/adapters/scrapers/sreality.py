@@ -70,12 +70,12 @@ class SrealityPlace:
 class SrealityScraper(BaseScraper):
     name = "sreality"
 
-    def __init__(self, spec, client):
-        super().__init__(spec, client)
-        self.place = SrealityPlace.from_params(resolve(spec.place))
+    def __init__(self, criteria, client):
+        super().__init__(criteria, client)
+        self.place = SrealityPlace.from_params(resolve(criteria.place))
 
     def _category_cbs(self) -> tuple[int, int]:
-        return ESTATE_TYPE_CB[self.spec.estate_type], OFFER_TYPE_CB[self.spec.offer_type]
+        return ESTATE_TYPE_CB[self.criteria.estate_type], OFFER_TYPE_CB[self.criteria.offer_type]
 
     def _location_params(self) -> dict:
         if self.place.district_id is not None:
@@ -92,13 +92,13 @@ class SrealityScraper(BaseScraper):
             "offset": offset,
             "lang": "cs",
         }
-        if self.spec.max_price > 0:
+        if self.criteria.max_price > 0:
             # The old czk_price_summary_order2=min|max param is silently
             # ignored by this API; price filtering happens client-side too.
-            params["price_from"] = self.spec.min_price
-            params["price_to"] = self.spec.max_price
-        if self.spec.min_land_m2 > 0:
-            params["estate_area_from"] = self.spec.min_land_m2
+            params["price_from"] = self.criteria.min_price
+            params["price_to"] = self.criteria.max_price
+        if self.criteria.min_land_m2 > 0:
+            params["estate_area_from"] = self.criteria.min_land_m2
         return params
 
     def scrape(self) -> list[Listing]:
@@ -142,7 +142,7 @@ class SrealityScraper(BaseScraper):
             return None
 
         price = int(estate.get("price_czk") or estate.get("price") or 0)
-        if self.spec.max_price > 0 and (price > self.spec.max_price or price < self.spec.min_price):
+        if self.criteria.max_price > 0 and (price > self.criteria.max_price or price < self.criteria.min_price):
             return None
 
         name = estate.get("advert_name", "")

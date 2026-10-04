@@ -55,7 +55,7 @@ def _listing(id, source, **kw):
 
 def _scraper(listings=(), error=None):
     class FakeScraper:
-        def __init__(self, spec, client):
+        def __init__(self, criteria, client):
             pass
 
         def scrape(self):
@@ -163,7 +163,7 @@ class TestCountsAndHealth:
 
     def test_an_unresolvable_place_aborts_the_profile_as_failed(self, caplog):
         class UnresolvablePlaceScraper:
-            def __init__(self, spec, client):
+            def __init__(self, criteria, client):
                 raise PlaceNotFoundError("obvod 78")
 
         deps = _deps(scrapers={"sreality": UnresolvablePlaceScraper})

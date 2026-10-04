@@ -21,7 +21,7 @@ from rentczecher_engine.adapters.repositories.sqlite import connection
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.client import build_client
-from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.services.pipeline import PipelineDeps
 from rentczecher_engine.services.scrape import Scraper
 
@@ -30,7 +30,7 @@ from rentczecher_engine.services.scrape import Scraper
 class ApiDeps:
     config: dict
     db_path: Path
-    scrapers: dict[str, Callable[[SearchSpec, object], Scraper]]
+    scrapers: dict[str, Callable[[Criteria, object], Scraper]]
     gazetteer_db_path: Path | None = None
 
     def profile_config(self, profile_id: str) -> dict | None:

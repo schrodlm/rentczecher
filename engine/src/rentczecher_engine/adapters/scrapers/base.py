@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import httpx
 
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.domain.profile import Criteria
 
 __all__ = ["BaseScraper", "Listing"]
 
@@ -11,8 +11,8 @@ __all__ = ["BaseScraper", "Listing"]
 class BaseScraper(ABC):
     name: str = "base"
 
-    def __init__(self, spec: SearchSpec, client: httpx.Client):
-        self.spec = spec
+    def __init__(self, criteria: Criteria, client: httpx.Client):
+        self.criteria = criteria
         self._client = client
 
     @abstractmethod

@@ -20,7 +20,7 @@ def client():
 from rentczecher_engine.adapters.config import paths  # noqa: E402
 from rentczecher_engine.adapters.config.loader import load_config  # noqa: E402
 from rentczecher_engine.domain.location import PlaceRef  # noqa: E402
-from rentczecher_engine.domain.search import SearchSpec  # noqa: E402
+from rentczecher_engine.domain.profile import Criteria  # noqa: E402
 
 if paths.config_path().exists():
     CONFIG = load_config(paths.config_path())
@@ -33,8 +33,8 @@ def _get_profile(profile_id: str) -> dict:
 
 
 def _scraper(cls, profile_id: str, client):
-    spec = SearchSpec.from_search_config(_get_profile(profile_id)["search"])
-    return cls(spec, client)
+    criteria = Criteria.from_search_config(_get_profile(profile_id)["search"])
+    return cls(criteria, client)
 
 
 # ─── Sreality ───────────────────────────────────────────────
@@ -127,9 +127,9 @@ class TestSrealityLive:
 
     def test_pagination_collects_beyond_one_page(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                          min_price=0, max_price=0)
-        listings = SrealityScraper(spec, client).scrape()
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
+                            min_price=0, max_price=0)
+        listings = SrealityScraper(criteria, client).scrape()
         assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"
 
 

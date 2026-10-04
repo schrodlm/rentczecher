@@ -258,7 +258,7 @@ def _make_listing(**kwargs):
 
 def _scraper(*listings):
     class FakeScraper:
-        def __init__(self, spec, client):
+        def __init__(self, criteria, client):
             pass
 
         def scrape(self):

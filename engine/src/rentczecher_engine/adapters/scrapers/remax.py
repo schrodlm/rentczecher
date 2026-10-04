@@ -81,20 +81,20 @@ class RemaxPlace:
 class RemaxScraper(BaseScraper):
     name = "remax"
 
-    def __init__(self, spec, client):
-        super().__init__(spec, client)
-        self.place = RemaxPlace.from_params(resolve(spec.place))
+    def __init__(self, criteria, client):
+        super().__init__(criteria, client)
+        self.place = RemaxPlace.from_params(resolve(criteria.place))
 
     def _build_url(self) -> str:
-        query: list[tuple[str, object]] = [("hledani", OFFER_TYPE_ID[self.spec.offer_type])]
+        query: list[tuple[str, object]] = [("hledani", OFFER_TYPE_ID[self.criteria.offer_type])]
         query += [(f"types[{type_id}]", "on")
-                  for type_id in ESTATE_TYPE_IDS[self.spec.estate_type]]
+                  for type_id in ESTATE_TYPE_IDS[self.criteria.estate_type]]
         query += [(f"regions[{self.place.region_id}][{district_id}]", "on")
                   for district_id in self.place.district_ids]
-        if self.spec.min_price > 0:
-            query.append(("price_from", self.spec.min_price))
-        if self.spec.max_price > 0:
-            query.append(("price_to", self.spec.max_price))
+        if self.criteria.min_price > 0:
+            query.append(("price_from", self.criteria.min_price))
+        if self.criteria.max_price > 0:
+            query.append(("price_to", self.criteria.max_price))
         return SEARCH_BASE_URL + "?" + urlencode(query)
 
     def scrape(self) -> list[Listing]:
@@ -206,9 +206,9 @@ class RemaxScraper(BaseScraper):
                 except ValueError:
                     pass
 
-        if self.spec.max_price > 0 and price > self.spec.max_price:
+        if self.criteria.max_price > 0 and price > self.criteria.max_price:
             return None
-        if price < self.spec.min_price or price == 0:
+        if price < self.criteria.min_price or price == 0:
             return None
 
         card_text = " ".join(card.get_text().split())  # Normalize whitespace

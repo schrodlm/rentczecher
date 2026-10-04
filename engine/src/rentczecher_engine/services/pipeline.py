@@ -16,8 +16,8 @@ from uuid import uuid4
 from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.domain.scrape import ScraperHealth
-from rentczecher_engine.domain.search import SearchSpec
 from rentczecher_engine.services.dedup import NameTierLookup, cross_source_dedup
 from rentczecher_engine.services.diff import classify
 from rentczecher_engine.services.filters import apply_filters
@@ -58,7 +58,7 @@ class PipelineDeps:
     store: RunStore
     clock: Callable[[], datetime]
     client: object
-    scrapers: Mapping[str, Callable[[SearchSpec, object], Scraper]]
+    scrapers: Mapping[str, Callable[[Criteria, object], Scraper]]
     gazetteer: Gazetteer
 
 
@@ -102,17 +102,17 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
     profile_id = profile_config["id"]
     run_id = str(uuid4())
     started_at = deps.clock()
-    spec = SearchSpec.from_search_config(profile_config["search"])
+    criteria = Criteria.from_search_config(profile_config["search"])
 
     enabled = {name: cls for name, cls in deps.scrapers.items()
               if name in profile_config["scrapers"]}
     try:
-        scraped, scraper_health = scrape_all(enabled, spec, deps.client, on_scraper_done)
+        scraped, scraper_health = scrape_all(enabled, criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
         log.error("Profile %s: %s - fix search.place", profile_id, error)
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
-    filtered = apply_filters(scraped, spec)
+    filtered = apply_filters(scraped, criteria)
     located = locate_listings(filtered, deps.gazetteer)
 
     located_by_id = {listing.id: listing for listing in located}

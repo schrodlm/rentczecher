@@ -7,8 +7,8 @@ from typing import Protocol, TypeVar
 
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.domain.scrape import ScraperHealth
-from rentczecher_engine.domain.search import SearchSpec
 
 log = logging.getLogger("rentczecher")
 
@@ -21,8 +21,8 @@ class Scraper(Protocol):
 
 
 def scrape_all(
-    scraper_classes: Mapping[str, Callable[[SearchSpec, ClientT], Scraper]],
-    spec: SearchSpec,
+    scraper_classes: Mapping[str, Callable[[Criteria, ClientT], Scraper]],
+    criteria: Criteria,
     client: ClientT,
     on_scraper_done: Callable[[str, ScraperHealth], None] | None = None,
 ) -> tuple[list[Listing], dict[str, ScraperHealth]]:
@@ -41,7 +41,7 @@ def scrape_all(
     for name, scraper_cls in scraper_classes.items():
         log.info("Running scraper: %s", name)
         try:
-            scraper = scraper_cls(spec, client)
+            scraper = scraper_cls(criteria, client)
             found = scraper.scrape()
         except ScraperBrokenError as error:
             log.error("  %s: portal changed its contract - scraper needs updating: %s", name, error)
