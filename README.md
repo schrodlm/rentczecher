@@ -22,10 +22,10 @@ hosted. Your searches and your history stay on your disk.
   type, estate type, a place, price bounds, minimum size or land) and which
   portals to ask. You never paste portal-specific URLs or region ids. A place
   name is resolved to each portal's own search parameters for you.
-- **Any Czech location by name.** `place: praha-7`, `place: domazlice`,
-  `place: "okres Beroun"`, `place: plzensky`. Any Czech kraj or district as a
-  slug or free text. A typo fails loudly with a did-you-mean suggestion instead
-  of silently searching the wrong place.
+- **Any Czech location by name.** `place: obvod Praha 7`, `place: okres Beroun`,
+  `place: kraj Plzeňský`. Any Czech kraj, okres or Praha obvod by its kind and
+  name. An unknown or ambiguous name fails loudly instead of silently searching
+  the wrong place.
 - **Multiple independent profiles.** Flat rentals in Praha 7, houses for sale in
   Domažlice. Each has its own portals, filters, and scoring, all from one config
   file and one cron entry.
@@ -91,7 +91,7 @@ profiles:
     search:
       offer_type: rent            # rent | sale
       estate_type: flat           # flat | house | land | cottage
-      place: praha-7              # any Czech kraj or district, typos get suggestions
+      place: obvod Praha 7        # a kraj, okres or Praha obvod, by its kind and name
       min_price: 0
       max_price: 25000
       dispositions: ["2+kk", "2+1"]   # empty = all
@@ -114,7 +114,7 @@ profiles:
     search:
       offer_type: sale
       estate_type: house
-      place: domazlice
+      place: okres Domažlice
       max_price: 5000000
       min_land_m2: 500
 
@@ -190,7 +190,8 @@ Places come from the gazetteer, a SQLite file shipped with the engine
 (`engine/src/rentczecher_engine/adapters/geocoding/gazetteer.sqlite`). It holds
 every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
 code, and how each portal names the places it can search by. `place:` names a
-kraj, an okres or a Praha obvod (`praha-7`, `domazlice`, `plzensky`).
+kraj, an okres or a Praha obvod by its kind and name (`obvod Praha 7`,
+`okres Domažlice`).
 [docs/places.md](docs/places.md) describes the units, and
 [docs/locating.md](docs/locating.md) how a listing's location text becomes them.
 
