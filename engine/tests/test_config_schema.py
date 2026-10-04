@@ -14,7 +14,7 @@ from rentczecher_engine.adapters.config.schema import Config, ProfileConfig
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria, Preferences
-from tests.profiles import layouts, preferences
+from tests.profiles import criteria, layouts, preferences, profile
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
@@ -32,7 +32,7 @@ VALID = {
 
 def _write(tmp_path, config):
     path = tmp_path / "config.yaml"
-    path.write_text(yaml.safe_dump(config, allow_unicode=True))
+    path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False))
     return path
 
 
@@ -116,7 +116,18 @@ class TestLoader:
         (loaded,) = load_config(_write(tmp_path, VALID))
         assert loaded.criteria == Criteria(
             offer_type="rent", estate_type="flat", place=PlaceRef(kind="obvod", code=78), max_price=25000)
-        assert loaded.portals == ("sreality",)
+
+    def test_each_profile_loads_as_a_profile_in_file_order(self, tmp_path):
+        """Profiles keep the order the file lists them in. A profile's key
+        becomes its id, its scrapers its portals, and its name and enabled
+        flag carry over."""
+        written = _broken(lambda c: c["profiles"].update(a={
+            **VALID["profiles"]["p"], "name": "A", "enabled": False, "scrapers": ["remax", "bezrealitky"]}))
+        assert load_config(_write(tmp_path, written)) == [
+            profile(criteria=criteria(max_price=25000)),
+            profile(id="a", name="A", enabled=False, portals=("remax", "bezrealitky"),
+                    criteria=criteria(max_price=25000)),
+        ]
 
     def test_search_loads_as_criteria(self, tmp_path):
         """Every search setting lands in its own criterion."""

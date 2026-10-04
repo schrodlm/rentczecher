@@ -61,6 +61,23 @@ class TestRunManager:
         assert kinds == ["run_started", "run_progress", "run_finished", "listings_arrived"]
         assert all(event.data["run_id"] == run_id for event in collected)
 
+    def test_a_run_executes_the_triggered_profile_under_its_id(self):
+        """The runner receives the profile that was triggered, and every
+        lifecycle event names that profile's id."""
+        received = []
+
+        def run_profile(profile, deps, *, dry_run=False, on_scraper_done=None):
+            received.append(profile)
+            return _result(new=2)
+
+        broker = EventBroker()
+        manager = _manager(broker, run_profile)
+        with broker.subscribe() as events:
+            manager.trigger(MATEJ)
+            collected = [events.get(timeout=2) for _ in range(3)]
+        assert received == [MATEJ]
+        assert all(event.data["profile_id"] == "matej" for event in collected)
+
     def test_no_listings_arrived_without_new_listings(self):
         """A run finding nothing new ends at run_finished."""
         broker = EventBroker()
