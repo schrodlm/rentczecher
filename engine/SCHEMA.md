@@ -30,12 +30,10 @@ erDiagram
     profiles   ||--o{ listing_tracking   : "tracks"
     listings   ||--o{ listing_tracking   : "seen by profiles as"
     profiles   ||--o{ scrape_runs         : "records a run of"
-    profiles   ||--o{ notification_state  : "tracks emails for"
     properties ||--o{ listings            : "posted as"
     properties ||--o| property_locations  : "lies at"
     properties ||--o{ property_images     : "owns"
     properties ||--o{ dedup_records       : "matched by"
-    properties ||--o{ notification_state  : "notified about"
     properties |o--o{ properties          : "merged into"
     listings   ||--o{ price_observations  : "priced over time"
     listings   ||--o{ dedup_records       : "diverged in"
@@ -54,5 +52,4 @@ erDiagram
 | `property_images` | Superset of image URLs across a property's listings. `local_path` is reserved (always null today) for an opt-in photo-archiving feature. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
 | `dedup_records` | Audit trail of every dedup match: why two were judged the same (`match_reason`) and how the listing's facts diverged from canonical (`differences`, JSON). |
-| `notification_state` | Per `(profile, property)`: has this profile been emailed about this property, and at what price (the price-drop baseline). |
 | `scrape_runs` | One row per profile per run: timings, status, counts. Data staleness = the latest non-failed run's `started_at`. |
