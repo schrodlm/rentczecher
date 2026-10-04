@@ -13,6 +13,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
+from tests.profiles import preferences
 
 GAZETTEER = Gazetteer()
 
@@ -27,6 +28,7 @@ PROFILE = {
         "place": PlaceRef("obvod", 78),
     },
     "scrapers": ["sreality"],
+    "scoring": preferences(),
 }
 
 STABLE = dict(

@@ -1,0 +1,24 @@
+"""Scoring preferences for tests: everything off unless a test turns it on."""
+
+from dataclasses import replace
+
+from rentczecher_engine.domain.disposition import Disposition, parse_disposition
+from rentczecher_engine.domain.profile import Preferences
+
+
+def preferences(**overrides) -> Preferences:
+    defaults = Preferences(
+        price_per_m2_weight=0, disposition_weight=0, preferred_dispositions=(),
+        size_weight=0, ideal_size_m2=55, neighborhood_weight=0, preferred_neighborhoods=(),
+        land_weight=0, ideal_land_m2=2000, price_weight=0, max_good_price=3000000,
+    )
+    return replace(defaults, **overrides)
+
+
+def layouts(*codes: str) -> tuple[Disposition, ...]:
+    parsed = []
+    for code in codes:
+        layout = parse_disposition(code)
+        assert layout is not None
+        parsed.append(layout)
+    return tuple(parsed)

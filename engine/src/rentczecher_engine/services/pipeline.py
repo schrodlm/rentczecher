@@ -117,7 +117,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)
-    survivors = [listing.with_annotations(score=compute_score(listing, profile_config))
+    survivors = [listing.with_annotations(score=compute_score(listing, profile_config["scoring"]))
                 for listing in outcome.survivors]
 
     current_ids = {listing.id for listing in survivors} | {m.absorbed_id for m in outcome.merges}

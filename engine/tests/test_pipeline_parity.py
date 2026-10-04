@@ -20,6 +20,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
+from tests.profiles import layouts, preferences
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -40,15 +41,14 @@ PROFILE = {
         "min_size_m2": 30,
     },
     "scrapers": ["sreality", "bezrealitky", "remax"],
-    "scoring": {
-        "price_per_m2_weight": 40,
-        "disposition_weight": 30,
-        "preferred_dispositions": ["2+kk", "1+1"],
-        "size_weight": 15,
-        "ideal_size_m2": 55,
-        "neighborhood_weight": 15,
-        "preferred_neighborhoods": ["Holešovice", "Letná"],
-    },
+    "scoring": preferences(
+        price_per_m2_weight=40,
+        disposition_weight=30,
+        preferred_dispositions=layouts("2+kk", "1+1"),
+        size_weight=15,
+        neighborhood_weight=15,
+        preferred_neighborhoods=("Holešovice", "Letná"),
+    ),
 }
 PROFILE_WITH_ID = {**PROFILE, "id": PROFILE_ID}
 

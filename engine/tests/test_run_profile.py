@@ -14,6 +14,7 @@ from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenEr
 from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
+from tests.profiles import preferences
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 GAZETTEER = Gazetteer()
@@ -70,6 +71,7 @@ def _profile_config(scrapers=("sreality",), **overrides):
         id="praha7-byty", name="Praha 7 byty",
         search={"offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78)},
         scrapers=list(scrapers),
+        scoring=preferences(),
     )
     config.update(overrides)
     return config
