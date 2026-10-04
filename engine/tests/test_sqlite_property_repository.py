@@ -14,6 +14,7 @@ import pytest
 
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
+from rentczecher_engine.domain.disposition import ATYPICAL, Disposition
 from rentczecher_engine.domain.geo import geocell
 from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
@@ -62,6 +63,17 @@ class TestCreateAndGet:
         assert got.size_m2 == 55
         assert got.disposition_raw_text == "2+kk"
         assert got.lat == 50.1
+
+    @pytest.mark.parametrize("disposition", [Disposition(rooms=2, kitchen="kitchenette"), ATYPICAL])
+    def test_round_trips_the_disposition(self, tmp_path, disposition):
+        repo, _ = _repo(tmp_path)
+        repo.create(_property(disposition=disposition))
+        assert repo.get("prop-1").disposition == disposition
+
+    def test_property_without_a_disposition_reads_back_none(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.create(_property())
+        assert repo.get("prop-1").disposition is None
 
     def test_get_missing_returns_none(self, tmp_path):
         repo, _ = _repo(tmp_path)

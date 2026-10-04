@@ -4,6 +4,7 @@ Run: python3 -m pytest tests/test_assemble.py -v
 """
 
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.location import Location, Place
 from rentczecher_engine.services.assemble import assemble_property
 
@@ -31,6 +32,7 @@ def test_uses_listings_own_gps_when_present():
     assert identity.location_raw_text == "Praha 7 - Holešovice"
     assert identity.size_m2 == 50
     assert identity.disposition_raw_text == "2+kk"
+    assert identity.disposition == Disposition(rooms=2, kitchen="kitchenette")
     assert identity.land_m2 == 120
     assert identity.lat == 50.1
     assert identity.lon == 14.4

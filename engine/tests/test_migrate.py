@@ -3,11 +3,13 @@
 Run: python3 -m pytest tests/test_migrate.py -v
 """
 
+import shutil
 import sqlite3
 
 import pytest
 
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.domain.disposition import ATYPICAL, Disposition
 
 EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
@@ -118,6 +120,48 @@ class TestMigrate:
         assert migrate.apply_pending(conn) == [1]
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "a" in tables
+
+
+class TestDispositionsMigration:
+    """The dispositions table holds the parser's vocabulary, and existing
+    properties gain the code their raw text names."""
+
+    def _db_at_version_9(self, tmp_path):
+        partial = tmp_path / "migrations"
+        partial.mkdir()
+        for path in migrate.MIGRATIONS_DIR.glob("000[1-9]_*.sql"):
+            shutil.copy(path, partial / path.name)
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(migrate, "MIGRATIONS_DIR", partial)
+            conn = connection.connect(tmp_path / "t.db")
+            assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        return conn
+
+    def test_backfill_maps_raw_texts_to_disposition_codes(self, tmp_path):
+        conn = self._db_at_version_9(tmp_path)
+        raw_texts = {"layout": "2+KK", "studio": "Garsoniéra", "atypical": "Atypický",
+                     "building": "Rodinný", "missing": None}
+        for property_id, raw_text in raw_texts.items():
+            conn.execute(
+                "INSERT INTO properties (id, created_at, disposition_raw_text) VALUES (?, ?, ?)",
+                (property_id, "2026-08-02T00:00:00+00:00", raw_text))
+        conn.commit()
+        assert migrate.apply_pending(conn)[0] == 10
+        codes = dict(conn.execute("SELECT id, disposition_code FROM properties").fetchall())
+        assert codes == {"layout": "2+kk", "studio": "1+kk", "atypical": "atypicky",
+                         "building": None, "missing": None}
+
+    def test_seeded_codes_are_exactly_the_parseable_dispositions(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        parseable = {ATYPICAL.code: ATYPICAL}
+        for rooms in range(1, 10):
+            for kitchen in ("kitchenette", "separate"):
+                disposition = Disposition(rooms=rooms, kitchen=kitchen)
+                parseable[disposition.code] = disposition
+        seeded = {row[0]: Disposition(rooms=row[1], kitchen=row[2])
+                  for row in conn.execute("SELECT code, rooms, kitchen FROM dispositions")}
+        assert seeded == parseable
 
 
 class TestConcurrentWriters:
