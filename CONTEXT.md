@@ -16,6 +16,18 @@ The inferred real-world housing unit behind one or more listings. The same
 flat posted on two portals is one property with two listings.
 _Avoid_: estate, home
 
+**Disposition**:
+A property's layout: its number of rooms and whether the kitchen is a
+kitchenette (2+kk) or a separate room (2+1). A layout fitting neither is
+atypical. A garsoniéra is a 1+kk.
+_Avoid_: room count
+
+**Disposition text**:
+The portal's own words for a listing's layout, kept as written. The
+disposition is parsed from it. Text naming no layout, such as a building
+type, leaves the disposition unknown.
+_Avoid_: disposition
+
 **Place**:
 One official territorial unit from RÚIAN, the state register of addresses: a
 kraj, okres, obec, obvod, městská část, část obce or ulice. Identified by its
