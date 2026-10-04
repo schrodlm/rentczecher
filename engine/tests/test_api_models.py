@@ -6,9 +6,10 @@ from tests.profiles import profile
 
 
 class TestProfileModel:
-    def test_from_profile_keeps_an_explicit_enabled_false(self):
-        """A disabled profile stays disabled on the wire."""
-        model = ProfileModel.from_profile(profile(id="matej", name="Matěj", enabled=False))
+    def test_a_paused_profile_is_not_enabled(self):
+        """A paused profile goes out as not enabled."""
+        paused = profile(id="matej", name="Matěj", paused_at="2026-10-04T00:00:00+00:00")
+        model = ProfileModel.from_profile(paused)
         assert model.enabled is False
 
 
