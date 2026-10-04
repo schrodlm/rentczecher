@@ -408,7 +408,8 @@ class TestBezrealitkyParsing:
 
 class TestBezrealitkyLocationParsing:
     """The comma-separated address splits into names on both commas and
-    'Praha - Bubeneč' style dash pairs; the portal has no okres concept."""
+    'Praha - Bubeneč' style dash pairs. An 'okres X' segment states the
+    district."""
 
     def test_comma_separated_address(self):
         place = _bez_parse_location("Veletržní, Praha 7")
@@ -422,6 +423,11 @@ class TestBezrealitkyLocationParsing:
 
     def test_empty_address(self):
         assert _bez_parse_location("") == ParsedPlace()
+
+    def test_an_okres_segment_states_the_district(self):
+        place = _bez_parse_location("Nekvasovy, okres Plzeň-jih")
+        assert place.names == ("Nekvasovy",)
+        assert place.district == "Plzeň-jih"
 
 
 class TestBezrealitkyPlaceBasedParams:
@@ -555,6 +561,11 @@ class TestRemaxLocationParsing:
         assert place.names == ()
         assert place.district == "Domažlice"
 
+    def test_kraj_vysocina_is_skipped_like_any_kraj(self):
+        place = _remax_parse_location("Žďár nad Sázavou , Kraj Vysočina", "")
+        assert place.names == ()
+        assert place.district == "Žďár nad Sázavou"
+
     def test_okres_with_part(self):
         place = _remax_parse_location("Domažlice - Týnské Předměstí", "")
         assert place.names == ("Týnské Předměstí",)
@@ -573,6 +584,16 @@ class TestRemaxLocationParsing:
     def test_bare_praha_is_not_an_okres(self):
         place = _remax_parse_location("Praha", "")
         assert place.names == ("Praha",)
+        assert place.district is None
+
+    def test_a_praha_street_is_a_name_not_a_district(self):
+        place = _remax_parse_location("Rybná , Hlavní město Praha , Praha 1, Hlavní město Praha", "")
+        assert place.names == ("Rybná", "Praha 1")
+        assert place.district is None
+
+    def test_a_praha_mestska_cast_is_a_name_not_a_district(self):
+        place = _remax_parse_location("Hlavní město Praha , Praha-Slivenec, Hlavní město Praha", "")
+        assert place.names == ("Praha-Slivenec",)
         assert place.district is None
 
     def test_empty_location(self):
