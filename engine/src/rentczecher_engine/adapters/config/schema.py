@@ -3,7 +3,7 @@ normalization. Everything downstream consumes the validated result."""
 
 import difflib
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, field_validator
 from typing import Annotated
 
 from rentczecher_engine.domain.disposition import Kitchen, parse_disposition
@@ -25,7 +25,6 @@ def _layouts_only(values: list[str]) -> list[str]:
 
 
 DispositionCodes = Annotated[list[str], AfterValidator(_layouts_only)]
-Rooms = Annotated[int, Field(ge=1, le=9)]
 
 
 class ScheduleConfig(StrictModel):
@@ -40,15 +39,9 @@ class SearchConfig(StrictModel):
     max_price: int | None = None
     min_size_m2: int | None = None
     min_land_m2: int | None = None
-    min_rooms: Rooms | None = None
-    max_rooms: Rooms | None = None
+    min_rooms: int | None = None
+    max_rooms: int | None = None
     kitchen: Kitchen | None = None
-
-    @model_validator(mode="after")
-    def _room_range_is_ordered(self) -> "SearchConfig":
-        if self.min_rooms is not None and self.max_rooms is not None and self.min_rooms > self.max_rooms:
-            raise ValueError("min_rooms must not exceed max_rooms")
-        return self
 
 
 class ScoringConfig(StrictModel):

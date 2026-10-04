@@ -145,7 +145,7 @@ class TestLoader:
     @pytest.mark.parametrize("rooms", [0, 10])
     def test_a_room_count_outside_one_to_nine_is_rejected(self, tmp_path, bound, rooms):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update({bound: rooms}))
-        with pytest.raises(ConfigError, match=rf"profiles\.p\.search\.{bound}"):
+        with pytest.raises(ConfigError, match=rf"profiles\.p\.search: {bound} must be 1 to 9"):
             load_config(_write(tmp_path, broken))
 
     @pytest.mark.parametrize("rooms", [1, 9])
