@@ -33,6 +33,11 @@ class TestScoring:
         preferred_neighborhoods=("Holešovice", "Letná", "Bubeneč"),
     )
 
+    NEIGHBORHOOD_ONLY = preferences(
+        neighborhood_weight=100,
+        preferred_neighborhoods=("Holešovice", "Letná"),
+    )
+
     HOUSE_PROFILE = preferences(
         land_weight=40,
         ideal_land_m2=2000,
@@ -140,3 +145,27 @@ class TestScoring:
         from rentczecher_engine.services.score import compute_score
         profile = preferences(disposition_weight=100, preferred_dispositions=layouts("garsoniéra", "1+kk"))
         assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 100
+
+    def test_a_preferred_neighborhood_scores_by_its_rank(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(location_raw_text="Praha 7 - Holešovice"), self.NEIGHBORHOOD_ONLY) == 100
+        assert compute_score(_make_listing(location_raw_text="Praha 7 - Letná"), self.NEIGHBORHOOD_ONLY) == 80
+
+    def test_neighborhood_matching_ignores_case(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(location_raw_text="praha 7 - letná"), self.NEIGHBORHOOD_ONLY) == 80
+
+    def test_a_late_preferred_neighborhood_scores_no_lower_than_twenty(self):
+        from rentczecher_engine.services.score import compute_score
+        six = preferences(neighborhood_weight=100,
+                          preferred_neighborhoods=("Karlín", "Smíchov", "Žižkov", "Dejvice", "Holešovice", "Letná"))
+        assert compute_score(_make_listing(location_raw_text="Praha 7 - Holešovice"), six) == 20
+        assert compute_score(_make_listing(location_raw_text="Praha 7 - Letná"), six) == 20
+
+    def test_a_listing_in_no_preferred_neighborhood_scores_the_floor(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(location_raw_text="Praha 2 - Vinohrady"), self.NEIGHBORHOOD_ONLY) == 20
+
+    def test_a_listing_without_location_text_takes_no_neighborhood_score(self):
+        from rentczecher_engine.services.score import compute_score
+        assert compute_score(_make_listing(location_raw_text=""), self.NEIGHBORHOOD_ONLY) == 0
