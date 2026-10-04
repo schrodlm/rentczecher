@@ -28,15 +28,16 @@ def compute_score(listing: Listing, preferences: Preferences) -> int:
         score = min(100.0, (listing.size_m2 / preferences.ideal_size_m2) * 100)
         total += score * preferences.size_weight / 100
 
-    # Neighborhood component
-    if preferences.neighborhood_weight and listing.location_raw_text and preferences.preferred_neighborhoods:
-        loc_lower = listing.location_raw_text.lower()
+    # Preferred place component
+    if preferences.place_weight and preferences.preferred_places:
+        location = listing.resolved_location
         score = 20.0
-        for i, hood in enumerate(preferences.preferred_neighborhoods):
-            if hood.lower() in loc_lower:
-                score = max(20.0, 100.0 - i * 20)
-                break
-        total += score * preferences.neighborhood_weight / 100
+        if location is not None:
+            for i, place in enumerate(preferences.preferred_places):
+                if location.lies_in(place):
+                    score = max(20.0, 100.0 - i * 20)
+                    break
+        total += score * preferences.place_weight / 100
 
     # Land area component (for houses/cottages)
     if preferences.land_weight and listing.land_m2 and preferences.ideal_land_m2 > 0:

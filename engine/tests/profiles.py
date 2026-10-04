@@ -17,7 +17,7 @@ def criteria(**overrides) -> Criteria:
 def preferences(**overrides) -> Preferences:
     defaults = Preferences(
         price_per_m2_weight=0, disposition_weight=0, preferred_dispositions=(),
-        size_weight=0, ideal_size_m2=55, neighborhood_weight=0, preferred_neighborhoods=(),
+        size_weight=0, ideal_size_m2=55, place_weight=0, preferred_places=(),
         land_weight=0, ideal_land_m2=2000, price_weight=0, max_good_price=3000000,
     )
     return replace(defaults, **overrides)

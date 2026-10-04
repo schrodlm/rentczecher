@@ -2,17 +2,38 @@
 
 Run with: python3 -m pytest tests/test_units.py -v
 """
+from dataclasses import replace
+
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.location import Location, Place, PlaceRef
 from tests.profiles import layouts, preferences
 
+PRAHA = Location(
+    kraj=Place(code=19, name="Hlavní město Praha", lat=50.08, lon=14.42),
+    okres=None,
+    obec=Place(code=554782, name="Praha", lat=50.08, lon=14.42),
+    obvod=None,
+    mestska_cast=None,
+    cast_obce=None,
+    ulice=None,
+    cislo_popisne=None,
+    cislo_orientacni=None,
+)
+IN_HOLESOVICE = replace(PRAHA, cast_obce=Place(code=490067, name="Holešovice", lat=50.10, lon=14.44))
+IN_BUBENEC = replace(PRAHA, cast_obce=Place(code=490024, name="Bubeneč", lat=50.10, lon=14.40))
+IN_VINOHRADY = replace(PRAHA, cast_obce=Place(code=490229, name="Vinohrady", lat=50.08, lon=14.44))
 
-def _make_listing(**kwargs) -> Listing:
+HOLESOVICE = PlaceRef("cast_obce", 490067)
+BUBENEC = PlaceRef("cast_obce", 490024)
+
+
+def _make_listing(resolved_location: Location | None = None, **kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Test", price=20000,
         location_raw_text="Praha 7 - Holešovice", url="https://example.com",
     )
     defaults.update(kwargs)
-    return Listing.build(**defaults)
+    return Listing.build(**defaults).with_annotations(resolved_location=resolved_location)
 
 
 # ─── Scoring ────────────────────────────────────────────────
@@ -29,13 +50,13 @@ class TestScoring:
         preferred_dispositions=layouts("2+kk", "2+1", "3+kk"),
         size_weight=15,
         ideal_size_m2=55,
-        neighborhood_weight=15,
-        preferred_neighborhoods=("Holešovice", "Letná", "Bubeneč"),
+        place_weight=15,
+        preferred_places=(HOLESOVICE, BUBENEC),
     )
 
-    NEIGHBORHOOD_ONLY = preferences(
-        neighborhood_weight=100,
-        preferred_neighborhoods=("Holešovice", "Letná"),
+    PLACE_ONLY = preferences(
+        place_weight=100,
+        preferred_places=(HOLESOVICE, BUBENEC),
     )
 
     HOUSE_PROFILE = preferences(
@@ -49,7 +70,7 @@ class TestScoring:
 
     def test_good_rental_scores_high(self):
         from rentczecher_engine.services.score import compute_score
-        l = _make_listing(price=20000, size_m2=50, disposition_raw_text="2+kk")
+        l = _make_listing(price=20000, size_m2=50, disposition_raw_text="2+kk", resolved_location=IN_HOLESOVICE)
         score = compute_score(l, self.RENTAL_PROFILE)
         assert score >= 70, f"Good rental should score 70+, got {score}"
 
@@ -146,26 +167,26 @@ class TestScoring:
         profile = preferences(disposition_weight=100, preferred_dispositions=layouts("garsoniéra", "1+kk"))
         assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 100
 
-    def test_a_preferred_neighborhood_scores_by_its_rank(self):
+    def test_a_preferred_place_scores_by_its_rank(self):
         from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(location_raw_text="Praha 7 - Holešovice"), self.NEIGHBORHOOD_ONLY) == 100
-        assert compute_score(_make_listing(location_raw_text="Praha 7 - Letná"), self.NEIGHBORHOOD_ONLY) == 80
+        assert compute_score(_make_listing(resolved_location=IN_HOLESOVICE), self.PLACE_ONLY) == 100
+        assert compute_score(_make_listing(resolved_location=IN_BUBENEC), self.PLACE_ONLY) == 80
 
-    def test_neighborhood_matching_ignores_case(self):
+    def test_a_late_preferred_place_scores_no_lower_than_twenty(self):
         from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(location_raw_text="praha 7 - letná"), self.NEIGHBORHOOD_ONLY) == 80
+        karlin = PlaceRef("cast_obce", 400637)
+        smichov = PlaceRef("cast_obce", 400301)
+        zizkov = PlaceRef("cast_obce", 490261)
+        dejvice = PlaceRef("cast_obce", 400459)
+        six = preferences(place_weight=100,
+                          preferred_places=(karlin, smichov, zizkov, dejvice, HOLESOVICE, BUBENEC))
+        assert compute_score(_make_listing(resolved_location=IN_HOLESOVICE), six) == 20
+        assert compute_score(_make_listing(resolved_location=IN_BUBENEC), six) == 20
 
-    def test_a_late_preferred_neighborhood_scores_no_lower_than_twenty(self):
+    def test_a_listing_in_no_preferred_place_scores_the_floor(self):
         from rentczecher_engine.services.score import compute_score
-        six = preferences(neighborhood_weight=100,
-                          preferred_neighborhoods=("Karlín", "Smíchov", "Žižkov", "Dejvice", "Holešovice", "Letná"))
-        assert compute_score(_make_listing(location_raw_text="Praha 7 - Holešovice"), six) == 20
-        assert compute_score(_make_listing(location_raw_text="Praha 7 - Letná"), six) == 20
+        assert compute_score(_make_listing(resolved_location=IN_VINOHRADY), self.PLACE_ONLY) == 20
 
-    def test_a_listing_in_no_preferred_neighborhood_scores_the_floor(self):
+    def test_a_listing_without_a_resolved_location_scores_as_matching_no_place(self):
         from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(location_raw_text="Praha 2 - Vinohrady"), self.NEIGHBORHOOD_ONLY) == 20
-
-    def test_a_listing_without_location_text_takes_no_neighborhood_score(self):
-        from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(location_raw_text=""), self.NEIGHBORHOOD_ONLY) == 0
+        assert compute_score(_make_listing(resolved_location=None), self.PLACE_ONLY) == 20

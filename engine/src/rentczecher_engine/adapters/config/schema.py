@@ -56,8 +56,8 @@ class ScoringConfig(StrictModel):
     preferred_dispositions: DispositionCodes = []
     size_weight: float = 0
     ideal_size_m2: int = 55
-    neighborhood_weight: float = 0
-    preferred_neighborhoods: list[str] = []
+    place_weight: float = 0
+    preferred_places: list[str] = []
     land_weight: float = 0
     ideal_land_m2: int = 2000
     price_weight: float = 0

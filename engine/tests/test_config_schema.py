@@ -165,13 +165,14 @@ class TestLoader:
             load_config(_write(tmp_path, broken))
 
     def test_scoring_loads_as_preferences_with_layouts_parsed(self, tmp_path):
-        """Every scoring setting lands in its own preference, and preferred
-        dispositions arrive parsed, in their order of preference."""
+        """Every scoring setting lands in its own preference, preferred
+        dispositions arrive parsed and preferred places resolved, each in their
+        order of preference."""
         written = _broken(lambda c: c["profiles"]["p"].update(scoring={
             "price_per_m2_weight": 10, "disposition_weight": 20,
             "preferred_dispositions": ["2+kk", "garsoniéra"],
             "size_weight": 30, "ideal_size_m2": 60,
-            "neighborhood_weight": 40, "preferred_neighborhoods": ["Letná", "Holešovice"],
+            "place_weight": 40, "preferred_places": ["cast_obce Bubeneč", "cast_obce Vinohrady"],
             "land_weight": 50, "ideal_land_m2": 900,
             "price_weight": 60, "max_good_price": 4000000}))
         (loaded,) = load_config(_write(tmp_path, written))
@@ -179,7 +180,7 @@ class TestLoader:
             price_per_m2_weight=10, disposition_weight=20,
             preferred_dispositions=layouts("2+kk", "1+kk"),
             size_weight=30, ideal_size_m2=60,
-            neighborhood_weight=40, preferred_neighborhoods=("Letná", "Holešovice"),
+            place_weight=40, preferred_places=(PlaceRef("cast_obce", 490024), PlaceRef("cast_obce", 490229)),
             land_weight=50, ideal_land_m2=900,
             price_weight=60, max_good_price=4000000)
 

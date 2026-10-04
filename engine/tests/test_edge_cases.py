@@ -42,11 +42,11 @@ class TestScoringDefaultPreferences:
         score = compute_score(listing, preferences(disposition_weight=30))
         assert isinstance(score, int)
 
-    def test_empty_preferred_neighborhoods(self):
+    def test_a_place_weight_without_places_scores(self):
         from rentczecher_engine.services.score import compute_score
 
-        listing = _make_listing(location_raw_text="Praha 7 - Holesovice", size_m2=50)
-        score = compute_score(listing, preferences(neighborhood_weight=15))
+        listing = _make_listing(size_m2=50)
+        score = compute_score(listing, preferences(place_weight=15))
         assert isinstance(score, int)
 
     def test_default_ideal_land(self):

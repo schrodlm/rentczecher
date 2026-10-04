@@ -17,7 +17,7 @@ from pathlib import Path
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 from tests.profiles import criteria, layouts, preferences, profile
@@ -42,8 +42,8 @@ PROFILE = profile(
         disposition_weight=30,
         preferred_dispositions=layouts("2+kk", "1+1"),
         size_weight=15,
-        neighborhood_weight=15,
-        preferred_neighborhoods=("Holešovice", "Letná"),
+        place_weight=15,
+        preferred_places=(PlaceRef("cast_obce", 490067), PlaceRef("cast_obce", 490024)),
     ),
 )
 

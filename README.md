@@ -33,7 +33,7 @@ hosted. Your searches and your history stay on your disk.
   shown once, with links to its other portals, keeping whichever copy carries
   more detail.
 - **Preference scoring.** A 0–100 score per listing from weights you set (price
-  per m², disposition, size, neighbourhood, land area, total price). It is
+  per m², disposition, size, preferred places, land area, total price). It is
   computed but not shown anywhere yet.
 - **Price drops and disappearances.** A listing whose price fell shows its old
   price next to the new one. A listing gone for three consecutive runs counts
@@ -106,8 +106,8 @@ profiles:
       preferred_dispositions: ["2+kk", "2+1", "3+kk"]
       size_weight: 15
       ideal_size_m2: 55
-      neighborhood_weight: 15
-      preferred_neighborhoods: ["Holešovice", "Letná"]
+      place_weight: 15
+      preferred_places: [cast_obce Bubeneč, obvod Praha 7]   # by kind and name, best first
 
   domazlice-domy:
     name: "Domažlicko – domy a chalupy"
