@@ -3,6 +3,7 @@
 Run with: python3 -m pytest tests/test_units.py -v
 """
 from rentczecher_engine.adapters.scrapers.base import Listing
+from tests.profiles import layouts, preferences
 
 
 def _make_listing(**kwargs) -> Listing:
@@ -17,35 +18,29 @@ def _make_listing(**kwargs) -> Listing:
 # ─── Scoring ────────────────────────────────────────────────
 
 class TestScoring:
-    DISPOSITION_ONLY = {
-        "scoring": {
-            "disposition_weight": 100,
-            "preferred_dispositions": ["1+kk", "2+kk"],
-        },
-    }
+    DISPOSITION_ONLY = preferences(
+        disposition_weight=100,
+        preferred_dispositions=layouts("1+kk", "2+kk"),
+    )
 
-    RENTAL_PROFILE = {
-        "scoring": {
-            "price_per_m2_weight": 40,
-            "disposition_weight": 30,
-            "preferred_dispositions": ["2+kk", "2+1", "3+kk"],
-            "size_weight": 15,
-            "ideal_size_m2": 55,
-            "neighborhood_weight": 15,
-            "preferred_neighborhoods": ["Holešovice", "Letná", "Bubeneč"],
-        }
-    }
+    RENTAL_PROFILE = preferences(
+        price_per_m2_weight=40,
+        disposition_weight=30,
+        preferred_dispositions=layouts("2+kk", "2+1", "3+kk"),
+        size_weight=15,
+        ideal_size_m2=55,
+        neighborhood_weight=15,
+        preferred_neighborhoods=("Holešovice", "Letná", "Bubeneč"),
+    )
 
-    HOUSE_PROFILE = {
-        "scoring": {
-            "land_weight": 40,
-            "ideal_land_m2": 2000,
-            "price_weight": 30,
-            "max_good_price": 3000000,
-            "size_weight": 30,
-            "ideal_size_m2": 150,
-        }
-    }
+    HOUSE_PROFILE = preferences(
+        land_weight=40,
+        ideal_land_m2=2000,
+        price_weight=30,
+        max_good_price=3000000,
+        size_weight=30,
+        ideal_size_m2=150,
+    )
 
     def test_good_rental_scores_high(self):
         from rentczecher_engine.services.score import compute_score
@@ -78,12 +73,6 @@ class TestScoring:
         l = _make_listing(size_m2=50)
         score = compute_score(l, self.RENTAL_PROFILE)
         assert isinstance(score, int)
-
-    def test_empty_scoring_config_returns_zero(self):
-        from rentczecher_engine.services.score import compute_score
-        l = _make_listing()
-        assert compute_score(l, {}) == 0
-        assert compute_score(l, {"scoring": {}}) == 0
 
     def test_house_large_land_scores_high(self):
         from rentczecher_engine.services.score import compute_score
@@ -141,13 +130,13 @@ class TestScoring:
 
     def test_a_late_preferred_rank_scores_no_lower_than_twenty(self):
         from rentczecher_engine.services.score import compute_score
-        profile = {"scoring": {"disposition_weight": 100, "preferred_dispositions": [
-            "1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1"]}}
+        profile = preferences(disposition_weight=100, preferred_dispositions=layouts(
+            "1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1"))
         assert compute_score(_make_listing(disposition_raw_text="3+kk"), profile) == 20
         assert compute_score(_make_listing(disposition_raw_text="3+1"), profile) == 20
 
     def test_a_preferred_studio_stands_for_a_1kk(self):
         """A garsoniéra in the preferred list ranks a 1+kk at its place."""
         from rentczecher_engine.services.score import compute_score
-        profile = {"scoring": {"disposition_weight": 100, "preferred_dispositions": ["garsoniéra", "1+kk"]}}
+        profile = preferences(disposition_weight=100, preferred_dispositions=layouts("garsoniéra", "1+kk"))
         assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 100

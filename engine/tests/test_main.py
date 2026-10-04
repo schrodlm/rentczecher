@@ -15,6 +15,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.cli import main as main_module
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
+from tests.profiles import preferences
 
 
 class TestOrphanedRepoDataWarning:
@@ -281,6 +282,7 @@ def _profile(profile_id, name):
         "id": profile_id, "name": name,
         "search": {"offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78)},
         "scrapers": ["sreality"],
+        "scoring": preferences(),
     }
 
 
