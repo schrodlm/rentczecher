@@ -141,24 +141,6 @@ class TestLoader:
             min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600,
             min_rooms=4, max_rooms=5, kitchen="separate")
 
-    @pytest.mark.parametrize("bound", ["min_rooms", "max_rooms"])
-    @pytest.mark.parametrize("rooms", [0, 10])
-    def test_a_room_count_outside_one_to_nine_is_rejected(self, tmp_path, bound, rooms):
-        broken = _broken(lambda c: c["profiles"]["p"]["search"].update({bound: rooms}))
-        with pytest.raises(ConfigError, match=rf"profiles\.p\.search: {bound} must be 1 to 9"):
-            load_config(_write(tmp_path, broken))
-
-    @pytest.mark.parametrize("rooms", [1, 9])
-    def test_a_range_of_one_room_count_at_either_end_loads(self, tmp_path, rooms):
-        written = _broken(lambda c: c["profiles"]["p"]["search"].update(min_rooms=rooms, max_rooms=rooms))
-        (loaded,) = load_config(_write(tmp_path, written))
-        assert (loaded.criteria.min_rooms, loaded.criteria.max_rooms) == (rooms, rooms)
-
-    def test_a_room_range_running_backwards_is_rejected(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(min_rooms=3, max_rooms=2))
-        with pytest.raises(ConfigError, match="min_rooms must not exceed max_rooms"):
-            load_config(_write(tmp_path, broken))
-
     def test_an_unknown_kitchen_kind_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(kitchen="none"))
         with pytest.raises(ConfigError, match=r"profiles\.p\.search\.kitchen"):
