@@ -90,11 +90,10 @@ def _run(run_store, monkeypatch, records):
         scrapers={"sreality": _scraper(listings)}, gazetteer=GAZETTEER,
     )
 
-    seen_before = store.seen_ids(PROFILE_ID)
     run_profile(PROFILE, deps, dry_run=False)
 
     diff = captured["diff"]
-    new_ids = {r["id"] for r in records} - seen_before
+    new_ids = {l.id for l in diff.new}
     drops = {(l.id, l.price_drop_from) for l in diff.price_drops}
     return new_ids, drops, captured["disappeared"]
 
