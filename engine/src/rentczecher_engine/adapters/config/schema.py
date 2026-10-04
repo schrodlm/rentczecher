@@ -4,9 +4,10 @@ normalization. Everything downstream consumes the validated result."""
 import difflib
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
-from typing import Annotated, Literal
+from typing import Annotated
 
 from rentczecher_engine.domain.disposition import Kitchen, parse_disposition
+from rentczecher_engine.domain.profile import EstateType, OfferType
 
 KNOWN_SCRAPERS = ("sreality", "bezrealitky", "remax")
 
@@ -32,8 +33,8 @@ class ScheduleConfig(StrictModel):
 
 
 class SearchConfig(StrictModel):
-    offer_type: Literal["rent", "sale"]
-    estate_type: Literal["flat", "house", "land", "cottage"]
+    offer_type: OfferType
+    estate_type: EstateType
     place: str
     min_price: int | None = None
     max_price: int | None = None

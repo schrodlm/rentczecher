@@ -1,7 +1,11 @@
 from dataclasses import dataclass
+from typing import Literal
 
 from rentczecher_engine.domain.disposition import Disposition, Kitchen
 from rentczecher_engine.domain.location import PlaceRef
+
+OfferType = Literal["rent", "sale"]
+EstateType = Literal["flat", "house", "land", "cottage"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -9,8 +13,8 @@ class Criteria:
     """Portal-neutral search intent; scrapers translate it into their
     portal's own parameters."""
 
-    offer_type: str
-    estate_type: str
+    offer_type: OfferType
+    estate_type: EstateType
     place: PlaceRef
     min_price: int | None = None
     max_price: int | None = None
