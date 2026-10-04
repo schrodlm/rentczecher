@@ -35,10 +35,10 @@ class SearchConfig(StrictModel):
     offer_type: Literal["rent", "sale"]
     estate_type: Literal["flat", "house", "land", "cottage"]
     place: str
-    min_price: int = 0
-    max_price: int = 25000
-    min_size_m2: int = 0
-    min_land_m2: int = 0
+    min_price: int | None = None
+    max_price: int | None = None
+    min_size_m2: int | None = None
+    min_land_m2: int | None = None
     min_rooms: Rooms | None = None
     max_rooms: Rooms | None = None
     kitchen: Kitchen | None = None

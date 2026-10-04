@@ -82,9 +82,9 @@ class BezrealitkyScraper(BaseScraper):
             # serves unfiltered countrywide results.
             "location=exact",
         ]
-        if self.criteria.min_price > 0:
+        if self.criteria.min_price is not None:
             params.append(f"priceFrom={self.criteria.min_price}")
-        if self.criteria.max_price > 0:
+        if self.criteria.max_price is not None:
             params.append(f"priceTo={self.criteria.max_price}")
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
@@ -163,9 +163,9 @@ class BezrealitkyScraper(BaseScraper):
         uri = advert.get("uri", "")
         price = advert.get("price", 0)
 
-        if self.criteria.max_price > 0 and price > self.criteria.max_price:
+        if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
-        if price < self.criteria.min_price:
+        if self.criteria.min_price is not None and price < self.criteria.min_price:
             return None
         if advert.get("reserved", False):
             return None

@@ -31,10 +31,10 @@ def _refusing_client() -> httpx.Client:
     return build_client(transport=httpx.MockTransport(refuse))
 
 FLATS_CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                          min_price=0, max_price=25000)
+                          max_price=25000)
 
 HOUSES_CRITERIA = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-                           min_price=0, max_price=5000000, min_land_m2=500)
+                           max_price=5000000, min_land_m2=500)
 
 
 def _serve_pages(monkeypatch, pages):
@@ -258,7 +258,7 @@ class TestSrealityContract:
 
 
 BEZ_CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        min_price=0, max_price=25000)
+                        max_price=25000)
 
 
 def _bez_advert(advert_id, price=20000, **overrides):
@@ -416,7 +416,7 @@ class TestBezrealitkyPlaceBasedParams:
 
 
 REMAX_CRITERIA = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-                          min_price=0, max_price=5000000)
+                          max_price=5000000)
 
 
 def _remax_card(listing_id, price=3000000):

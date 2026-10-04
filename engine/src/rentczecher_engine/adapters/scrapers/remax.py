@@ -91,9 +91,9 @@ class RemaxScraper(BaseScraper):
                   for type_id in ESTATE_TYPE_IDS[self.criteria.estate_type]]
         query += [(f"regions[{self.place.region_id}][{district_id}]", "on")
                   for district_id in self.place.district_ids]
-        if self.criteria.min_price > 0:
+        if self.criteria.min_price is not None:
             query.append(("price_from", self.criteria.min_price))
-        if self.criteria.max_price > 0:
+        if self.criteria.max_price is not None:
             query.append(("price_to", self.criteria.max_price))
         return SEARCH_BASE_URL + "?" + urlencode(query)
 
@@ -206,9 +206,9 @@ class RemaxScraper(BaseScraper):
                 except ValueError:
                     pass
 
-        if self.criteria.max_price > 0 and price > self.criteria.max_price:
+        if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
-        if price < self.criteria.min_price or price == 0:
+        if (self.criteria.min_price is not None and price < self.criteria.min_price) or price == 0:
             return None
 
         card_text = " ".join(card.get_text().split())  # Normalize whitespace

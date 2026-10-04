@@ -92,11 +92,9 @@ profiles:
       offer_type: rent            # rent | sale
       estate_type: flat           # flat | house | land | cottage
       place: obvod Praha 7        # a kraj, okres or Praha obvod, by its kind and name
-      min_price: 0
       max_price: 25000
       min_rooms: 2                # 1-9, leave out for no bound
       max_rooms: 2                # with no kitchen set, 2+kk and 2+1 both match
-      min_size_m2: 0
 
     scrapers: [sreality, bezrealitky, remax]
 

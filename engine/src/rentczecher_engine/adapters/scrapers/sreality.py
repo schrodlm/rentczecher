@@ -92,12 +92,12 @@ class SrealityScraper(BaseScraper):
             "offset": offset,
             "lang": "cs",
         }
-        if self.criteria.max_price > 0:
+        if self.criteria.max_price is not None:
             # The old czk_price_summary_order2=min|max param is silently
             # ignored by this API; price filtering happens client-side too.
-            params["price_from"] = self.criteria.min_price
+            params["price_from"] = self.criteria.min_price or 0
             params["price_to"] = self.criteria.max_price
-        if self.criteria.min_land_m2 > 0:
+        if self.criteria.min_land_m2 is not None:
             params["estate_area_from"] = self.criteria.min_land_m2
         return params
 
@@ -142,7 +142,8 @@ class SrealityScraper(BaseScraper):
             return None
 
         price = int(estate.get("price_czk") or estate.get("price") or 0)
-        if self.criteria.max_price > 0 and (price > self.criteria.max_price or price < self.criteria.min_price):
+        too_cheap = self.criteria.min_price is not None and price < self.criteria.min_price
+        if self.criteria.max_price is not None and (price > self.criteria.max_price or too_cheap):
             return None
 
         name = estate.get("advert_name", "")

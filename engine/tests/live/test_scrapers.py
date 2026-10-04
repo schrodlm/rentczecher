@@ -78,10 +78,9 @@ class TestSrealityLive:
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
         max_price = profile.criteria.max_price
-        min_price = profile.criteria.min_price
+        assert max_price is not None
         for l in listings:
             assert l.price <= max_price, f"Price {l.price} exceeds max {max_price}"
-            assert l.price >= min_price, f"Price {l.price} below min {min_price}"
 
     def test_domazlice_returns_houses(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
@@ -127,8 +126,7 @@ class TestSrealityLive:
 
     def test_pagination_collects_beyond_one_page(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
-        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                            min_price=0, max_price=0)
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
         listings = SrealityScraper(criteria, client).scrape()
         assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"
 
@@ -193,6 +191,7 @@ class TestRemaxLive:
         listings = s.scrape()
         for l in listings:
             assert l.price > 0
+            assert profile.criteria.max_price is not None
             assert l.price <= profile.criteria.max_price
 
     def test_praha7_titles_no_agent_id(self, client):
