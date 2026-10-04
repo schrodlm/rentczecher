@@ -308,6 +308,7 @@ The summary above is enough to orient a contributor.
   values, pin them with boundary tests before touching them. The dedup
   matcher's weights and thresholds are calibrated against owner-labeled pairs,
   move them only with boundary tests pinning current outcomes first.
-- **User-facing strings are Czech. Code and internal strings are English.**
+- **User-facing strings are English, translated through the panel's locale
+  catalogs.** Engine output, code and internal strings are English.
 
 `CLAUDE.md` has the full text of these stances.

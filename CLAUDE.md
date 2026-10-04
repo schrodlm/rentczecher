@@ -45,7 +45,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 - SQLite repositories apply the static-readability stance concretely: set `conn.row_factory = sqlite3.Row` and index columns by name; give each row-to-domain conversion a `_to_<type>(row)` mapper that names every field; assign each SQL statement to a `stmt` local (triple-quoted for multi-line); and spell out column lists in full. No `dataclasses.fields()` reflection, no `"?" * len(...)` placeholder tricks — the column list is the source of truth and drift should fail loudly. Write methods never call `conn.commit()` themselves; the caller owns the transaction boundary with one explicit commit per unit of work.
 - Scoring thresholds are tuned-by-feel production behavior. Never retune or restructure them without boundary tests pinning current behavior first.
 - The dedup matcher's weights and thresholds are calibrated against owner-labeled listing pairs. Move them only with boundary tests pinning current outcomes first, never by feel.
-- User-facing strings (emails, logs meant for the owner) are Czech; identifiers and internal strings are English.
+- User-facing strings are written in English and translated through the panel's locale catalogs. Engine output, identifiers and internal strings are English.
 
 ## Agent skills
 
