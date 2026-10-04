@@ -17,18 +17,14 @@ from rentczecher_engine.domain.errors import AmbiguousPlaceError, PlaceNotFoundE
 from rentczecher_engine.domain.location import Location, ParsedPlace, Place, PlaceKind, PlaceRef
 from rentczecher_engine.domain.property import PropertyLocation
 
-# Portals disagree on decoration: sreality "Hlavní město Praha" is remax
-# and bezrealitky "Praha"; bezrealitky prefixes okresy with "okres".
-# Hyphenated names (Brno-město) stay single words, untouched by this.
-_NOISE_WORDS = {"okres", "kraj", "hlavni", "mesto"}
-
 
 def normalize_name(name: str) -> str:
-    """One key for all portals' (and users') spellings of a place: casefold,
-    strip diacritics, drop the decoration words portals disagree on."""
+    """The key a name is matched by: casefolded, without diacritics, with
+    runs of whitespace collapsed. The build stores it for every place, so a
+    change here needs a new SCHEMA_VERSION and a rebuild."""
     decomposed = unicodedata.normalize("NFD", name.casefold())
     flat = "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
-    return " ".join(w for w in flat.split() if w not in _NOISE_WORDS)
+    return " ".join(flat.split())
 
 
 # Portals put a house number after the street name ("Škarmanská 369 / 369");
@@ -53,7 +49,7 @@ _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 
 # The schema this code reads. The build stamps it into the file, and a file
 # built for another schema is refused rather than misread.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def open_gazetteer(db_path: Path | None = None) -> sqlite3.Connection:

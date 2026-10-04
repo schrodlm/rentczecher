@@ -17,10 +17,10 @@ Needs ČÚZK and the portals reachable. Options:
 | `--address-dump PATH` | an already downloaded `OB_ADR` zip |
 | `--out PATH` | write somewhere else (default: the shipped file) |
 
-Rebuild after changing `schema.sql`, bumping `SCHEMA_VERSION` in
-`src/rentczecher_engine/adapters/geocoding/gazetteer.py` first, since the
-engine refuses a file built for another version. The root README lists the
-other reasons to rebuild.
+Rebuild after changing `schema.sql` or `normalize_name`, bumping
+`SCHEMA_VERSION` in `src/rentczecher_engine/adapters/geocoding/gazetteer.py`
+first, since the engine refuses a file built for another version. The root
+README lists the other reasons to rebuild.
 
 ## What it does
 
