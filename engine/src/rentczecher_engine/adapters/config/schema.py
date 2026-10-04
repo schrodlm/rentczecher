@@ -55,13 +55,13 @@ class ScoringConfig(StrictModel):
     disposition_weight: float = 0
     preferred_dispositions: DispositionCodes = []
     size_weight: float = 0
-    ideal_size_m2: int = 55
+    ideal_size_m2: int | None = None
     place_weight: float = 0
     preferred_places: list[str] = []
     land_weight: float = 0
-    ideal_land_m2: int = 2000
+    ideal_land_m2: int | None = None
     price_weight: float = 0
-    max_good_price: int = 3000000
+    max_good_price: int | None = None
 
 
 class ProfileConfig(StrictModel):

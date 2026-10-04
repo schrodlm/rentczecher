@@ -111,19 +111,23 @@ def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
 
 
 def _preferences(gazetteer: Gazetteer, scoring: ScoringConfig, where: str) -> Preferences:
-    return Preferences(
-        price_per_m2_weight=scoring.price_per_m2_weight,
-        disposition_weight=scoring.disposition_weight,
-        preferred_dispositions=tuple(_disposition(code) for code in scoring.preferred_dispositions),
-        size_weight=scoring.size_weight,
-        ideal_size_m2=scoring.ideal_size_m2,
-        place_weight=scoring.place_weight,
-        preferred_places=tuple(_preferred_place(gazetteer, text, where) for text in scoring.preferred_places),
-        land_weight=scoring.land_weight,
-        ideal_land_m2=scoring.ideal_land_m2,
-        price_weight=scoring.price_weight,
-        max_good_price=scoring.max_good_price,
-    )
+    preferred_places = tuple(_preferred_place(gazetteer, text, where) for text in scoring.preferred_places)
+    try:
+        return Preferences(
+            price_per_m2_weight=scoring.price_per_m2_weight,
+            disposition_weight=scoring.disposition_weight,
+            preferred_dispositions=tuple(_disposition(code) for code in scoring.preferred_dispositions),
+            size_weight=scoring.size_weight,
+            ideal_size_m2=scoring.ideal_size_m2,
+            place_weight=scoring.place_weight,
+            preferred_places=preferred_places,
+            land_weight=scoring.land_weight,
+            ideal_land_m2=scoring.ideal_land_m2,
+            price_weight=scoring.price_weight,
+            max_good_price=scoring.max_good_price,
+        )
+    except ValueError as error:
+        raise ConfigError(f"{where}.scoring: {error}") from error
 
 
 def _disposition(code: str) -> Disposition:

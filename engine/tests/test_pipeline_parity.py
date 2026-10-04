@@ -42,6 +42,7 @@ PROFILE = profile(
         disposition_weight=30,
         preferred_dispositions=layouts("2+kk", "1+1"),
         size_weight=15,
+        ideal_size_m2=55,
         place_weight=15,
         preferred_places=(PlaceRef("cast_obce", 490067), PlaceRef("cast_obce", 490024)),
     ),
