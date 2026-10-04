@@ -9,7 +9,7 @@ import pytest
 
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria
-from tests.profiles import criteria, layouts, preferences
+from tests.profiles import criteria, layouts, preferences, profile
 
 
 class TestImmutability:
@@ -77,3 +77,23 @@ class TestCriteriaBounds:
 
     def test_a_bound_of_one_is_accepted(self):
         criteria(min_price=1, max_price=1, min_size_m2=1, min_land_m2=1)
+
+
+class TestUniqueEntries:
+    """A list in a profile names each entry once."""
+
+    def test_a_repeated_preferred_disposition_is_rejected(self):
+        """A garsoniéra is a 1+kk, so listing both repeats a layout."""
+        with pytest.raises(ValueError, match="preferred_dispositions must not repeat"):
+            preferences(preferred_dispositions=layouts("garsoniéra", "1+kk"))
+
+    def test_a_repeated_preferred_place_is_rejected(self):
+        with pytest.raises(ValueError, match="preferred_places must not repeat"):
+            preferences(preferred_places=(PlaceRef("obvod", 78), PlaceRef("obvod", 78)))
+
+    def test_the_same_code_under_two_kinds_is_accepted(self):
+        preferences(preferred_places=(PlaceRef("obvod", 78), PlaceRef("cast_obce", 78)))
+
+    def test_a_repeated_portal_is_rejected(self):
+        with pytest.raises(ValueError, match="portals must not repeat"):
+            profile(portals=("sreality", "sreality"))
