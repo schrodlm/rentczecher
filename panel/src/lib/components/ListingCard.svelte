@@ -53,7 +53,7 @@
 		</div>
 
 		<div class="card__detail-line">
-			{#if listing.disposition}<span>{listing.disposition}</span>{/if}
+			{#if listing.disposition_raw_text}<span>{listing.disposition_raw_text}</span>{/if}
 			{#if listing.size_m2 !== null}<span>{listing.size_m2}&nbsp;m²</span>{/if}
 		</div>
 

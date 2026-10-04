@@ -9,7 +9,7 @@ export function listing(id: string, overrides: Partial<ListingModel> = {}): List
 		location_raw_text: 'Praha 7',
 		resolved_location: null,
 		size_m2: 52,
-		disposition: '2+kk',
+		disposition_raw_text: '2+kk',
 		first_seen_at: new Date().toISOString(),
 		viewed_at: null,
 		favourited_at: null,

@@ -11,7 +11,7 @@ def apply_filters(listings: list[Listing], spec: SearchSpec) -> list[Listing]:
         disp_lower = {d.lower() for d in spec.dispositions}
         result = [
             l for l in result
-            if l.disposition is None or l.disposition.lower() in disp_lower
+            if l.disposition_raw_text is None or l.disposition_raw_text.lower() in disp_lower
         ]
 
     if spec.min_size_m2 > 0:

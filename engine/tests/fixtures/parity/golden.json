@@ -9,7 +9,7 @@
    "url": "https://www.sreality.cz/detail/pronajem/byt/praha-holesovice-delnicka/1003",
    "image_url": null,
    "size_m2": 48,
-   "disposition": null,
+   "disposition_raw_text": null,
    "lat": 50.1031,
    "lon": 14.4499,
    "charges": null,
@@ -27,7 +27,7 @@
    "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2001",
    "image_url": "https://img.example/b2001.jpg",
    "size_m2": 54,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "lat": 50.1037,
    "lon": 14.4408,
    "charges": 3000,
@@ -48,7 +48,7 @@
    "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2002",
    "image_url": "https://img.example/b2002.jpg",
    "size_m2": 61,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "lat": null,
    "lon": null,
    "charges": 2500,
@@ -70,7 +70,7 @@
    "url": "https://www.sreality.cz/detail/pronajem/byt/1+1/praha-holesovice-kamenicka/1002",
    "image_url": "https://img.example/s1002.jpg",
    "size_m2": 40,
-   "disposition": "1+1",
+   "disposition_raw_text": "1+1",
    "lat": 50.0997,
    "lon": 14.4287,
    "charges": null,
@@ -92,7 +92,7 @@
    "title": "Pronájem - 2+kk - 54 m² - U Vody, Praha",
    "location_raw_text": "U Vody, Praha - Holešovice",
    "size_m2": 54,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "land_m2": null
   },
   "bezrealitky:2002": {
@@ -103,7 +103,7 @@
    "title": "Pronájem - 2+kk - 61 m² - Veverkova, Praha",
    "location_raw_text": "Veverkova, Praha - Holešovice",
    "size_m2": 61,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "land_m2": null
   },
   "remax:3001": {
@@ -114,7 +114,7 @@
    "title": "Pronájem - 2+kk - 61 m² - Veverkova, Praha",
    "location_raw_text": "Veverkova, Praha - Holešovice",
    "size_m2": 61,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "land_m2": null
   },
   "remax:3002": {
@@ -125,7 +125,7 @@
    "title": "Pronájem - 2+kk - 54 m² - U Vody, Praha",
    "location_raw_text": "U Vody, Praha - Holešovice",
    "size_m2": 54,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "land_m2": null
   },
   "sreality:1001": {
@@ -136,7 +136,7 @@
    "title": "Pronájem - 2+kk - 54 m² - U Vody, Praha",
    "location_raw_text": "U Vody, Praha - Holešovice",
    "size_m2": 54,
-   "disposition": "2+kk",
+   "disposition_raw_text": "2+kk",
    "land_m2": null
   },
   "sreality:1002": {
@@ -147,7 +147,7 @@
    "title": "Pronájem bytu 1+1 40 m²",
    "location_raw_text": "Kamenická, Praha",
    "size_m2": 40,
-   "disposition": "1+1",
+   "disposition_raw_text": "1+1",
    "land_m2": null
   },
   "sreality:1003": {
@@ -158,7 +158,7 @@
    "title": "Pronájem bytu 48 m²",
    "location_raw_text": "Dělnická, Praha - Holešovice, Praha 7",
    "size_m2": 48,
-   "disposition": null,
+   "disposition_raw_text": null,
    "land_m2": null
   },
   "sreality:9999": {
@@ -169,7 +169,7 @@
    "title": "Pronájem bytu 1+kk 30 m²",
    "location_raw_text": "Tusarova, Praha",
    "size_m2": 30,
-   "disposition": "1+kk",
+   "disposition_raw_text": "1+kk",
    "land_m2": null
   }
  }

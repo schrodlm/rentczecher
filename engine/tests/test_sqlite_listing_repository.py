@@ -268,7 +268,7 @@ class TestInboxListings:
     def test_carries_listing_and_property_facts(self, tmp_path):
         repo, conn = _repo(tmp_path)
         conn.execute("UPDATE properties SET title = ?, location_raw_text = ?, size_m2 = ?, "
-                     "disposition = ? WHERE id = ?",
+                     "disposition_raw_text = ? WHERE id = ?",
                      ("Byt 2+kk", "Praha 7", 55, "2+kk", PROPERTY))
         conn.commit()
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
@@ -279,7 +279,7 @@ class TestInboxListings:
         assert card.title == "Byt 2+kk"
         assert card.location_raw_text == "Praha 7"
         assert card.size_m2 == 55
-        assert card.disposition == "2+kk"
+        assert card.disposition_raw_text == "2+kk"
 
     def test_missing_property_facts_are_none_not_dropped(self, tmp_path):
         repo, conn = _repo(tmp_path)
@@ -288,7 +288,7 @@ class TestInboxListings:
         assert card.title is None
         assert card.location_raw_text is None
         assert card.size_m2 is None
-        assert card.disposition is None
+        assert card.disposition_raw_text is None
 
     def test_carries_tracking_state(self, tmp_path):
         repo, conn = _repo(tmp_path)

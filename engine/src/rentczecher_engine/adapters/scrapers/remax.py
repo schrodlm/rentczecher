@@ -250,6 +250,6 @@ class RemaxScraper(BaseScraper):
             url=detail_url,
             image_url=image_url,
             size_m2=size,
-            disposition=disposition,
+            disposition_raw_text=disposition,
             land_m2=land,
         )

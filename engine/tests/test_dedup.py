@@ -57,9 +57,9 @@ def _factor(score, name):
 class TestDedup:
     def test_same_flat_different_sources_deduped(self):
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=14.4)
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1, lon=14.4)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1, "Same flat should be deduped"
         assert len(result[0].cross_source) == 1
@@ -70,10 +70,10 @@ class TestDedup:
         shared street name there still carries the pair to a match."""
         shared_place = ParsedPlace(names=("Veletržní", "Praha 7"))
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=None,
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1, lon=None,
                            parsed_place=shared_place)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1015, lon=14.4298,
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1015, lon=14.4298,
                            parsed_place=shared_place)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
@@ -114,11 +114,11 @@ class TestDedupCrossSourceCorrectness:
     def test_own_source_never_in_cross_source(self):
         listings = [
             _make_listing(id="sreality:1", source="sreality", price=20000,
-                          size_m2=50, disposition="2+kk", lat=50.1, lon=14.4),
+                          size_m2=50, disposition_raw_text="2+kk", lat=50.1, lon=14.4),
             _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                          size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001),
+                          size_m2=50, disposition_raw_text="2+kk", lat=50.1001, lon=14.4001),
             _make_listing(id="remax:1", source="remax", price=20000,
-                          size_m2=50, disposition="2+kk", lat=50.1002, lon=14.4002),
+                          size_m2=50, disposition_raw_text="2+kk", lat=50.1002, lon=14.4002),
         ]
 
         result = _locate_and_dedup(listings)
@@ -133,15 +133,15 @@ class TestDedupCrossSourceCorrectness:
         """Two separate dedup groups -- verify for each keeper."""
         # Group A: close GPS, same price
         a1 = _make_listing(id="sreality:a", source="sreality", price=18000,
-                           size_m2=40, disposition="1+kk", lat=50.0, lon=14.0)
+                           size_m2=40, disposition_raw_text="1+kk", lat=50.0, lon=14.0)
         a2 = _make_listing(id="bezrealitky:a", source="bezrealitky", price=18000,
-                           size_m2=40, disposition="1+kk", lat=50.0001, lon=14.0001)
+                           size_m2=40, disposition_raw_text="1+kk", lat=50.0001, lon=14.0001)
 
         # Group B: different area
         b1 = _make_listing(id="sreality:b", source="sreality", price=25000,
-                           size_m2=60, disposition="3+kk", lat=49.0, lon=13.0)
+                           size_m2=60, disposition_raw_text="3+kk", lat=49.0, lon=13.0)
         b2 = _make_listing(id="remax:b", source="remax", price=25000,
-                           size_m2=60, disposition="3+kk", lat=49.0001, lon=13.0001)
+                           size_m2=60, disposition_raw_text="3+kk", lat=49.0001, lon=13.0001)
 
         result = _locate_and_dedup([a1, a2, b1, b2])
 
@@ -155,13 +155,13 @@ class TestDedupThreeSources:
     def test_three_sources_merge_into_one(self):
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1, lon=14.4,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1, lon=14.4,
                           location_raw_text="Praha 7"),
             _make_listing(id="bezrealitky:200", source="bezrealitky", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1001, lon=14.4001,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1001, lon=14.4001,
                           location_raw_text="Praha 7"),
             _make_listing(id="remax:300", source="remax", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1002, lon=14.4002,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1002, lon=14.4002,
                           location_raw_text="Praha 7"),
         ]
 
@@ -171,13 +171,13 @@ class TestDedupThreeSources:
     def test_three_sources_cross_source_has_two_entries(self):
         listings = [
             _make_listing(id="sreality:100", source="sreality", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1, lon=14.4,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1, lon=14.4,
                           location_raw_text="Praha 7"),
             _make_listing(id="bezrealitky:200", source="bezrealitky", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1001, lon=14.4001,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1001, lon=14.4001,
                           location_raw_text="Praha 7"),
             _make_listing(id="remax:300", source="remax", price=22000,
-                          size_m2=55, disposition="2+kk", lat=50.1002, lon=14.4002,
+                          size_m2=55, disposition_raw_text="2+kk", lat=50.1002, lon=14.4002,
                           location_raw_text="Praha 7"),
         ]
 
@@ -239,25 +239,25 @@ class TestDispositionFactor:
     """Disposition disagreement outweighs near-identical GPS: same-building units stay separate."""
 
     def test_both_none_gate_skipped(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, disposition=None,
+        l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition=None,
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_one_none_gate_skipped(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, disposition=None,
+        l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="3+1",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="3+1",
                            size_m2=50, lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_case_insensitive_match(self):
-        l1 = _make_listing(id="a:1", source="a", price=20000, disposition="2+KK",
+        l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+KK",
                            size_m2=50, lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
@@ -265,9 +265,9 @@ class TestDispositionFactor:
     def test_disposition_disagreement_outweighs_near_identical_gps(self):
         # GPS (+35) and price (+15) alone would clear the match threshold, but the disposition
         # disagreement (-35) drags the total down to 15, below even the uncertain band.
-        l1 = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk",
+        l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk",
                            lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="1+kk",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="1+kk",
                            lat=50.100001, lon=14.40)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 2
@@ -278,25 +278,25 @@ class TestSizeGate:
 
     def test_zero_size_on_either_side_skips_gate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=0,
-                           disposition="2+kk", lat=50.10, lon=14.40)
+                           disposition_raw_text="2+kk", lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=999,
-                           disposition="2+kk", lat=50.1001, lon=14.4001)
+                           disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_both_none_skips_gate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=None,
-                           disposition="2+kk", lat=50.10, lon=14.40)
+                           disposition_raw_text="2+kk", lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=None,
-                           disposition="2+kk", lat=50.1001, lon=14.4001)
+                           disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
     def test_diff_exactly_five_matches(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=50,
-                           disposition="2+kk", lat=50.10, lon=14.40)
+                           disposition_raw_text="2+kk", lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=55,
-                           disposition="2+kk", lat=50.1001, lon=14.4001)
+                           disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
@@ -449,9 +449,9 @@ class TestSharedNameFactorWithNoGps:
     def test_shared_street_name_alone_clears_the_evidence_floor_and_matches(self):
         shared_place = ParsedPlace(names=("Veletržní",))
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=50,
-                           disposition="2+kk", parsed_place=shared_place)
+                           disposition_raw_text="2+kk", parsed_place=shared_place)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=50,
-                           disposition="2+kk", parsed_place=shared_place)
+                           disposition_raw_text="2+kk", parsed_place=shared_place)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
@@ -470,9 +470,9 @@ class TestKeeperChoice:
     """Completeness score: lat, charges, land_m2, size_m2 (is not None) + image_url (bool)."""
 
     def test_exact_tie_keeps_first_in_input_order(self):
-        l1 = _make_listing(id="s:1", source="s", price=20000, disposition="2+kk",
+        l1 = _make_listing(id="s:1", source="s", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
@@ -481,18 +481,18 @@ class TestKeeperChoice:
     def test_empty_string_image_scores_same_as_none(self):
         # image_url uses bool() (:94) rather than the `is not None` used for the other
         # four completeness fields, so "" and None are indistinguishable here.
-        l1 = _make_listing(id="s:1", source="s", price=20000, disposition="2+kk",
+        l1 = _make_listing(id="s:1", source="s", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.10, lon=14.40, image_url="")
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001, image_url=None)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
         assert result[0].id == "s:1"
 
     def test_one_extra_field_flips_keeper_to_richer_listing(self):
-        l1 = _make_listing(id="s:1", source="s", price=20000, disposition="2+kk",
+        l1 = _make_listing(id="s:1", source="s", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.10, lon=14.40)
-        l2 = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
+        l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                            size_m2=50, lat=50.1001, lon=14.4001, charges=1500)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
@@ -503,9 +503,9 @@ class TestOrderingMechanics:
     """Survivors preserve original input order; a keeper stays at its own position."""
 
     def test_survivor_order_matches_input_order(self):
-        x = _make_listing(id="x:1", source="x", price=20000, disposition="2+kk",
+        x = _make_listing(id="x:1", source="x", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.10, lon=14.40)
-        y = _make_listing(id="y:1", source="y", price=20000, disposition="2+kk",
+        y = _make_listing(id="y:1", source="y", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1001, lon=14.4001)
         z = _make_listing(id="z:1", source="z", price=99999, location_raw_text="Nowhere special zzz")
 
@@ -529,11 +529,11 @@ class TestNoTransitiveGrouping:
         # A-B diff ~6.98%, B-C diff ~6.52%, A-C diff ~13.04% (>10%, so A and C alone never match).
         # With B listed first, B is the outer-loop `i` and gets directly compared to both A and C
         # before either is removed -- two direct pairwise matches sharing B, not graph closure.
-        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk",
+        a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.10, lon=14.40)
-        b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
-        c = _make_listing(id="c:1", source="c", price=23000, disposition="2+kk",
+        c = _make_listing(id="c:1", source="c", price=23000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = _locate_and_dedup([b, a, c])
@@ -546,11 +546,11 @@ class TestNoTransitiveGrouping:
         # negative), but GPS, disposition and size all agree, so A~C scores a direct match on its
         # own -- a straight pairwise match, not graph closure through B. A~B matches first (A
         # richer, so A keeps and B is removed); A is then compared to C directly and matches too.
-        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
+        a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
-        b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
-        c = _make_listing(id="c:1", source="c", price=22500, disposition="2+kk",
+        c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = _locate_and_dedup([a, b, c])
@@ -564,11 +564,11 @@ class TestNoTransitiveGrouping:
         # C is then compared to A directly: A is richer, so this time C itself is removed in A's
         # favor (remove_to_keeper[C]=A). C's absorbed source (B) re-parents onto A when C is
         # displaced, so the final survivor A carries both B and C even though C never survives.
-        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
+        a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
-        b = _make_listing(id="b:1", source="b", price=21500, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
-        c = _make_listing(id="c:1", source="c", price=22500, disposition="2+kk",
+        c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = _locate_and_dedup([c, b, a])
@@ -581,11 +581,11 @@ class TestCrossSourceAccumulation:
     """A keeper absorbing multiple listings accumulates all their sources, in absorption order."""
 
     def test_keeper_accumulates_both_sources_in_order(self):
-        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
+        a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1, land_m2=1, image_url="x")
-        b = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1001, lon=14.4001)
-        c = _make_listing(id="c:1", source="c", price=20000, disposition="2+kk",
+        c = _make_listing(id="c:1", source="c", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1002, lon=14.4002)
 
         result = _locate_and_dedup([a, b, c])
@@ -609,11 +609,11 @@ class TestScoredMatcherInvariants:
         # price, so raw A~C and raw B~C both score no_match on their own -
         # nothing about A absorbing B's source changes what C is compared
         # against, so C must survive unmerged.
-        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition_raw_text="2+kk",
                           lat=50.10, lon=14.40)
-        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition_raw_text="2+kk",
                           lat=50.1001, lon=14.4001)
-        c = _make_listing(id="c:1", source="c", price=40000, size_m2=20, disposition="3+kk",
+        c = _make_listing(id="c:1", source="c", price=40000, size_m2=20, disposition_raw_text="3+kk",
                           lat=50.20, lon=14.60)
 
         result = _locate_and_dedup([a, b, c], gazetteer)
@@ -629,8 +629,8 @@ class TestScoredMatcherInvariants:
         # gazetteer-resolved) nor any parsed_place name, so the evidence
         # floor (GPS or shared-name evidence) is never met and the pair must
         # not merge despite the naive total.
-        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk")
-        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk")
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition_raw_text="2+kk")
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition_raw_text="2+kk")
 
         result = _locate_and_dedup([a, b], gazetteer)
         assert len(result) == 2
@@ -647,10 +647,10 @@ class TestVeletrzniShapedMatch:
         dist = haversine_m(lat_a, lon_a, lat_b, lon_b)
         assert 400 < dist < 1500, "must land in the GPS mid-band, not an immediate accept/reject"
 
-        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition="2+kk",
+        a = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition_raw_text="2+kk",
                           lat=lat_a, lon=lon_a, location_raw_text="Veletržní 1<>2",
                           parsed_place=ParsedPlace(names=("Veletržní", "Praha")))
-        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition="2+kk",
+        b = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition_raw_text="2+kk",
                           lat=lat_b, lon=lon_b, location_raw_text="Praha 7 - Bubeneč",
                           parsed_place=ParsedPlace(names=("Veletržní", "Bubeneč")))
 
@@ -667,10 +667,10 @@ class TestGeocellBoundaries:
         edge = 4640 * CELL_LAT_DEG
         shared = ParsedPlace(names=("U Vody", "Praha"))
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=55, disposition="2+kk",
+                           size_m2=55, disposition_raw_text="2+kk",
                            lat=edge - 0.0005, lon=14.44, parsed_place=shared)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=55, disposition="2+kk",
+                           size_m2=55, disposition_raw_text="2+kk",
                            lat=edge + 0.0005, lon=14.44, parsed_place=shared)
         assert len(_locate_and_dedup([l1, l2])) == 1
 
@@ -689,10 +689,10 @@ class TestStreetsDisagreeVetoesASharedPart:
         this shape is usually two units in one building. Uncertain pairs stay
         separate: a wrong merge hides a listing, a missed one only repeats it."""
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
+                           size_m2=55, disposition_raw_text="2+kk", lat=50.1000, lon=14.44,
                            parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
+                           size_m2=55, disposition_raw_text="2+kk", lat=50.1013, lon=14.44,
                            parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
         assert len(_locate_and_dedup([l1, l2])) == 2
 
@@ -702,10 +702,10 @@ class TestStreetsDisagreeVetoesASharedPart:
         dist = haversine_m(lat_a, lon_a, lat_b, lon_b)
         assert 100 < dist < 1500, "close but not an immediate GPS-ceiling accept on its own"
 
-        a = _make_listing(id="a:1", source="a", price=20000, disposition="2+kk", size_m2=50,
+        a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=lat_a, lon=lon_a,
                           parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
-        b = _make_listing(id="b:1", source="b", price=20000, disposition="2+kk", size_m2=50,
+        b = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=lat_b, lon=lon_b,
                           parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
 
@@ -723,10 +723,10 @@ class TestStreetsDisagreeVetoesASharedPart:
         assert 100 < dist < 1500, "close but not an immediate GPS-ceiling accept on its own"
 
         a = _make_listing(id="sreality:1", source="sreality", price=22000,
-                          size_m2=35, disposition="1+kk", lat=lat_a, lon=lon_a,
+                          size_m2=35, disposition_raw_text="1+kk", lat=lat_a, lon=lon_a,
                           parsed_place=ParsedPlace(names=("Korunovační", "Praha", "Bubeneč")))
         b = _make_listing(id="bezrealitky:1", source="bezrealitky", price=22500,
-                          size_m2=37, disposition="1+kk", lat=lat_b, lon=lon_b,
+                          size_m2=37, disposition_raw_text="1+kk", lat=lat_b, lon=lon_b,
                           parsed_place=ParsedPlace(names=("U studánky", "Praha", "Bubeneč")))
 
         result = _locate_and_dedup([a, b], gazetteer)
@@ -755,8 +755,8 @@ class TestPromoteFields:
     side's place evidence sits at the more specific tier."""
 
     def test_kept_value_wins_over_a_present_absorbed_value(self):
-        kept = _make_listing(title="Kept title", size_m2=50, disposition="2+kk", land_m2=10)
-        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition="1+kk", land_m2=20)
+        kept = _make_listing(title="Kept title", size_m2=50, disposition_raw_text="2+kk", land_m2=10)
+        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition_raw_text="1+kk", land_m2=20)
 
         canonical, _ = promote_fields(kept, absorbed)
 
@@ -766,8 +766,8 @@ class TestPromoteFields:
         assert canonical["land_m2"] == 10
 
     def test_absorbed_fills_every_gap_kept_leaves(self):
-        kept = _make_listing(title="", size_m2=None, disposition=None, land_m2=None, lat=None, lon=None)
-        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition="1+kk", land_m2=20,
+        kept = _make_listing(title="", size_m2=None, disposition_raw_text=None, land_m2=None, lat=None, lon=None)
+        absorbed = _make_listing(title="Absorbed title", size_m2=48, disposition_raw_text="1+kk", land_m2=20,
                                   lat=50.1, lon=14.4)
 
         canonical, differences = promote_fields(kept, absorbed)
@@ -801,8 +801,8 @@ class TestPromoteFields:
         assert canonical["lon"] == 14.4270
 
     def test_differences_shape_matches_the_dedup_records_json_shape(self):
-        kept = _make_listing(disposition="2+kk", size_m2=50)
-        absorbed = _make_listing(disposition="1+kk", size_m2=48)
+        kept = _make_listing(disposition_raw_text="2+kk", size_m2=50)
+        absorbed = _make_listing(disposition_raw_text="1+kk", size_m2=48)
 
         _, differences = promote_fields(kept, absorbed)
 
@@ -810,9 +810,9 @@ class TestPromoteFields:
         assert differences["size_m2"] == {"canonical": 50, "listing": 48}
 
     def test_no_differences_when_every_field_is_identical(self):
-        kept = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition="2+kk",
+        kept = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition_raw_text="2+kk",
                               land_m2=10, lat=50.1, lon=14.4)
-        absorbed = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition="2+kk",
+        absorbed = _make_listing(title="Same", location_raw_text="Praha 7", size_m2=50, disposition_raw_text="2+kk",
                                   land_m2=10, lat=50.1, lon=14.4)
 
         _, differences = promote_fields(kept, absorbed)
@@ -820,8 +820,8 @@ class TestPromoteFields:
         assert differences == {}
 
     def test_disposition_casing_disagreement_is_not_a_genuine_difference(self):
-        kept = _make_listing(disposition="2+KK")
-        absorbed = _make_listing(disposition="2+kk")
+        kept = _make_listing(disposition_raw_text="2+KK")
+        absorbed = _make_listing(disposition_raw_text="2+kk")
 
         _, differences = promote_fields(kept, absorbed)
 
@@ -834,9 +834,9 @@ class TestDedupOutcomeDecisions:
 
     def test_merging_pair_appears_in_merges_with_a_match_band_score(self):
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1, lon=14.4)
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1, lon=14.4)
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=50, disposition="2+kk", lat=50.1001, lon=14.4001)
+                           size_m2=50, disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
 
         outcome = _locate_and_dedup_outcome([l1, l2])
 
@@ -848,10 +848,10 @@ class TestDedupOutcomeDecisions:
 
     def test_uncertain_pair_appears_in_uncertain_and_both_survive(self):
         l1 = _make_listing(id="sreality:1", source="sreality", price=20000,
-                           size_m2=55, disposition="2+kk", lat=50.1000, lon=14.44,
+                           size_m2=55, disposition_raw_text="2+kk", lat=50.1000, lon=14.44,
                            parsed_place=ParsedPlace(names=("U Vody", "Praha", "Holešovice")))
         l2 = _make_listing(id="bezrealitky:1", source="bezrealitky", price=20000,
-                           size_m2=55, disposition="2+kk", lat=50.1013, lon=14.44,
+                           size_m2=55, disposition_raw_text="2+kk", lat=50.1013, lon=14.44,
                            parsed_place=ParsedPlace(names=("Veverkova", "Praha", "Holešovice")))
 
         outcome = _locate_and_dedup_outcome([l1, l2])

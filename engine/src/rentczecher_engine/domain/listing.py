@@ -21,7 +21,7 @@ class ScrapedListing:
     url: str
     image_url: str | None = None
     size_m2: int | None = None
-    disposition: str | None = None
+    disposition_raw_text: str | None = None
     lat: float | None = None
     lon: float | None = None
     charges: int | None = None
@@ -95,8 +95,8 @@ class Listing:
         return self.scraped.size_m2
 
     @property
-    def disposition(self) -> str | None:
-        return self.scraped.disposition
+    def disposition_raw_text(self) -> str | None:
+        return self.scraped.disposition_raw_text
 
     @property
     def lat(self) -> float | None:
@@ -154,7 +154,7 @@ class InboxCard:
     baseline when the previous observation was higher, and sibling postings
     of the same property on other portals.
 
-    title/location_raw_text/size_m2/disposition/price are nullable: a card can exist
+    title/location_raw_text/size_m2/disposition_raw_text/price are nullable: a card can exist
     before its property has facts or before any price was ever observed.
     property_location is None until a posting's text resolves to a place.
     """
@@ -166,7 +166,7 @@ class InboxCard:
     location_raw_text: str | None
     property_location: PropertyLocation | None
     size_m2: int | None
-    disposition: str | None
+    disposition_raw_text: str | None
     first_seen_at: str
     viewed_at: str | None
     favourited_at: str | None

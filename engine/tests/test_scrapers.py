@@ -92,7 +92,7 @@ class TestSrealityParsing:
         assert l.title == payload["results"][0]["advert_name"]
         assert l.price == 19900
         assert isinstance(l.price, int)
-        assert l.disposition == "2+kk"
+        assert l.disposition_raw_text == "2+kk"
         assert l.size_m2 == 56
         assert l.land_m2 is None
         assert abs(l.lat - 50.111328) < 1e-6
@@ -108,7 +108,7 @@ class TestSrealityParsing:
         listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC)
         assert sorted(x.id for x in listings) == ["sreality:3870457932", "sreality:527867980"]
         l = next(x for x in listings if x.id == "sreality:527867980")
-        assert l.disposition == "Rodinný"
+        assert l.disposition_raw_text == "Rodinný"
         assert l.size_m2 == 142
         assert l.land_m2 == 728
         assert "Domažlice" in l.location_raw_text
@@ -322,7 +322,7 @@ class TestBezrealitkyParsing:
         assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
         assert l.image_url == "https://img.bezrealitky.cz/1.jpg"
         assert l.size_m2 == 55
-        assert l.disposition == "2+kk"
+        assert l.disposition_raw_text == "2+kk"
         assert l.charges == 3500
         assert abs(l.lat - 50.1) < 1e-9
         assert abs(l.lon - 14.43) < 1e-9
@@ -331,7 +331,7 @@ class TestBezrealitkyParsing:
         advert = _bez_advert(1, disposition="UNDEFINED")
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([advert], total_count=1)})
         listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
-        assert listings[0].disposition is None
+        assert listings[0].disposition_raw_text is None
 
     def test_reserved_and_out_of_range_adverts_are_skipped(self, monkeypatch):
         adverts = [
@@ -551,7 +551,7 @@ class TestRemaxParsing:
         assert l.image_url == "https://www.remax-czech.cz/img/12345.jpg"
         assert l.size_m2 == 120
         assert l.land_m2 == 800
-        assert l.disposition == "4+kk"
+        assert l.disposition_raw_text == "4+kk"
 
     def test_paginates_while_next_link_exists(self, monkeypatch):
         client, calls = _serve_remax_pages(monkeypatch, {

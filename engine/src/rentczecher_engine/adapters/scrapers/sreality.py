@@ -174,7 +174,7 @@ class SrealityScraper(BaseScraper):
             url=self._build_detail_url(estate, hash_id, disposition, locality),
             image_url=image_url,
             size_m2=size,
-            disposition=disposition,
+            disposition_raw_text=disposition,
             lat=lat,
             lon=lon,
             land_m2=land,

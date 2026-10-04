@@ -226,7 +226,7 @@ class BezrealitkyScraper(BaseScraper):
             url=f"{DETAIL_BASE}/{uri}",
             image_url=image_url,
             size_m2=int(float(surface)) if surface else None,
-            disposition=disposition if disposition else None,
+            disposition_raw_text=disposition if disposition else None,
             lat=lat,
             lon=lon,
             charges=int(float(charges)) if charges else None,

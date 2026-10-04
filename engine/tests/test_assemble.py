@@ -14,7 +14,7 @@ def _make_listing(**kwargs) -> Listing:
     defaults = dict(
         id="test:1", source="test", title="Byt 2+kk", price=20000,
         location_raw_text="Praha 7 - Holešovice", url="https://example.com",
-        size_m2=50, disposition="2+kk", land_m2=120,
+        size_m2=50, disposition_raw_text="2+kk", land_m2=120,
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
@@ -30,7 +30,7 @@ def test_uses_listings_own_gps_when_present():
     assert identity.title == "Byt 2+kk"
     assert identity.location_raw_text == "Praha 7 - Holešovice"
     assert identity.size_m2 == 50
-    assert identity.disposition == "2+kk"
+    assert identity.disposition_raw_text == "2+kk"
     assert identity.land_m2 == 120
     assert identity.lat == 50.1
     assert identity.lon == 14.4

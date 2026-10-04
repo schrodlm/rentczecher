@@ -24,10 +24,10 @@ def test_facts_and_merged_into_default_to_none():
 
 def test_carries_canonical_facts():
     p = PropertyIdentity(id="x", created_at="2026-08-11T06:00:00+00:00",
-                         title="Byt 2+kk", size_m2=55, disposition="2+kk")
+                         title="Byt 2+kk", size_m2=55, disposition_raw_text="2+kk")
     assert p.title == "Byt 2+kk"
     assert p.size_m2 == 55
-    assert p.disposition == "2+kk"
+    assert p.disposition_raw_text == "2+kk"
 
 
 def _location(**kw):

@@ -7,7 +7,7 @@
       "parsed_place": {"names": ["U Vody", "Praha", "Holešovice", "Praha 7"]},
       "url": "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/1001",
       "image_url": "https://img.example/s1001.jpg",
-      "size_m2": 55, "disposition": "2+kk", "lat": 50.1035, "lon": 14.4405
+      "size_m2": 55, "disposition_raw_text": "2+kk", "lat": 50.1035, "lon": 14.4405
     },
     {
       "id": "sreality:1002", "source": "sreality",
@@ -16,7 +16,7 @@
       "parsed_place": {"names": ["Kamenická", "Praha", "Holešovice", "Praha 7"]},
       "url": "https://www.sreality.cz/detail/pronajem/byt/1+1/praha-holesovice-kamenicka/1002",
       "image_url": "https://img.example/s1002.jpg",
-      "size_m2": 40, "disposition": "1+1", "lat": 50.0997, "lon": 14.4287
+      "size_m2": 40, "disposition_raw_text": "1+1", "lat": 50.0997, "lon": 14.4287
     },
     {
       "id": "sreality:1003", "source": "sreality",
@@ -25,7 +25,7 @@
       "parsed_place": {"names": ["Dělnická", "Praha", "Holešovice", "Praha 7"]},
       "url": "https://www.sreality.cz/detail/pronajem/byt/praha-holesovice-delnicka/1003",
       "image_url": null,
-      "size_m2": 48, "disposition": null, "lat": 50.1031, "lon": 14.4499
+      "size_m2": 48, "disposition_raw_text": null, "lat": 50.1031, "lon": 14.4499
     }
   ],
   "bezrealitky": [
@@ -37,7 +37,7 @@
       "parsed_place": {"names": ["U Vody", "Praha", "Holešovice"]},
       "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2001",
       "image_url": "https://img.example/b2001.jpg",
-      "size_m2": 54, "disposition": "2+kk", "lat": 50.1037, "lon": 14.4408, "charges": 3000
+      "size_m2": 54, "disposition_raw_text": "2+kk", "lat": 50.1037, "lon": 14.4408, "charges": 3000
     },
     {
       "id": "bezrealitky:2002", "source": "bezrealitky",
@@ -47,7 +47,7 @@
       "parsed_place": {"names": ["Veverkova", "Praha", "Holešovice"]},
       "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2002",
       "image_url": "https://img.example/b2002.jpg",
-      "size_m2": 61, "disposition": "2+kk", "charges": 2500
+      "size_m2": 61, "disposition_raw_text": "2+kk", "charges": 2500
     },
     {
       "id": "bezrealitky:2003", "source": "bezrealitky",
@@ -57,7 +57,7 @@
       "parsed_place": {"names": ["Letohradská", "Praha", "Holešovice"]},
       "url": "https://www.bezrealitky.cz/nemovitosti-byty-domy/2003",
       "image_url": "https://img.example/b2003.jpg",
-      "size_m2": 78, "disposition": "3+kk", "lat": 50.0989, "lon": 14.4312, "charges": 2000
+      "size_m2": 78, "disposition_raw_text": "3+kk", "lat": 50.0989, "lon": 14.4312, "charges": 2000
     }
   ],
   "remax": [
@@ -69,7 +69,7 @@
       "parsed_place": {"names": ["Veverkova", "Praha 7", "Holešovice"]},
       "url": "https://www.remax-czech.cz/reality/detail/3001/pronajem-bytu-2-kk",
       "image_url": null,
-      "size_m2": 60, "disposition": "2+kk"
+      "size_m2": 60, "disposition_raw_text": "2+kk"
     },
     {
       "id": "remax:3002", "source": "remax",
@@ -79,7 +79,7 @@
       "parsed_place": {"names": ["U Vody", "Praha 7", "Holešovice"]},
       "url": "https://www.remax-czech.cz/reality/detail/3002/pronajem-bytu-2-kk",
       "image_url": null,
-      "size_m2": 55, "disposition": "2+kk"
+      "size_m2": 55, "disposition_raw_text": "2+kk"
     }
   ]
 }

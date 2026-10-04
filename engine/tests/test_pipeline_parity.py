@@ -94,7 +94,7 @@ def _seed_seen_state(conn):
     ]
     for prop_id, listing_id, title, location, size_m2, disposition, price, misses, url in seeded:
         conn.execute(
-            "INSERT INTO properties (id, created_at, title, location_raw_text, size_m2, disposition) "
+            "INSERT INTO properties (id, created_at, title, location_raw_text, size_m2, disposition_raw_text) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             (prop_id, recent, title, location, size_m2, disposition))
         conn.execute(
@@ -121,7 +121,7 @@ def _listing_snapshot(listing):
         "url": listing.url,
         "image_url": listing.image_url,
         "size_m2": listing.size_m2,
-        "disposition": listing.disposition,
+        "disposition_raw_text": listing.disposition_raw_text,
         "lat": listing.lat,
         "lon": listing.lon,
         "charges": listing.charges,
@@ -139,7 +139,7 @@ def _seen_snapshot(conn):
         SELECT listings.id AS id, listings.source AS source, listings.url AS url,
                listing_tracking.miss_count AS miss_count,
                properties.title AS title, properties.location_raw_text AS location_raw_text,
-               properties.size_m2 AS size_m2, properties.disposition AS disposition,
+               properties.size_m2 AS size_m2, properties.disposition_raw_text AS disposition_raw_text,
                properties.land_m2 AS land_m2,
                latest_price.price AS price
         FROM listing_tracking
@@ -159,7 +159,7 @@ def _seen_snapshot(conn):
             "source": row["source"], "url": row["url"],
             "miss_count": row["miss_count"], "price": row["price"],
             "title": row["title"], "location_raw_text": row["location_raw_text"],
-            "size_m2": row["size_m2"], "disposition": row["disposition"],
+            "size_m2": row["size_m2"], "disposition_raw_text": row["disposition_raw_text"],
             "land_m2": row["land_m2"],
         }
         for row in conn.execute(stmt)
