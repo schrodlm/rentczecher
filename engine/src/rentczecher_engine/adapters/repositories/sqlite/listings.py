@@ -174,8 +174,8 @@ class SqliteListingRepository(ListingRepository):
                             max_age_days: int = 7, min_misses: int = 3) -> list[DisappearedListing]:
         """The disappearances get_disappeared would report once this run's
         miss counts land, without writing them: absent listings evaluated
-        one miss ahead, present ones at zero. Lets the pipeline compute the
-        notification before the send it must not corrupt state ahead of."""
+        one miss ahead, present ones at zero. Lets the pipeline count this
+        run's disappearances before it persists the run."""
         candidates = self._tracked_within_window(profile_id, max_age_days)
         result = []
         for row in candidates:

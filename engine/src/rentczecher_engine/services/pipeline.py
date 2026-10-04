@@ -19,10 +19,9 @@ from rentczecher_engine.domain.listing import DisappearedListing, Listing
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.domain.search import SearchSpec
 from rentczecher_engine.services.dedup import NameTierLookup, cross_source_dedup
-from rentczecher_engine.services.diff import DiffResult, classify
+from rentczecher_engine.services.diff import classify
 from rentczecher_engine.services.filters import apply_filters
 from rentczecher_engine.services.locate import PlaceResolver, locate_listings
-from rentczecher_engine.services.notify import Notifier, build_notification
 from rentczecher_engine.services.scrape import Scraper, scrape_all
 from rentczecher_engine.services.score import compute_score
 
@@ -61,7 +60,6 @@ class PipelineDeps:
     client: object
     scrapers: Mapping[str, Callable[[SearchSpec, object], Scraper]]
     gazetteer: Gazetteer
-    notifier: Notifier
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,19 +97,6 @@ def _failed_result(profile_id: str, run_id: str, started_at: datetime,
     )
 
 
-def _notify_succeeded(notifier: Notifier, notable: list[Listing], diff: DiffResult,
-                      profile_config: dict, spec: SearchSpec) -> bool:
-    """Nothing to say is not a failure to say it - persisting still runs.
-    A real send failing is signalled by raising or by returning False."""
-    if not notable:
-        return True
-    return notifier.send(build_notification(diff, profile_config, spec)) is not False
-
-
-def _has_recipients(profile_config: dict) -> bool:
-    return bool(profile_config.get("to", []))
-
-
 def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = False,
                 on_scraper_done: Callable[[str, ScraperHealth], None] | None = None) -> ProfileRunResult:
     profile_id = profile_config["id"]
@@ -139,13 +124,11 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
     disappeared = deps.store.pending_disappeared(profile_id, current_ids)
     diff = classify(survivors, deps.store.seen_ids(profile_id),
                     deps.store.latest_prices(profile_id), disappeared)
-    notable = diff.new + diff.price_drops
 
-    if not dry_run and _notify_succeeded(deps.notifier, notable, diff, profile_config, spec):
+    if not dry_run:
         deps.store.persist_outcome(
             profile_id, profile_config["name"], outcome, located_by_id, current_ids)
-        if notable and _has_recipients(profile_config):
-            deps.store.prune(profile_id)
+        deps.store.prune(profile_id)
 
     finished_at = deps.clock()
     counts = RunCounts(total=len(survivors), new=len(diff.new),

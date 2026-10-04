@@ -1,9 +1,7 @@
-"""Edge-case tests for dedup, notifier, scoring, and db modules.
+"""Edge-case tests for dedup, scoring, and db modules.
 
 Run with: python3 -m pytest tests/test_edge_cases.py -v
 """
-import re
-
 from rentczecher_engine.adapters.scrapers.base import Listing
 
 
@@ -14,140 +12,6 @@ def _make_listing(**kwargs) -> Listing:
     )
     defaults.update(kwargs)
     return Listing.build(**defaults)
-
-
-# ─── 3. Sreality URL with spaces ─────────────────────────────
-
-class TestSrealityURLSpaces:
-    """Disposition 'rodinny dum' should produce a valid URL (no spaces)."""
-
-    def test_detail_url_no_spaces(self):
-        """Verify Sreality URL construction replaces spaces with hyphens."""
-        # Reproduce the URL construction from scrapers/sreality.py (after fix)
-        disp_label = "rodinny dum"
-        disp_slug = disp_label.replace(" ", "-")  # This is what the fixed code does
-
-        detail_url = f"https://www.sreality.cz/detail/prodej/dum/{disp_slug}/domazlice/12345"
-
-        assert " " not in detail_url, "URL should not contain spaces"
-        assert "rodinny-dum" in detail_url
-
-        listing = _make_listing(
-            id="sreality:12345", source="sreality",
-            title="Prodej rodinneho domu", price=3000000,
-            url=detail_url, disposition=disp_label,
-        )
-
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-        html = _render_card(listing, is_rent=False)
-        assert html  # did not crash
-
-    def test_listing_url_is_escapable(self):
-        """Notifier _safe_url should still return a usable href even with spaces."""
-        from rentczecher_engine.adapters.notifiers.smtp import _safe_url
-
-        url_with_space = "https://www.sreality.cz/detail/prodej/dum/rodinny dum/domazlice/12345"
-        result = _safe_url(url_with_space)
-        # _safe_url only validates prefix and HTML-escapes; it should not crash
-        assert result.startswith("https://")
-
-
-# ─── 4. Notifier with price=0 ────────────────────────────────
-
-class TestNotifierPriceZero:
-    def test_render_card_price_zero_no_crash(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = _make_listing(price=0)
-        html = _render_card(listing, is_rent=True)
-        assert isinstance(html, str)
-        assert "0" in html
-
-    def test_format_price_zero(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _format_price
-
-        assert "0" in _format_price(0, is_rent=True)
-        assert "0" in _format_price(0, is_rent=False)
-
-
-# ─── 5. Notifier with all None optional fields ───────────────
-
-class TestNotifierAllNoneOptionals:
-    def test_render_card_minimal_listing(self):
-        """Only required fields set -- all optional fields are None/default."""
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = Listing.build(
-            id="test:bare", source="test", title="Bare listing",
-            price=15000, location_raw_text="Praha", url="https://example.com",
-        )
-
-        html = _render_card(listing, is_rent=True)
-        assert isinstance(html, str)
-        assert "Bare listing" in html
-
-    def test_render_card_no_image(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = Listing.build(
-            id="test:noimg", source="test", title="No image",
-            price=10000, location_raw_text="Praha", url="https://example.com",
-        )
-        html = _render_card(listing, is_rent=True)
-        assert "<img" not in html
-
-    def test_render_card_no_location_no_gps_no_map_link(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = Listing.build(
-            id="test:nogps", source="test", title="No GPS",
-            price=10000, location_raw_text="", url="https://example.com",
-        )
-        html = _render_card(listing, is_rent=True)
-        assert "maps.google.com" not in html
-
-    def test_render_card_location_produces_map_link(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = Listing.build(
-            id="test:loc", source="test", title="Test",
-            price=10000, location_raw_text="Umělecká, Praha - Holešovice", url="https://example.com",
-        )
-        html = _render_card(listing, is_rent=True)
-        assert "maps.google.com" in html
-        assert "Um%C4%9Bleck" in html  # URL-encoded address
-
-
-# ─── 6. Notifier maps link uniqueness ────────────────────────
-
-class TestNotifierMapsLinkUniqueness:
-    def test_different_locations_different_map_urls(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        locations = [
-            "Umělecká, Praha - Holešovice",
-            "Letohradská, Praha - Holešovice",
-            "Jana Zajíce, Praha - Bubeneč",
-        ]
-
-        map_urls = []
-        for i, loc in enumerate(locations):
-            listing = _make_listing(id=f"test:{i}", location_raw_text=loc)
-            html = _render_card(listing, is_rent=True)
-            match = re.search(r'https://maps\.google\.com/\?q=[^"]+', html)
-            assert match is not None, f"No maps URL found for listing {i}"
-            map_urls.append(match.group(0))
-
-        assert len(set(map_urls)) == 3, (
-            f"Expected 3 unique map URLs, got {len(set(map_urls))}: {map_urls}"
-        )
-
-    def test_gps_fallback_when_no_location(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = _make_listing(location_raw_text="", lat=50.10199, lon=14.42769)
-        html = _render_card(listing, is_rent=True)
-        assert "50.10199" in html, "GPS fallback should be used when no location"
 
 
 # ─── 7. Scoring with all zero weights ────────────────────────
@@ -185,35 +49,6 @@ class TestScoringAllZeroWeights:
         listing = _make_listing()
         score = compute_score(listing, profile)
         assert isinstance(score, int)
-
-
-# ─── 9. Large price formatting ───────────────────────────────
-
-class TestLargePriceFormatting:
-    def test_sale_price_uses_nbsp_separator(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _format_price
-
-        result = _format_price(4500000, is_rent=False)
-        assert "," not in result, f"Should not contain comma: {result}"
-        # Uses non-breaking space (\xa0) as thousand separator
-        assert "4\xa0500\xa0000" in result, f"Expected nbsp-separated price in: {repr(result)}"
-        assert "Kč" in result, f"Sale price should contain 'Kč': {result}"
-
-    def test_rent_price_uses_nbsp_separator(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _format_price
-
-        result = _format_price(25000, is_rent=True)
-        assert "," not in result, f"Should not contain comma: {result}"
-        assert "25\xa0000" in result, f"Expected nbsp-separated in: {repr(result)}"
-        assert "měsíc" in result, f"Rent should mention 'měsíc': {result}"
-
-    def test_format_in_rendered_card(self):
-        from rentczecher_engine.adapters.notifiers.smtp import _render_card
-
-        listing = _make_listing(price=4500000)
-        html = _render_card(listing, is_rent=False)
-        assert "4\xa0500\xa0000" in html, "Rendered card should contain nbsp-formatted price"
-        assert "4,500,000" not in html, "Rendered card should NOT contain comma-separated price"
 
 
 # ─── 10. Config missing optional keys ────────────────────────

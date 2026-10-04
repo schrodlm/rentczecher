@@ -141,8 +141,8 @@ class Listing:
 
 @dataclass(frozen=True, slots=True)
 class DisappearedListing:
-    """A listing judged gone, with the property facts and latest price the
-    disappeared-listings email needs to render it.
+    """A listing judged gone, with the property facts and latest price
+    needed to show it.
 
     title/location_raw_text/price are nullable: a listing can disappear before its
     property has a title or before any price observation was ever recorded.

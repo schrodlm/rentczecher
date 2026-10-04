@@ -1,8 +1,8 @@
 """Golden test pinning the exact end-to-end pipeline behavior.
 
 Feeds a fixed set of fixture listings through run_profile (filters,
-cross-source dedup, scoring, price drops, disappearances,
-notify-then-commit) and compares the full outcome against a committed
+cross-source dedup, scoring, price drops, disappearances, commit)
+and compares the full outcome against a committed
 golden file. Regenerate deliberately with:
 PARITY_REGEN=1 python3 -m pytest tests/test_pipeline_parity.py
 
@@ -18,6 +18,7 @@ from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
@@ -166,24 +167,10 @@ def _seen_snapshot(conn):
     }
 
 
-class _CaptureNotifier:
-    def __init__(self):
-        self.notification = None
-
-    def send(self, notification) -> bool:
-        self.notification = notification
-        return True
-
-
-class _SilentNotifier:
-    def send(self, notification) -> bool:
-        return True
-
-
-def _deps(store, scrapers, notifier):
+def _deps(store, scrapers):
     return PipelineDeps(
         store=store, clock=utc_now, client=None, scrapers=scrapers,
-        gazetteer=GAZETTEER, notifier=notifier,
+        gazetteer=GAZETTEER,
     )
 
 
@@ -193,19 +180,27 @@ def test_parity_profile_satisfies_the_config_schema():
     ProfileConfig.model_validate(PROFILE)
 
 
-def test_pipeline_outcome_matches_golden(run_store):
+def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     store, conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
     _seed_seen_state(conn)
 
-    notifier = _CaptureNotifier()
-    deps = _deps(store, _fake_scrapers(listing_data), notifier)
+    captured = {}
+    real_classify = pipeline.classify
+
+    def spying_classify(*args):
+        captured["diff"] = real_classify(*args)
+        return captured["diff"]
+
+    monkeypatch.setattr(pipeline, "classify", spying_classify)
+    deps = _deps(store, _fake_scrapers(listing_data))
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
-    notification = notifier.notification
+    diff = captured["diff"]
+    notable = sorted(diff.new + diff.price_drops, key=lambda listing: listing.score, reverse=True)
     snapshot = {
-        "notable": [_listing_snapshot(l) for l in notification.listings],
-        "disappeared_ids": sorted(d.id for d in notification.disappeared),
+        "notable": [_listing_snapshot(l) for l in notable],
+        "disappeared_ids": sorted(d.id for d in diff.disappeared),
         "seen_after": _seen_snapshot(conn),
     }
 
@@ -224,7 +219,7 @@ def test_run_profile_persists_only_through_the_store(run_store):
     store, _conn = run_store
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
 
-    deps = _deps(store, _fake_scrapers(listing_data), _SilentNotifier())
+    deps = _deps(store, _fake_scrapers(listing_data))
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
     assert store.seen_ids(PROFILE_ID)

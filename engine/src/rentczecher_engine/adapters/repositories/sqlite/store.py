@@ -18,7 +18,7 @@ class SqliteRunStore:
     """Everything one profile run reads and persists, behind one object.
 
     The pipeline reads seen state and prices before deciding what is new,
-    then persists the whole outcome only after the notification succeeded.
+    then persists the whole outcome in one unit of work.
     """
 
     def __init__(self, conn: sqlite3.Connection, *, now: Callable[[], datetime] = utc_now):
