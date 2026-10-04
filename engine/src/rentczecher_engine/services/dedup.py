@@ -18,7 +18,7 @@ from rentczecher_engine.domain.dedup import (
     UncertainPair,
     match_score_to_json,
 )
-from rentczecher_engine.domain.disposition import normalize_disposition
+from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.geo import haversine_m
 from rentczecher_engine.domain.listing import Listing
 
@@ -140,8 +140,8 @@ def _shared_name_factor(
 
 
 def _disposition_factor(a: Listing, b: Listing) -> FactorResult:
-    disp_a = normalize_disposition(a.disposition)
-    disp_b = normalize_disposition(b.disposition)
+    disp_a = parse_disposition(a.disposition)
+    disp_b = parse_disposition(b.disposition)
     if disp_a is None or disp_b is None:
         return 0.0, False
     if disp_a == disp_b:
@@ -416,10 +416,12 @@ def promote_fields(kept: Listing, absorbed: Listing) -> tuple[dict, dict]:
         canonical["lon"] = kept_evidence[1] if kept_evidence else None
     _record_difference(differences, "location_raw_text", canonical["location_raw_text"], absorbed.location_raw_text)
 
-    canonical_disposition = normalize_disposition(kept.disposition) or normalize_disposition(absorbed.disposition)
+    kept_disposition = parse_disposition(kept.disposition)
+    absorbed_disposition = parse_disposition(absorbed.disposition)
+    absorbed_code = absorbed_disposition.code if absorbed_disposition is not None else None
+    canonical_disposition = kept_disposition.code if kept_disposition is not None else absorbed_code
     canonical["disposition"] = canonical_disposition
-    absorbed_disposition = normalize_disposition(absorbed.disposition)
-    _record_difference(differences, "disposition", canonical_disposition, absorbed_disposition)
+    _record_difference(differences, "disposition", canonical_disposition, absorbed_code)
 
     for field in ("size_m2", "land_m2"):
         canonical[field] = _promote_gap_fill(kept, absorbed, field)
