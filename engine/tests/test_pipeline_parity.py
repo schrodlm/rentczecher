@@ -203,9 +203,9 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
 
     diff = captured["diff"]
-    notable = sorted(diff.new + diff.price_drops, key=lambda listing: listing.score, reverse=True)
     snapshot = {
-        "notable": [_listing_snapshot(l) for l in notable],
+        "new": [_listing_snapshot(l) for l in diff.new],
+        "price_drops": [_listing_snapshot(l) for l in diff.price_drops],
         "disappeared_ids": sorted(captured["disappeared"]),
         "seen_after": _seen_snapshot(conn),
     }
