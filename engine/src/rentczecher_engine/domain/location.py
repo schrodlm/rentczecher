@@ -44,6 +44,18 @@ class PlaceRef:
 
 
 @dataclass(frozen=True, slots=True)
+class PlaceMatch:
+    """A place found by name, with the names of the obec and okres it lies
+    in to tell same-named places apart. A unit is never its own obec or
+    okres, so those are None for an obec or okres itself."""
+
+    place: PlaceRef
+    name: str
+    obec: str | None
+    okres: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class Location:
     """Where something lies: the RÚIAN unit of each kind, kraj to ulice, plus
     the house numbers as written. A kind left open is None, and Praha lies
