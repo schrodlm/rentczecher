@@ -187,7 +187,54 @@ class Gazetteer:
         if match is None:
             return None
         location = self._filled_from_names_inside_obec(self._location_of(match), place.names)
+        location = self._with_containing_units(location)
         return replace(location, cislo_popisne=place.cislo_popisne, cislo_orientacni=place.cislo_orientacni)
+
+    def _with_containing_units(self, location: Location) -> Location:
+        """The location with the část obce, městská část and obvod its finer
+        units lie in, where exactly one fits. A unit spanning two, or one that
+        disagrees with a unit already set, is left open rather than guessed,
+        and a unit the text named is kept."""
+        if location.cast_obce is None and location.ulice is not None:
+            stmt = """
+                SELECT c.code, c.name, c.lat, c.lon
+                FROM ulice_casti_obce u JOIN casti_obce c ON c.code = u.cast_obce_code
+                WHERE u.ulice_code = ?
+            """
+            location = replace(location, cast_obce=_only(self._places(stmt, location.ulice.code)))
+        if location.mestska_cast is None:
+            location = replace(location, mestska_cast=_only(self._mestske_casti_holding(location)))
+        if location.obvod is None and location.mestska_cast is not None:
+            location = replace(location, obvod=self._obvod_of_mestska_cast(location.mestska_cast.code))
+        return location
+
+    def _mestske_casti_holding(self, location: Location) -> set[Place]:
+        """The městské části the location's street and část obce both lie in,
+        inside its obvod when one is set."""
+        candidates: set[Place] | None = None
+        if location.ulice is not None:
+            stmt = """
+                SELECT m.code, m.name, m.lat, m.lon
+                FROM ulice_mestske_casti u JOIN mestske_casti m ON m.code = u.mestska_cast_code
+                WHERE u.ulice_code = ?
+            """
+            candidates = self._places(stmt, location.ulice.code)
+        if location.cast_obce is not None:
+            stmt = """
+                SELECT m.code, m.name, m.lat, m.lon
+                FROM casti_obce_mestske_casti c JOIN mestske_casti m ON m.code = c.mestska_cast_code
+                WHERE c.cast_obce_code = ?
+            """
+            of_part = self._places(stmt, location.cast_obce.code)
+            candidates = of_part if candidates is None else candidates & of_part
+        if candidates is None:
+            return set()
+        if location.obvod is not None:
+            candidates = {m for m in candidates if self._obvod_of_mestska_cast(m.code) == location.obvod}
+        return candidates
+
+    def _places(self, stmt: str, code: int) -> set[Place]:
+        return {_to_place(row) for row in self._conn.execute(stmt, (code,))}
 
     def _filled_from_names_inside_obec(self, location: Location, names: Iterable[str]) -> Location:
         """The location with each kind the match left open filled from a name

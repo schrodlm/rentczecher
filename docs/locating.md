@@ -22,7 +22,7 @@ the listing ends up with this Location:
 | okres | none, Praha has no okres |
 | obec | Praha |
 | obvod | Praha 7 |
-| městská část | none |
+| městská část | Praha 7 |
 | část obce | Holešovice |
 | ulice | Přístavní |
 | číslo popisné | 1401 |
@@ -83,7 +83,7 @@ than a guess.
 
 ## 3. The rest of the Location fills in
 
-From the anchor, the gazetteer fills in two things:
+From the anchor, the gazetteer fills in three things:
 
 - **The units that contain it.** A street lies in one obec, an obec in one
   okres and one kraj, a Praha městská část in one obvod. These are certain, so
@@ -92,13 +92,22 @@ From the anchor, the gazetteer fills in two things:
   "Holešovice" is ambiguous nationwide but exactly one část obce inside Praha.
   In Praha a district number like "Praha 7" means the obvod, as it does in a
   Czech address.
+- **The units its street or část obce lies in.** RÚIAN's address points show
+  which část obce and městská část each street lies in, and which městská část
+  each část obce lies in. Přístavní lies only in Holešovice and only in the
+  městská část Praha 7, so both fill even when the text names neither, and the
+  obvod follows from the městská část. A street or část obce that spans two
+  units of a kind, or whose unit disagrees with one the text named, leaves that
+  kind empty: Holešovice alone spans two městské části, so it leaves the
+  městská část and the obvod empty.
 
 A name fills its kind only when exactly one unit inside the obec matches. Two
-names that disagree, say "Praha 6" and "Praha 7", leave that kind empty. A
-name that matches the obec or the okres never fills a smaller kind. For
-example, Brno has a část obce called "Brno-město", but when another name is
-the anchor, the text "Brno-město" does not fill it, because it is also the
-okres.
+names that disagree, say "Praha 6" and "Praha 7", leave that kind empty for
+the street to decide. A kind the text names is never replaced. A name that
+matches the obec or the okres never fills a smaller kind, though a street
+lying in that kind still fills it. For example, Brno has a část obce called
+"Brno-město", but when another name is the anchor, the text "Brno-město" does
+not fill it, because it is also the okres.
 
 ## 4. The property keeps its most detailed location
 
