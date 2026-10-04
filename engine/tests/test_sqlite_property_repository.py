@@ -25,7 +25,7 @@ CREATED = BASE.isoformat()
 def _repo(tmp_path):
     conn = connection.connect(tmp_path / "t.db")
     migrate.apply_pending(conn)
-    conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, ?)", (CREATED,))
+    conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (CREATED,))
     conn.commit()
     return SqlitePropertyRepository(conn, now=lambda: BASE), conn
 

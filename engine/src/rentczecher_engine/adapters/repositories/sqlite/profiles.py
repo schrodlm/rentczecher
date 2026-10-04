@@ -21,7 +21,7 @@ class SqliteProfileRepository:
         if existing is not None:
             return
         insert = """
-            INSERT INTO profiles (id, name, active, created_at)
-            VALUES (?, ?, 1, ?)
+            INSERT INTO profiles (id, name, created_at)
+            VALUES (?, ?, ?)
         """
         self._conn.execute(insert, (profile_id, name, self._now().isoformat()))

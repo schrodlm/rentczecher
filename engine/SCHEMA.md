@@ -27,6 +27,18 @@ keys in the migrations, which are authoritative if the two disagree.
 
 ```mermaid
 erDiagram
+    profiles   ||--o| profile_criteria   : "searches by"
+    offer_types  ||--o{ profile_criteria : "offered as"
+    estate_types ||--o{ profile_criteria : "typed as"
+    place_kinds  ||--o{ profile_criteria : "placed by"
+    portals      ||--o{ profile_portals  : "scanned as"
+    dispositions ||--o{ preferred_dispositions : "preferred as"
+    place_kinds  ||--o{ preferred_places : "placed by"
+    dispositions ||--o{ properties       : "laid out as"
+    profiles   ||--o{ profile_portals    : "scans"
+    profiles   ||--o| profile_preferences : "scores by"
+    profiles   ||--o{ preferred_dispositions : "prefers"
+    profiles   ||--o{ preferred_places   : "prefers"
     profiles   ||--o{ listing_tracking   : "tracks"
     listings   ||--o{ listing_tracking   : "seen by profiles as"
     profiles   ||--o{ scrape_runs         : "records a run of"
@@ -44,7 +56,12 @@ erDiagram
 
 | Table | Holds |
 |---|---|
-| `profiles` | One row per configured search: `id`, `name`, `active`, `created_at`. The search *parameters* stay in `config.yaml`. |
+| `profiles` | One row per saved search: `id`, `name`, `paused_at` (null while it scans), `created_at`. |
+| `profile_criteria` | What a listing must satisfy to be shown, one row per profile: rent or sale, the type of property, the search place as a RÚIAN kind and code, the price, size and land bounds, the room range and the kitchen kind. A null bound is no bound. |
+| `profile_portals` | The portals a profile scans, one row each. |
+| `profile_preferences` | A profile's scoring weights and their settings, one row per profile. A setting may be null only while its weight is 0. |
+| `preferred_dispositions`, `preferred_places` | A profile's preferred dispositions and places, ranked, rank 1 the most preferred. |
+| `portals`, `offer_types`, `estate_types`, `place_kinds`, `dispositions` | The fixed vocabularies the other tables reference, seeded by the migrations. |
 | `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. |
 | `listings` | One per-portal posting: `source:source_id`, which property, url, scraped timestamp. A fact of the posting, shared by every profile whose search sees it. No per-profile state. |
 | `listing_tracking` | Per-profile seen state for a listing: first/last seen, `miss_count`, `viewed_at`, `favourited_at`. One row per profile and listing. Pruning deletes only these rows, never the facts. |
