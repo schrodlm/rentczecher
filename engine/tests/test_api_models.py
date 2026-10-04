@@ -1,5 +1,6 @@
 from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
+from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.listing import InboxCard, SiblingSource
 
 
@@ -28,6 +29,7 @@ class TestListingModel:
             property_location=None,
             size_m2=54,
             disposition_raw_text="2+kk",
+            disposition=Disposition(rooms=2, kitchen="kitchenette"),
             first_seen_at="2026-09-01T00:00:00+00:00",
             viewed_at=None,
             favourited_at=None,
