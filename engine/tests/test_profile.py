@@ -9,7 +9,7 @@ import pytest
 
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria
-from tests.profiles import layouts, preferences
+from tests.profiles import criteria, layouts, preferences
 
 
 class TestImmutability:
@@ -48,3 +48,16 @@ class TestPreferenceSettings:
                     place_weight=10, preferred_places=(PlaceRef("obvod", 78),),
                     land_weight=10, ideal_land_m2=1,
                     price_weight=10, max_good_price=1)
+
+
+class TestCriteriaBounds:
+    """A bound is positive or unset. Unset is the only way to say no bound."""
+
+    @pytest.mark.parametrize("bound", ["min_price", "max_price", "min_size_m2", "min_land_m2"])
+    @pytest.mark.parametrize("value", [0, -1])
+    def test_a_bound_of_zero_or_less_is_rejected(self, bound, value):
+        with pytest.raises(ValueError, match=f"{bound} must be positive"):
+            criteria(**{bound: value})
+
+    def test_a_bound_of_one_is_accepted(self):
+        criteria(min_price=1, max_price=1, min_size_m2=1, min_land_m2=1)

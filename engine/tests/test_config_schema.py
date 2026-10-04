@@ -228,6 +228,11 @@ class TestLoader:
         with pytest.raises(ConfigError, match=rf"profiles\.p\.scoring\.preferred_places: .*{message}"):
             load_config(_write(tmp_path, broken))
 
+    def test_a_zero_bound_is_rejected_naming_the_field(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(min_price=0))
+        with pytest.raises(ConfigError, match=r"profiles\.p\.search: min_price must be positive"):
+            load_config(_write(tmp_path, broken))
+
     def test_a_weighted_preference_without_its_setting_names_the_field(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"].update(scoring={"size_weight": 15}))
         with pytest.raises(ConfigError, match=r"profiles\.p\.scoring: size_weight needs a positive ideal_size_m2"):
