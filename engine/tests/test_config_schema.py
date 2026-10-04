@@ -13,7 +13,7 @@ from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.config.schema import Config, ProfileConfig
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher_engine.domain.location import PlaceRef
-from rentczecher_engine.domain.profile import Preferences
+from rentczecher_engine.domain.profile import Criteria, Preferences
 from tests.profiles import layouts, preferences
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
@@ -66,10 +66,6 @@ class TestPlaceRequired:
         with pytest.raises(ConfigError, match="unknown place"):
             load_config(_write(tmp_path, broken))
 
-    def test_place_loads_as_its_kind_and_code(self, tmp_path):
-        loaded = load_config(_write(tmp_path, VALID))
-        assert loaded["profiles"]["p"]["search"].place == PlaceRef(kind="obvod", code=78)
-
     def test_the_kind_is_read_in_any_case(self, tmp_path):
         written = _broken(lambda c: c["profiles"]["p"]["search"].update(place="Obvod Praha 7"))
         loaded = load_config(_write(tmp_path, written))
@@ -116,10 +112,23 @@ class TestLoader:
         with pytest.raises(ConfigNotFoundError, match="config not found at"):
             load_config(missing)
 
-    def test_valid_config_loads_as_plain_dict(self, tmp_path):
+    def test_unset_search_settings_load_as_unbounded(self, tmp_path):
         config = load_config(_write(tmp_path, VALID))
-        assert config["profiles"]["p"]["search"].min_price == 0
+        assert config["profiles"]["p"]["search"] == Criteria(
+            offer_type="rent", estate_type="flat", place=PlaceRef(kind="obvod", code=78), max_price=25000)
         assert config["profiles"]["p"]["scrapers"] == ["sreality"]
+
+    def test_search_loads_as_criteria(self, tmp_path):
+        """Every search setting lands in its own criterion."""
+        written = _broken(lambda c: c["profiles"]["p"].update(search={
+            "offer_type": "sale", "estate_type": "house", "place": "okres Domažlice",
+            "min_price": 1000000, "max_price": 5000000, "min_size_m2": 80, "min_land_m2": 600,
+            "dispositions": ["4+1", "5+kk"]}))
+        loaded = load_config(_write(tmp_path, written))
+        assert loaded["profiles"]["p"]["search"] == Criteria(
+            offer_type="sale", estate_type="house", place=PlaceRef(kind="okres", code=3401),
+            min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600,
+            dispositions=("4+1", "5+kk"))
 
     def test_scoring_loads_as_preferences_with_layouts_parsed(self, tmp_path):
         """Every scoring setting lands in its own preference, and preferred
