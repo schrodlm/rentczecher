@@ -1,5 +1,5 @@
 """Load config.yaml through the schema. The pipeline consumes the validated
-result as a dict whose search place and preferences are typed."""
+result as a dict whose criteria and preferences are typed."""
 
 import difflib
 from pathlib import Path
@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from rentczecher_engine.adapters.config.schema import Config, ScoringConfig, StrictModel
+from rentczecher_engine.adapters.config.schema import Config, ScoringConfig, SearchConfig, StrictModel
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.scrapers.location_resolver import resolve
 from rentczecher_engine.domain.errors import (
@@ -18,7 +18,7 @@ from rentczecher_engine.domain.errors import (
 )
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import PlaceKind, PlaceRef
-from rentczecher_engine.domain.profile import Preferences
+from rentczecher_engine.domain.profile import Criteria, Preferences
 
 _SEARCHABLE_KINDS: dict[str, PlaceKind] = {"kraj": "kraj", "okres": "okres", "obvod": "obvod"}
 
@@ -38,9 +38,10 @@ def load_config(path: Path) -> dict:
     gazetteer = Gazetteer()
     try:
         for profile_id, profile in loaded["profiles"].items():
-            search = profile["search"]
-            search["place"] = _search_place(gazetteer, search["place"], f"{path.name}: profiles.{profile_id}")
-            profile["scoring"] = _preferences(config.profiles[profile_id].scoring)
+            written = config.profiles[profile_id]
+            place = _search_place(gazetteer, written.search.place, f"{path.name}: profiles.{profile_id}")
+            profile["search"] = _criteria(written.search, place)
+            profile["scoring"] = _preferences(written.scoring)
     finally:
         gazetteer.close()
     return loaded
@@ -58,6 +59,19 @@ def _search_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:
     except (PlaceNotFoundError, AmbiguousPlaceError) as error:
         raise ConfigError(f"{where}.search.place: {error}") from error
     return place
+
+
+def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
+    return Criteria(
+        offer_type=search.offer_type,
+        estate_type=search.estate_type,
+        place=place,
+        min_price=search.min_price,
+        max_price=search.max_price,
+        min_size_m2=search.min_size_m2,
+        min_land_m2=search.min_land_m2,
+        dispositions=tuple(search.dispositions),
+    )
 
 
 def _preferences(scoring: ScoringConfig) -> Preferences:

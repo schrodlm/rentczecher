@@ -68,12 +68,12 @@ class TestPlaceRequired:
 
     def test_place_loads_as_its_kind_and_code(self, tmp_path):
         loaded = load_config(_write(tmp_path, VALID))
-        assert loaded["profiles"]["p"]["search"]["place"] == PlaceRef(kind="obvod", code=78)
+        assert loaded["profiles"]["p"]["search"].place == PlaceRef(kind="obvod", code=78)
 
     def test_the_kind_is_read_in_any_case(self, tmp_path):
         written = _broken(lambda c: c["profiles"]["p"]["search"].update(place="Obvod Praha 7"))
         loaded = load_config(_write(tmp_path, written))
-        assert loaded["profiles"]["p"]["search"]["place"] == PlaceRef(kind="obvod", code=78)
+        assert loaded["profiles"]["p"]["search"].place == PlaceRef(kind="obvod", code=78)
 
     @pytest.mark.parametrize("place", ["obec Kdyně", "Praha 7"])
     def test_a_place_not_written_as_a_searchable_kind_is_rejected(self, tmp_path, place):
@@ -118,7 +118,7 @@ class TestLoader:
 
     def test_valid_config_loads_as_plain_dict(self, tmp_path):
         config = load_config(_write(tmp_path, VALID))
-        assert config["profiles"]["p"]["search"]["min_price"] == 0
+        assert config["profiles"]["p"]["search"].min_price == 0
         assert config["profiles"]["p"]["scrapers"] == ["sreality"]
 
     def test_scoring_loads_as_preferences_with_layouts_parsed(self, tmp_path):
@@ -182,7 +182,7 @@ class TestLoader:
         config = copy.deepcopy(VALID)
         config["profiles"]["p"]["search"]["dispositions"] = ["garsoniéra", "atypický"]
         loaded = load_config(_write(tmp_path, config))
-        assert loaded["profiles"]["p"]["search"]["dispositions"] == ["garsoniéra", "atypický"]
+        assert loaded["profiles"]["p"]["search"].dispositions == ("garsoniéra", "atypický")
 
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))

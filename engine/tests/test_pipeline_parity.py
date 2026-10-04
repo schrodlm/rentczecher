@@ -17,10 +17,10 @@ from pathlib import Path
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
+from rentczecher_engine.domain.location import ParsedPlace
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import layouts, preferences
+from tests.profiles import criteria, layouts, preferences
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -31,15 +31,11 @@ PROFILE_ID = "parity"
 PROFILE = {
     "name": "Parity profile",
     "enabled": True,
-    "search": {
-        "offer_type": "rent",
-        "estate_type": "flat",
-        "place": PlaceRef("obvod", 78),
-        "min_price": 0,
-        "max_price": 25000,
-        "dispositions": ["2+kk", "1+1"],
-        "min_size_m2": 30,
-    },
+    "search": criteria(
+        max_price=25000,
+        dispositions=("2+kk", "1+1"),
+        min_size_m2=30,
+    ),
     "scrapers": ["sreality", "bezrealitky", "remax"],
     "scoring": preferences(
         price_per_m2_weight=40,

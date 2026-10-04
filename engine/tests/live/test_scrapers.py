@@ -33,8 +33,7 @@ def _get_profile(profile_id: str) -> dict:
 
 
 def _scraper(cls, profile_id: str, client):
-    criteria = Criteria.from_search_config(_get_profile(profile_id)["search"])
-    return cls(criteria, client)
+    return cls(_get_profile(profile_id)["search"], client)
 
 
 # ─── Sreality ───────────────────────────────────────────────
@@ -77,8 +76,8 @@ class TestSrealityLive:
         profile = _get_profile("praha7-byty")
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
-        max_price = profile["search"]["max_price"]
-        min_price = profile["search"]["min_price"]
+        max_price = profile["search"].max_price
+        min_price = profile["search"].min_price
         for l in listings:
             assert l.price <= max_price, f"Price {l.price} exceeds max {max_price}"
             assert l.price >= min_price, f"Price {l.price} below min {min_price}"
@@ -193,7 +192,7 @@ class TestRemaxLive:
         listings = s.scrape()
         for l in listings:
             assert l.price > 0
-            assert l.price <= profile["search"]["max_price"]
+            assert l.price <= profile["search"].max_price
 
     def test_praha7_titles_no_agent_id(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
