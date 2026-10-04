@@ -217,6 +217,17 @@ class TestLoader:
                            match=r"profiles\.p\.scoring\.preferred_dispositions.*not a disposition: Rodinný"):
             load_config(_write(tmp_path, broken))
 
+    @pytest.mark.parametrize(("written", "message"), [
+        ("Bubeneč", "start 'Bubeneč' with its kind"),
+        ("cast_obce Bubenec Dolni", "unknown place"),
+        ("cast_obce Holešovice", "several places are called"),
+    ])
+    def test_a_preferred_place_that_names_no_one_place_is_rejected(self, tmp_path, written, message):
+        broken = _broken(lambda c: c["profiles"]["p"].update(
+            scoring={"place_weight": 15, "preferred_places": [written]}))
+        with pytest.raises(ConfigError, match=rf"profiles\.p\.scoring\.preferred_places: .*{message}"):
+            load_config(_write(tmp_path, broken))
+
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))
         with pytest.raises(ConfigError, match=r"profiles\.p\.search\.offer_type"):

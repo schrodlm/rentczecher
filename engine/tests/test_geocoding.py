@@ -258,6 +258,51 @@ class TestResolveFillsNamedUnits:
         assert location.obvod is None
 
 
+class TestResolveContainingUnits:
+    """The units a resolved street or část obce lies in fill the kinds the text
+    left open, when exactly one fits what is already set."""
+
+    def test_a_street_brings_its_cast_obce_mestska_cast_and_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Veverkova", "Praha")))
+        assert location.cast_obce.name == "Holešovice"
+        assert location.mestska_cast.name == "Praha 7"
+        assert location.obvod.name == "Praha 7"
+
+    def test_a_cast_obce_in_one_mestska_cast_brings_it_and_its_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Praha", "Smíchov")))
+        assert location.mestska_cast.name == "Praha 5"
+        assert location.obvod.name == "Praha 5"
+
+    def test_a_named_obvod_the_street_agrees_with_gains_the_streets_mestska_cast(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 7")))
+        assert location.mestska_cast.name == "Praha 7"
+
+    def test_a_cast_obce_spanning_two_mestske_casti_fills_neither_them_nor_the_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Praha", "Holešovice")))
+        assert location.cast_obce.name == "Holešovice"
+        assert location.mestska_cast is None
+        assert location.obvod is None
+
+    def test_a_named_obvod_is_kept_and_a_mestska_cast_outside_it_is_not_added(self, gazetteer):
+        # Veletržní lies in Praha 7, the text says Praha 2.
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 2")))
+        assert location.obvod.name == "Praha 2"
+        assert location.mestska_cast is None
+        # Veletržní runs through Bubeneč and Holešovice, so it names no část obce.
+        assert location.cast_obce is None
+
+    def test_a_street_and_a_named_cast_obce_sharing_no_mestska_cast_fill_none(self, gazetteer):
+        # Vinohrady touches no part of Praha 7, where Veletržní lies.
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha", "Vinohrady")))
+        assert location.cast_obce.name == "Vinohrady"
+        assert location.mestska_cast is None
+        assert location.obvod is None
+
+    def test_names_disagreeing_on_the_obvod_leave_it_to_the_street(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 7", "Praha 6")))
+        assert location.obvod.name == "Praha 7"
+
+
 class TestResolveHouseNumbers:
     def test_the_house_numbers_ride_along_as_written(self, gazetteer):
         place = ParsedPlace(names=("U Vody", "Praha"), cislo_popisne="1401", cislo_orientacni="5a")
