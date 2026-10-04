@@ -12,6 +12,7 @@ import yaml
 from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.config.schema import Config, ProfileConfig
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
+from rentczecher_engine.domain.location import PlaceRef
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
@@ -61,6 +62,21 @@ class TestPlaceRequired:
     def test_unknown_place_fails_at_load(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(place="okres Domzlice"))
         with pytest.raises(ConfigError, match="unknown place"):
+            load_config(_write(tmp_path, broken))
+
+    def test_place_loads_as_its_kind_and_code(self, tmp_path):
+        loaded = load_config(_write(tmp_path, VALID))
+        assert loaded["profiles"]["p"]["search"]["place"] == PlaceRef(kind="obvod", code=78)
+
+    def test_the_kind_is_read_in_any_case(self, tmp_path):
+        written = _broken(lambda c: c["profiles"]["p"]["search"].update(place="Obvod Praha 7"))
+        loaded = load_config(_write(tmp_path, written))
+        assert loaded["profiles"]["p"]["search"]["place"] == PlaceRef(kind="obvod", code=78)
+
+    @pytest.mark.parametrize("place", ["obec Kdyně", "Praha 7"])
+    def test_a_place_not_written_as_a_searchable_kind_is_rejected(self, tmp_path, place):
+        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(place=place))
+        with pytest.raises(ConfigError, match="name a kraj, okres or obvod"):
             load_config(_write(tmp_path, broken))
 
 

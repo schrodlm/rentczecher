@@ -16,7 +16,8 @@ from rentczecher_engine.adapters.geocoding.gazetteer import (
     normalize_name,
     open_gazetteer,
 )
-from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.domain.errors import AmbiguousPlaceError, PlaceNotFoundError
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.services.assemble import assemble_location
 
 # No gazetteer unit holds this code.
@@ -293,6 +294,28 @@ class TestNamed:
 
     def test_a_cancelled_kraj_reads_as_no_location(self, gazetteer, stored):
         assert gazetteer.named(replace(stored, kraj_code=CANCELLED_CODE)) is None
+
+
+class TestPlaceNamed:
+    """A place written as its kind and name is the one place carrying both,
+    or an error, never a guess."""
+
+    def test_finds_the_place_of_that_kind(self, gazetteer):
+        assert gazetteer.place_named("obvod", "Praha 7") == PlaceRef(kind="obvod", code=78)
+
+    def test_matches_any_spelling_of_the_name(self, gazetteer):
+        assert gazetteer.place_named("okres", "domazlice") == PlaceRef(kind="okres", code=3401)
+
+    def test_the_kind_separates_places_sharing_a_name(self, gazetteer):
+        assert gazetteer.place_named("obec", "Domažlice") == PlaceRef(kind="obec", code=553425)
+
+    def test_an_unknown_name_raises(self, gazetteer):
+        with pytest.raises(PlaceNotFoundError):
+            gazetteer.place_named("okres", "Domzlice")
+
+    def test_a_name_several_places_carry_raises(self, gazetteer):
+        with pytest.raises(AmbiguousPlaceError):
+            gazetteer.place_named("cast_obce", "Holešovice")
 
 
 class TestNameTiers:
