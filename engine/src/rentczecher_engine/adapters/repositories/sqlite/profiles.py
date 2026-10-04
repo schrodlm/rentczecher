@@ -39,6 +39,41 @@ class SqliteProfileRepository:
         self._insert_preferences(profile.id, profile.preferences)
         return profile
 
+    def update(self, profile_id: str, name: str, paused: bool, portals: tuple[str, ...],
+               preferences: Preferences) -> Profile | None:
+        """Everything but the criteria, which stay as created. None for an
+        unknown id."""
+        current = self.get(profile_id)
+        if current is None:
+            return None
+        if not paused:
+            paused_at = None
+        elif current.paused_at is None:
+            paused_at = self._now().isoformat()
+        else:
+            paused_at = current.paused_at
+        profile = Profile(
+            id=profile_id,
+            name=name,
+            paused_at=paused_at,
+            portals=tuple(sorted(portals)),
+            criteria=current.criteria,
+            preferences=preferences,
+        )
+        stmt = "UPDATE profiles SET name = ?, paused_at = ? WHERE id = ?"
+        # The profile may have been deleted on another connection since the read.
+        if self._conn.execute(stmt, (profile.name, profile.paused_at, profile.id)).rowcount == 0:
+            return None
+        self._delete_portals_and_preferences(profile.id)
+        self._insert_portals(profile.id, profile.portals)
+        self._insert_preferences(profile.id, profile.preferences)
+        return profile
+
+    def delete(self, profile_id: str) -> bool:
+        """Whether the profile existed. Its listings stay."""
+        stmt = "DELETE FROM profiles WHERE id = ?"
+        return self._conn.execute(stmt, (profile_id,)).rowcount == 1
+
     def get(self, profile_id: str) -> Profile | None:
         stmt = """
             SELECT p.id, p.name, p.paused_at,
@@ -78,6 +113,16 @@ class SqliteProfileRepository:
             preferred_dispositions=self._preferred_dispositions(profile_id),
             preferred_places=self._preferred_places(profile_id),
         )
+
+    def _delete_portals_and_preferences(self, profile_id: str) -> None:
+        stmt = "DELETE FROM profile_portals WHERE profile_id = ?"
+        self._conn.execute(stmt, (profile_id,))
+        stmt = "DELETE FROM profile_preferences WHERE profile_id = ?"
+        self._conn.execute(stmt, (profile_id,))
+        stmt = "DELETE FROM preferred_dispositions WHERE profile_id = ?"
+        self._conn.execute(stmt, (profile_id,))
+        stmt = "DELETE FROM preferred_places WHERE profile_id = ?"
+        self._conn.execute(stmt, (profile_id,))
 
     def _insert_criteria(self, profile_id: str, criteria: Criteria) -> None:
         stmt = """
