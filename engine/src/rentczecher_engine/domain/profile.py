@@ -62,6 +62,10 @@ class Preferences:
     max_good_price: int | None
 
     def __post_init__(self) -> None:
+        if len(set(self.preferred_dispositions)) != len(self.preferred_dispositions):
+            raise ValueError("preferred_dispositions must not repeat")
+        if len(set(self.preferred_places)) != len(self.preferred_places):
+            raise ValueError("preferred_places must not repeat")
         if self.disposition_weight and not self.preferred_dispositions:
             raise ValueError("disposition_weight needs preferred_dispositions")
         if self.size_weight and (self.ideal_size_m2 is None or self.ideal_size_m2 <= 0):
@@ -85,3 +89,7 @@ class Profile:
     portals: tuple[str, ...]
     criteria: Criteria
     preferences: Preferences
+
+    def __post_init__(self) -> None:
+        if len(set(self.portals)) != len(self.portals):
+            raise ValueError("portals must not repeat")

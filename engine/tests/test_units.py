@@ -164,7 +164,7 @@ class TestScoring:
     def test_a_preferred_studio_stands_for_a_1kk(self):
         """A garsoniéra in the preferred list ranks a 1+kk at its place."""
         from rentczecher_engine.services.score import compute_score
-        profile = preferences(disposition_weight=100, preferred_dispositions=layouts("garsoniéra", "1+kk"))
+        profile = preferences(disposition_weight=100, preferred_dispositions=layouts("garsoniéra"))
         assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 100
 
     def test_a_preferred_place_scores_by_its_rank(self):
