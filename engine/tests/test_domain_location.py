@@ -1,11 +1,12 @@
-"""Tests for the Location model: which of its units is the most specific.
+"""Tests for the Location model: which of its units is the most specific,
+and which places it lies in.
 
 Run: python3 -m pytest tests/test_domain_location.py -v
 """
 
 from dataclasses import replace
 
-from rentczecher_engine.domain.location import Location, Place
+from rentczecher_engine.domain.location import Location, Place, PlaceRef
 
 KRAJ = Place(code=43, name="Plzeňský kraj", lat=49.7, lon=13.4)
 OKRES = Place(code=3401, name="Domažlice", lat=49.4, lon=12.9)
@@ -24,6 +25,7 @@ ONLY_KRAJ = Location(
     cislo_popisne=None,
     cislo_orientacni=None,
 )
+IN_HOLESOVICE = replace(ONLY_KRAJ, obvod=OBVOD, mestska_cast=MESTSKA_CAST, cast_obce=CAST_OBCE)
 
 
 class TestMostSpecific:
@@ -34,8 +36,7 @@ class TestMostSpecific:
         assert location.most_specific() == ("ulice", street)
 
     def test_a_cast_obce_outranks_its_mestska_cast_and_obvod(self):
-        location = replace(ONLY_KRAJ, obvod=OBVOD, mestska_cast=MESTSKA_CAST, cast_obce=CAST_OBCE)
-        assert location.most_specific() == ("cast_obce", CAST_OBCE)
+        assert IN_HOLESOVICE.most_specific() == ("cast_obce", CAST_OBCE)
 
     def test_a_mestska_cast_outranks_its_obvod(self):
         location = replace(ONLY_KRAJ, obvod=OBVOD, mestska_cast=MESTSKA_CAST)
@@ -47,3 +48,21 @@ class TestMostSpecific:
 
     def test_a_kraj_alone_is_the_most_specific(self):
         assert ONLY_KRAJ.most_specific() == ("kraj", KRAJ)
+
+
+class TestLiesIn:
+    def test_a_location_lies_in_each_unit_it_holds(self):
+        assert IN_HOLESOVICE.lies_in(PlaceRef("kraj", 43))
+        assert IN_HOLESOVICE.lies_in(PlaceRef("obvod", 78))
+        assert IN_HOLESOVICE.lies_in(PlaceRef("mestska_cast", 500186))
+        assert IN_HOLESOVICE.lies_in(PlaceRef("cast_obce", 490067))
+
+    def test_a_code_matches_only_within_its_kind(self):
+        """Codes repeat across kinds: obvod 78 is not cast_obce 78."""
+        assert not IN_HOLESOVICE.lies_in(PlaceRef("cast_obce", 78))
+
+    def test_a_location_does_not_lie_in_another_unit_of_a_kind_it_holds(self):
+        assert not IN_HOLESOVICE.lies_in(PlaceRef("obvod", 19))
+
+    def test_a_kind_left_open_matches_no_place(self):
+        assert not IN_HOLESOVICE.lies_in(PlaceRef("ulice", 467103))
