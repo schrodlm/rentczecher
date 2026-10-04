@@ -7,6 +7,7 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 
 from dataclasses import dataclass, fields, replace
 
+from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import Location, ParsedPlace
 from rentczecher_engine.domain.property import PropertyLocation
 
@@ -97,6 +98,10 @@ class Listing:
     @property
     def disposition_raw_text(self) -> str | None:
         return self.scraped.disposition_raw_text
+
+    @property
+    def disposition(self) -> Disposition | None:
+        return parse_disposition(self.scraped.disposition_raw_text)
 
     @property
     def lat(self) -> float | None:
