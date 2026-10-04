@@ -11,6 +11,7 @@ import pytest
 from scripts.gazetteer.database import GazetteerDatabase
 from scripts.gazetteer.harvest import harvest_portals
 from scripts.gazetteer.model import Kraj, Obec, Obvod, Okres, Position
+from scripts.gazetteer.portals import bezrealitky
 from scripts.gazetteer.portals.bezrealitky import heading_names, parse_bundle, parse_regions
 from scripts.gazetteer.portals.portal import MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
 from scripts.gazetteer.portals.remax import RemaxDistrict, parse_search_form
@@ -62,6 +63,12 @@ class TestRemax:
         """RE/MAX's form repeats some districts verbatim."""
         assert parse_search_form(_REMAX_FORM).districts["Praha 7"] == RemaxDistrict(region_id=19, district_id=78)
 
+    def test_the_vysocina_heading_reads_as_kraj_vysocina(self):
+        """The form's 'Vysočina' heading leaves out the 'Kraj' of the official name."""
+        form = ('<h4>Vysočina</h4><input name="regions[63][3707]" type="checkbox">'
+                '<label for="x">Jihlava</label>')
+        assert parse_search_form(form).regions == {"Kraj Vysočina": 63}
+
     def test_a_form_without_checkboxes_is_refused(self):
         with pytest.raises(SystemExit, match="has its shape changed"):
             parse_search_form("<h4>Plzeňský</h4>")
@@ -92,6 +99,14 @@ class TestBezrealitky:
     def test_a_bundle_without_the_table_is_refused(self):
         with pytest.raises(SystemExit, match="no Praha ids in the bundle"):
             parse_bundle("console.log(1)")
+
+    def test_the_bundles_praha_id_replaces_the_apis(self, monkeypatch):
+        monkeypatch.setattr(bezrealitky, "_api_places",
+                            lambda client: ({"Hlavní město Praha": "R1", "Plzeňský kraj": "R2"}, {}))
+        monkeypatch.setattr(bezrealitky, "_bundle_places",
+                            lambda client: ({"Hlavní město Praha": "R3"}, {"Praha 7": "R4"}))
+        places = bezrealitky.Bezrealitky().fetch(client=None)
+        assert places.regions == {"Plzeňský kraj": "R2", "Hlavní město Praha": "R3"}
 
     def test_a_search_page_heading_naming_the_place_confirms_its_id(self):
         html = "<h1>Všechny typy nabídek <span>•</span> okres Domažlice</h1>"
