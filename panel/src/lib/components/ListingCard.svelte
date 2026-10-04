@@ -18,6 +18,13 @@
 			: null
 	);
 
+	// A portal label naming no layout ("Rodinný") is still worth showing.
+	const dispositionLabel = $derived(
+		listing.disposition === 'atypicky'
+			? t.t('atypical layout')
+			: (listing.disposition ?? listing.disposition_raw_text)
+	);
+
 	const freshness = $derived.by(() => {
 		const days = daysSince(listing.first_seen_at);
 		return days < 1 ? t.t('new') : t.tn('{count} day watched', '{count} days watched', days);
@@ -53,7 +60,7 @@
 		</div>
 
 		<div class="card__detail-line">
-			{#if listing.disposition_raw_text}<span>{listing.disposition_raw_text}</span>{/if}
+			{#if dispositionLabel}<span>{dispositionLabel}</span>{/if}
 			{#if listing.size_m2 !== null}<span>{listing.size_m2}&nbsp;m²</span>{/if}
 		</div>
 
