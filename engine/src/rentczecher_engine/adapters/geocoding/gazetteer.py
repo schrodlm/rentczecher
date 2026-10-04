@@ -4,6 +4,7 @@ Lookups run against the shipped gazetteer.sqlite, built from RÚIAN and a
 live portal harvest by `python -m scripts.gazetteer build`.
 """
 
+import json
 import re
 import sqlite3
 import unicodedata
@@ -14,7 +15,7 @@ from pathlib import Path
 from typing import Literal, TypeVar
 
 from rentczecher_engine.domain.errors import AmbiguousPlaceError, PlaceNotFoundError
-from rentczecher_engine.domain.location import Location, ParsedPlace, Place, PlaceKind, PlaceRef
+from rentczecher_engine.domain.location import Location, ParsedPlace, Place, PlaceKind, PlaceMatch, PlaceRef
 from rentczecher_engine.domain.property import PropertyLocation
 
 
@@ -46,6 +47,14 @@ _TABLE_OF_KIND: dict[PlaceKind, _UnitTable] = {
 }
 
 _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
+
+# A shorter query matches too much of the country to be useful.
+_SEARCH_MIN_PREFIX = 2
+_SEARCH_MAX_RESULTS = 20
+# Bounds the scan when results are filtered by containment, so a broad
+# query inside a large place stays fast at the cost of missing matches past
+# the cap.
+_SEARCH_MAX_CANDIDATES = 2000
 
 # The schema this code reads. The build stamps it into the file, and a file
 # built for another schema is refused rather than misread.
@@ -88,6 +97,18 @@ def candidate_names(names: Iterable[str]) -> list[str]:
 
 def _to_place(row: sqlite3.Row) -> Place:
     return Place(code=row["code"], name=row["name"], lat=row["lat"], lon=row["lon"])
+
+
+def _to_place_match(row: sqlite3.Row, location: Location) -> PlaceMatch:
+    place = PlaceRef(kind=row["kind"], code=row["code"])
+    obec = location.obec if place.kind != "obec" else None
+    okres = location.okres if place.kind != "okres" else None
+    return PlaceMatch(
+        place=place,
+        name=row["name"],
+        obec=obec.name if obec is not None else None,
+        okres=okres.name if okres is not None else None,
+    )
 
 
 def _only(items: set[T]) -> T | None:
@@ -329,6 +350,139 @@ class Gazetteer:
             raise AmbiguousPlaceError(f"{kind} {name}")
         return PlaceRef(kind=kind, code=rows[0]["code"])
 
+    def search_places(self, query: str, within: PlaceRef | None = None,
+                      kinds: tuple[PlaceKind, ...] | None = None) -> list[PlaceMatch]:
+        """Places whose name starts with the query, coarsest kind first, then
+        by name. Within a place, only places that are it or lie at least
+        partly inside it. None for kinds means every kind."""
+        if within is not None and self._unit(_TABLE_OF_KIND[within.kind], within.code) is None:
+            raise PlaceNotFoundError(f"{within.kind} {within.code}")
+        prefix = normalize_name(query)
+        if len(prefix) < _SEARCH_MIN_PREFIX:
+            return []
+        if within is not None and within.kind not in ("kraj", "okres", "obec"):
+            return self._places_partly_in(prefix, kinds, within)
+        rows = self._places_starting_with(
+            prefix, kinds,
+            kraj_code=within.code if within is not None and within.kind == "kraj" else None,
+            okres_code=within.code if within is not None and within.kind == "okres" else None,
+            obec_code=within.code if within is not None and within.kind == "obec" else None,
+            limit=_SEARCH_MAX_RESULTS,
+        )
+        return [_to_place_match(row, self._location_of(row)) for row in rows]
+
+    def _places_partly_in(self, prefix: str, kinds: tuple[PlaceKind, ...] | None,
+                          within: PlaceRef) -> list[PlaceMatch]:
+        rows = self._places_starting_with(prefix, kinds, kraj_code=None, okres_code=None,
+                                          obec_code=self._obec_code_of(within), limit=_SEARCH_MAX_CANDIDATES)
+        matches: list[PlaceMatch] = []
+        for row in rows:
+            candidate = PlaceRef(kind=row["kind"], code=row["code"])
+            location = self._location_of(row)
+            if not self._lies_partly_in(candidate, location, within):
+                continue
+            matches.append(_to_place_match(row, location))
+            if len(matches) == _SEARCH_MAX_RESULTS:
+                break
+        return matches
+
+    def _places_starting_with(self, prefix: str, kinds: tuple[PlaceKind, ...] | None, kraj_code: int | None,
+                              okres_code: int | None, obec_code: int | None, limit: int) -> sqlite3.Cursor:
+        stmt = """
+            SELECT kind, code, name, name_norm, obec_code, obec_norm, lat, lon FROM (
+                SELECT 'kraj' AS kind, code, name, name_norm,
+                       NULL AS obec_code, NULL AS obec_norm, NULL AS okres_code, code AS kraj_code,
+                       lat, lon
+                FROM kraje
+                UNION ALL
+                SELECT 'okres' AS kind, code, name, name_norm,
+                       NULL AS obec_code, NULL AS obec_norm, code AS okres_code, kraj_code,
+                       lat, lon
+                FROM okresy
+                UNION ALL
+                SELECT 'obvod' AS kind, ob.code, ob.name, ob.name_norm,
+                       ob.obec_code, o.name_norm AS obec_norm, o.okres_code, o.kraj_code,
+                       ob.lat, ob.lon
+                FROM obvody ob JOIN obce o ON o.code = ob.obec_code
+                UNION ALL
+                SELECT p.kind, p.code, p.name, p.name_norm,
+                       p.obec_code, p.obec_norm, o.okres_code, o.kraj_code,
+                       p.lat, p.lon
+                FROM places p JOIN obce o ON o.code = p.obec_code
+            )
+            WHERE substr(name_norm, 1, length(:prefix)) = :prefix
+              AND (:kinds IS NULL OR kind IN (SELECT value FROM json_each(:kinds)))
+              AND (:kraj_code IS NULL OR kraj_code = :kraj_code)
+              AND (:okres_code IS NULL OR okres_code = :okres_code)
+              AND (:obec_code IS NULL OR obec_code = :obec_code)
+            ORDER BY CASE kind
+                         WHEN 'kraj' THEN 0
+                         WHEN 'okres' THEN 1
+                         WHEN 'obec' THEN 2
+                         WHEN 'obvod' THEN 3
+                         WHEN 'mestska_cast' THEN 4
+                         WHEN 'cast_obce' THEN 5
+                         WHEN 'ulice' THEN 6
+                     END,
+                     name_norm, name
+            LIMIT :limit
+        """
+        params = {
+            "prefix": prefix,
+            "kinds": json.dumps(kinds) if kinds is not None else None,
+            "kraj_code": kraj_code,
+            "okres_code": okres_code,
+            "obec_code": obec_code,
+            "limit": limit,
+        }
+        return self._conn.execute(stmt, params)
+
+    def _obec_code_of(self, place: PlaceRef) -> int:
+        stmt = f"SELECT obec_code FROM {_TABLE_OF_KIND[place.kind]} WHERE code = ?"
+        row = self._conn.execute(stmt, (place.code,)).fetchone()
+        return row["obec_code"]
+
+    def _lies_partly_in(self, candidate: PlaceRef, location: Location, within: PlaceRef) -> bool:
+        if candidate == within or location.lies_in(within):
+            return True
+        if candidate.kind == "cast_obce":
+            return within in self._units_touched_by_cast_obce(candidate.code)
+        if candidate.kind == "ulice":
+            return within in self._units_touched_by_ulice(candidate.code)
+        return False
+
+    def _units_touched_by_cast_obce(self, cast_obce_code: int) -> set[PlaceRef]:
+        """The městské části and obvody the část obce shares an address
+        point with."""
+        stmt = """
+            SELECT m.code AS mestska_cast_code, m.obvod_code
+            FROM casti_obce_mestske_casti c JOIN mestske_casti m ON m.code = c.mestska_cast_code
+            WHERE c.cast_obce_code = ?
+        """
+        return self._mestske_casti_and_obvody(stmt, cast_obce_code)
+
+    def _units_touched_by_ulice(self, ulice_code: int) -> set[PlaceRef]:
+        """The městské části, obvody and části obce the street shares an
+        address point with."""
+        stmt = """
+            SELECT m.code AS mestska_cast_code, m.obvod_code
+            FROM ulice_mestske_casti u JOIN mestske_casti m ON m.code = u.mestska_cast_code
+            WHERE u.ulice_code = ?
+        """
+        touched = self._mestske_casti_and_obvody(stmt, ulice_code)
+        stmt = "SELECT cast_obce_code FROM ulice_casti_obce WHERE ulice_code = ?"
+        for row in self._conn.execute(stmt, (ulice_code,)):
+            touched.add(PlaceRef(kind="cast_obce", code=row["cast_obce_code"]))
+        return touched
+
+    def _mestske_casti_and_obvody(self, stmt: str, code: int) -> set[PlaceRef]:
+        units: set[PlaceRef] = set()
+        for row in self._conn.execute(stmt, (code,)):
+            units.add(PlaceRef(kind="mestska_cast", code=row["mestska_cast_code"]))
+            if row["obvod_code"] is not None:
+                units.add(PlaceRef(kind="obvod", code=row["obvod_code"]))
+        return units
+
     def _unit(self, table: _UnitTable, code: int | None) -> Place | None:
         if code is None:
             return None
@@ -364,11 +518,25 @@ class Gazetteer:
 
     def _location_of(self, row: sqlite3.Row) -> Location:
         """The matched unit in its kind's field, with its strict parents."""
+        if row["kind"] == "kraj":
+            return Location(
+                kraj=_to_place(row),
+                okres=None,
+                obec=None,
+                obvod=None,
+                mestska_cast=None,
+                cast_obce=None,
+                ulice=None,
+                cislo_popisne=None,
+                cislo_orientacni=None,
+            )
         if row["kind"] == "okres":
             return self._okres_location(row["code"])
         location = self._obec_location(row["obec_code"])
         if row["kind"] == "obec":
             return location
+        if row["kind"] == "obvod":
+            return replace(location, obvod=_to_place(row))
         if row["kind"] == "ulice":
             return replace(location, ulice=_to_place(row))
         if row["kind"] == "cast_obce":
