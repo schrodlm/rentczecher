@@ -16,7 +16,9 @@ profiles:
       place: obvod Praha 7      # a kraj, okres or Praha obvod, by its kind and name
       min_price: 0
       max_price: 25000
-      dispositions: []          # e.g. ["2+kk", "2+1"] - empty means all
+      min_rooms: 2              # 1-9, leave out for no bound
+      max_rooms: 3
+      kitchen: kitchenette      # kitchenette (N+kk) | separate (N+1), leave out for either
       min_size_m2: 0
 
     scrapers: [sreality, bezrealitky, remax]
@@ -48,7 +50,6 @@ profiles:
       place: okres Domažlice
       min_price: 0
       max_price: 5000000
-      dispositions: []
       min_size_m2: 0
       min_land_m2: 500          # Minimum land/plot area
 

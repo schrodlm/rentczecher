@@ -34,7 +34,7 @@ PROFILE = profile(
     portals=("sreality", "bezrealitky", "remax"),
     criteria=criteria(
         max_price=25000,
-        dispositions=("2+kk", "1+1"),
+        max_rooms=2,
         min_size_m2=30,
     ),
     preferences=preferences(

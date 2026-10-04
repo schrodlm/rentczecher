@@ -133,13 +133,11 @@ class TestLoader:
         """Every search setting lands in its own criterion."""
         written = _broken(lambda c: c["profiles"]["p"].update(search={
             "offer_type": "sale", "estate_type": "house", "place": "okres Domažlice",
-            "min_price": 1000000, "max_price": 5000000, "min_size_m2": 80, "min_land_m2": 600,
-            "dispositions": ["4+1", "5+kk"]}))
+            "min_price": 1000000, "max_price": 5000000, "min_size_m2": 80, "min_land_m2": 600}))
         (loaded,) = load_config(_write(tmp_path, written))
         assert loaded.criteria == Criteria(
             offer_type="sale", estate_type="house", place=PlaceRef(kind="okres", code=3401),
-            min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600,
-            dispositions=("4+1", "5+kk"))
+            min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600)
 
     def test_scoring_loads_as_preferences_with_layouts_parsed(self, tmp_path):
         """Every scoring setting lands in its own preference, and preferred
@@ -177,18 +175,13 @@ class TestLoader:
 
     def test_unknown_key_gets_a_suggestion(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(
-            dispositons=["2+kk"]))
-        with pytest.raises(ConfigError, match=r"dispositons: unknown key \(did you mean 'dispositions'\?\)"):
+            max_prise=25000))
+        with pytest.raises(ConfigError, match=r"max_prise: unknown key \(did you mean 'max_price'\?\)"):
             load_config(_write(tmp_path, broken))
 
     def test_unknown_scraper_name_is_an_error(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["scrapers"].append("idnes"))
         with pytest.raises(ConfigError, match="unknown scraper 'idnes'"):
-            load_config(_write(tmp_path, broken))
-
-    def test_unparseable_criterion_disposition_is_named(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(dispositions=["2+kk", "2+2"]))
-        with pytest.raises(ConfigError, match=r"profiles\.p\.search\.dispositions.*not a disposition: 2\+2"):
             load_config(_write(tmp_path, broken))
 
     def test_unparseable_preferred_disposition_is_named(self, tmp_path):
@@ -197,12 +190,6 @@ class TestLoader:
         with pytest.raises(ConfigError,
                            match=r"profiles\.p\.scoring\.preferred_dispositions.*not a disposition: Rodinný"):
             load_config(_write(tmp_path, broken))
-
-    def test_studio_and_atypical_are_accepted_dispositions(self, tmp_path):
-        config = copy.deepcopy(VALID)
-        config["profiles"]["p"]["search"]["dispositions"] = ["garsoniéra", "atypický"]
-        (loaded,) = load_config(_write(tmp_path, config))
-        assert loaded.criteria.dispositions == ("garsoniéra", "atypický")
 
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))
