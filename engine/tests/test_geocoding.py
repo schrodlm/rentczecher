@@ -22,6 +22,7 @@ from rentczecher_engine.services.assemble import assemble_location
 
 # No gazetteer unit holds this code.
 CANCELLED_CODE = 999_999_999
+KINDS_COARSEST_FIRST = ["kraj", "okres", "obec", "obvod", "mestska_cast", "cast_obce", "ulice"]
 
 
 class TestNormalizeName:
@@ -381,6 +382,80 @@ class TestPlaceNamed:
     def test_a_name_several_places_carry_raises(self, gazetteer):
         with pytest.raises(AmbiguousPlaceError):
             gazetteer.place_named("cast_obce", "Holešovice")
+
+
+class TestSearchPlaces:
+    """Places whose official name starts with the query, coarsest kind
+    first, narrowed to a place and to kinds on request."""
+
+    def test_matching_ignores_case_and_diacritics(self, gazetteer):
+        assert "Holešovice" in [match.name for match in gazetteer.search_places("HOLES", kinds=("cast_obce",))]
+
+    def test_a_query_shorter_than_two_letters_finds_nothing(self, gazetteer):
+        assert gazetteer.search_places("h") == []
+
+    def test_coarser_kinds_come_first(self, gazetteer):
+        kinds = [match.place.kind for match in gazetteer.search_places("domaž")]
+        assert kinds == sorted(kinds, key=KINDS_COARSEST_FIRST.index)
+        assert {"okres", "obec", "cast_obce", "ulice"} <= set(kinds)
+
+    def test_at_most_twenty_places_come_back(self, gazetteer):
+        assert len(gazetteer.search_places("na")) == 20
+
+    def test_a_name_opening_with_a_formerly_dropped_word_is_searchable(self, gazetteer):
+        assert "Hlavní" in [match.name for match in gazetteer.search_places("hlavní", kinds=("ulice",))]
+
+    def test_same_named_places_are_told_apart_by_their_obec_and_okres(self, gazetteer):
+        matches = gazetteer.search_places("holešovice", kinds=("cast_obce",))
+        assert {(match.obec, match.okres) for match in matches} == {
+            ("Praha", None), ("Chroustovice", "Chrudim")}
+
+    @pytest.mark.parametrize("within", [PlaceRef("obvod", 78), PlaceRef("mestska_cast", 500054)])
+    def test_a_place_partly_inside_counts_as_within(self, gazetteer, within):
+        """Holešovice straddles Praha 1 and Praha 7, so both offer it."""
+        matches = gazetteer.search_places("holeš", within=within)
+        assert [(match.place.kind, match.name) for match in matches] == [("cast_obce", "Holešovice")]
+
+    def test_within_an_okres_keeps_only_places_inside_it(self, gazetteer):
+        matches = gazetteer.search_places("domaž", within=PlaceRef("okres", 3401))
+        assert {match.okres for match in matches if match.place.kind != "okres"} == {"Domažlice"}
+        assert ("okres", "Domažlice") in [(match.place.kind, match.name) for match in matches]
+
+    def test_an_obec_and_an_okres_carry_no_context_of_their_own(self, gazetteer):
+        matches = gazetteer.search_places("domažlice", kinds=("okres", "obec"))
+        assert {(match.place.kind, match.obec, match.okres) for match in matches} == {
+            ("okres", None, None), ("obec", None, "Domažlice")}
+
+    def test_a_place_counts_as_within_itself(self, gazetteer):
+        matches = gazetteer.search_places("praha 7", within=PlaceRef("obvod", 78))
+        assert ("obvod", "Praha 7") in [(match.place.kind, match.name) for match in matches]
+
+    def test_a_street_partly_inside_counts_as_within(self, gazetteer):
+        matches = gazetteer.search_places("veletr", within=PlaceRef("obvod", 78))
+        assert [(match.place.kind, match.name) for match in matches] == [("ulice", "Veletržní")]
+
+    def test_within_a_kraj_keeps_only_places_inside_it(self, gazetteer):
+        matches = gazetteer.search_places("do", within=PlaceRef("kraj", 43), kinds=("okres",))
+        assert [match.name for match in matches] == ["Domažlice"]
+
+    def test_within_an_obec_keeps_only_places_inside_it(self, gazetteer):
+        matches = gazetteer.search_places("kd", within=PlaceRef("obec", 553786))
+        assert {match.name for match in matches} == {"Kdyně"}
+
+    def test_within_a_finer_place_keeps_the_kind_filter_and_the_limit(self, gazetteer):
+        within = PlaceRef("obvod", 19)
+        assert len(gazetteer.search_places("na", within=within)) == 20
+        matches = gazetteer.search_places("nové", within=within, kinds=("cast_obce",))
+        assert [(match.place.kind, match.name) for match in matches] == [("cast_obce", "Nové Město")]
+
+    def test_kinds_narrow_the_results(self, gazetteer):
+        kinds = {match.place.kind for match in gazetteer.search_places("domaž", kinds=("okres", "obec"))}
+        assert kinds == {"okres", "obec"}
+
+    @pytest.mark.parametrize("kind", KINDS_COARSEST_FIRST)
+    def test_an_unknown_within_place_raises(self, gazetteer, kind):
+        with pytest.raises(PlaceNotFoundError):
+            gazetteer.search_places("na", within=PlaceRef(kind, CANCELLED_CODE))
 
 
 class TestNameTiers:
