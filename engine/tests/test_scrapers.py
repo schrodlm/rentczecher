@@ -78,6 +78,12 @@ class TestSrealitySearchParams:
         assert "price_from" not in params
         assert "price_to" not in params
 
+    def test_min_price_alone_is_sent_without_a_max(self):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_price=15000)
+        params = SrealityScraper(criteria, _refusing_client())._build_params(offset=0)
+        assert params["price_from"] == 15000
+        assert "price_to" not in params
+
 
 class TestSrealityParsing:
     """Fixture-driven parsing of recorded /api/v1/estates/search responses."""
@@ -213,6 +219,14 @@ class TestSrealityPagination:
                      "pagination": {"total": 2}}}
         client, _ = _serve_pages(monkeypatch, pages)
         listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
+        assert [l.id for l in listings] == ["sreality:1"]
+
+    def test_min_price_alone_drops_cheaper_estates(self, monkeypatch):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_price=15000)
+        pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=9000)],
+                     "pagination": {"total": 2}}}
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(criteria, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
     def test_unset_max_price_keeps_expensive_estates(self, monkeypatch):
