@@ -15,6 +15,9 @@ EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
     "listing_tracking",
     "price_observations", "dedup_records", "scrape_runs",
+    "portals", "offer_types", "estate_types", "place_kinds",
+    "profile_criteria", "profile_portals", "profile_preferences",
+    "preferred_dispositions", "preferred_places",
 }
 
 
@@ -39,8 +42,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 10
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -58,7 +61,7 @@ class TestMigrate:
     def test_bad_source_is_rejected(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
-        conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute(
@@ -68,7 +71,7 @@ class TestMigrate:
     def test_invalid_differences_json_is_rejected(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
-        conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
         conn.execute(
             "INSERT INTO listings (id, property_id, source, url, scraped_at) "
@@ -80,7 +83,7 @@ class TestMigrate:
     def test_cascade_delete_removes_dependent_price_history(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
-        conn.execute("INSERT INTO profiles VALUES ('p', 'P', 1, '2026-08-02T00:00:00+00:00')")
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', '2026-08-02T00:00:00+00:00')")
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', '2026-08-02T00:00:00+00:00')")
         conn.execute(
             "INSERT INTO listings (id, property_id, source, url, scraped_at) "
@@ -173,7 +176,7 @@ class TestConcurrentWriters:
 
         holder = connection.connect(db)
         holder.execute("BEGIN IMMEDIATE")
-        holder.execute("INSERT INTO profiles VALUES ('a', 'A', 1, '2026-08-02T00:00:00+00:00')")
+        holder.execute("INSERT INTO profiles (id, name, created_at) VALUES ('a', 'A', '2026-08-02T00:00:00+00:00')")
 
         # A zero-timeout writer hits the held lock immediately: proves the lock
         # is real, so the waiting writer below is saved by the timeout, not luck.
@@ -184,7 +187,7 @@ class TestConcurrentWriters:
 
         holder.commit()
         waiter = connection.connect(db)
-        waiter.execute("INSERT INTO profiles VALUES ('b', 'B', 1, '2026-08-02T00:00:00+00:00')")
+        waiter.execute("INSERT INTO profiles (id, name, created_at) VALUES ('b', 'B', '2026-08-02T00:00:00+00:00')")
         waiter.commit()
         assert connection.connect(db).execute("SELECT count(*) FROM profiles").fetchone()[0] == 2
 

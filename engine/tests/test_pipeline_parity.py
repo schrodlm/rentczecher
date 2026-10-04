@@ -78,7 +78,7 @@ def _seed_seen_state(conn):
     disappearance threshold."""
     recent = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     conn.execute(
-        "INSERT INTO profiles (id, name, active, created_at) VALUES (?, ?, 1, ?)",
+        "INSERT INTO profiles (id, name, created_at) VALUES (?, ?, ?)",
         (PROFILE_ID, "Parity profile", recent))
     seeded = [
         # Already seen at a higher price -> must surface as a price drop.

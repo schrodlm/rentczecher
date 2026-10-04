@@ -125,7 +125,7 @@ class TestDbMigrate:
         assert db.exists()
         import sqlite3
         conn = sqlite3.connect(db)
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 10
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "properties" in tables and "listings" in tables
 
@@ -285,8 +285,8 @@ class TestDryRunIsReadOnly:
 
         # Seed a listing the fake scrape will NOT return, so the miss-count
         # write would have to happen if dry run were not read only.
-        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
-                     "VALUES (?, 'Dry-run test', 1, 't')", (profile_id,))
+        conn.execute("INSERT INTO profiles (id, name, created_at) "
+                     "VALUES (?, 'Dry-run test', 't')", (profile_id,))
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-old', 't')")
         conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
                      "VALUES ('sreality:old', 'prop-old', 'sreality', 'u', 't')")
@@ -320,8 +320,8 @@ class TestCommittedScanPrunes:
         store, conn = run_store
         profile_id = "prune-test"
 
-        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
-                     "VALUES (?, 'Prune test', 1, 't')", (profile_id,))
+        conn.execute("INSERT INTO profiles (id, name, created_at) "
+                     "VALUES (?, 'Prune test', 't')", (profile_id,))
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-stale', 't')")
         conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
                      "VALUES ('sreality:stale', 'prop-stale', 'sreality', 'u', 't')")

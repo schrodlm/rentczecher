@@ -38,7 +38,7 @@ def _repo(tmp_path, now=None):
     conn = connection.connect(tmp_path / "t.db")
     migrate.apply_pending(conn)
     for profile_id in (PROFILE, OTHER_PROFILE):
-        conn.execute("INSERT INTO profiles VALUES (?, 'P', 1, ?)",
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES (?, 'P', ?)",
                      (profile_id, BASE.isoformat()))
     conn.execute("INSERT INTO properties (id, created_at) VALUES (?, ?)",
                  (PROPERTY, BASE.isoformat()))

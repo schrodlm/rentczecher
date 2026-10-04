@@ -22,9 +22,10 @@ class TestEnsure:
         repo, conn = _repo(tmp_path)
         repo.ensure("praha7-byty", "Praha 7")
         repo.ensure("praha7-byty", "Praha 7")
-        rows = conn.execute("SELECT id, name, active, created_at FROM profiles").fetchall()
+        rows = conn.execute("SELECT id, name, paused_at, created_at FROM profiles").fetchall()
         assert len(rows) == 1
         assert rows[0]["id"] == "praha7-byty"
+        assert rows[0]["paused_at"] is None
         assert rows[0]["created_at"] == BASE.isoformat()
 
     def test_existing_row_is_left_untouched(self, tmp_path):
