@@ -18,6 +18,7 @@ from rentczecher_engine.adapters.geocoding.gazetteer import normalize_name
 
 from .portal import (
     BROWSER_HEADERS,
+    PRAHA_KRAJ,
     REQUEST_SPACING_S,
     MatchedDistrict,
     MatchedRegion,
@@ -41,7 +42,6 @@ _PRAHA_IDS = re.compile(r'name:"(Praha(?: \d+)?)",osmId:"(R\d+)"')
 _HEADING = re.compile(r"<h1[^>]*>(.*?)</h1>", re.DOTALL)
 _TAG = re.compile(r"<[^>]+>")
 
-_PRAHA = normalize_name("Praha")
 
 
 class Bezrealitky:
@@ -56,7 +56,7 @@ class Bezrealitky:
         self._bundle_ids = set(bundle_regions.values()) | set(bundle_districts.values())
         # The bundle's Praha id is the one the search recognizes, so it
         # replaces the API's.
-        regions = {name: ids for name, ids in regions.items() if normalize_name(name) != _PRAHA}
+        regions = {name: ids for name, ids in regions.items() if name != PRAHA_KRAJ}
         for name, ids in bundle_regions.items():
             add_unique(regions, name, ids, self.name)
         for name, ids in bundle_districts.items():
@@ -100,11 +100,12 @@ def parse_regions(payload: dict) -> tuple[dict[str, str], dict[str, str]]:
     regions: dict[str, str] = {}
     districts: dict[str, str] = {}
     for kraj in kraje:
-        add_unique(regions, kraj["name"], f"R{kraj['osmId']}", "bezrealitky")
-        if normalize_name(kraj["name"]) == _PRAHA:
+        kraj_name = _official_name(kraj["name"])
+        add_unique(regions, kraj_name, f"R{kraj['osmId']}", "bezrealitky")
+        if kraj_name == PRAHA_KRAJ:
             continue
         for okres in kraj["children"] or []:
-            add_unique(districts, okres["name"], f"R{okres['osmId']}", "bezrealitky")
+            add_unique(districts, _official_name(okres["name"]), f"R{okres['osmId']}", "bezrealitky")
     return regions, districts
 
 
@@ -127,7 +128,7 @@ def parse_bundle(javascript: str) -> tuple[dict[str, str], dict[str, str]]:
     regions: dict[str, str] = {}
     districts: dict[str, str] = {}
     for name, osm_id in _PRAHA_IDS.findall(javascript):
-        add_unique(regions if name == "Praha" else districts, name, osm_id, "bezrealitky")
+        add_unique(regions if name == "Praha" else districts, _official_name(name), osm_id, "bezrealitky")
     if not regions or not districts:
         raise SystemExit("bezrealitky: no Praha ids in the bundle, has its table changed?")
     return regions, districts
@@ -154,6 +155,16 @@ def heading_names(html: str, name: str) -> bool:
     expected = normalize_name(name)
     for heading in _HEADING.findall(html):
         parts = _TAG.sub("", heading).split("•")
-        if expected in (normalize_name(part) for part in parts):
+        if expected in (normalize_name(_official_name(part.strip())) for part in parts):
             return True
     return False
+
+
+def _official_name(name: str) -> str:
+    """The portal names an okres 'okres Domažlice' and the capital 'Praha',
+    where RÚIAN says 'Domažlice' and 'Hlavní město Praha'."""
+    if name == "Praha":
+        return PRAHA_KRAJ
+    if name.casefold().startswith("okres "):
+        return name[len("okres "):]
+    return name

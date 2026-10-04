@@ -36,15 +36,18 @@ DETAIL_BASE = "https://www.bezrealitky.cz/nemovitosti-byty-domy"
 
 def _parse_location(address: str) -> ParsedPlace:
     """The portal's address string is comma-separated, with 'Praha - Bubeneč'
-    style dash pairs inside a segment; the portal has no district (okres)
-    concept, so district is always None."""
+    style dash pairs inside a segment. An 'okres Domažlice' segment states
+    the district."""
     names = []
+    district = None
     for segment in address.split(","):
         for name in re.split(r"\s+[-–]\s+", segment):
             name = name.strip()
-            if name and name not in names:
+            if name.casefold().startswith("okres "):
+                district = name[len("okres "):]
+            elif name and name not in names:
                 names.append(name)
-    return ParsedPlace(names=tuple(names))
+    return ParsedPlace(names=tuple(names), district=district)
 
 
 def _apollo_get(obj: dict, prefix: str):

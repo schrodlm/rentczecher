@@ -45,7 +45,7 @@ class TestSreality:
 _REMAX_FORM = """
 <h4>Plzeňský</h4>
 <input name="regions[43][3401]" type="checkbox"><label for="x">Domažlice</label>
-<h4>Hlavní město Praha</h4>
+<h4>Praha</h4>
 <input name="regions[19][19]" type="checkbox"><label for="y">Praha 1</label>
 <input name="regions[19][78]" type="checkbox"><label for="z">Praha 7</label>
 <input name="regions[19][78]" type="checkbox"><label for="z">Praha 7</label>
@@ -55,7 +55,7 @@ _REMAX_FORM = """
 class TestRemax:
     def test_reads_each_district_as_its_region_and_district_pair(self):
         places = parse_search_form(_REMAX_FORM)
-        assert places.regions == {"Plzeňský": 43, "Hlavní město Praha": 19}
+        assert places.regions == {"Plzeňský kraj": 43, "Hlavní město Praha": 19}
         assert places.districts["Domažlice"] == RemaxDistrict(region_id=43, district_id=3401)
 
     def test_a_district_listed_twice_with_the_same_ids_is_kept_once(self):
@@ -72,14 +72,14 @@ class TestBezrealitky:
         payload = {"data": {"czechRegions": [
             {"name": "Plzeňský kraj", "osmId": 442466, "children": [{"name": "okres Domažlice", "osmId": 441864}]},
         ]}}
-        assert parse_regions(payload) == ({"Plzeňský kraj": "R442466"}, {"okres Domažlice": "R441864"})
+        assert parse_regions(payload) == ({"Plzeňský kraj": "R442466"}, {"Domažlice": "R441864"})
 
     def test_prahas_children_in_the_api_are_skipped(self):
         """Under Praha the API lists části obce, which are not search districts."""
         payload = {"data": {"czechRegions": [
             {"name": "Praha", "osmId": 435514, "children": [{"name": "Holešovice", "osmId": 1}]},
         ]}}
-        assert parse_regions(payload) == ({"Praha": "R435514"}, {})
+        assert parse_regions(payload) == ({"Hlavní město Praha": "R435514"}, {})
 
     def test_an_empty_api_answer_is_refused(self):
         with pytest.raises(SystemExit, match="returned no regions"):
@@ -87,7 +87,7 @@ class TestBezrealitky:
 
     def test_reads_prahas_ids_from_the_bundle_table(self):
         javascript = 'x={name:"Praha",osmId:"R435541"},{name:"Praha 7",osmId:"R20000064250"},y'
-        assert parse_bundle(javascript) == ({"Praha": "R435541"}, {"Praha 7": "R20000064250"})
+        assert parse_bundle(javascript) == ({"Hlavní město Praha": "R435541"}, {"Praha 7": "R20000064250"})
 
     def test_a_bundle_without_the_table_is_refused(self):
         with pytest.raises(SystemExit, match="no Praha ids in the bundle"):

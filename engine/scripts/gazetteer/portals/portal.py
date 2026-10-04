@@ -22,6 +22,9 @@ BROWSER_HEADERS = {
 # Pause between requests to one portal, to stay a polite visitor.
 REQUEST_SPACING_S = 1.0
 
+# RÚIAN's name for the capital's kraj, which portals call plain 'Praha'.
+PRAHA_KRAJ = "Hlavní město Praha"
+
 
 @dataclass(frozen=True, slots=True)
 class PortalPlaces(Generic[RegionIds, DistrictIds]):
