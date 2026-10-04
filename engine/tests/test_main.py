@@ -19,9 +19,8 @@ from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 from tests.profiles import profile, stored_profile
 
 
-class TestEmptyScraperList:
-    """A profile whose scrapers list resolves to zero enabled scrapers must
-    not run silently."""
+class TestEmptyPortalList:
+    """A profile that scans no portals is skipped with a warning."""
 
     def test_warns_and_skips_the_profile(self, tmp_path, monkeypatch, caplog):
         db_path = tmp_path / "t.db"
@@ -34,7 +33,7 @@ class TestEmptyScraperList:
         with caplog.at_level("WARNING", logger="rentczecher"):
             main_module.run(dry_run=True)
 
-        assert any("no enabled scrapers" in r.getMessage() for r in caplog.records)
+        assert any("scans no portals" in r.getMessage() for r in caplog.records)
 
 
 class TestDbMigrate:

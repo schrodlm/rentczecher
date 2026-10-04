@@ -108,7 +108,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
     try:
         scraped, scraper_health = scrape_all(enabled, profile.criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
-        log.error("Profile %s: %s - fix search.place", profile_id, error)
+        log.error("Profile %s: %s - fix its search place", profile_id, error)
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
     filtered = apply_filters(scraped, profile.criteria)
