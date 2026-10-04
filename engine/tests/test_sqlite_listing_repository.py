@@ -276,7 +276,7 @@ class TestDisappeared:
 class TestPendingDisappeared:
     """pending_disappeared must report exactly what get_disappeared reports
     once increment_miss_counts has landed the same run's counts - the
-    pairing today's pipeline relies on to compute a notification before any
+    pairing the pipeline relies on to count disappearances before any
     write."""
 
     def _seed_missing(self, repo, conn, first_seen, miss_count):

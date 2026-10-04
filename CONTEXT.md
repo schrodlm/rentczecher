@@ -1,14 +1,14 @@
 # rentczecher
 
 Multi-profile Czech real-estate watchdog: scrapes portals, deduplicates
-listings across them, scores against per-profile preferences, and emails
-what's new.
+listings across them, scores against per-profile preferences, and tracks
+what's new for the panel and notification channels to show.
 
 ## Language
 
 **Listing**:
 One portal's posting, identified as `source:source_id`. The unit scrapers
-produce and emails show.
+produce and the panel shows.
 _Avoid_: advert, offer, item
 
 **Property**:
@@ -67,9 +67,9 @@ watchdog exists to surface.
 _Avoid_: unseen, unread, fresh
 
 **Notified**:
-A notification channel (email today, others later) delivered the listing.
-Channels are toggleable; notifying does not make a listing stop being new -
-only viewing does.
+A notification channel delivered the listing. A channel is a client of the
+API and keeps that record itself, the engine never tracks it. Notifying does
+not make a listing stop being new, only viewing does.
 _Avoid_: sent, emailed
 
 **Disappeared**:
@@ -141,7 +141,7 @@ _Avoid_: API key, credential, session
 
 **Scan**:
 One execution of the pipeline for one profile: scrape its portals, dedup,
-diff against what it has seen, notify. Scans are queued and execute strictly
+diff against what it has seen, commit. Scans are queued and execute strictly
 one at a time.
 _Avoid_: run, job, task, sync
 

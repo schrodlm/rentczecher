@@ -10,7 +10,6 @@ import time
 import pytest
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.cli import main as main_module
@@ -272,30 +271,26 @@ def _scraper(*listings):
     return FakeScraper
 
 
-class _SilentNotifier:
-    def send(self, notification) -> bool:
-        return True
+def _deps(store):
+    return PipelineDeps(
+        store=store,
+        clock=utc_now,
+        client=None,
+        scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
+        gazetteer=Gazetteer(),
+    )
+
+
+def _profile(profile_id, name):
+    return {
+        "id": profile_id, "name": name,
+        "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+        "scrapers": ["sreality"],
+    }
 
 
 class TestDryRunIsReadOnly:
     """A dry run writes no state. Miss counters advance only on real runs."""
-
-    def _deps(self, store):
-        return PipelineDeps(
-            store=store,
-            clock=utc_now,
-            client=None,
-            scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
-            gazetteer=Gazetteer(),
-            notifier=_SilentNotifier(),
-        )
-
-    def _profile(self, profile_id):
-        return {
-            "id": profile_id, "name": "Dry-run test",
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
-            "scrapers": ["sreality"],
-        }
 
     def test_dry_run_leaves_the_database_untouched(self, run_store):
         store, conn = run_store
@@ -323,26 +318,23 @@ class TestDryRunIsReadOnly:
 
         before = state()
 
-        deps = self._deps(store)
-        run_profile(self._profile(profile_id), deps, dry_run=True)
-        run_profile(self._profile(profile_id), deps, dry_run=True)
+        deps = _deps(store)
+        run_profile(_profile(profile_id, "Dry-run test"), deps, dry_run=True)
+        run_profile(_profile(profile_id, "Dry-run test"), deps, dry_run=True)
 
         assert state() == before
         assert store.seen_ids(profile_id) == {"sreality:old"}
 
 
-class TestNotifierSkipsEmailWithoutRecipients:
-    """A profile with notable listings but no 'to' recipients still
-    persists its outcome, but skips pruning stale tracking - only a real
-    send stands in for the owner having seen the run's results. The missing-
-    recipients error logs only when a notification is actually attempted."""
+class TestCommittedScanPrunes:
+    """Every committed scan forgets the profile's stale tracking rows."""
 
-    def test_outcome_persists_but_stale_tracking_is_kept(self, run_store):
+    def test_stale_tracking_is_pruned(self, run_store):
         store, conn = run_store
-        profile_id = "no-recipients"
+        profile_id = "prune-test"
 
         conn.execute("INSERT INTO profiles (id, name, active, created_at) "
-                     "VALUES (?, 'No recipients', 1, 't')", (profile_id,))
+                     "VALUES (?, 'Prune test', 1, 't')", (profile_id,))
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-stale', 't')")
         conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
                      "VALUES ('sreality:stale', 'prop-stale', 'sreality', 'u', 't')")
@@ -352,59 +344,9 @@ class TestNotifierSkipsEmailWithoutRecipients:
                      "'2000-01-01T00:00:00+00:00', 0)", (profile_id,))
         conn.commit()
 
-        notifier = build_smtp_notifier(
-            email_cfg={}, profile_id=profile_id, recipients=[]) or NoRecipientsNotifier(profile_id)
-        deps = PipelineDeps(
-            store=store,
-            clock=utc_now,
-            client=None,
-            scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
-            gazetteer=Gazetteer(),
-            notifier=notifier,
-        )
-        profile = {
-            "id": profile_id, "name": "No recipients", "to": [],
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
-            "scrapers": ["sreality"],
-        }
-
-        run_profile(profile, deps)
+        run_profile(_profile(profile_id, "Prune test"), _deps(store))
 
         remaining = conn.execute(
             "SELECT listing_id FROM listing_tracking WHERE profile_id = ? ORDER BY listing_id", (profile_id,)
         ).fetchall()
-        assert [r["listing_id"] for r in remaining] == ["sreality:new", "sreality:stale"]
-
-    def test_missing_recipients_error_only_logs_when_something_is_notable(self, run_store, caplog):
-        store, conn = run_store
-        profile_id = "no-recipients"
-
-        conn.execute("INSERT INTO profiles (id, name, active, created_at) "
-                     "VALUES (?, 'No recipients', 1, 't')", (profile_id,))
-        conn.commit()
-
-        notifier = build_smtp_notifier(
-            email_cfg={}, profile_id=profile_id, recipients=[]) or NoRecipientsNotifier(profile_id)
-        profile = {
-            "id": profile_id, "name": "No recipients", "to": [],
-            "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
-            "scrapers": ["sreality"],
-        }
-
-        with caplog.at_level("ERROR", logger="rentczecher"):
-            deps = PipelineDeps(
-                store=store, clock=utc_now, client=None,
-                scrapers={"sreality": _scraper()}, gazetteer=Gazetteer(), notifier=notifier,
-            )
-            run_profile(profile, deps)
-        assert not caplog.records
-
-        caplog.clear()
-        with caplog.at_level("ERROR", logger="rentczecher"):
-            deps = PipelineDeps(
-                store=store, clock=utc_now, client=None,
-                scrapers={"sreality": _scraper(_make_listing(id="sreality:new", title="New listing"))},
-                gazetteer=Gazetteer(), notifier=notifier,
-            )
-            run_profile(profile, deps)
-        assert any("has no 'to' recipients configured" in r.getMessage() for r in caplog.records)
+        assert [r["listing_id"] for r in remaining] == ["sreality:new"]

@@ -18,7 +18,6 @@ import yaml
 
 from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.adapters.notifiers.smtp import NoRecipientsNotifier
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.domain.listing import Listing
@@ -168,7 +167,6 @@ class Scenario:
                     client=None,
                     scrapers=self._scrapers_for(scan, clock.current),
                     gazetteer=gazetteer,
-                    notifier=NoRecipientsNotifier(self.profile_id),
                 )
                 run_profile(profile_config, deps)
             clock.current = now

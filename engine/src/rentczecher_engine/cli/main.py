@@ -16,7 +16,6 @@ from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.config import paths
 from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
@@ -185,7 +184,6 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
         migrate.apply_pending(conn)
         store = SqliteRunStore(conn)
 
-        email_cfg = config.get("email", {})
         profiles = config.get("profiles", {})
 
         if not profiles:
@@ -203,22 +201,19 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
 
                 log.info("=== Profile: %s ===", profile.get("name", profile_id))
                 if dry_run:
-                    log.info("DRY RUN - no emails, no DB updates")
+                    log.info("DRY RUN - no DB updates")
 
                 if not profile["scrapers"]:
                     log.warning("Profile %s has no enabled scrapers", profile_id)
                     continue
 
                 scrapers = scraper_registry(profile["scrapers"])
-                notifier = build_smtp_notifier(
-                    email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)
                 deps = PipelineDeps(
                     store=store,
                     clock=utc_now,
                     client=client,
                     scrapers=scrapers,
                     gazetteer=gazetteer,
-                    notifier=notifier,
                 )
                 try:
                     result = run_profile({**profile, "id": profile_id}, deps, dry_run=dry_run)
@@ -234,7 +229,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
 def main():
     parser = argparse.ArgumentParser(description="Byt Watchdog - Real estate monitor")
     parser.add_argument("--dry-run", action="store_true",
-                        help="Scrape and show results without sending email or updating DB")
+                        help="Scrape and show results without updating DB")
     parser.add_argument("--profile", type=str, default=None,
                         help="Run only a specific profile (by ID)")
     subparsers = parser.add_subparsers(dest="command")

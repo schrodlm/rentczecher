@@ -8,7 +8,7 @@ from pathlib import Path
 
 SRC_ROOT = Path(__file__).parent.parent / "src" / "rentczecher_engine"
 
-FORBIDDEN_MODULES = ("sqlite3", "httpx", "smtplib")
+FORBIDDEN_MODULES = ("sqlite3", "httpx")
 
 
 def _owning_package(path: Path) -> tuple[str, ...]:

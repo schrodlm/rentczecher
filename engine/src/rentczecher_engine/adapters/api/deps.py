@@ -17,7 +17,6 @@ from pathlib import Path
 from fastapi import HTTPException, Request
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.adapters.notifiers.smtp import NoRecipientsNotifier, build_smtp_notifier
 from rentczecher_engine.adapters.repositories.sqlite import connection
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
@@ -60,22 +59,17 @@ class ApiDeps:
     def build_pipeline_deps(self, profile_id: str) -> Iterator[PipelineDeps]:
         """A run's own connection, gazetteer and HTTP client, never shared
         with request handlers and all closed when the run finishes."""
-        profile = self.profile_config(profile_id)
-        if profile is None:
+        if self.profile_config(profile_id) is None:
             raise KeyError(profile_id)
         conn = connection.connect(self.db_path)
         try:
             with self.open_gazetteer() as gazetteer, build_client() as client:
-                email_cfg = self.config.get("email", {})
-                notifier = build_smtp_notifier(
-                    email_cfg, profile_id, profile.get("to", [])) or NoRecipientsNotifier(profile_id)
                 yield PipelineDeps(
                     store=SqliteRunStore(conn),
                     clock=utc_now,
                     client=client,
                     scrapers=self.scrapers,
                     gazetteer=gazetteer,
-                    notifier=notifier,
                 )
         finally:
             conn.close()
