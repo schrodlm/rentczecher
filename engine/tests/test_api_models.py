@@ -46,6 +46,7 @@ class TestListingModel:
             "resolved_location": None,
             "size_m2": 54,
             "disposition_raw_text": "2+kk",
+            "disposition": "2+kk",
             "first_seen_at": "2026-09-01T00:00:00+00:00",
             "viewed_at": None,
             "favourited_at": None,

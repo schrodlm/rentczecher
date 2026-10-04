@@ -91,3 +91,6 @@ msgstr "nedostupný"
 
 msgid "rentczecher stopped working. Restart the app to continue."
 msgstr "rentczecher přestal fungovat. Pro pokračování aplikaci restartujte."
+
+msgid "atypical layout"
+msgstr "atypická dispozice"
