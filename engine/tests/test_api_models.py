@@ -55,6 +55,27 @@ class TestListingModel:
             "sibling_sources": [{"source": "bezrealitky", "url": "https://example.com/b"}],
         }
 
+    def test_from_card_sends_no_disposition_when_the_raw_text_names_none(self):
+        """A raw text naming no layout maps to a null disposition."""
+        card = InboxCard(
+            id="sreality:1",
+            source="sreality",
+            url="https://example.com/1",
+            title="Rodinný dům",
+            location_raw_text=None,
+            property_location=None,
+            size_m2=None,
+            disposition_raw_text="Rodinný",
+            disposition=None,
+            first_seen_at="2026-09-01T00:00:00+00:00",
+            viewed_at=None,
+            favourited_at=None,
+            price=None,
+            price_drop_from=None,
+            sibling_sources=(),
+        )
+        assert ListingModel.from_card(card, None).disposition is None
+
 
 class TestPortalHealthModel:
     def test_from_entry_folds_the_portal_name_in(self):
