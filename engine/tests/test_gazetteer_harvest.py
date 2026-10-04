@@ -165,14 +165,14 @@ def gazetteer(tmp_path):
 
 def _complete_places() -> PortalPlaces[str, str]:
     return PortalPlaces(
-        regions={"Praha": "r19", "Plzeňský": "r43"},
-        districts={"okres Domažlice": "d3401", "Praha 7": "d78", "Praha 13": "d13"},
+        regions={"Hlavní město Praha": "r19", "Plzensky kraj": "r43"},
+        districts={"DOMAŽLICE": "d3401", "Praha 7": "d78", "Praha 13": "d13"},
     )
 
 
 class TestHarvest:
     def test_each_portal_name_is_joined_to_its_official_place(self, gazetteer):
-        """Names match despite the portal's wording, and the codes reach the portal."""
+        """Names match regardless of case and diacritics, and the codes reach the portal."""
         portal = FakePortal(_complete_places())
         harvest_portals(gazetteer, client=None, portals=[portal])
         regions, districts = portal.stored[0]
@@ -193,12 +193,14 @@ class TestHarvest:
 
     def test_a_search_place_the_portal_does_not_map_aborts(self, gazetteer):
         """Every okres must be mapped, since a profile may search it."""
-        places = PortalPlaces(regions={"Praha": "r19", "Plzeňský": "r43"}, districts={"Praha 7": "d78"})
+        places = PortalPlaces(regions={"Hlavní město Praha": "r19", "Plzeňský kraj": "r43"},
+                              districts={"Praha 7": "d78"})
         with pytest.raises(SystemExit, match="no mapping for 1 okresy: Domažlice"):
             harvest_portals(gazetteer, client=None, portals=[FakePortal(places)])
 
     def test_two_portal_names_for_one_kraj_abort(self, gazetteer):
-        places = PortalPlaces(regions={"Praha": "r19", "Hlavní město Praha": "r19b", "Plzeňský": "r43"},
+        places = PortalPlaces(regions={"Hlavni mesto Praha": "r19", "Hlavní město Praha": "r19b",
+                                       "Plzeňský kraj": "r43"},
                               districts={"Domažlice": "d3401", "Praha 7": "d78"})
         with pytest.raises(SystemExit, match="both name kraj Hlavní město Praha"):
             harvest_portals(gazetteer, client=None, portals=[FakePortal(places)])
