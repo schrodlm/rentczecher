@@ -61,15 +61,15 @@ them.
 config.yaml
    │  load + strict pydantic validation (adapters/config)
    ▼
-SearchSpec.from_search_config(profile["search"])        # portal-neutral intent
+Criteria.from_search_config(profile["search"])          # portal-neutral intent
    │
    ▼
-scrape_all(scrapers, spec, client)                      # services/scrape, per scraper:
-   │      resolve(spec.place) → per-portal ids            location_resolver
+scrape_all(scrapers, criteria, client)                  # services/scrape, per scraper:
+   │      resolve(criteria.place) → per-portal ids        location_resolver
    │      fetch → parse → list[Listing]                   fetch/parse split
    │      (ScraperBrokenError = contract changed, isolated per scraper)
    ▼
-apply_filters(listings, spec)                           # disposition / min size / min land
+apply_filters(listings, criteria)                       # disposition / min size / min land
    ▼
 locate_listings(listings, gazetteer)                    # services/locate
    ▼
@@ -114,7 +114,7 @@ without corrupting it.
   facts. Every field of both inner records is exposed as a read-only property.
   The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
   replaces facts, the pipeline replaces annotations, and the two never tangle.
-- `SearchSpec`: portal-neutral search intent, built once per profile and handed
+- `Criteria`: portal-neutral search intent, built once per profile and handed
   to every scraper and the filter.
 
 ### Scrapers

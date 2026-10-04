@@ -22,7 +22,7 @@ from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.domain.location import ParsedPlace
-from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
 SCENARIOS_DIR = Path(__file__).parent
@@ -166,7 +166,7 @@ class Scenario:
         finally:
             conn.close()
 
-    def _scrapers_for(self, scan: ScenarioScan, scraped_at: datetime) -> dict[str, Callable[[SearchSpec, object], ScenarioScraper]]:
+    def _scrapers_for(self, scan: ScenarioScan, scraped_at: datetime) -> dict[str, Callable[[Criteria, object], ScenarioScraper]]:
         by_portal: dict[str, list[Listing]] = {portal: [] for portal in self.portals()}
         for fields in scan.listings:
             listing = _build_listing(fields, scraped_at)
@@ -177,8 +177,8 @@ class Scenario:
         }
 
 
-def _scraper_returning(listings: list[Listing]) -> Callable[[SearchSpec, object], ScenarioScraper]:
-    def make(spec: SearchSpec, client: object) -> ScenarioScraper:
+def _scraper_returning(listings: list[Listing]) -> Callable[[Criteria, object], ScenarioScraper]:
+    def make(criteria: Criteria, client: object) -> ScenarioScraper:
         return ScenarioScraper(listings)
     return make
 

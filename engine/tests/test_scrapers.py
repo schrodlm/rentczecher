@@ -19,7 +19,7 @@ from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
 from rentczecher_engine.adapters.scrapers.sreality import _parse_location as _sreality_parse_location
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
-from rentczecher_engine.domain.search import SearchSpec
+from rentczecher_engine.domain.profile import Criteria
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
 
@@ -30,11 +30,11 @@ def _refusing_client() -> httpx.Client:
 
     return build_client(transport=httpx.MockTransport(refuse))
 
-FLATS_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        min_price=0, max_price=25000)
+FLATS_CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
+                          min_price=0, max_price=25000)
 
-HOUSES_SPEC = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-                         min_price=0, max_price=5000000, min_land_m2=500)
+HOUSES_CRITERIA = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
+                           min_price=0, max_price=5000000, min_land_m2=500)
 
 
 def _serve_pages(monkeypatch, pages):
@@ -53,10 +53,10 @@ def _serve_pages(monkeypatch, pages):
 
 class TestSrealitySearchParams:
     """Query params match the /api/v1/estates/search contract, derived from
-    the spec and its resolved place."""
+    the criteria and its resolved place."""
 
     def test_flats_params(self):
-        params = SrealityScraper(FLATS_SPEC, _refusing_client())._build_params(offset=100)
+        params = SrealityScraper(FLATS_CRITERIA, _refusing_client())._build_params(offset=100)
         assert params["category_main_cb"] == 1
         assert params["category_type_cb"] == 2
         assert params["locality_district_id"] == 5007
@@ -69,23 +69,23 @@ class TestSrealitySearchParams:
         assert "estate_area_from" not in params
 
     def test_min_land_becomes_estate_area_from(self):
-        params = SrealityScraper(HOUSES_SPEC, _refusing_client())._build_params(offset=0)
+        params = SrealityScraper(HOUSES_CRITERIA, _refusing_client())._build_params(offset=0)
         assert params["estate_area_from"] == 500
 
 
 class TestSrealityParsing:
     """Fixture-driven parsing of recorded /api/v1/estates/search responses."""
 
-    def _scrape_fixture(self, monkeypatch, fixture_name, spec):
+    def _scrape_fixture(self, monkeypatch, fixture_name, criteria):
         payload = json.loads((FIXTURES / fixture_name).read_text())
         client, calls = _serve_pages(monkeypatch, {0: payload})
-        listings = SrealityScraper(spec, client).scrape()
+        listings = SrealityScraper(criteria, client).scrape()
         return listings, calls, payload
 
     def test_flats_fixture_parses_all_fields(self, monkeypatch):
         # The fixture holds three real listings; two exceed the profile's
         # 25000 price cap and must be dropped by the client-side filter.
-        listings, calls, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_SPEC)
+        listings, calls, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
         assert [x.id for x in listings] == ["sreality:1222430796"]
         l = listings[0]
         assert l.source == "sreality"
@@ -105,7 +105,7 @@ class TestSrealityParsing:
 
     def test_houses_fixture_parses_land_and_district(self, monkeypatch):
         # One of the three fixture houses exceeds the 5M price cap.
-        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC)
+        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_CRITERIA)
         assert sorted(x.id for x in listings) == ["sreality:3870457932", "sreality:527867980"]
         l = next(x for x in listings if x.id == "sreality:527867980")
         assert l.disposition_raw_text == "Rodinný"
@@ -116,12 +116,12 @@ class TestSrealityParsing:
 
     def test_city_equal_to_citypart_is_not_duplicated_in_location(self, monkeypatch):
         # Village listings often have city == citypart (Drahotín/Drahotín).
-        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_SPEC)
+        listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_CRITERIA)
         l = next(x for x in listings if x.id == "sreality:3870457932")
         assert l.location_raw_text == "Drahotín, Domažlice"
 
     def test_request_sends_browser_headers(self, monkeypatch):
-        _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_SPEC)
+        _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
         headers = calls[0].headers
         assert "Mozilla" in headers["User-Agent"]
         assert headers["Accept"] == "application/json"
@@ -181,14 +181,14 @@ class TestSrealityPagination:
             100: {"results": [self._estate(2), self._estate(3)], "pagination": {"total": 3}},
         }
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_SPEC, client).scrape()
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert sorted(l.id for l in listings) == ["sreality:1", "sreality:2", "sreality:3"]
         assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
     def test_stops_on_empty_page(self, monkeypatch):
         pages = {0: {"results": [self._estate(1)], "pagination": {"total": 99}}}
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_SPEC, client).scrape()
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert len(listings) == 1
         assert [int(c.url.params["offset"]) for c in calls] == [0, 100]
 
@@ -198,7 +198,7 @@ class TestSrealityPagination:
         same = [self._estate(1), self._estate(2)]
         pages = {o: {"results": same, "pagination": {"total": 500}} for o in (0, 100, 200, 300)}
         client, calls = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_SPEC, client).scrape()
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert len(listings) == 2
         assert len(calls) == 2
 
@@ -206,7 +206,7 @@ class TestSrealityPagination:
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=99999)],
                      "pagination": {"total": 2}}}
         client, _ = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_SPEC, client).scrape()
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
     def test_missing_disposition_never_produces_double_slash_url(self, monkeypatch):
@@ -214,7 +214,7 @@ class TestSrealityPagination:
         estate["category_sub_cb"] = None
         pages = {0: {"results": [estate], "pagination": {"total": 1}}}
         client, _ = _serve_pages(monkeypatch, pages)
-        listings = SrealityScraper(FLATS_SPEC, client).scrape()
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         url = listings[0].url
         assert "//" not in url.removeprefix("https://")
         assert url.endswith("/praha-holesovice/7")
@@ -222,11 +222,11 @@ class TestSrealityPagination:
 
 class TestSrealityPlaceBasedParams:
     """With a resolved place, search params derive from the place and the
-    spec's typed estate/offer types instead of raw portal codes."""
+    typed estate/offer types of the criteria instead of raw portal codes."""
 
     def test_district_place_supplies_location_and_categories(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
-        scraper = SrealityScraper(spec, _refusing_client())
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
+        scraper = SrealityScraper(criteria, _refusing_client())
         params = scraper._build_params(offset=0)
         assert params["locality_district_id"] == 5007
         assert "locality_region_id" not in params
@@ -234,8 +234,8 @@ class TestSrealityPlaceBasedParams:
         assert params["category_type_cb"] == 2
 
     def test_kraj_place_searches_by_region(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43), max_price=5000000)
-        scraper = SrealityScraper(spec, _refusing_client())
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43), max_price=5000000)
+        scraper = SrealityScraper(criteria, _refusing_client())
         params = scraper._build_params(offset=0)
         assert params["locality_region_id"] == 2
         assert "locality_district_id" not in params
@@ -254,11 +254,11 @@ class TestSrealityContract:
 
         client = build_client(transport=httpx.MockTransport(handler))
         with pytest.raises(ScraperBrokenError):
-            SrealityScraper(FLATS_SPEC, client).scrape()
+            SrealityScraper(FLATS_CRITERIA, client).scrape()
 
 
-BEZ_SPEC = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                      min_price=0, max_price=25000)
+BEZ_CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
+                        min_price=0, max_price=25000)
 
 
 def _bez_advert(advert_id, price=20000, **overrides):
@@ -310,7 +310,7 @@ class TestBezrealitkyParsing:
 
     def test_parses_advert_fields(self, monkeypatch):
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([_bez_advert(1)], total_count=1)})
-        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
         l = listings[0]
         assert l.source == "bezrealitky"
@@ -330,7 +330,7 @@ class TestBezrealitkyParsing:
     def test_undefined_disposition_is_treated_as_absent(self, monkeypatch):
         advert = _bez_advert(1, disposition="UNDEFINED")
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page([advert], total_count=1)})
-        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert listings[0].disposition_raw_text is None
 
     def test_reserved_and_out_of_range_adverts_are_skipped(self, monkeypatch):
@@ -340,7 +340,7 @@ class TestBezrealitkyParsing:
             _bez_advert(3, price=99999),
         ]
         client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page(adverts, total_count=3)})
-        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
 
     def test_paginates_until_total_count(self, monkeypatch):
@@ -350,7 +350,7 @@ class TestBezrealitkyParsing:
             1: _bez_page(first, total_count=16),
             2: _bez_page(second, total_count=16),
         })
-        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert len(listings) == 16
         assert len(calls) == 2
 
@@ -363,13 +363,13 @@ class TestBezrealitkyParsing:
             1: _bez_page(first, total_count=16),
             2: _bez_page(second, total_count=16),
         })
-        listings = BezrealitkyScraper(BEZ_SPEC, client).scrape()
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:16"]
 
     def test_missing_next_data_raises_scraper_broken(self, monkeypatch):
         client, _ = _serve_bez_pages(monkeypatch, {1: "<html><body>redesigned</body></html>"})
         with pytest.raises(ScraperBrokenError):
-            BezrealitkyScraper(BEZ_SPEC, client).scrape()
+            BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
 
 
 class TestBezrealitkyLocationParsing:
@@ -392,12 +392,13 @@ class TestBezrealitkyLocationParsing:
 
 class TestBezrealitkyPlaceBasedParams:
     """With a resolved place, the search URL derives from the place and the
-    spec's typed estate/offer types; without either a place or a configured
-    region id the scraper refuses to run rather than search elsewhere."""
+    typed estate/offer types of the criteria; without either a place or a
+    configured region id the scraper refuses to run rather than search
+    elsewhere."""
 
-    def test_place_and_spec_drive_the_url(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
-        scraper = BezrealitkyScraper(spec, _refusing_client())
+    def test_place_and_criteria_drive_the_url(self):
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
+        scraper = BezrealitkyScraper(criteria, _refusing_client())
         url = scraper._build_url()
         assert "regionOsmIds=R441864" in url
         assert "estateType=DUM" in url
@@ -405,17 +406,17 @@ class TestBezrealitkyPlaceBasedParams:
         assert "location=exact" in url
 
 
-    def test_place_based_title_labels_follow_the_spec(self, monkeypatch):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
+    def test_place_based_title_labels_follow_the_criteria(self, monkeypatch):
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
         client, _ = _serve_bez_pages(monkeypatch, {
             1: _bez_page([_bez_advert(1, price=3000000)], total_count=1),
         })
-        listings = BezrealitkyScraper(spec, client).scrape()
+        listings = BezrealitkyScraper(criteria, client).scrape()
         assert listings[0].title.startswith("Prodej - ")
 
 
-REMAX_SPEC = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-                        min_price=0, max_price=5000000)
+REMAX_CRITERIA = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
+                          min_price=0, max_price=5000000)
 
 
 def _remax_card(listing_id, price=3000000):
@@ -537,7 +538,7 @@ class TestRemaxParsing:
 
     def test_parses_card_fields(self, monkeypatch):
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([_remax_card(12345)])})
-        listings = RemaxScraper(REMAX_SPEC, client).scrape()
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["remax:12345"]
         l = listings[0]
         assert l.source == "remax"
@@ -558,7 +559,7 @@ class TestRemaxParsing:
             1: _remax_page([_remax_card(1)], has_next=True),
             2: _remax_page([_remax_card(2)]),
         })
-        listings = RemaxScraper(REMAX_SPEC, client).scrape()
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
         assert sorted(l.id for l in listings) == ["remax:1", "remax:2"]
         assert len(calls) == 2
 
@@ -566,24 +567,24 @@ class TestRemaxParsing:
         # A cardless page also means genuinely-zero results, so unlike the
         # other portals it cannot raise ScraperBrokenError.
         client, _ = _serve_remax_pages(monkeypatch, {1: "<html><body>žádné výsledky</body></html>"})
-        assert RemaxScraper(REMAX_SPEC, client).scrape() == []
+        assert RemaxScraper(REMAX_CRITERIA, client).scrape() == []
 
     def test_out_of_range_price_is_filtered(self, monkeypatch):
         cards = [_remax_card(1), _remax_card(2, price=99000000)]
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page(cards)})
-        listings = RemaxScraper(REMAX_SPEC, client).scrape()
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["remax:1"]
 
 
 class TestRemaxPlaceBasedUrl:
     """With a resolved place the search URL is built from the place and the
-    spec's typed estate/offer types; the hand-pasted search_url becomes
-    unnecessary."""
+    typed estate/offer types of the criteria; the hand-pasted search_url
+    becomes unnecessary."""
 
     def test_district_place_builds_the_full_url(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                          min_price=17000, max_price=25000)
-        scraper = RemaxScraper(spec, _refusing_client())
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
+                            min_price=17000, max_price=25000)
+        scraper = RemaxScraper(criteria, _refusing_client())
         url = scraper._build_url()
         assert url.startswith("https://www.remax-czech.cz/reality/vyhledavani/?")
         assert "hledani=2" in url
@@ -592,32 +593,32 @@ class TestRemaxPlaceBasedUrl:
         assert "price_from=17000" in url and "price_to=25000" in url
 
     def test_sale_house_maps_types_and_hledani(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
-        url = RemaxScraper(spec, _refusing_client())._build_url()
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
+        url = RemaxScraper(criteria, _refusing_client())._build_url()
         assert "hledani=1" in url
         assert "types%5B6%5D=on" in url
         assert "regions%5B43%5D%5B3401%5D=on" in url
         assert "price_from" not in url
 
     def test_kraj_place_checks_every_district_of_the_region(self):
-        spec = SearchSpec(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43))
-        url = RemaxScraper(spec, _refusing_client())._build_url()
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43))
+        url = RemaxScraper(criteria, _refusing_client())._build_url()
         assert url.count("regions%5B43%5D") == 7
         assert "regions%5B43%5D%5B3401%5D=on" in url
 
 
 class TestEstateOfferTypeCoverage:
     """Every schema Literal estate/offer value has a portal mapping in every
-    scraper - a valid spec can never KeyError at scrape time."""
+    scraper - valid criteria can never KeyError at scrape time."""
 
     @pytest.mark.parametrize("estate_type", ["flat", "house", "land", "cottage"])
     @pytest.mark.parametrize("offer_type", ["rent", "sale"])
     def test_every_combination_builds_portal_params(self, estate_type, offer_type):
-        spec = SearchSpec(offer_type=offer_type, estate_type=estate_type,
-                          place=PlaceRef("obvod", 78), max_price=25000)
-        SrealityScraper(spec, _refusing_client())._build_params(offset=0)
-        BezrealitkyScraper(spec, _refusing_client())._build_url()
-        RemaxScraper(spec, _refusing_client())._build_url()
+        criteria = Criteria(offer_type=offer_type, estate_type=estate_type,
+                            place=PlaceRef("obvod", 78), max_price=25000)
+        SrealityScraper(criteria, _refusing_client())._build_params(offset=0)
+        BezrealitkyScraper(criteria, _refusing_client())._build_url()
+        RemaxScraper(criteria, _refusing_client())._build_url()
 
 
 class TestNarrowPlaceViews:
@@ -646,9 +647,9 @@ class TestNarrowPlaceViews:
 
     def test_scrapers_hold_no_full_place_params(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
-            scraper = scraper_cls(spec, _refusing_client())
+            scraper = scraper_cls(criteria, _refusing_client())
             assert not any(isinstance(value, PlaceParams)
                            for value in vars(scraper).values()), scraper_cls.name
 
@@ -658,8 +659,8 @@ class TestPlaceResolutionFailure:
     instead of silently searching nowhere."""
 
     def test_unknown_place_raises_at_construction(self):
-        spec = SearchSpec(offer_type="rent", estate_type="flat",
-                          place=PlaceRef("okres", 999999), max_price=25000)
+        criteria = Criteria(offer_type="rent", estate_type="flat",
+                            place=PlaceRef("okres", 999999), max_price=25000)
         for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
             with pytest.raises(PlaceNotFoundError):
-                scraper_cls(spec, _refusing_client())
+                scraper_cls(criteria, _refusing_client())

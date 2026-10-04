@@ -65,4 +65,4 @@ trusted it stays unknown. The gazetteer refuses rather than guesses.
   renames and repeated names. A nested per-portal payload behind an opaque
   resolver, which would drop typing to dictionary keys mid-chain. Injecting
   the resolved place into each scraper's constructor, which would let the
-  spec and its place disagree.
+  criteria and their place disagree.

@@ -67,7 +67,7 @@ def _fake_scrapers(listing_data):
         class FakeScraper:
             _records = records
 
-            def __init__(self, spec, client):
+            def __init__(self, criteria, client):
                 pass
 
             def scrape(self):
