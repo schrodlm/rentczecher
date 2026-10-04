@@ -70,24 +70,19 @@ def _run(run_store, monkeypatch, records):
     store, _conn = run_store
     listings = _listings(*records)
 
-    captured = {"disappeared": set(), "notable": []}
-
+    captured = {}
     real_pending_disappeared = store.pending_disappeared
-
-    def spying_pending_disappeared(profile_id, current_ids):
-        disappeared = real_pending_disappeared(profile_id, current_ids)
-        captured["disappeared"] = {d.id for d in disappeared}
-        return disappeared
-
-    monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
-
     real_classify = pipeline.classify
 
-    def spying_classify(*args):
-        diff = real_classify(*args)
-        captured["notable"] = diff.new + diff.price_drops
-        return diff
+    def spying_pending_disappeared(profile_id, current_ids):
+        captured["disappeared"] = real_pending_disappeared(profile_id, current_ids)
+        return captured["disappeared"]
 
+    def spying_classify(*args):
+        captured["diff"] = real_classify(*args)
+        return captured["diff"]
+
+    monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
     monkeypatch.setattr(pipeline, "classify", spying_classify)
 
     deps = PipelineDeps(
@@ -98,9 +93,9 @@ def _run(run_store, monkeypatch, records):
     seen_before = store.seen_ids(PROFILE_ID)
     run_profile(PROFILE, deps, dry_run=False)
 
+    diff = captured["diff"]
     new_ids = {r["id"] for r in records} - seen_before
-    drops = {(l.id, l.price_drop_from)
-             for l in captured["notable"] if l.price_drop_from is not None}
+    drops = {(l.id, l.price_drop_from) for l in diff.price_drops}
     return new_ids, drops, captured["disappeared"]
 
 

@@ -186,12 +186,18 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     _seed_seen_state(conn)
 
     captured = {}
+    real_pending_disappeared = store.pending_disappeared
     real_classify = pipeline.classify
+
+    def spying_pending_disappeared(profile_id, current_ids):
+        captured["disappeared"] = real_pending_disappeared(profile_id, current_ids)
+        return captured["disappeared"]
 
     def spying_classify(*args):
         captured["diff"] = real_classify(*args)
         return captured["diff"]
 
+    monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
     monkeypatch.setattr(pipeline, "classify", spying_classify)
     deps = _deps(store, _fake_scrapers(listing_data))
     run_profile(PROFILE_WITH_ID, deps, dry_run=False)
@@ -200,7 +206,7 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     notable = sorted(diff.new + diff.price_drops, key=lambda listing: listing.score, reverse=True)
     snapshot = {
         "notable": [_listing_snapshot(l) for l in notable],
-        "disappeared_ids": sorted(d.id for d in diff.disappeared),
+        "disappeared_ids": sorted(captured["disappeared"]),
         "seen_after": _seen_snapshot(conn),
     }
 

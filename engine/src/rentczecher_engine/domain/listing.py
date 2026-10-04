@@ -140,25 +140,6 @@ class Listing:
 
 
 @dataclass(frozen=True, slots=True)
-class DisappearedListing:
-    """A listing judged gone, with the property facts and latest price
-    needed to show it.
-
-    title/location_raw_text/price are nullable: a listing can disappear before its
-    property has a title or before any price observation was ever recorded.
-    """
-
-    id: str
-    source: str
-    url: str
-    first_seen_at: str
-    miss_count: int
-    title: str | None
-    location_raw_text: str | None
-    price: int | None
-
-
-@dataclass(frozen=True, slots=True)
 class SiblingSource:
     """Another portal's posting of the same property - the take-na badge."""
 

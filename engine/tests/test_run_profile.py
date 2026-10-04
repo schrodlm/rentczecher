@@ -25,7 +25,7 @@ class FakeRunStore:
     def __init__(self):
         self.seen: set[str] = set()
         self.prices: dict[str, int] = {}
-        self.pending: list = []
+        self.pending: set[str] = set()
         self.persist_calls: list = []
         self.prune_calls: list[str] = []
 
