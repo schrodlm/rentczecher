@@ -72,6 +72,12 @@ class TestSrealitySearchParams:
         params = SrealityScraper(HOUSES_CRITERIA, _refusing_client())._build_params(offset=0)
         assert params["estate_area_from"] == 500
 
+    def test_no_price_bounds_send_no_price_params(self):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+        params = SrealityScraper(criteria, _refusing_client())._build_params(offset=0)
+        assert "price_from" not in params
+        assert "price_to" not in params
+
 
 class TestSrealityParsing:
     """Fixture-driven parsing of recorded /api/v1/estates/search responses."""
@@ -209,6 +215,13 @@ class TestSrealityPagination:
         listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
+    def test_unset_max_price_keeps_expensive_estates(self, monkeypatch):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+        pages = {0: {"results": [self._estate(1, price=99999999)], "pagination": {"total": 1}}}
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(criteria, client).scrape()
+        assert [l.id for l in listings] == ["sreality:1"]
+
     def test_missing_disposition_never_produces_double_slash_url(self, monkeypatch):
         estate = self._estate(7)
         estate["category_sub_cb"] = None
@@ -343,6 +356,13 @@ class TestBezrealitkyParsing:
         listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
 
+    def test_unset_max_price_keeps_expensive_adverts(self, monkeypatch):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+        adverts = [_bez_advert(1, price=99999999)]
+        client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page(adverts, total_count=1)})
+        listings = BezrealitkyScraper(criteria, client).scrape()
+        assert [l.id for l in listings] == ["bezrealitky:1"]
+
     def test_paginates_until_total_count(self, monkeypatch):
         first = [_bez_advert(i) for i in range(1, 16)]
         second = [_bez_advert(16)]
@@ -405,6 +425,18 @@ class TestBezrealitkyPlaceBasedParams:
         assert "offerType=PRODEJ" in url
         assert "location=exact" in url
 
+    def test_price_bounds_become_price_from_and_price_to(self):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
+                            min_price=17000, max_price=25000)
+        url = BezrealitkyScraper(criteria, _refusing_client())._build_url()
+        assert "priceFrom=17000" in url
+        assert "priceTo=25000" in url
+
+    def test_no_price_bounds_send_no_price_params(self):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
+        url = BezrealitkyScraper(criteria, _refusing_client())._build_url()
+        assert "priceFrom" not in url
+        assert "priceTo" not in url
 
     def test_place_based_title_labels_follow_the_criteria(self, monkeypatch):
         criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
@@ -575,6 +607,12 @@ class TestRemaxParsing:
         listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["remax:1"]
 
+    def test_unset_max_price_keeps_expensive_cards(self, monkeypatch):
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401))
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([_remax_card(1, price=99000000)])})
+        listings = RemaxScraper(criteria, client).scrape()
+        assert [l.id for l in listings] == ["remax:1"]
+
 
 class TestRemaxPlaceBasedUrl:
     """With a resolved place the search URL is built from the place and the
@@ -599,6 +637,12 @@ class TestRemaxPlaceBasedUrl:
         assert "types%5B6%5D=on" in url
         assert "regions%5B43%5D%5B3401%5D=on" in url
         assert "price_from" not in url
+
+    def test_no_price_bounds_send_no_price_params(self):
+        criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401))
+        url = RemaxScraper(criteria, _refusing_client())._build_url()
+        assert "price_from" not in url
+        assert "price_to" not in url
 
     def test_kraj_place_checks_every_district_of_the_region(self):
         criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("kraj", 43))
