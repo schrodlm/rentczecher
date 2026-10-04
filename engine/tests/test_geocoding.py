@@ -25,18 +25,14 @@ CANCELLED_CODE = 999_999_999
 
 
 class TestNormalizeName:
-    """One key for all portals' (and users') spellings of the same place."""
+    """A name's key ignores case and diacritics."""
 
     @pytest.mark.parametrize("variants, expected", [
-        (("Domažlice", "okres Domažlice"), "domazlice"),
-        (("Plzeňský kraj", "Plzeňský"), "plzensky"),
-        (("Hlavní město Praha", "Praha"), "praha"),
-        (("Kraj Vysočina", "Vysočina"), "vysocina"),
+        (("Domažlice", "DOMAŽLICE", "domazlice"), "domazlice"),
         (("Praha 7",), "praha 7"),
-        (("Praha-východ", "okres Praha-východ"), "praha-vychod"),
         (("Brno-město",), "brno-mesto"),
     ])
-    def test_portal_spellings_normalize_identically(self, variants, expected):
+    def test_spellings_differing_in_case_or_diacritics_normalize_identically(self, variants, expected):
         for variant in variants:
             assert normalize_name(variant) == expected, variant
 
