@@ -5,7 +5,7 @@ Run: python3 -m pytest tests/test_domain_disposition.py -v
 
 import pytest
 
-from rentczecher_engine.domain.disposition import parse_disposition
+from rentczecher_engine.domain.disposition import ATYPICAL, Disposition, parse_disposition
 
 
 def _code(raw: str | None) -> str | None:
@@ -46,3 +46,24 @@ class TestSelfIdentifyingLayouts:
 
     def test_building_type_label_is_no_evidence(self):
         assert _code("Rodinný") is None
+
+
+class TestParsedLayout:
+    def test_layout_carries_its_rooms_and_kitchen_kind(self):
+        assert parse_disposition("2+kk") == Disposition(rooms=2, kitchen="kitchenette")
+        assert parse_disposition("2+1") == Disposition(rooms=2, kitchen="separate")
+
+    def test_atypical_parses_to_the_atypical_layout(self):
+        assert parse_disposition("Atypický") == ATYPICAL
+
+    @pytest.mark.parametrize("raw", ["3+2", "3+0"])
+    def test_second_number_other_than_one_names_no_kitchen(self, raw):
+        assert parse_disposition(raw) is None
+
+
+class TestDisposition:
+    def test_half_filled_disposition_is_refused(self):
+        with pytest.raises(ValueError):
+            Disposition(rooms=2, kitchen=None)
+        with pytest.raises(ValueError):
+            Disposition(rooms=None, kitchen="separate")
