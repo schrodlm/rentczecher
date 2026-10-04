@@ -4,11 +4,18 @@ Excluded from the default pytest run. Run deliberately with:
 python3 -m pytest -m live tests/live/test_scrapers.py -v
 These tests hit real APIs so they may be slow and results change over time.
 """
-from pathlib import Path
-
 import pytest
 
-from rentczecher_engine.adapters.scrapers.client import build_client  # noqa: E402
+from rentczecher_engine.adapters.scrapers.client import build_client
+from rentczecher_engine.domain.location import PlaceRef
+from rentczecher_engine.domain.profile import Criteria
+from tests.profiles import criteria
+
+SEARCHES: dict[str, Criteria] = {
+    "praha7-byty": criteria(max_price=25000, min_rooms=2, max_rooms=3, kitchen="kitchenette"),
+    "domazlice-domy": criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
+                               max_price=5000000, min_land_m2=500),
+}
 
 
 @pytest.fixture(scope="module")
@@ -16,25 +23,9 @@ def client():
     with build_client() as c:
         yield c
 
-# Load the resolved config, falling back to the example profiles.
-from rentczecher_engine.adapters.config import paths  # noqa: E402
-from rentczecher_engine.adapters.config.loader import load_config  # noqa: E402
-from rentczecher_engine.domain.location import PlaceRef  # noqa: E402
-from rentczecher_engine.domain.profile import Criteria, Profile  # noqa: E402
 
-if paths.config_path().exists():
-    PROFILES = load_config(paths.config_path())
-else:
-    PROFILES = load_config(Path(__file__).parents[2] / "config.example.yaml")
-
-
-def _get_profile(profile_id: str) -> Profile:
-    (profile,) = [profile for profile in PROFILES if profile.id == profile_id]
-    return profile
-
-
-def _scraper(cls, profile_id: str, client):
-    return cls(_get_profile(profile_id).criteria, client)
+def _scraper(cls, search_id: str, client):
+    return cls(SEARCHES[search_id], client)
 
 
 # ─── Sreality ───────────────────────────────────────────────
@@ -74,10 +65,9 @@ class TestSrealityLive:
 
     def test_praha7_price_in_range(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
-        profile = _get_profile("praha7-byty")
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
-        max_price = profile.criteria.max_price
+        max_price = SEARCHES["praha7-byty"].max_price
         assert max_price is not None
         for l in listings:
             assert l.price <= max_price, f"Price {l.price} exceeds max {max_price}"
@@ -126,8 +116,7 @@ class TestSrealityLive:
 
     def test_pagination_collects_beyond_one_page(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
-        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
-        listings = SrealityScraper(criteria, client).scrape()
+        listings = SrealityScraper(criteria(), client).scrape()
         assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"
 
 
@@ -186,13 +175,13 @@ class TestRemaxLive:
 
     def test_praha7_prices_valid(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
-        profile = _get_profile("praha7-byty")
         s = _scraper(RemaxScraper, "praha7-byty", client)
         listings = s.scrape()
+        max_price = SEARCHES["praha7-byty"].max_price
+        assert max_price is not None
         for l in listings:
             assert l.price > 0
-            assert profile.criteria.max_price is not None
-            assert l.price <= profile.criteria.max_price
+            assert l.price <= max_price
 
     def test_praha7_titles_no_agent_id(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper

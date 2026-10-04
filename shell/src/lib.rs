@@ -60,7 +60,7 @@ fn generate_token() -> String {
 /// A debug build runs the engine from source, so engine edits show on the
 /// next launch without re-freezing. With RENTCZECHER_SCENARIO set, it first
 /// replays that scenario into a scratch folder and runs the engine there, so
-/// development never touches the real config and data.
+/// development never touches the real data.
 #[cfg(debug_assertions)]
 fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
     let engine = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine");
@@ -68,9 +68,7 @@ fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
     command.args(["run", "rentczecher", "serve"]).current_dir(&engine);
     if let Ok(scenario) = std::env::var("RENTCZECHER_SCENARIO") {
         let home = replay_scenario(&engine, &scenario)?;
-        command
-            .env("RENTCZECHER_CONFIG", home.join("config.yaml"))
-            .env("RENTCZECHER_DATA_DIR", home.join("data"));
+        command.env("RENTCZECHER_DATA_DIR", home.join("data"));
     }
     Ok(command)
 }
