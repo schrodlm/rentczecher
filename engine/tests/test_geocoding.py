@@ -36,6 +36,14 @@ class TestNormalizeName:
         for variant in variants:
             assert normalize_name(variant) == expected, variant
 
+    @pytest.mark.parametrize("name, expected", [
+        ("Hlavní město Praha", "hlavni mesto praha"),
+        ("okres Domažlice", "okres domazlice"),
+        ("Kraj Vysočina", "kraj vysocina"),
+    ])
+    def test_every_word_of_a_name_is_kept(self, name, expected):
+        assert normalize_name(name) == expected
+
 
 class TestCandidateNames:
     def test_house_numbers_yield_a_stripped_variant(self):
@@ -310,6 +318,22 @@ class TestResolveHouseNumbers:
         location = gazetteer.resolve(ParsedPlace(names=("U Vody", "Praha")))
         assert location.cislo_popisne is None
         assert location.cislo_orientacni is None
+
+
+class TestResolveOfficialWording:
+    """A name matches by its full official wording."""
+
+    def test_a_street_named_hlavni_resolves(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Hlavní", "Albrechtice")))
+        assert location.ulice.name == "Hlavní"
+
+    def test_an_obec_named_with_mesto_resolves(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Město Albrechtice",)))
+        assert location.obec.name == "Město Albrechtice"
+
+    def test_a_kraj_name_does_not_resolve_to_a_same_named_obec(self, gazetteer):
+        """Kraj Vysočina does not resolve to the obec Vysočina in another kraj."""
+        assert gazetteer.resolve(ParsedPlace(names=("Kraj Vysočina",))) is None
 
 
 class TestNamed:
