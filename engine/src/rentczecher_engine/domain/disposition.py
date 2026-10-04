@@ -16,7 +16,7 @@ Kitchen = Literal["kitchenette", "separate"]
 # A studio (garsoniéra, garsonka) is a 1+kk by another name.
 _STUDIO_SYNONYMS = {"garsoniera", "garsonka"}
 _ATYPICAL_CODE = "atypicky"
-_LAYOUT = re.compile(r"^(\d)\s*\+\s*(kk|1)$")
+_LAYOUT = re.compile(r"^([1-9])\s*\+\s*(kk|1)$")
 
 
 @dataclass(frozen=True, slots=True)
