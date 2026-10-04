@@ -7,8 +7,8 @@ This is the map for working on the code. If you only want to run rentczecher,
 
 **The pipeline runs on the SQLite canonical-property model.** A run reads its
 seen state and price history from the database, decides what is new, dropped,
-or disappeared, and persists the outcome only after the notification
-succeeded. The schema is documented in [SCHEMA.md](SCHEMA.md): a **property**
+or disappeared, and commits the outcome on every scan that is not a dry run.
+The schema is documented in [SCHEMA.md](SCHEMA.md): a **property**
 is the inferred real-world unit, a **listing** is one portal's posting of it
 (a global fact), and **listing_tracking** carries each profile's seen state
 for a listing.
@@ -27,7 +27,7 @@ A single installable package with light hexagonal layering:
 ```
 src/rentczecher_engine/
   domain/        frozen dataclasses, pure. no I/O, no deps on adapters
-  adapters/      the edges: scrapers, notifiers, config, storage, geocoding
+  adapters/      the edges: scrapers, config, storage, geocoding, HTTP API
   services/      use-cases and orchestration over the domain
   cli/           argparse entry point. wires adapters to the pipeline
 ```
@@ -35,7 +35,7 @@ src/rentczecher_engine/
 - `domain/` never imports from `adapters/` or `services/`. Just types and two
   geo functions.
 - `services/` depends on `domain/` only, never on `adapters/` or on
-  `sqlite3`, `httpx`, or `smtplib` directly. A layering guard test
+  `sqlite3` or `httpx` directly. A layering guard test
   (`tests/test_layering.py`) parses every module's imports and fails the
   build on a violation.
 - `adapters/` and `cli/` may depend on everything. `cli/main.py` is where the
@@ -52,7 +52,7 @@ pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
 the whole orchestration, called once per enabled profile by `cli/main.py::run`.
 It returns a `ProfileRunResult` (status, per-scraper health, counts) that the
 CLI logs. `PipelineDeps` bundles everything the run needs behind protocols:
-`RunStore` (satisfied by `SqliteRunStore`), a `Gazetteer`, a `Notifier`, the
+`RunStore` (satisfied by `SqliteRunStore`), a `Gazetteer`, the
 scraper registry, an `httpx` client, and a clock. Because these are
 structural protocols, `services/` never imports the adapters that implement
 them.
@@ -77,23 +77,18 @@ cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
 compute_score(listing, profile)                         # services/score
    ▼
-classify(survivors, seen_ids, latest_prices)            # services/diff
+store.pending_disappeared(...)   and   classify(survivors, seen_ids, latest_prices)
    ▼
-build_notification(diff, profile, spec)   then   notifier.send(...)
-   ▼
-store.persist_outcome(...)   then, if notable, store.prune(...)
+store.persist_outcome(...)   then   store.prune(...)
 ```
 
-Two orderings are load-bearing and must be preserved:
+Two rules are load-bearing and must be preserved:
 
-- **Notify-then-commit.** `run_profile` only calls `store.persist_outcome`
-  after `notifier.send` returns something other than `False` (or there was
-  nothing to send). If the send fails, nothing commits, including the
-  miss-count increments, so the same listings are retried next run. A profile
-  with no configured recipients still persists (a stand-in notifier logs a
-  warning and reports success). Pruning is a separate transaction after
-  `persist_outcome`'s, and only runs when there was something notable to send
-  and the profile has recipients.
+- **Every scan commits.** `run_profile` calls `store.persist_outcome` and then
+  `store.prune` on every scan that is not a dry run and gets past the scrape,
+  each in its own transaction. Nothing waits on a delivery: the engine sends no notifications,
+  and a notification channel is an API client that keeps its own record of
+  what it delivered.
 - **Three-miss disappearance.** A listing is disappeared only after three
   consecutive runs without it, to ride out portal API flicker.
 
@@ -120,7 +115,7 @@ without corrupting it.
   The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
   replaces facts, the pipeline replaces annotations, and the two never tangle.
 - `SearchSpec`: portal-neutral search intent, built once per profile and handed
-  to every scraper, the filter, and the notification.
+  to every scraper and the filter.
 
 ### Scrapers
 
@@ -203,21 +198,17 @@ tests pinning current outcomes first.
 `adapters/config/schema.py` is the single source of truth for config shape,
 defaults, and normalization. Strict pydantic v2 (`extra="forbid"`, so a typo is
 an error with a suggestion). `loader.py` validates, cross-checks each `place`,
-and returns a plain dict with the SMTP secret unwrapped. `paths.py` resolves
-config and data locations (env overrides, then repo-local if a config is there,
-then XDG).
+and returns a plain dict. `paths.py` resolves config and data locations (env
+overrides, then repo-local if a config is there, then XDG).
 
-### Notification
+### Notification channels
 
-`services/notify.py::build_notification` assembles a channel-agnostic
-`Notification` (score-sorted listings, disappeared entries, a subject line) from
-the run's diff. A `Notifier` is anything with a `send(notification) -> bool`.
-`adapters/notifiers/smtp.py::SmtpNotifier` is the only one today: one Czech
-HTML and text email per profile, with image, price (and old price on a drop),
-details, source and cross-source badges, a Google Maps link (address-based, GPS
-as fallback), and an optional disappeared section. `cli/main.py` falls back to
-a no-op notifier that only logs when a profile has no `to` recipients, so the
-run still persists.
+The engine knows nothing about email, recipients or languages. A notification
+channel is a client of the HTTP API, like the panel: it reads new listings and
+price drops through the API and its event stream, keeps its own record of what
+it delivered, retries a failed delivery itself, and owns its wording. No
+channel exists yet, so scans are quiet outside the panel. ADR 10 records the
+decision.
 
 ## Storage
 
@@ -282,8 +273,8 @@ in order:
 2. **Robustness**: a real test pyramid (pure unit, recorded-fixture contract,
    nightly live-drift, e2e), property tests, boundary pins on the tuned dedup and
    scoring constants, CI.
-3. **Quick-glance UX**: a settled card design, a better email, non-SMTP channels
-   (Telegram, ntfy, webhook), score explainability.
+3. **Quick-glance UX**: a settled card design, notification channels as API
+   clients (email, Telegram, ntfy, webhook), score explainability.
 4. **Desktop app**: a Tauri and SvelteKit shell over a Python sidecar that
    imports this exact `services` layer, with a signed auto-updater (scrapers rot,
    and fixes have to reach non-technical users on their own). The package is the

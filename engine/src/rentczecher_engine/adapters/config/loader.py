@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from rentczecher_engine.adapters.config.schema import Config, StrictModel, field_aliases
+from rentczecher_engine.adapters.config.schema import Config, StrictModel
 from rentczecher_engine.adapters.scrapers.location_resolver import resolve
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError
 
@@ -31,11 +31,7 @@ def load_config(path: Path) -> dict:
                 f"{path.name}: profiles.{profile_id}.search.place: {error}"
             ) from error
 
-    dumped = config.model_dump(by_alias=True)
-    # SecretStr survives model_dump; the pipeline needs the plain value and
-    # this is the one place typed config and plain dicts meet.
-    dumped["email"]["smtp_password"] = config.email.smtp_password.get_secret_value()
-    return dumped
+    return config.model_dump()
 
 
 def _readable(filename: str, error: ValidationError) -> str:
@@ -67,4 +63,4 @@ def _field_names_at(parents: tuple) -> list[str]:
             # dict[str, Model] fields descend into the value type on the
             # NEXT path part (the dict key), which carries no fields itself.
             model = args[1] if args else annotation
-    return field_aliases(model) if getattr(model, "model_fields", None) else []
+    return list(model.model_fields) if getattr(model, "model_fields", None) else []

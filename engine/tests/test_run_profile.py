@@ -66,7 +66,7 @@ def _scraper(listings=(), error=None):
 
 def _profile_config(scrapers=("sreality",), **overrides):
     config = dict(
-        id="praha7-byty", name="Praha 7 byty", to=["owner@example.com"],
+        id="praha7-byty", name="Praha 7 byty",
         search={"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
         scrapers=list(scrapers),
     )
