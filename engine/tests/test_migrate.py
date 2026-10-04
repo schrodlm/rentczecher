@@ -5,11 +5,15 @@ Run: python3 -m pytest tests/test_migrate.py -v
 
 import shutil
 import sqlite3
+from typing import get_args
 
 import pytest
 
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS
 from rentczecher_engine.domain.disposition import ATYPICAL, Disposition
+from rentczecher_engine.domain.location import PlaceKind
+from rentczecher_engine.domain.profile import EstateType, OfferType
 
 EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
@@ -19,6 +23,19 @@ EXPECTED_TABLES = {
     "profile_criteria", "profile_portals", "profile_preferences",
     "preferred_dispositions", "preferred_places",
 }
+
+
+def _db_at_version(tmp_path, version):
+    partial = tmp_path / "migrations"
+    partial.mkdir()
+    for path in migrate.MIGRATIONS_DIR.glob("*.sql"):
+        if int(path.name.split("_")[0]) <= version:
+            shutil.copy(path, partial / path.name)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(migrate, "MIGRATIONS_DIR", partial)
+        conn = connection.connect(tmp_path / "t.db")
+        assert migrate.apply_pending(conn)[-1] == version
+    return conn
 
 
 class TestConnectionSetup:
@@ -129,19 +146,8 @@ class TestDispositionsMigration:
     """The dispositions table holds the parser's vocabulary, and existing
     properties gain the code their raw text names."""
 
-    def _db_at_version_9(self, tmp_path):
-        partial = tmp_path / "migrations"
-        partial.mkdir()
-        for path in migrate.MIGRATIONS_DIR.glob("000[1-9]_*.sql"):
-            shutil.copy(path, partial / path.name)
-        with pytest.MonkeyPatch.context() as patch:
-            patch.setattr(migrate, "MIGRATIONS_DIR", partial)
-            conn = connection.connect(tmp_path / "t.db")
-            assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        return conn
-
     def test_backfill_maps_raw_texts_to_disposition_codes(self, tmp_path):
-        conn = self._db_at_version_9(tmp_path)
+        conn = _db_at_version(tmp_path, 9)
         raw_texts = {"layout": "2+KK", "studio": "Garsoniéra", "atypical": "Atypický",
                      "building": "Rodinný", "missing": None}
         for property_id, raw_text in raw_texts.items():
@@ -165,6 +171,152 @@ class TestDispositionsMigration:
         seeded = {row[0]: Disposition(rooms=row[1], kitchen=row[2])
                   for row in conn.execute("SELECT code, rooms, kitchen FROM dispositions")}
         assert seeded == parseable
+
+
+class TestProfilesMigration:
+    """Profiles gain their criteria and preferences tables, earlier profile
+    rows go with their tracking, and the lookups hold the engine's
+    vocabularies."""
+
+    NOW = "2026-10-04T00:00:00+00:00"
+
+    VALID_CRITERIA = {
+        "profile_id": "p", "offer_type": "rent", "estate_type": "flat", "place_kind": "obvod",
+        "place_code": 78, "min_price": 1, "max_price": 2, "min_size_m2": 1, "min_land_m2": 1,
+        "min_rooms": 2, "max_rooms": 2, "kitchen": "kitchenette",
+    }
+    INSERT_CRITERIA = """
+        INSERT INTO profile_criteria
+            (profile_id, offer_type, estate_type, place_kind, place_code, min_price, max_price,
+             min_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
+        VALUES (:profile_id, :offer_type, :estate_type, :place_kind, :place_code, :min_price, :max_price,
+                :min_size_m2, :min_land_m2, :min_rooms, :max_rooms, :kitchen)
+    """
+
+    VALID_PREFERENCES = {
+        "profile_id": "p", "price_per_m2_weight": 10, "disposition_weight": 10, "size_weight": 10,
+        "ideal_size_m2": 55, "place_weight": 10, "land_weight": 10, "ideal_land_m2": 900,
+        "price_weight": 10, "max_good_price": 4000000,
+    }
+    INSERT_PREFERENCES = """
+        INSERT INTO profile_preferences
+            (profile_id, price_per_m2_weight, disposition_weight, size_weight, ideal_size_m2,
+             place_weight, land_weight, ideal_land_m2, price_weight, max_good_price)
+        VALUES (:profile_id, :price_per_m2_weight, :disposition_weight, :size_weight, :ideal_size_m2,
+                :place_weight, :land_weight, :ideal_land_m2, :price_weight, :max_good_price)
+    """
+
+    def _migrated_with_profile(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        return conn
+
+    def test_lookups_hold_the_engine_vocabularies(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        assert {row[0] for row in conn.execute("SELECT name FROM portals")} == set(ALL_SCRAPERS)
+        assert {row[0] for row in conn.execute("SELECT name FROM offer_types")} == set(get_args(OfferType))
+        assert {row[0] for row in conn.execute("SELECT name FROM estate_types")} == set(get_args(EstateType))
+        assert {row[0] for row in conn.execute("SELECT name FROM place_kinds")} == set(get_args(PlaceKind))
+
+    def test_earlier_profiles_go_with_their_tracking_and_listings_stay(self, tmp_path):
+        conn = _db_at_version(tmp_path, 10)
+        conn.execute("INSERT INTO profiles (id, name, active, created_at) VALUES ('old', 'Old', 1, ?)",
+                     (self.NOW,))
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (self.NOW,))
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('sreality:1', 'x', 'sreality', 'u', ?)", (self.NOW,))
+        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
+                     "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
+        conn.commit()
+        assert migrate.apply_pending(conn) == [11]
+        assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
+        assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
+        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
+
+    def test_a_full_valid_profile_is_accepted(self, tmp_path):
+        conn = self._migrated_with_profile(tmp_path)
+        conn.execute(self.INSERT_CRITERIA, self.VALID_CRITERIA)
+        conn.execute(self.INSERT_PREFERENCES, self.VALID_PREFERENCES)
+        conn.execute("INSERT INTO profile_portals (profile_id, portal) VALUES ('p', 'sreality')")
+        conn.execute("INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '2+kk', 1)")
+        conn.execute("INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) "
+                     "VALUES ('p', 'cast_obce', 490024, 1)")
+
+    @pytest.mark.parametrize("column, value", [
+        ("min_price", 0), ("max_price", -1), ("min_size_m2", 0), ("min_land_m2", 0),
+        ("min_rooms", 0), ("max_rooms", 10), ("kitchen", "none"),
+        ("offer_type", "lease"), ("estate_type", "garage"), ("place_kind", "street"),
+    ])
+    def test_criteria_reject_an_out_of_range_value(self, tmp_path, column, value):
+        conn = self._migrated_with_profile(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(self.INSERT_CRITERIA, {**self.VALID_CRITERIA, column: value})
+
+    @pytest.mark.parametrize("low, high", [("min_price", "max_price"), ("min_rooms", "max_rooms")])
+    def test_criteria_reject_a_range_running_backwards(self, tmp_path, low, high):
+        conn = self._migrated_with_profile(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(self.INSERT_CRITERIA, {**self.VALID_CRITERIA, low: 3, high: 2})
+
+    @pytest.mark.parametrize("setting", ["ideal_size_m2", "ideal_land_m2", "max_good_price"])
+    @pytest.mark.parametrize("setting_value", [None, 0])
+    def test_a_weighted_preference_needs_a_positive_setting(self, tmp_path, setting, setting_value):
+        conn = self._migrated_with_profile(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(self.INSERT_PREFERENCES, {**self.VALID_PREFERENCES, setting: setting_value})
+
+    def test_a_paused_profile_records_when_it_was_paused(self, tmp_path):
+        conn = self._migrated_with_profile(tmp_path)
+        conn.execute("UPDATE profiles SET paused_at = ? WHERE id = 'p'", (self.NOW,))
+        assert conn.execute("SELECT paused_at FROM profiles").fetchone()[0] == self.NOW
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(profiles)")}
+        assert "active" not in columns
+
+    def test_deleting_a_profile_deletes_its_own_rows(self, tmp_path):
+        conn = self._migrated_with_profile(tmp_path)
+        conn.execute(self.INSERT_CRITERIA, self.VALID_CRITERIA)
+        conn.execute(self.INSERT_PREFERENCES, self.VALID_PREFERENCES)
+        conn.execute("INSERT INTO profile_portals (profile_id, portal) VALUES ('p', 'sreality')")
+        conn.execute("INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '2+kk', 1)")
+        conn.execute("INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) "
+                     "VALUES ('p', 'cast_obce', 490024, 1)")
+        conn.execute("DELETE FROM profiles WHERE id = 'p'")
+        for table in ("profile_criteria", "profile_preferences", "profile_portals",
+                      "preferred_dispositions", "preferred_places"):
+            assert conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0, table
+
+    @pytest.mark.parametrize("stmt", [
+        "INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '3+kk', 1)",
+        "INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) VALUES ('p', 'obvod', 78, 1)",
+    ])
+    def test_a_rank_is_unique_within_a_profile(self, tmp_path, stmt):
+        conn = self._migrated_with_profile(tmp_path)
+        conn.execute("INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '2+kk', 1)")
+        conn.execute("INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) "
+                     "VALUES ('p', 'cast_obce', 490024, 1)")
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(stmt)
+
+    @pytest.mark.parametrize("stmt", [
+        "INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '2+kk', 0)",
+        "INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) VALUES ('p', 'obvod', 78, 0)",
+    ])
+    def test_a_rank_starts_at_one(self, tmp_path, stmt):
+        conn = self._migrated_with_profile(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(stmt)
+
+    @pytest.mark.parametrize("stmt", [
+        "INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) VALUES ('p', 'street', 1, 1)",
+        "INSERT INTO profile_portals (profile_id, portal) VALUES ('p', 'idnes')",
+        "INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '10+kk', 1)",
+    ])
+    def test_an_unknown_place_kind_portal_or_disposition_is_rejected(self, tmp_path, stmt):
+        conn = self._migrated_with_profile(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(stmt)
 
 
 class TestConcurrentWriters:
