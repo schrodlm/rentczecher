@@ -145,13 +145,12 @@ price params, because those params aren't reliable.
 
 ### Location resolution
 
-`location_resolver.resolve(place)` turns a place slug or free-text name into a
-`PlaceParams` row read from the gazetteer's portal tables, or raises
-`PlaceNotFoundError` with did-you-mean suggestions. A search place is a kraj, an
-okres or a Praha obvod, and its slug is computed from its official name. Each
-scraper narrows the row to its own typed view (`SrealityPlace`,
-`BezrealitkyPlace`, `RemaxPlace`) at construction and keeps no other portal's
-data.
+`location_resolver.resolve(place)` turns a search place, a `PlaceRef` of RÚIAN
+kind and code, into a `PlaceParams` row read from the gazetteer's portal
+tables, or raises `PlaceNotFoundError` for a place no portal searches. A search
+place is a kraj, an okres or a Praha obvod. Each scraper narrows the row to its
+own typed view (`SrealityPlace`, `BezrealitkyPlace`, `RemaxPlace`) at
+construction and keeps no other portal's data.
 
 Config loading resolves every profile's `place` up front, so an unresolvable
 place is a config error before any scraper runs.
