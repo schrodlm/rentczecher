@@ -3,6 +3,7 @@
 Run: python3 -m pytest tests/test_config_schema.py -v
 """
 
+import copy
 from pathlib import Path
 
 import pytest
@@ -33,7 +34,6 @@ def _write(tmp_path, config):
 
 
 def _broken(mutate):
-    import copy
     config = copy.deepcopy(VALID)
     mutate(config)
     return config
@@ -123,6 +123,24 @@ class TestLoader:
         broken = _broken(lambda c: c["profiles"]["p"]["scrapers"].append("idnes"))
         with pytest.raises(ConfigError, match="unknown scraper 'idnes'"):
             load_config(_write(tmp_path, broken))
+
+    def test_unparseable_criterion_disposition_is_named(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(dispositions=["2+kk", "2+2"]))
+        with pytest.raises(ConfigError, match=r"profiles\.p\.search\.dispositions.*not a disposition: 2\+2"):
+            load_config(_write(tmp_path, broken))
+
+    def test_unparseable_preferred_disposition_is_named(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"].update(
+            scoring={"disposition_weight": 30, "preferred_dispositions": ["Rodinný"]}))
+        with pytest.raises(ConfigError,
+                           match=r"profiles\.p\.scoring\.preferred_dispositions.*not a disposition: Rodinný"):
+            load_config(_write(tmp_path, broken))
+
+    def test_studio_and_atypical_are_accepted_dispositions(self, tmp_path):
+        config = copy.deepcopy(VALID)
+        config["profiles"]["p"]["search"]["dispositions"] = ["garsoniéra", "atypický"]
+        loaded = load_config(_write(tmp_path, config))
+        assert loaded["profiles"]["p"]["search"]["dispositions"] == ["garsoniéra", "atypický"]
 
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))
