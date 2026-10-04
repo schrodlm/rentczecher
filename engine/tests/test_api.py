@@ -237,7 +237,7 @@ class TestListListings:
         assert location["okres"] is None
         assert location["obec"]["name"] == "Praha"
         assert location["obvod"]["name"] == "Praha 7"
-        assert location["mestska_cast"] is None
+        assert location["mestska_cast"]["name"] == "Praha 7"
         assert location["cast_obce"]["name"] == "Holešovice"
         assert location["ulice"]["name"] == "Přístavní"
         assert location["cislo_popisne"] == "1401"
