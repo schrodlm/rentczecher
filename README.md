@@ -19,16 +19,15 @@ hosted. Your searches and your history stay on your disk.
   Next.js data), RE/MAX Czech (HTML). Each is a separate scraper. If one breaks
   or a site is down, the others still run.
 - **Any search, described once.** A profile says what you're looking for (offer
-  type, estate type, a place, price bounds, minimum size or land) and which
-  portals to ask. You never paste portal-specific URLs or region ids. A place
-  name is resolved to each portal's own search parameters for you.
-- **Any Czech location by name.** `place: obvod Praha 7`, `place: okres Beroun`,
-  `place: kraj Plzeňský`. Any Czech kraj, okres or Praha obvod by its kind and
-  name. An unknown or ambiguous name fails loudly instead of silently searching
-  the wrong place.
+  type, estate type, a place, price bounds, minimum size or land, a room range)
+  and which portals to ask. You never paste portal-specific URLs or region ids.
+  The place is resolved to each portal's own search parameters for you.
+- **Official Czech places.** A search place is a kraj, an okres or a Praha
+  obvod. A place no portal searches fails loudly instead of silently searching
+  the wrong one.
 - **Multiple independent profiles.** Flat rentals in Praha 7, houses for sale in
-  Domažlice. Each has its own portals, filters, and scoring, all from one config
-  file and one cron entry.
+  Domažlice. Each has its own portals, criteria and preferences, and one cron
+  entry scans them all.
 - **Cross-portal dedup.** The same flat posted on Sreality and Bezrealitky is
   shown once, with links to its other portals, keeping whichever copy carries
   more detail.
@@ -53,104 +52,57 @@ hosted. Your searches and your history stay on your disk.
 
 ```bash
 python3 scripts/bootstrap.py   # checks tools, installs the environments
-cp engine/config.example.yaml ~/.config/rentczecher/config.yaml
 ```
 
 For scheduled runs, register a cron entry yourself pointing at
 `engine/.venv/bin/rentczecher` (a packaged desktop app with its own scheduling is
 in the works).
 
-Then edit your config and try a run that changes nothing:
+With at least one profile in the database (see [Profiles](#profiles)), try a
+run that changes nothing:
 
 ```bash
-# 1) fill in your search profiles
-$EDITOR ~/.config/rentczecher/config.yaml
-
-# 2) check it: typos and bad values are reported with the exact offending key
-engine/.venv/bin/rentczecher config validate
-
-# 3) dry run: scrape and log the counts, write no state
-.venv/bin/rentczecher --dry-run
-.venv/bin/rentczecher --dry-run --profile praha7-byty   # just one profile
+# dry run: scrape and log the counts, write no state
+engine/.venv/bin/rentczecher --dry-run
+engine/.venv/bin/rentczecher --dry-run --profile <profile id>   # just one profile
 ```
 
-## Configuring your search
+## Profiles
 
-The config has an optional `schedule` and any number of named `profiles`. Each
-profile is a self-contained search.
+Profiles are user data in the database. Creating them from the app comes with
+the profile API and the editor screen (issues #16 and #11). Today a profile
+only exists through a scenario seed or the repository.
 
-```yaml
-schedule:
-  cron_interval_hours: 3          # informational, the cron entry is what runs
+Each profile is a self-contained search with three parts:
 
-profiles:
-  praha7-byty:
-    name: "Praha 7 – byty k pronájmu"
-    enabled: true
-
-    search:
-      offer_type: rent            # rent | sale
-      estate_type: flat           # flat | house | land | cottage
-      place: obvod Praha 7        # a kraj, okres or Praha obvod, by its kind and name
-      max_price: 25000
-      min_rooms: 2                # 1-9, leave out for no bound
-      max_rooms: 2                # with no kitchen set, 2+kk and 2+1 both match
-
-    scrapers: [sreality, bezrealitky, remax]
-
-    scoring:
-      price_per_m2_weight: 40
-      disposition_weight: 30
-      preferred_dispositions: ["2+kk", "2+1", "3+kk"]
-      size_weight: 15
-      ideal_size_m2: 55
-      place_weight: 15
-      preferred_places: [cast_obce Bubeneč, obvod Praha 7]   # by kind and name, best first
-
-  domazlice-domy:
-    name: "Domažlicko – domy a chalupy"
-
-    search:
-      offer_type: sale
-      estate_type: house
-      place: okres Domažlice
-      max_price: 5000000
-      min_land_m2: 500
-
-    scrapers: [sreality, bezrealitky, remax]
-
-    scoring:
-      land_weight: 40
-      ideal_land_m2: 2000
-      price_weight: 30
-      max_good_price: 3000000
-      size_weight: 30
-      ideal_size_m2: 150
-```
-
-`engine/config.example.yaml` is the full reference with every option and its default.
+- **Criteria** decide whether a listing is shown: rent or sale, the estate type
+  (flat, house, land or cottage), the search place, price bounds, a minimum
+  size or land area, a room range from 1 to 9 and a kitchen kind. An unset
+  bound is no bound.
+- **Portals** are the sites it scans. The location comes entirely from the
+  search place.
+- **Preferences** only score and order what is shown. Each has a weight, and
+  all but price per m² have a setting: an ideal size or land area, a good
+  price, and ranked preferred dispositions and places. A setting may be empty
+  only while its weight is 0.
 
 A few things worth knowing:
 
-- **`scrapers` is a list of portal names**, like `[sreality, bezrealitky, remax]`.
-  There are no per-portal parameter blocks. The location comes entirely from
-  `search.place`.
-- **Scoring weights are relative and sum to a ceiling you set.** A component only
-  contributes when its weight is set and the listing has the field it needs. No
-  land area, and the land component just doesn't fire. Weights that add up to
-  about 100 make the score read as a percentage.
-- **The config is strictly validated.** An unknown key is an error, not a silent
-  no-op. That includes the pre-`place` per-portal keys from very old configs. Run
-  `config validate` to see exactly what's wrong before a cron run does.
+- **Scoring weights are relative.** A component only contributes when its
+  weight is set and the listing has the field it needs. No land area, and the
+  land component just doesn't fire. Weights that add up to about 100 make the
+  score read as a percentage.
+- **Preferred places match by location.** A listing matches a preferred place
+  when its resolved location is that place or lies inside it. A flat on
+  Přístavní matches a preferred obvod Praha 7. A listing with no location
+  matches none.
 
 ## CLI
 
 ```bash
-rentczecher                          # run every enabled profile (what cron calls)
-rentczecher --profile praha7-byty    # run one profile
+rentczecher                          # scan every unpaused profile (what cron calls)
+rentczecher --profile <profile id>   # scan one profile, by its UUID
 rentczecher --dry-run                # scrape and log counts, no state written
-rentczecher --dry-run --profile X    # dry-run a single profile
-rentczecher config validate          # validate config.yaml (--path checks another file)
 rentczecher db migrate               # create/upgrade the SQLite schema (see note below)
 ```
 
@@ -164,20 +116,13 @@ command comes from the engine's Python package, `rentczecher_engine`.
 
 ## Where things live
 
-By default rentczecher follows the XDG base directories:
-
 | | Default path |
 |---|---|
-| Config | `~/.config/rentczecher/config.yaml` |
-| Data (history, pid lock, logs) | `~/.local/share/rentczecher/` |
+| Data (database, pid lock) | `~/.local/share/rentczecher/` |
 | Cron log | `~/.local/share/rentczecher/cron.log` |
 
-Override order: the `RENTCZECHER_CONFIG` and `RENTCZECHER_DATA_DIR` environment
-variables win outright. Otherwise, if a `config.yaml` sits in `engine/`, both
-config and data resolve there, which is handy for a self-contained checkout.
-Otherwise the XDG defaults above. Data always follows the config anchor, so one
-installation never splits its history across two homes. The installer warns you
-if it finds stranded history from an earlier repo-local setup.
+Set `RENTCZECHER_DATA_DIR` to put the data elsewhere. A checkout whose
+`engine/data/` already holds `rentczecher.db` uses that folder instead.
 
 ```bash
 tail -f ~/.local/share/rentczecher/cron.log   # watch the scheduled runs
@@ -188,9 +133,7 @@ tail -f ~/.local/share/rentczecher/cron.log   # watch the scheduled runs
 Places come from the gazetteer, a SQLite file shipped with the engine
 (`engine/src/rentczecher_engine/adapters/geocoding/gazetteer.sqlite`). It holds
 every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
-code, and how each portal names the places it can search by. `place:` names a
-kraj, an okres or a Praha obvod by its kind and name (`obvod Praha 7`,
-`okres Domažlice`).
+code, and how each portal names the places it can search by.
 [docs/places.md](docs/places.md) describes the units, and
 [docs/locating.md](docs/locating.md) how a listing's location text becomes them.
 
@@ -242,10 +185,11 @@ cd panel; $env:RENTCZECHER_SCENARIO="price-drops"; npm run tauri dev  # Windows
 ```
 
 Each scenario is a YAML file in `engine/tests/scenarios/` that states what
-happened: the listings each scan saw, then which ones you viewed. The debug app
-replays it through the engine into a scratch folder and runs there, so your real
-config and data are never touched. Tests start from the same files. To add one,
-write a new file next to the others. `fresh-scrape.yaml` shows every part.
+happened: the profile's search, the listings each scan saw, then which ones you
+viewed. The debug app seeds the profile into a scratch database, replays the
+scans through the engine and runs there, so your real data is never touched.
+Tests start from the same files. To add one, write a new file next to the
+others. `fresh-scrape.yaml` shows every part.
 
 ## Building the desktop app
 
@@ -261,8 +205,8 @@ its own installers, since the frozen engine cannot be cross-compiled.
 ## Troubleshooting
 
 - **A scraper suddenly returns 0 results.** Usually the portal changed its page
-  structure or ids. `config validate` and `--dry-run` show which portal. If it's
-  a location taxonomy change, rebuild the gazetteer (above).
+  structure or ids. `--dry-run` shows which portal. If it's a location
+  taxonomy change, rebuild the gazetteer (above).
 - **Sreality returns all 404s.** Sreality's API blanket-404s some networks
   (datacenter and VPN egress) while its homepage serves 200 fine. This is almost
   always your connection being blocked, not a bug. It works from ordinary

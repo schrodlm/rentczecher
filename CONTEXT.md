@@ -56,10 +56,11 @@ _Avoid_: search, watch, subscription
 
 **Criteria**:
 What a listing must satisfy to be shown for a profile: the search place,
-rent or sale, the type of property, the price range, the minimum size or land
-and the range of dispositions. A listing failing one is never shown. A listing
-that cannot be confirmed inside the search place fails it, but a missing size,
-land or disposition does not fail a bound, since the portal simply did not say.
+rent or sale, the type of property, the price range, the minimum size or land,
+the room range and the kitchen kind. A listing failing one is never shown. A
+listing that cannot be confirmed inside the search place fails it, but a
+missing size, land or disposition does not fail a bound, since the portal
+simply did not say.
 _Avoid_: filters, search parameters
 
 **Search place**:

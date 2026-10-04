@@ -27,9 +27,7 @@ is a foreign key. Overlaps, such as a část obce crossing two Prague obvody,
 are link tables computed from address points, since every address belongs to
 exactly one unit of each kind. It needs no network.
 
-**Search places.** A profile names its search place by kind and code. Until
-profiles move into the database (#16), the config writes it as its kind and
-name, which the gazetteer turns into the code.
+**Search places.** A profile names its search place by kind and code.
 The gazetteer's portal tables map each searchable place (every kraj, okres
 and Praha obvod) to each portal's own id for it. The gazetteer build harvests
 the ids from the portals, joins each to its official place by name and

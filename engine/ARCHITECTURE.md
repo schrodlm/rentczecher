@@ -27,7 +27,7 @@ A single installable package with light hexagonal layering:
 ```
 src/rentczecher_engine/
   domain/        frozen dataclasses, pure. no I/O, no deps on adapters
-  adapters/      the edges: scrapers, config, storage, geocoding, HTTP API
+  adapters/      the edges: scrapers, storage, geocoding, HTTP API, config (data paths)
   services/      use-cases and orchestration over the domain
   cli/           argparse entry point. wires adapters to the pipeline
 ```
@@ -49,7 +49,7 @@ pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
 ## The live pipeline
 
 `services/pipeline.py::run_profile(profile, deps, dry_run=False)` is
-the whole orchestration, called once per enabled profile by `cli/main.py::run`.
+the whole orchestration, called once per unpaused profile by `cli/main.py::run`.
 It returns a `ProfileRunResult` (status, per-scraper health, counts) that the
 CLI logs. `PipelineDeps` bundles everything the run needs behind protocols:
 `RunStore` (satisfied by `SqliteRunStore`), a `Gazetteer`, the
@@ -58,10 +58,10 @@ structural protocols, `services/` never imports the adapters that implement
 them.
 
 ```
-config.yaml
-   │  load + strict pydantic validation (adapters/config)
+profiles in the database
+   │  SqliteProfileRepository.list_profiles()          # adapters/repositories
    ▼
-Criteria, Preferences                                   # typed, portal-neutral
+Profile: portals, Criteria, Preferences                 # typed, portal-neutral
    │
    ▼
 scrape_all(scrapers, criteria, client)                  # services/scrape, per scraper:
@@ -69,13 +69,13 @@ scrape_all(scrapers, criteria, client)                  # services/scrape, per s
    │      fetch → parse → list[Listing]                   fetch/parse split
    │      (ScraperBrokenError = contract changed, isolated per scraper)
    ▼
-apply_filters(listings, criteria)                       # disposition / min size / min land
+apply_filters(listings, criteria)                       # room range, kitchen / min size / min land
    ▼
 locate_listings(listings, gazetteer)                    # services/locate
    ▼
 cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
-compute_score(listing, profile)                         # services/score
+compute_score(listing, preferences)                     # services/score
    ▼
 store.pending_disappeared(...)   and   classify(survivors, seen_ids, latest_prices)
    ▼
@@ -114,8 +114,15 @@ without corrupting it.
   facts. Every field of both inner records is exposed as a read-only property.
   The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
   replaces facts, the pipeline replaces annotations, and the two never tangle.
-- `Criteria`: portal-neutral search intent, built once per profile and handed
-  to every scraper and the filter.
+- `Profile` (frozen): one saved search, read from the database. Its id (a
+  UUID), name, `enabled` (false while paused), its portals, its `Criteria`
+  and its `Preferences`.
+- `Criteria`: portal-neutral search intent, handed to every scraper and the
+  filter. The search place is a `PlaceRef` (RÚIAN kind and code).
+- `Preferences`: the scoring weights and their settings. Price per m² has a
+  weight only. Its curve is fixed in `services/score.py`. Scoring has no
+  hidden defaults. A preferred place matches when the listing's resolved location is
+  that place or lies inside it.
 
 ### Scrapers
 
@@ -152,8 +159,8 @@ place is a kraj, an okres or a Praha obvod. Each scraper narrows the row to its
 own typed view (`SrealityPlace`, `BezrealitkyPlace`, `RemaxPlace`) at
 construction and keeps no other portal's data.
 
-Config loading resolves every profile's `place` up front, so an unresolvable
-place is a config error before any scraper runs.
+That error fails only that profile's scan, before any listing is fetched.
+The other profiles still run.
 
 ### Offline geocoder (RÚIAN gazetteer)
 
@@ -192,13 +199,19 @@ listing, a missed one only repeats it. The weights and thresholds are calibrated
 against owner-labeled real cross-portal pairs, and move only with boundary
 tests pinning current outcomes first.
 
-### Config
+### Profiles and the data directory
 
-`adapters/config/schema.py` is the single source of truth for config shape,
-defaults, and normalization. Strict pydantic v2 (`extra="forbid"`, so a typo is
-an error with a suggestion). `loader.py` validates, cross-checks each `place`,
-and returns the typed profiles (`list[Profile]`). `paths.py` resolves config and data locations (env
-overrides, then repo-local if a config is there, then XDG).
+Profiles are user data in the database. Creating them from the app comes with
+the profile API and the editor screen (#16, #11). Until then a profile only
+exists through a scenario seed or the repository. `SqliteProfileRepository` stores a profile across the profile tables in
+[SCHEMA.md](SCHEMA.md) and reads it back as a typed `Profile`. The domain
+types reject bad values on construction, and the schema's constraints refuse
+them again on write.
+
+`adapters/config/paths.py` resolves the data directory, which holds the
+database and the pid lock: `RENTCZECHER_DATA_DIR` when set, else the
+repository's `engine/data/` when it already holds `rentczecher.db`, else
+`$XDG_DATA_HOME/rentczecher`.
 
 ### Notification channels
 
