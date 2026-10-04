@@ -13,17 +13,19 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import get_args
 
 import yaml
 
-from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.domain.location import ParsedPlace, PlaceKind
 from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
+from tests.profiles import preferences
 
 SCENARIOS_DIR = Path(__file__).parent
 
@@ -35,6 +37,9 @@ DEFAULT_LISTING = {
     "size_m2": 50,
     "disposition_raw_text": "2+kk",
 }
+
+_SEARCH_KEYS = {"offer_type", "estate_type", "place", "min_price", "max_price",
+                "min_size_m2", "min_land_m2", "min_rooms", "max_rooms", "kitchen"}
 
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
@@ -107,15 +112,14 @@ class Scenario:
         unknown = set(raw) - {"profile", "scans", "viewed"}
         if unknown:
             raise ValueError(f"scenario {name!r}: unknown keys {sorted(unknown)}")
+        unknown_profile = set(raw["profile"]) - {"name", "search"}
+        if unknown_profile:
+            raise ValueError(f"scenario {name!r}: unknown profile keys {sorted(unknown_profile)}")
         scans = tuple(
             ScenarioScan(at=offset_from_now(scan["at"]), listings=tuple(scan.get("listings") or ()))
             for scan in raw.get("scans", ())
         )
         return cls(name, raw["profile"], scans, tuple(raw.get("viewed", ())))
-
-    @property
-    def profile_id(self) -> str:
-        return self.name
 
     def portals(self) -> list[str]:
         """Every portal any scan saw a listing from, so each scan runs them
@@ -123,22 +127,15 @@ class Scenario:
         sources = {_source_of(listing["id"]) for scan in self.scans for listing in scan.listings}
         return sorted(sources)
 
-    def config(self) -> dict:
-        """The config file a scenario's data folder runs under."""
-        profile = {**self.profile, "scrapers": self.portals()}
-        return {"profiles": {self.profile_id: profile}}
-
-    def replay_into(self, home: Path, now: datetime) -> None:
-        """Writes home/config.yaml and replays every scan, then every view,
-        into a fresh home/data/rentczecher.db. A home that already holds a
-        database is refused, since replaying on top would stack two stories."""
+    def replay_into(self, home: Path, now: datetime) -> str:
+        """Adds the scenario's profile, dated at its first scan, to a fresh
+        home/data/rentczecher.db, replays every scan, then every view, and
+        returns the profile's id. A home that already holds a database is
+        refused, since replaying on top would stack two stories."""
         if (home / "data" / "rentczecher.db").exists():
             raise ValueError(f"{home} already holds a database, replay into a fresh folder")
-        config = self.config()
-        home.mkdir(parents=True, exist_ok=True)
-        (home / "config.yaml").write_text(yaml.safe_dump(config, allow_unicode=True), encoding="utf-8")
         data_dir = home / "data"
-        data_dir.mkdir(exist_ok=True)
+        data_dir.mkdir(parents=True, exist_ok=True)
 
         clock = ReplayClock(now)
         conn = connection.connect(data_dir / "rentczecher.db")
@@ -146,9 +143,11 @@ class Scenario:
             migrate.apply_pending(conn)
             store = SqliteRunStore(conn, now=clock)
             gazetteer = Gazetteer()
-            # Read back through the engine's own loader, so the pipeline sees
-            # the profile exactly as the app would.
-            (profile,) = load_config(home / "config.yaml")
+            if self.scans:
+                clock.current = now + self.scans[0].at
+            profile = SqliteProfileRepository(conn, now=clock).add(
+                self.profile["name"], tuple(self.portals()), self._criteria(gazetteer), preferences())
+            conn.commit()
             for scan in self.scans:
                 clock.current = now + scan.at
                 deps = PipelineDeps(
@@ -161,9 +160,36 @@ class Scenario:
                 run_profile(profile, deps)
             clock.current = now
             for listing_id in self.viewed:
-                store.mark_viewed(self.profile_id, listing_id)
+                store.mark_viewed(profile.id, listing_id)
         finally:
             conn.close()
+        return profile.id
+
+    def _criteria(self, gazetteer: Gazetteer) -> Criteria:
+        """The profile's search, its place written by kind and name, like
+        'obvod Praha 7'. An unknown key or place kind, or a place name that
+        is unknown or ambiguous, fails loudly."""
+        search = self.profile["search"]
+        unknown = set(search) - _SEARCH_KEYS
+        if unknown:
+            raise ValueError(f"scenario {self.name!r}: unknown search keys {sorted(unknown)}")
+        kind, _, place_name = search["place"].partition(" ")
+        place_kinds = get_args(PlaceKind)
+        if kind not in place_kinds:
+            raise ValueError(
+                f"scenario {self.name!r}: unknown place kind {kind!r}, expected one of {list(place_kinds)}")
+        return Criteria(
+            offer_type=search["offer_type"],
+            estate_type=search["estate_type"],
+            place=gazetteer.place_named(kind, place_name),
+            min_price=search.get("min_price"),
+            max_price=search.get("max_price"),
+            min_size_m2=search.get("min_size_m2"),
+            min_land_m2=search.get("min_land_m2"),
+            min_rooms=search.get("min_rooms"),
+            max_rooms=search.get("max_rooms"),
+            kitchen=search.get("kitchen"),
+        )
 
     def _scrapers_for(self, scan: ScenarioScan, scraped_at: datetime) -> dict[str, Callable[[Criteria, object], ScenarioScraper]]:
         by_portal: dict[str, list[Listing]] = {portal: [] for portal in self.portals()}

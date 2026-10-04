@@ -1,6 +1,8 @@
 """Tests for the scenario loader and the shipped scenarios: each replays into
 the inbox its file describes."""
 
+import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -13,38 +15,38 @@ NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
 
 
 def replayed(name, tmp_path):
-    """The store over a scenario replayed into tmp_path, plus its raw connection."""
-    Scenario.load(name).replay_into(tmp_path, NOW)
+    """The store over a scenario replayed into tmp_path, and the replayed
+    profile's id."""
+    profile_id = Scenario.load(name).replay_into(tmp_path, NOW)
     conn = connection.connect(tmp_path / "data" / "rentczecher.db")
-    return SqliteRunStore(conn), conn
+    return SqliteRunStore(conn), profile_id
 
 
 @pytest.mark.parametrize("name", Scenario.names())
 def test_every_scenario_replays(name, tmp_path):
     """Each shipped scenario file loads and replays without error."""
     Scenario.load(name).replay_into(tmp_path, NOW)
-    assert (tmp_path / "config.yaml").is_file()
     assert (tmp_path / "data" / "rentczecher.db").is_file()
 
 
 def test_empty_leaves_an_empty_inbox(tmp_path):
     """A scan that found nothing leaves the profile with no cards."""
-    store, _ = replayed("empty", tmp_path)
-    assert store.inbox_listings("empty") == []
+    store, profile_id = replayed("empty", tmp_path)
+    assert store.inbox_listings(profile_id) == []
 
 
 def test_fresh_scrape_shows_new_and_viewed_listings(tmp_path):
     """The viewed list marks exactly those listings viewed, the rest stay new."""
-    store, _ = replayed("fresh-scrape", tmp_path)
-    cards = store.inbox_listings("fresh-scrape")
+    store, profile_id = replayed("fresh-scrape", tmp_path)
+    cards = store.inbox_listings(profile_id)
     assert len(cards) == 6
     assert {card.id for card in cards if card.viewed_at is not None} == {"sreality:1002", "remax:3001"}
 
 
 def test_price_drops_carries_the_earlier_price(tmp_path):
     """A listing seen again at a lower price reports the price it dropped from."""
-    store, _ = replayed("price-drops", tmp_path)
-    by_id = {card.id: card for card in store.inbox_listings("price-drops")}
+    store, profile_id = replayed("price-drops", tmp_path)
+    by_id = {card.id: card for card in store.inbox_listings(profile_id)}
     assert by_id["sreality:1101"].price == 22500
     assert by_id["sreality:1101"].price_drop_from == 25000
     assert by_id["bezrealitky:2101"].price_drop_from is None
@@ -53,25 +55,27 @@ def test_price_drops_carries_the_earlier_price(tmp_path):
 def test_price_drops_dates_listings_by_their_first_scan(tmp_path):
     """Relative scan times land on the replay's clock: first seen three days
     before now."""
-    store, _ = replayed("price-drops", tmp_path)
-    card = next(card for card in store.inbox_listings("price-drops") if card.id == "sreality:1101")
+    store, profile_id = replayed("price-drops", tmp_path)
+    card = next(card for card in store.inbox_listings(profile_id) if card.id == "sreality:1101")
     assert datetime.fromisoformat(card.first_seen_at) == NOW - timedelta(days=3)
 
 
 def test_disappeared_misses_the_listing_three_scans_in_a_row(tmp_path):
     """A listing absent from the last three scans carries three misses, its
     neighbour none."""
-    _, conn = replayed("disappeared", tmp_path)
+    profile_id = Scenario.load("disappeared").replay_into(tmp_path, NOW)
     stmt = "SELECT listing_id, miss_count FROM listing_tracking WHERE profile_id = ?"
-    misses = {row["listing_id"]: row["miss_count"] for row in conn.execute(stmt, ("disappeared",))}
+    with closing(connection.connect(tmp_path / "data" / "rentczecher.db")) as conn:
+        conn.row_factory = sqlite3.Row
+        misses = {row["listing_id"]: row["miss_count"] for row in conn.execute(stmt, (profile_id,))}
     assert misses == {"sreality:1201": 3, "sreality:1202": 0}
 
 
 def test_cross_portal_folds_the_same_flat_into_one_property(tmp_path):
     """The two postings of one flat point at each other as siblings, the
     unrelated flat has none."""
-    store, _ = replayed("cross-portal", tmp_path)
-    siblings = {card.id: {s.source for s in card.sibling_sources} for card in store.inbox_listings("cross-portal")}
+    store, profile_id = replayed("cross-portal", tmp_path)
+    siblings = {card.id: {s.source for s in card.sibling_sources} for card in store.inbox_listings(profile_id)}
     assert siblings == {"sreality:1301": {"bezrealitky"}, "bezrealitky:2301": {"sreality"}, "remax:3301": set()}
 
 

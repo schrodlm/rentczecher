@@ -42,8 +42,8 @@ class FakeRunStore:
     def prune(self, profile_id):
         self.prune_calls.append(profile_id)
 
-    def persist_outcome(self, profile_id, profile_name, outcome, located_by_id, current_ids):
-        self.persist_calls.append((profile_id, profile_name, outcome, located_by_id, current_ids))
+    def persist_outcome(self, profile_id, outcome, located_by_id, current_ids):
+        self.persist_calls.append((profile_id, outcome, located_by_id, current_ids))
 
 
 def _listing(id, source, **kw):

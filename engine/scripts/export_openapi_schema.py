@@ -25,7 +25,7 @@ def build_schema_text() -> str:
     # Schema generation only introspects routes. The app never opens this
     # path, since no request is served.
     unused_db_path = Path("unused.db")
-    api_deps = ApiDeps(profiles=(), db_path=unused_db_path, scrapers=scraper_registry())
+    api_deps = ApiDeps(db_path=unused_db_path, scrapers=scraper_registry())
     app = create_app(token="schema-export", api_deps=api_deps)
     schema = app.openapi()
     # SSE payloads ride inside the event stream, never on a route, so the

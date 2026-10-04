@@ -1,9 +1,12 @@
 """Profiles, search criteria and scoring preferences for tests: a plain
 rent/flat search of obvod Praha 7 with no bounds, every preference off unless
-a test turns it on, and an enabled profile scanning sreality with both."""
+a test turns it on, and an enabled profile scanning sreality with both, held
+in memory or stored in a database."""
 
+import sqlite3
 from dataclasses import replace
 
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria, Preferences, Profile
@@ -29,6 +32,16 @@ def profile(**overrides) -> Profile:
         criteria=criteria(), preferences=preferences(),
     )
     return replace(defaults, **overrides)
+
+
+def stored_profile(
+    conn: sqlite3.Connection, name: str = "P", portals: tuple[str, ...] = ("sreality",),
+    criteria: Criteria = criteria(), preferences: Preferences = preferences(),
+) -> Profile:
+    """A profile added to a migrated database and committed."""
+    profile = SqliteProfileRepository(conn).add(name, portals, criteria, preferences)
+    conn.commit()
+    return profile
 
 
 def layouts(*codes: str) -> tuple[Disposition, ...]:

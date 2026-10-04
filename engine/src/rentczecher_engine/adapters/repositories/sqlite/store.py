@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
-from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import InboxCard
@@ -25,7 +24,6 @@ class SqliteRunStore:
         self._conn = conn
         self._listings = SqliteListingRepository(conn, now=now)
         self._properties = SqlitePropertyRepository(conn, now=now)
-        self._profiles = SqliteProfileRepository(conn, now=now)
         self._now = now
 
     def seen_ids(self, profile_id: str) -> set[str]:
@@ -60,15 +58,14 @@ class SqliteRunStore:
         else:
             self._conn.commit()
 
-    def persist_outcome(self, profile_id: str, profile_name: str, outcome: DedupOutcome,
+    def persist_outcome(self, profile_id: str, outcome: DedupOutcome,
                         located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
-        """Writes the run's facts in one transaction: the profile row, one
-        property per real-world unit, a listing row per portal posting
+        """Writes the run's facts in one transaction: one property per
+        real-world unit, a listing row per portal posting
         (absorbed ones included, under their keeper's property), the dedup
         audit trail, and the miss-count increments for listings absent this
         run. Nothing commits if any step raises."""
         try:
-            self._profiles.ensure(profile_id, profile_name)
             now = self._now().isoformat()
             keeper_ids = outcome.final_keeper_ids()
 

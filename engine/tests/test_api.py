@@ -11,9 +11,11 @@ Run: python3 -m pytest tests/test_api.py -v
 
 import threading
 import time
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from rentczecher_engine.adapters.api.app import create_app
@@ -28,34 +30,29 @@ from rentczecher_engine.domain.location import Location, ParsedPlace, PlaceRef
 from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
-from tests.profiles import criteria, profile
+from tests.profiles import criteria, stored_profile
 
 TOKEN = "test-token"
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 
-PROFILES = (
-    profile(id="praha7-byty", name="Praha 7 byty"),
-    profile(
-        id="domazlice-domy", name="Domazlice domy", enabled=False,
-        criteria=criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401)),
-    ),
-)
-
 
 def _db(tmp_path: Path) -> Path:
     db_path = tmp_path / "t.db"
-    conn = connection.connect(db_path)
-    migrate.apply_pending(conn)
-    conn.close()
+    with closing(connection.connect(db_path)) as conn:
+        migrate.apply_pending(conn)
     return db_path
 
 
-def _api_deps(tmp_path: Path, profiles: tuple[Profile, ...] | None = None) -> ApiDeps:
-    return ApiDeps(
-        profiles=profiles if profiles is not None else PROFILES,
-        db_path=_db(tmp_path),
-        scrapers={},
-    )
+def _api_deps(tmp_path: Path) -> ApiDeps:
+    return ApiDeps(db_path=_db(tmp_path), scrapers={})
+
+
+@pytest.fixture
+def praha7(tmp_path) -> Profile:
+    """An enabled Praha 7 flat search stored in the database the test's
+    deps and client read."""
+    with closing(connection.connect(_db(tmp_path))) as conn:
+        return stored_profile(conn, name="Praha 7 byty")
 
 
 def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exception | None = None):
@@ -79,9 +76,8 @@ def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exceptio
     return run_profile
 
 
-def _client(tmp_path: Path, *, profiles: tuple[Profile, ...] | None = None, run_profile=None) -> TestClient:
-    deps = _api_deps(tmp_path, profiles)
-    app = create_app(TOKEN, deps, run_profile=run_profile or _stub_run_profile())
+def _client(tmp_path: Path, *, run_profile=None) -> TestClient:
+    app = create_app(TOKEN, _api_deps(tmp_path), run_profile=run_profile or _stub_run_profile())
     return TestClient(app)
 
 
@@ -159,7 +155,8 @@ class TestShutdown:
         """An authenticated shutdown request is accepted and triggers the
         callback the spawner handed to the app."""
         requested = []
-        app = create_app(TOKEN, _api_deps(tmp_path), run_profile=_stub_run_profile(),
+        deps = _api_deps(tmp_path)
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile(),
                          request_shutdown=lambda: requested.append(True))
         response = TestClient(app).post("/v1/shutdown", headers=_auth())
         assert response.status_code == 202
@@ -168,7 +165,8 @@ class TestShutdown:
     def test_requires_the_token(self, tmp_path):
         """Without the bearer token the request is refused and nothing stops."""
         requested = []
-        app = create_app(TOKEN, _api_deps(tmp_path), run_profile=_stub_run_profile(),
+        deps = _api_deps(tmp_path)
+        app = create_app(TOKEN, deps, run_profile=_stub_run_profile(),
                          request_shutdown=lambda: requested.append(True))
         response = TestClient(app).post("/v1/shutdown")
         assert response.status_code == 401
@@ -176,27 +174,34 @@ class TestShutdown:
 
     def test_absent_without_a_callback(self, tmp_path):
         """An app built without a shutdown callback has no shutdown route."""
-        response = _client(tmp_path).post("/v1/shutdown", headers=_auth())
+        client = _client(tmp_path)
+        response = client.post("/v1/shutdown", headers=_auth())
         assert response.status_code == 404
 
 
 class TestListProfiles:
-    def test_lists_every_profile_including_disabled(self, tmp_path):
+    def test_lists_every_profile_including_disabled(self, tmp_path, praha7):
+        with closing(connection.connect(_db(tmp_path))) as conn:
+            domazlice = stored_profile(
+                conn, name="Domazlice domy",
+                criteria=criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401)))
+            conn.execute("UPDATE profiles SET paused_at = ? WHERE id = ?", (BASE.isoformat(), domazlice.id))
+            conn.commit()
         client = _client(tmp_path)
         response = client.get("/v1/profiles", headers=_auth())
         body = response.json()
-        assert {p["id"] for p in body} == {"praha7-byty", "domazlice-domy"}
-        disabled = next(p for p in body if p["id"] == "domazlice-domy")
+        assert {p["id"] for p in body} == {praha7.id, domazlice.id}
+        disabled = next(p for p in body if p["id"] == domazlice.id)
         assert disabled["enabled"] is False
 
 
-def _persist_listing(deps: ApiDeps, resolved_location: Location | None = None) -> None:
+def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location | None = None) -> None:
     with deps.open_run_store() as store:
         listing = Listing.build(
             id="sreality:1", source="sreality", title="t", price=20000, location_raw_text="l",
             url="https://example.com/1", resolved_location=resolved_location)
         store.persist_outcome(
-            "praha7-byty", "Praha 7 byty", DedupOutcome(survivors=[listing], merges=(), uncertain=()),
+            profile_id, DedupOutcome(survivors=[listing], merges=(), uncertain=()),
             {}, current_ids={"sreality:1"})
 
 
@@ -206,32 +211,30 @@ class TestListListings:
         response = client.get("/v1/profiles/nope/listings", headers=_auth())
         assert response.status_code == 404
 
-    def test_filter_new_excludes_viewed_listings(self, tmp_path):
+    def test_filter_new_excludes_viewed_listings(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
-        _persist_listing(deps)
+        _persist_listing(deps, praha7.id)
         with deps.open_run_store() as store:
-            store.mark_viewed("praha7-byty", "sreality:1")
+            store.mark_viewed(praha7.id, "sreality:1")
 
-        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
-        client = TestClient(app)
+        client = _client(tmp_path)
 
-        new_only = client.get("/v1/profiles/praha7-byty/listings", headers=_auth(), params={"filter": "new"})
+        new_only = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "new"})
         assert new_only.json() == []
 
-        every = client.get("/v1/profiles/praha7-byty/listings", headers=_auth(), params={"filter": "all"})
+        every = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"})
         assert [card["id"] for card in every.json()] == ["sreality:1"]
         assert every.json()[0]["viewed_at"] is not None
 
-    def test_a_listing_carries_its_named_resolved_location(self, tmp_path):
+    def test_a_listing_carries_its_named_resolved_location(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
         place = ParsedPlace(names=("Přístavní", "Praha", "Holešovice", "Praha 7"), cislo_popisne="1401")
         with deps.open_gazetteer() as gazetteer:
-            _persist_listing(deps, resolved_location=gazetteer.resolve(place))
+            _persist_listing(deps, praha7.id, resolved_location=gazetteer.resolve(place))
 
-        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
-        client = TestClient(app)
+        client = _client(tmp_path)
 
-        (card,) = client.get("/v1/profiles/praha7-byty/listings", headers=_auth()).json()
+        (card,) = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth()).json()
         location = card["resolved_location"]
         assert location["kraj"]["name"] == "Hlavní město Praha"
         assert location["okres"] is None
@@ -243,14 +246,13 @@ class TestListListings:
         assert location["cislo_popisne"] == "1401"
         assert location["cislo_orientacni"] is None
 
-    def test_a_listing_whose_text_never_resolved_keeps_only_its_raw_text(self, tmp_path):
+    def test_a_listing_whose_text_never_resolved_keeps_only_its_raw_text(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
-        _persist_listing(deps)
+        _persist_listing(deps, praha7.id)
 
-        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
-        client = TestClient(app)
+        client = _client(tmp_path)
 
-        (card,) = client.get("/v1/profiles/praha7-byty/listings", headers=_auth()).json()
+        (card,) = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth()).json()
         assert card["resolved_location"] is None
         assert card["location_raw_text"] == "l"
 
@@ -261,18 +263,17 @@ class TestMarkViewed:
         response = client.patch("/v1/profiles/nope/listings/sreality:1/viewed", headers=_auth())
         assert response.status_code == 404
 
-    def test_marks_the_listing_viewed(self, tmp_path):
+    def test_marks_the_listing_viewed(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
-        _persist_listing(deps)
+        _persist_listing(deps, praha7.id)
 
-        app = create_app(TOKEN, deps, run_profile=_stub_run_profile())
-        client = TestClient(app)
+        client = _client(tmp_path)
 
-        response = client.patch("/v1/profiles/praha7-byty/listings/sreality:1/viewed", headers=_auth())
+        response = client.patch(f"/v1/profiles/{praha7.id}/listings/sreality:1/viewed", headers=_auth())
         assert response.status_code == 204
 
         listings = client.get(
-            "/v1/profiles/praha7-byty/listings", headers=_auth(), params={"filter": "all"}).json()
+            f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"}).json()
         assert listings[0]["viewed_at"] is not None
 
 
@@ -282,13 +283,13 @@ class TestTriggerRun:
         response = client.post("/v1/runs", headers=_auth(), json={"profile_id": "nope"})
         assert response.status_code == 404
 
-    def test_returns_a_run_id_immediately(self, tmp_path):
+    def test_returns_a_run_id_immediately(self, tmp_path, praha7):
         run_profile = _stub_run_profile()
         client = _client(tmp_path, run_profile=run_profile)
-        response = client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+        response = client.post("/v1/runs", headers=_auth(), json={"profile_id": praha7.id})
         assert response.status_code == 202
         body = response.json()
-        assert body["profile_id"] == "praha7-byty"
+        assert body["profile_id"] == praha7.id
         assert body["run_id"]
 
     def test_missing_profile_id_is_a_validation_error(self, tmp_path):
@@ -296,7 +297,7 @@ class TestTriggerRun:
         response = client.post("/v1/runs", headers=_auth(), json={})
         assert response.status_code == 422
 
-    def test_concurrent_requests_never_run_the_pipeline_at_the_same_time(self, tmp_path):
+    def test_concurrent_requests_never_run_the_pipeline_at_the_same_time(self, tmp_path, praha7):
         overlap_detected = threading.Event()
         currently_running = threading.Event()
 
@@ -313,7 +314,7 @@ class TestTriggerRun:
 
         client = _client(tmp_path, run_profile=run_profile)
         responses = [
-            client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+            client.post("/v1/runs", headers=_auth(), json={"profile_id": praha7.id})
             for _ in range(3)
         ]
         assert all(r.status_code == 202 for r in responses)
@@ -327,10 +328,10 @@ class TestHealth:
         response = client.get("/v1/health", headers=_auth())
         assert response.json() == []
 
-    def test_reflects_the_last_run_per_portal(self, tmp_path):
+    def test_reflects_the_last_run_per_portal(self, tmp_path, praha7):
         run_profile = _stub_run_profile()
         client = _client(tmp_path, run_profile=run_profile)
-        client.post("/v1/runs", headers=_auth(), json={"profile_id": "praha7-byty"})
+        client.post("/v1/runs", headers=_auth(), json={"profile_id": praha7.id})
 
         deadline = time.monotonic() + 3
         body: list = []
@@ -396,7 +397,7 @@ class TestEventStream:
         gen.close()
         assert broker._subscribers == []
 
-    def test_a_full_run_publishes_started_progress_and_finished(self, tmp_path):
+    def test_a_full_run_publishes_started_progress_and_finished(self, tmp_path, praha7):
         run_profile = _stub_run_profile()
         deps = _api_deps(tmp_path)
         app = create_app(TOKEN, deps, run_profile=run_profile)
@@ -404,7 +405,7 @@ class TestEventStream:
 
         def trigger_shortly_after_subscribing():
             time.sleep(0.1)
-            app.state.run_manager.trigger(deps.profile("praha7-byty"))
+            app.state.run_manager.trigger(deps.profile(praha7.id))
 
         threading.Thread(target=trigger_shortly_after_subscribing, daemon=True).start()
 

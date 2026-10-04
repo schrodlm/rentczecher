@@ -7,17 +7,17 @@ DROPS, and which ids come out as DISAPPEARED on each run.
 Run: python3 -m pytest tests/test_pipeline_golden.py -v
 """
 
+import pytest
+
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import profile
+from tests.profiles import stored_profile
 
 GAZETTEER = Gazetteer()
-
-PROFILE_ID = "golden"
-PROFILE = profile(id=PROFILE_ID, name="Golden profile")
 
 STABLE = dict(
     id="sreality:stable", source="sreality",
@@ -55,7 +55,13 @@ def _scraper(listings):
     return FakeScraper
 
 
-def _run(run_store, monkeypatch, records):
+@pytest.fixture
+def golden_profile(run_store) -> Profile:
+    _store, conn = run_store
+    return stored_profile(conn, name="Golden profile")
+
+
+def _run(run_store, monkeypatch, profile, records):
     """Run one simulated scrape and report (new_ids, drops, disappeared_ids)."""
     store, _conn = run_store
     listings = _listings(*records)
@@ -80,7 +86,7 @@ def _run(run_store, monkeypatch, records):
         scrapers={"sreality": _scraper(listings)}, gazetteer=GAZETTEER,
     )
 
-    run_profile(PROFILE, deps, dry_run=False)
+    run_profile(profile, deps, dry_run=False)
 
     diff = captured["diff"]
     new_ids = {l.id for l in diff.new}
@@ -88,54 +94,54 @@ def _run(run_store, monkeypatch, records):
     return new_ids, drops, captured["disappeared"]
 
 
-def test_first_run_reports_everything_new_and_nothing_else(run_store, monkeypatch):
+def test_first_run_reports_everything_new_and_nothing_else(run_store, golden_profile, monkeypatch):
     """Run 1: every listing is unseen, so all of them are NEW and neither
     price drops nor disappearances are reported."""
-    new_ids, drops, disappeared = _run(run_store, monkeypatch, [STABLE, FLAKY, DROPPING])
+    new_ids, drops, disappeared = _run(run_store, monkeypatch, golden_profile, [STABLE, FLAKY, DROPPING])
 
     assert new_ids == {"sreality:stable", "sreality:flaky", "sreality:dropping"}
     assert drops == set()
     assert disappeared == set()
 
 
-def test_second_run_detects_price_drop_and_first_miss_without_disappearance(run_store, monkeypatch):
+def test_second_run_detects_price_drop_and_first_miss_without_disappearance(run_store, golden_profile, monkeypatch):
     """Run 2: a lowered price is reported as a drop carrying the old price,
     a missing listing counts one miss but is not yet disappeared, and
     listings present unchanged are reported neither new nor dropped."""
-    _run(run_store, monkeypatch, [STABLE, FLAKY, DROPPING])
+    _run(run_store, monkeypatch, golden_profile, [STABLE, FLAKY, DROPPING])
 
-    new_ids, drops, disappeared = _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])
+    new_ids, drops, disappeared = _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])
 
     assert new_ids == set()
     assert drops == {("sreality:dropping", 18000)}
     assert disappeared == set()
 
 
-def test_listing_missing_three_consecutive_runs_is_reported_disappeared(run_store, monkeypatch):
+def test_listing_missing_three_consecutive_runs_is_reported_disappeared(run_store, golden_profile, monkeypatch):
     """Runs 3-4: a listing absent from the scrape keeps accruing misses and
     is reported disappeared starting from the run where its miss count first
     reaches the threshold, and on every run after while it stays gone."""
-    _run(run_store, monkeypatch, [STABLE, FLAKY, DROPPING])
-    _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])  # FLAKY misses once here
+    _run(run_store, monkeypatch, golden_profile, [STABLE, FLAKY, DROPPING])
+    _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])  # FLAKY misses once here
 
-    _, _, disappeared_run3 = _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])  # miss 2
+    _, _, disappeared_run3 = _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])  # miss 2
     assert disappeared_run3 == set()
 
-    _, _, disappeared_run4 = _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])  # miss 3
+    _, _, disappeared_run4 = _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])  # miss 3
     assert disappeared_run4 == {"sreality:flaky"}
 
-    _, _, disappeared_run5 = _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])  # still gone
+    _, _, disappeared_run5 = _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])  # still gone
     assert disappeared_run5 == {"sreality:flaky"}
 
 
-def test_returning_listing_resets_miss_count_and_is_not_new_again(run_store, monkeypatch):
+def test_returning_listing_resets_miss_count_and_is_not_new_again(run_store, golden_profile, monkeypatch):
     """A listing that goes missing once and then reappears has its miss
     count reset to zero and is not reported as new on its return."""
     store, conn = run_store
-    _run(run_store, monkeypatch, [STABLE, FLAKY, DROPPING])
-    _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])  # FLAKY misses once
+    _run(run_store, monkeypatch, golden_profile, [STABLE, FLAKY, DROPPING])
+    _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])  # FLAKY misses once
 
-    new_ids, _, disappeared = _run(run_store, monkeypatch, [STABLE, FLAKY, DROPPING_CHEAPER])
+    new_ids, _, disappeared = _run(run_store, monkeypatch, golden_profile, [STABLE, FLAKY, DROPPING_CHEAPER])
 
     assert "sreality:flaky" not in new_ids
     assert disappeared == set()
@@ -145,6 +151,6 @@ def test_returning_listing_resets_miss_count_and_is_not_new_again(run_store, mon
 
     # Confirm the reset actually held: two more absences are not yet enough
     # to cross the threshold again.
-    _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])
-    _, _, disappeared_after_two_misses = _run(run_store, monkeypatch, [STABLE, DROPPING_CHEAPER])
+    _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])
+    _, _, disappeared_after_two_misses = _run(run_store, monkeypatch, golden_profile, [STABLE, DROPPING_CHEAPER])
     assert disappeared_after_two_misses == set()
