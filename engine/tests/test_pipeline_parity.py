@@ -20,7 +20,7 @@ from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.location import ParsedPlace
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, layouts, preferences
+from tests.profiles import criteria, layouts, preferences, profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -28,16 +28,16 @@ GOLDEN = FIXTURES / "golden.json"
 GAZETTEER = Gazetteer()
 
 PROFILE_ID = "parity"
-PROFILE = {
-    "name": "Parity profile",
-    "enabled": True,
-    "search": criteria(
+PROFILE = profile(
+    id=PROFILE_ID,
+    name="Parity profile",
+    portals=("sreality", "bezrealitky", "remax"),
+    criteria=criteria(
         max_price=25000,
         dispositions=("2+kk", "1+1"),
         min_size_m2=30,
     ),
-    "scrapers": ["sreality", "bezrealitky", "remax"],
-    "scoring": preferences(
+    preferences=preferences(
         price_per_m2_weight=40,
         disposition_weight=30,
         preferred_dispositions=layouts("2+kk", "1+1"),
@@ -45,8 +45,7 @@ PROFILE = {
         neighborhood_weight=15,
         preferred_neighborhoods=("Holešovice", "Letná"),
     ),
-}
-PROFILE_WITH_ID = {**PROFILE, "id": PROFILE_ID}
+)
 
 
 def _build_fixture_listing(record):
@@ -189,7 +188,7 @@ def test_pipeline_outcome_matches_golden(run_store, monkeypatch):
     monkeypatch.setattr(store, "pending_disappeared", spying_pending_disappeared)
     monkeypatch.setattr(pipeline, "classify", spying_classify)
     deps = _deps(store, _fake_scrapers(listing_data))
-    run_profile(PROFILE_WITH_ID, deps, dry_run=False)
+    run_profile(PROFILE, deps, dry_run=False)
 
     diff = captured["diff"]
     snapshot = {
@@ -215,7 +214,7 @@ def test_run_profile_persists_only_through_the_store(run_store):
     listing_data = json.loads((FIXTURES / "listings.json").read_text())
 
     deps = _deps(store, _fake_scrapers(listing_data))
-    run_profile(PROFILE_WITH_ID, deps, dry_run=False)
+    run_profile(PROFILE, deps, dry_run=False)
 
     assert store.seen_ids(PROFILE_ID)
     assert not list(paths.data_dir().glob("seen-*.json"))

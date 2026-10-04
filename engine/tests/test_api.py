@@ -25,27 +25,21 @@ from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.location import Location, ParsedPlace, PlaceRef
+from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
-from tests.profiles import criteria
+from tests.profiles import criteria, profile
 
 TOKEN = "test-token"
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 
-PROFILE_CONFIG = {
-    "praha7-byty": {
-        "name": "Praha 7 byty",
-        "enabled": True,
-        "search": criteria(),
-        "scrapers": ["sreality"],
-    },
-    "domazlice-domy": {
-        "name": "Domazlice domy",
-        "enabled": False,
-        "search": criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401)),
-        "scrapers": ["sreality"],
-    },
-}
+PROFILES = (
+    profile(id="praha7-byty", name="Praha 7 byty"),
+    profile(
+        id="domazlice-domy", name="Domazlice domy", enabled=False,
+        criteria=criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401)),
+    ),
+)
 
 
 def _db(tmp_path: Path) -> Path:
@@ -56,9 +50,9 @@ def _db(tmp_path: Path) -> Path:
     return db_path
 
 
-def _api_deps(tmp_path: Path, profiles: dict | None = None) -> ApiDeps:
+def _api_deps(tmp_path: Path, profiles: tuple[Profile, ...] | None = None) -> ApiDeps:
     return ApiDeps(
-        config={"profiles": profiles if profiles is not None else PROFILE_CONFIG},
+        profiles=profiles if profiles is not None else PROFILES,
         db_path=_db(tmp_path),
         scrapers={},
     )
@@ -69,14 +63,14 @@ def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exceptio
     returns a canned result (or raises), never touching a scraper."""
     calls = []
 
-    def run_profile(profile_config, deps, *, dry_run=False, on_scraper_done=None):
-        calls.append(profile_config["id"])
+    def run_profile(profile, deps, *, dry_run=False, on_scraper_done=None):
+        calls.append(profile.id)
         if on_scraper_done is not None:
             on_scraper_done("sreality", ScraperHealth(status="ok", error=None, listing_count=2))
         if error is not None:
             raise error
         return result or ProfileRunResult(
-            profile_id=profile_config["id"], run_id="stub-run", started_at=BASE, finished_at=BASE,
+            profile_id=profile.id, run_id="stub-run", started_at=BASE, finished_at=BASE,
             status="ok", scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=2)},
             counts=RunCounts(total=2, new=2, price_drops=0, disappeared=0),
         )
@@ -85,7 +79,7 @@ def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exceptio
     return run_profile
 
 
-def _client(tmp_path: Path, *, profiles: dict | None = None, run_profile=None) -> TestClient:
+def _client(tmp_path: Path, *, profiles: tuple[Profile, ...] | None = None, run_profile=None) -> TestClient:
     deps = _api_deps(tmp_path, profiles)
     app = create_app(TOKEN, deps, run_profile=run_profile or _stub_run_profile())
     return TestClient(app)
@@ -187,7 +181,7 @@ class TestShutdown:
 
 
 class TestListProfiles:
-    def test_returns_profiles_from_config_read_only(self, tmp_path):
+    def test_lists_every_profile_including_disabled(self, tmp_path):
         client = _client(tmp_path)
         response = client.get("/v1/profiles", headers=_auth())
         body = response.json()
@@ -306,14 +300,14 @@ class TestTriggerRun:
         overlap_detected = threading.Event()
         currently_running = threading.Event()
 
-        def run_profile(profile_config, deps, *, dry_run=False, on_scraper_done=None):
+        def run_profile(profile, deps, *, dry_run=False, on_scraper_done=None):
             if currently_running.is_set():
                 overlap_detected.set()
             currently_running.set()
             time.sleep(0.2)
             currently_running.clear()
             return ProfileRunResult(
-                profile_id=profile_config["id"], run_id="r", started_at=BASE, finished_at=BASE,
+                profile_id=profile.id, run_id="r", started_at=BASE, finished_at=BASE,
                 status="ok", scraper_health={}, counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
             )
 
@@ -410,7 +404,7 @@ class TestEventStream:
 
         def trigger_shortly_after_subscribing():
             time.sleep(0.1)
-            app.state.run_manager.trigger("praha7-byty", deps.profile_config("praha7-byty"))
+            app.state.run_manager.trigger(deps.profile("praha7-byty"))
 
         threading.Thread(target=trigger_shortly_after_subscribing, daemon=True).start()
 

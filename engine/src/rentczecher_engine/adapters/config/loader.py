@@ -1,5 +1,4 @@
-"""Load config.yaml through the schema. The pipeline consumes the validated
-result as a dict whose criteria and preferences are typed."""
+"""Load config.yaml through the schema into typed profiles."""
 
 import difflib
 from pathlib import Path
@@ -7,7 +6,13 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from rentczecher_engine.adapters.config.schema import Config, ScoringConfig, SearchConfig, StrictModel
+from rentczecher_engine.adapters.config.schema import (
+    Config,
+    ProfileConfig,
+    ScoringConfig,
+    SearchConfig,
+    StrictModel,
+)
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.scrapers.location_resolver import resolve
 from rentczecher_engine.domain.errors import (
@@ -18,12 +23,12 @@ from rentczecher_engine.domain.errors import (
 )
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import PlaceKind, PlaceRef
-from rentczecher_engine.domain.profile import Criteria, Preferences
+from rentczecher_engine.domain.profile import Criteria, Preferences, Profile
 
 _SEARCHABLE_KINDS: dict[str, PlaceKind] = {"kraj": "kraj", "okres": "okres", "obvod": "obvod"}
 
 
-def load_config(path: Path) -> dict:
+def load_config(path: Path) -> list[Profile]:
     if not path.exists():
         raise ConfigNotFoundError(f"config not found at {path}")
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -34,17 +39,24 @@ def load_config(path: Path) -> dict:
     except ValidationError as error:
         raise ConfigError(_readable(path.name, error)) from error
 
-    loaded = config.model_dump()
     gazetteer = Gazetteer()
     try:
-        for profile_id, profile in loaded["profiles"].items():
-            written = config.profiles[profile_id]
-            place = _search_place(gazetteer, written.search.place, f"{path.name}: profiles.{profile_id}")
-            profile["search"] = _criteria(written.search, place)
-            profile["scoring"] = _preferences(written.scoring)
+        return [_profile(gazetteer, profile_id, written, f"{path.name}: profiles.{profile_id}")
+                for profile_id, written in config.profiles.items()]
     finally:
         gazetteer.close()
-    return loaded
+
+
+def _profile(gazetteer: Gazetteer, profile_id: str, written: ProfileConfig, where: str) -> Profile:
+    place = _search_place(gazetteer, written.search.place, where)
+    return Profile(
+        id=profile_id,
+        name=written.name,
+        enabled=written.enabled,
+        portals=tuple(written.scrapers),
+        criteria=_criteria(written.search, place),
+        preferences=_preferences(written.scoring),
+    )
 
 
 def _search_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:

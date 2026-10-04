@@ -14,7 +14,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.cli import main as main_module
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, preferences
+from tests.profiles import profile
 
 
 class TestOrphanedRepoDataWarning:
@@ -161,7 +161,7 @@ class TestServe:
         """With port 0, serve binds a free port and prints it as PORT=<n>
         before serving on that same socket."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         served = []
         monkeypatch.setattr(main_module.uvicorn.Server, "run",
@@ -179,7 +179,7 @@ class TestServe:
         """The callback serve hands to the app sets the running server's
         exit flag, the same flag uvicorn's own Ctrl-C handler sets."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         created = {}
         real_create_app = main_module.create_app
@@ -208,7 +208,7 @@ class TestServe:
         """With exit_with_parent, stdin reaching end of input makes the
         running server exit, as when the spawner dies."""
         monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
-        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: {"profiles": {}})
+        monkeypatch.setattr(main_module, "_load_config_or_exit", lambda: [])
         monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
         monkeypatch.setattr(main_module.sys, "stdin", io.TextIOWrapper(io.BytesIO(b"")))
         exited = []
@@ -276,15 +276,6 @@ def _deps(store):
     )
 
 
-def _profile(profile_id, name):
-    return {
-        "id": profile_id, "name": name,
-        "search": criteria(),
-        "scrapers": ["sreality"],
-        "scoring": preferences(),
-    }
-
-
 class TestDryRunIsReadOnly:
     """A dry run writes no state. Miss counters advance only on real runs."""
 
@@ -315,8 +306,8 @@ class TestDryRunIsReadOnly:
         before = state()
 
         deps = _deps(store)
-        run_profile(_profile(profile_id, "Dry-run test"), deps, dry_run=True)
-        run_profile(_profile(profile_id, "Dry-run test"), deps, dry_run=True)
+        run_profile(profile(id=profile_id, name="Dry-run test"), deps, dry_run=True)
+        run_profile(profile(id=profile_id, name="Dry-run test"), deps, dry_run=True)
 
         assert state() == before
         assert store.seen_ids(profile_id) == {"sreality:old"}
@@ -340,7 +331,7 @@ class TestCommittedScanPrunes:
                      "'2000-01-01T00:00:00+00:00', 0)", (profile_id,))
         conn.commit()
 
-        run_profile(_profile(profile_id, "Prune test"), _deps(store))
+        run_profile(profile(id=profile_id, name="Prune test"), _deps(store))
 
         remaining = conn.execute(
             "SELECT listing_id FROM listing_tracking WHERE profile_id = ? ORDER BY listing_id", (profile_id,)

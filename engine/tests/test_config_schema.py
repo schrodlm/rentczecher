@@ -68,8 +68,8 @@ class TestPlaceRequired:
 
     def test_the_kind_is_read_in_any_case(self, tmp_path):
         written = _broken(lambda c: c["profiles"]["p"]["search"].update(place="Obvod Praha 7"))
-        loaded = load_config(_write(tmp_path, written))
-        assert loaded["profiles"]["p"]["search"].place == PlaceRef(kind="obvod", code=78)
+        (loaded,) = load_config(_write(tmp_path, written))
+        assert loaded.criteria.place == PlaceRef(kind="obvod", code=78)
 
     @pytest.mark.parametrize("place", ["obec Kdyně", "Praha 7"])
     def test_a_place_not_written_as_a_searchable_kind_is_rejected(self, tmp_path, place):
@@ -113,10 +113,10 @@ class TestLoader:
             load_config(missing)
 
     def test_unset_search_settings_load_as_unbounded(self, tmp_path):
-        config = load_config(_write(tmp_path, VALID))
-        assert config["profiles"]["p"]["search"] == Criteria(
+        (loaded,) = load_config(_write(tmp_path, VALID))
+        assert loaded.criteria == Criteria(
             offer_type="rent", estate_type="flat", place=PlaceRef(kind="obvod", code=78), max_price=25000)
-        assert config["profiles"]["p"]["scrapers"] == ["sreality"]
+        assert loaded.portals == ("sreality",)
 
     def test_search_loads_as_criteria(self, tmp_path):
         """Every search setting lands in its own criterion."""
@@ -124,8 +124,8 @@ class TestLoader:
             "offer_type": "sale", "estate_type": "house", "place": "okres Domažlice",
             "min_price": 1000000, "max_price": 5000000, "min_size_m2": 80, "min_land_m2": 600,
             "dispositions": ["4+1", "5+kk"]}))
-        loaded = load_config(_write(tmp_path, written))
-        assert loaded["profiles"]["p"]["search"] == Criteria(
+        (loaded,) = load_config(_write(tmp_path, written))
+        assert loaded.criteria == Criteria(
             offer_type="sale", estate_type="house", place=PlaceRef(kind="okres", code=3401),
             min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600,
             dispositions=("4+1", "5+kk"))
@@ -140,8 +140,8 @@ class TestLoader:
             "neighborhood_weight": 40, "preferred_neighborhoods": ["Letná", "Holešovice"],
             "land_weight": 50, "ideal_land_m2": 900,
             "price_weight": 60, "max_good_price": 4000000}))
-        loaded = load_config(_write(tmp_path, written))
-        assert loaded["profiles"]["p"]["scoring"] == Preferences(
+        (loaded,) = load_config(_write(tmp_path, written))
+        assert loaded.preferences == Preferences(
             price_per_m2_weight=10, disposition_weight=20,
             preferred_dispositions=layouts("2+kk", "1+kk"),
             size_weight=30, ideal_size_m2=60,
@@ -151,8 +151,8 @@ class TestLoader:
 
     def test_an_absent_scoring_section_loads_as_no_preferences(self, tmp_path):
         """Every weight is off and the ideals take the schema's defaults."""
-        loaded = load_config(_write(tmp_path, VALID))
-        assert loaded["profiles"]["p"]["scoring"] == preferences()
+        (loaded,) = load_config(_write(tmp_path, VALID))
+        assert loaded.preferences == preferences()
 
     def test_wrong_type_names_the_exact_key(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(max_price="five milion"))
@@ -190,8 +190,8 @@ class TestLoader:
     def test_studio_and_atypical_are_accepted_dispositions(self, tmp_path):
         config = copy.deepcopy(VALID)
         config["profiles"]["p"]["search"]["dispositions"] = ["garsoniéra", "atypický"]
-        loaded = load_config(_write(tmp_path, config))
-        assert loaded["profiles"]["p"]["search"].dispositions == ("garsoniéra", "atypický")
+        (loaded,) = load_config(_write(tmp_path, config))
+        assert loaded.criteria.dispositions == ("garsoniéra", "atypický")
 
     def test_invalid_offer_type_is_rejected(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(offer_type="lease"))

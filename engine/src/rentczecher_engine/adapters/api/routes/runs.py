@@ -18,5 +18,5 @@ def trigger_run(request: Request, body: TriggerRunBody) -> RunTriggeredModel:
 
     profile = require_profile(deps, body.profile_id)
 
-    run_id = run_manager.trigger(body.profile_id, profile)
-    return RunTriggeredModel(run_id=run_id, profile_id=body.profile_id)
+    run_id = run_manager.trigger(profile)
+    return RunTriggeredModel(run_id=run_id, profile_id=profile.id)

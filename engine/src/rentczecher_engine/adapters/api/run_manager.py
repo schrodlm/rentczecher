@@ -26,6 +26,7 @@ from rentczecher_engine.adapters.api.events import (
     RunProgressEvent,
     RunStartedEvent,
 )
+from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import PipelineDeps, ProfileRunResult
 
@@ -34,7 +35,7 @@ log = logging.getLogger("rentczecher.api")
 
 class PipelineRunner(Protocol):
     def __call__(
-        self, profile_config: dict, deps: PipelineDeps, *, dry_run: bool = False,
+        self, profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
         on_scraper_done: Callable[[str, ScraperHealth], None] | None = None,
     ) -> ProfileRunResult:
         ...
@@ -43,8 +44,7 @@ class PipelineRunner(Protocol):
 @dataclass(frozen=True, slots=True)
 class _RunRequest:
     run_id: str
-    profile_id: str
-    profile_config: dict
+    profile: Profile
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +66,7 @@ class RunManager:
 
     def __init__(
         self,
-        profile_deps_for: Callable[[str], AbstractContextManager[PipelineDeps]],
+        profile_deps_for: Callable[[], AbstractContextManager[PipelineDeps]],
         broker: EventBroker,
         *,
         run_profile: PipelineRunner,
@@ -82,9 +82,9 @@ class RunManager:
         self._worker = threading.Thread(target=self._drain, name="rentczecher-run-worker", daemon=True)
         self._worker.start()
 
-    def trigger(self, profile_id: str, profile_config: dict) -> str:
+    def trigger(self, profile: Profile) -> str:
         run_id = str(uuid4())
-        self._queue.put(_RunRequest(run_id=run_id, profile_id=profile_id, profile_config=profile_config))
+        self._queue.put(_RunRequest(run_id=run_id, profile=profile))
         return run_id
 
     def last_health(self) -> dict[str, PortalHealthEntry]:
@@ -108,27 +108,27 @@ class RunManager:
         self._broker.publish(RunEvent(
             kind="run_started",
             data=RunStartedEvent(
-                run_id=request.run_id, profile_id=request.profile_id).model_dump()))
+                run_id=request.run_id, profile_id=request.profile.id).model_dump()))
 
         def on_scraper_done(scraper: str, health: ScraperHealth) -> None:
             self._record_health(scraper, health)
             self._broker.publish(RunEvent(
                 kind="run_progress",
                 data=RunProgressEvent(
-                    run_id=request.run_id, profile_id=request.profile_id, scraper=scraper,
+                    run_id=request.run_id, profile_id=request.profile.id, scraper=scraper,
                     status=health.status, listing_count=health.listing_count,
                 ).model_dump(),
             ))
 
         try:
-            with self._profile_deps_for(request.profile_id) as deps:
-                result = self._run_profile(request.profile_config, deps, on_scraper_done=on_scraper_done)
+            with self._profile_deps_for() as deps:
+                result = self._run_profile(request.profile, deps, on_scraper_done=on_scraper_done)
         except Exception as error:
-            log.exception("Run %s for profile %s failed", request.run_id, request.profile_id)
+            log.exception("Run %s for profile %s failed", request.run_id, request.profile.id)
             self._broker.publish(RunEvent(
                 kind="run_finished",
                 data=RunFinishedEvent(
-                    run_id=request.run_id, profile_id=request.profile_id,
+                    run_id=request.run_id, profile_id=request.profile.id,
                     status="failed", error=str(error),
                 ).model_dump(),
             ))
@@ -137,7 +137,7 @@ class RunManager:
         self._broker.publish(RunEvent(
             kind="run_finished",
             data=RunFinishedEvent(
-                run_id=request.run_id, profile_id=request.profile_id,
+                run_id=request.run_id, profile_id=request.profile.id,
                 status=result.status,
                 counts=RunCountsModel(
                     total=result.counts.total, new=result.counts.new,
@@ -149,6 +149,6 @@ class RunManager:
             self._broker.publish(RunEvent(
                 kind="listings_arrived",
                 data=ListingsArrivedEvent(
-                    run_id=request.run_id, profile_id=request.profile_id,
+                    run_id=request.run_id, profile_id=request.profile.id,
                     new=result.counts.new).model_dump(),
             ))

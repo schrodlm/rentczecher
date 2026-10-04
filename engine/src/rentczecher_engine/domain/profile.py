@@ -35,3 +35,16 @@ class Preferences:
     ideal_land_m2: int
     price_weight: float
     max_good_price: int
+
+
+@dataclass(frozen=True, slots=True)
+class Profile:
+    """One person's saved search: the portals it scans, the criteria a
+    listing must meet to be shown, and the preferences that score it."""
+
+    id: str
+    name: str
+    enabled: bool
+    portals: tuple[str, ...]
+    criteria: Criteria
+    preferences: Preferences

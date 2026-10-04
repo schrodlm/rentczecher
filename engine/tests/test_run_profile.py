@@ -13,7 +13,7 @@ from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
-from tests.profiles import criteria, preferences
+from tests.profiles import profile
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 GAZETTEER = Gazetteer()
@@ -65,15 +65,8 @@ def _scraper(listings=(), error=None):
     return FakeScraper
 
 
-def _profile_config(scrapers=("sreality",), **overrides):
-    config = dict(
-        id="praha7-byty", name="Praha 7 byty",
-        search=criteria(),
-        scrapers=list(scrapers),
-        scoring=preferences(),
-    )
-    config.update(overrides)
-    return config
+def _profile(portals=("sreality",)):
+    return profile(id="praha7-byty", name="Praha 7 byty", portals=portals)
 
 
 def _deps(store=None, scrapers=None, clock=None):
@@ -91,7 +84,7 @@ class TestCommit:
         store = FakeRunStore()
         deps = _deps(store=store)
 
-        run_profile(_profile_config(), deps)
+        run_profile(_profile(), deps)
 
         assert len(store.persist_calls) == 1
         assert store.prune_calls == ["praha7-byty"]
@@ -102,7 +95,7 @@ class TestCommit:
         store.prices = {"sreality:1": 20000}
         deps = _deps(store=store)
 
-        run_profile(_profile_config(), deps)
+        run_profile(_profile(), deps)
 
         assert len(store.persist_calls) == 1
         assert store.prune_calls == ["praha7-byty"]
@@ -113,7 +106,7 @@ class TestDryRun:
         store = FakeRunStore()
         deps = _deps(store=store)
 
-        run_profile(_profile_config(), deps, dry_run=True)
+        run_profile(_profile(), deps, dry_run=True)
 
         assert store.persist_calls == []
         assert store.prune_calls == []
@@ -127,7 +120,7 @@ class TestScraperIsolation:
         }
         deps = _deps(scrapers=scrapers)
 
-        result = run_profile(_profile_config(scrapers=("sreality", "bezrealitky")), deps)
+        result = run_profile(_profile(portals=("sreality", "bezrealitky")), deps)
 
         assert result.counts.new == 1
         assert result.scraper_health["sreality"].status == "ok"
@@ -138,7 +131,7 @@ class TestCountsAndHealth:
     def test_all_scrapers_ok_is_status_ok(self):
         deps = _deps(scrapers={"sreality": _scraper([_listing("1", "sreality")])})
 
-        result = run_profile(_profile_config(), deps)
+        result = run_profile(_profile(), deps)
 
         assert result.status == "ok"
         assert result.counts == RunCounts(total=1, new=1, price_drops=0, disappeared=0)
@@ -149,14 +142,14 @@ class TestCountsAndHealth:
             "remax": _scraper([]),
         })
 
-        result = run_profile(_profile_config(scrapers=("sreality", "remax")), deps)
+        result = run_profile(_profile(portals=("sreality", "remax")), deps)
 
         assert result.status == "ok"
 
     def test_a_broken_scraper_is_status_partial(self):
         deps = _deps(scrapers={"sreality": _scraper(error=ScraperBrokenError("boom"))})
 
-        result = run_profile(_profile_config(), deps)
+        result = run_profile(_profile(), deps)
 
         assert result.status == "partial"
 
@@ -168,7 +161,7 @@ class TestCountsAndHealth:
         deps = _deps(scrapers={"sreality": UnresolvablePlaceScraper})
 
         with caplog.at_level("ERROR", logger="rentczecher"):
-            result = run_profile(_profile_config(), deps)
+            result = run_profile(_profile(), deps)
 
         assert result.status == "failed"
         assert result.counts.total == 0
@@ -185,7 +178,7 @@ class TestCountsAndHealth:
             "sreality": _scraper([_listing("1", "sreality", price=20000)])
         })
 
-        result = run_profile(_profile_config(), deps)
+        result = run_profile(_profile(), deps)
 
         assert result.counts.new == 0
         assert result.counts.price_drops == 1
@@ -193,7 +186,7 @@ class TestCountsAndHealth:
     def test_run_id_and_timestamps_are_populated(self):
         deps = _deps(clock=lambda: BASE)
 
-        result = run_profile(_profile_config(), deps)
+        result = run_profile(_profile(), deps)
 
         assert result.run_id
         assert result.started_at == BASE

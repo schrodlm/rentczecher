@@ -2,17 +2,13 @@ from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthMod
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.listing import InboxCard, SiblingSource
+from tests.profiles import profile
 
 
 class TestProfileModel:
-    def test_from_config_defaults_enabled_to_true(self):
-        """A profile without an enabled key is enabled."""
-        model = ProfileModel.from_config("matej", {"name": "Matěj"})
-        assert model.model_dump() == {"id": "matej", "name": "Matěj", "enabled": True}
-
-    def test_from_config_keeps_an_explicit_enabled_false(self):
+    def test_from_profile_keeps_an_explicit_enabled_false(self):
         """A disabled profile stays disabled on the wire."""
-        model = ProfileModel.from_config("matej", {"name": "Matěj", "enabled": False})
+        model = ProfileModel.from_profile(profile(id="matej", name="Matěj", enabled=False))
         assert model.enabled is False
 
 

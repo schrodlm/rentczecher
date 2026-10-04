@@ -16,7 +16,7 @@ from uuid import uuid4
 from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.profile import Criteria
+from rentczecher_engine.domain.profile import Criteria, Profile
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.dedup import NameTierLookup, cross_source_dedup
 from rentczecher_engine.services.diff import classify
@@ -97,27 +97,26 @@ def _failed_result(profile_id: str, run_id: str, started_at: datetime,
     )
 
 
-def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = False,
+def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
                 on_scraper_done: Callable[[str, ScraperHealth], None] | None = None) -> ProfileRunResult:
-    profile_id = profile_config["id"]
+    profile_id = profile.id
     run_id = str(uuid4())
     started_at = deps.clock()
-    criteria = profile_config["search"]
 
     enabled = {name: cls for name, cls in deps.scrapers.items()
-              if name in profile_config["scrapers"]}
+              if name in profile.portals}
     try:
-        scraped, scraper_health = scrape_all(enabled, criteria, deps.client, on_scraper_done)
+        scraped, scraper_health = scrape_all(enabled, profile.criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
         log.error("Profile %s: %s - fix search.place", profile_id, error)
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
-    filtered = apply_filters(scraped, criteria)
+    filtered = apply_filters(scraped, profile.criteria)
     located = locate_listings(filtered, deps.gazetteer)
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)
-    survivors = [listing.with_annotations(score=compute_score(listing, profile_config["scoring"]))
+    survivors = [listing.with_annotations(score=compute_score(listing, profile.preferences))
                 for listing in outcome.survivors]
 
     current_ids = {listing.id for listing in survivors} | {m.absorbed_id for m in outcome.merges}
@@ -126,7 +125,7 @@ def run_profile(profile_config: dict, deps: PipelineDeps, *, dry_run: bool = Fal
 
     if not dry_run:
         deps.store.persist_outcome(
-            profile_id, profile_config["name"], outcome, located_by_id, current_ids)
+            profile_id, profile.name, outcome, located_by_id, current_ids)
         deps.store.prune(profile_id)
 
     finished_at = deps.clock()

@@ -48,7 +48,7 @@ pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
 
 ## The live pipeline
 
-`services/pipeline.py::run_profile(profile_config, deps, dry_run=False)` is
+`services/pipeline.py::run_profile(profile, deps, dry_run=False)` is
 the whole orchestration, called once per enabled profile by `cli/main.py::run`.
 It returns a `ProfileRunResult` (status, per-scraper health, counts) that the
 CLI logs. `PipelineDeps` bundles everything the run needs behind protocols:
@@ -197,7 +197,7 @@ tests pinning current outcomes first.
 `adapters/config/schema.py` is the single source of truth for config shape,
 defaults, and normalization. Strict pydantic v2 (`extra="forbid"`, so a typo is
 an error with a suggestion). `loader.py` validates, cross-checks each `place`,
-and returns a plain dict. `paths.py` resolves config and data locations (env
+and returns the typed profiles (`list[Profile]`). `paths.py` resolves config and data locations (env
 overrides, then repo-local if a config is there, then XDG).
 
 ### Notification channels
