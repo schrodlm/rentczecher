@@ -1,5 +1,6 @@
 """Smart scoring system for ranking listings."""
 
+from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.listing import Listing
 
 
@@ -21,11 +22,10 @@ def compute_score(listing: Listing, profile: dict) -> int:
     # Disposition component
     w_disp = scoring_cfg.get("disposition_weight", 0)
     preferred = scoring_cfg.get("preferred_dispositions", [])
-    if w_disp and listing.disposition_raw_text and preferred:
-        disp_lower = listing.disposition_raw_text.lower()
-        preferred_lower = [d.lower() for d in preferred]
-        if disp_lower in preferred_lower:
-            idx = preferred_lower.index(disp_lower)
+    if w_disp and listing.disposition is not None and preferred:
+        preferred_layouts = [parse_disposition(raw) for raw in preferred]
+        if listing.disposition in preferred_layouts:
+            idx = preferred_layouts.index(listing.disposition)
             score = max(20.0, 100.0 - idx * 20)
         else:
             score = 10.0
