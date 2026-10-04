@@ -149,21 +149,10 @@ class SqliteListingRepository(ListingRepository):
                     "WHERE profile_id = ? AND listing_id = ?",
                     (profile_id, row["listing_id"]))
 
-    def get_disappeared(self, profile_id: str, current_ids: set[str],
-                        max_age_days: int = 7, min_misses: int = 3) -> set[str]:
-        candidates = self._tracked_within_window(profile_id, max_age_days)
-        return {
-            row["listing_id"]
-            for row in candidates
-            if row["listing_id"] not in current_ids and row["miss_count"] >= min_misses
-        }
-
     def pending_disappeared(self, profile_id: str, current_ids: set[str],
                             max_age_days: int = 7, min_misses: int = 3) -> set[str]:
-        """The disappearances get_disappeared would report once this run's
-        miss counts land, without writing them: absent listings evaluated
-        one miss ahead, present ones at zero. Lets the pipeline count this
-        run's disappearances before it persists the run."""
+        """Lets the pipeline count this run's disappearances before it
+        persists the run."""
         candidates = self._tracked_within_window(profile_id, max_age_days)
         return {
             row["listing_id"]
@@ -289,8 +278,8 @@ class SqliteListingRepository(ListingRepository):
         )
 
     def _tracked_within_window(self, profile_id: str, max_age_days: int) -> list[sqlite3.Row]:
-        """Every listing_tracking row for the profile whose first_seen_at is
-        recent enough to ever qualify as disappeared, with its miss count.
+        """Every listing_tracking row for the profile first seen recently
+        enough to count as disappeared, with its miss count.
 
         Reported only while recently first seen: an old listing that finally
         drops off is stale, not news.
