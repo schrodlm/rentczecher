@@ -13,6 +13,8 @@ from rentczecher_engine.adapters.config.loader import load_config
 from rentczecher_engine.adapters.config.schema import Config, ProfileConfig
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
 from rentczecher_engine.domain.location import PlaceRef
+from rentczecher_engine.domain.profile import Preferences
+from tests.profiles import layouts, preferences
 
 EXAMPLE = Path(__file__).parent.parent / "config.example.yaml"
 
@@ -118,6 +120,30 @@ class TestLoader:
         config = load_config(_write(tmp_path, VALID))
         assert config["profiles"]["p"]["search"]["min_price"] == 0
         assert config["profiles"]["p"]["scrapers"] == ["sreality"]
+
+    def test_scoring_loads_as_preferences_with_layouts_parsed(self, tmp_path):
+        """Every scoring setting lands in its own preference, and preferred
+        dispositions arrive parsed, in their order of preference."""
+        written = _broken(lambda c: c["profiles"]["p"].update(scoring={
+            "price_per_m2_weight": 10, "disposition_weight": 20,
+            "preferred_dispositions": ["2+kk", "garsoniéra"],
+            "size_weight": 30, "ideal_size_m2": 60,
+            "neighborhood_weight": 40, "preferred_neighborhoods": ["Letná", "Holešovice"],
+            "land_weight": 50, "ideal_land_m2": 900,
+            "price_weight": 60, "max_good_price": 4000000}))
+        loaded = load_config(_write(tmp_path, written))
+        assert loaded["profiles"]["p"]["scoring"] == Preferences(
+            price_per_m2_weight=10, disposition_weight=20,
+            preferred_dispositions=layouts("2+kk", "1+kk"),
+            size_weight=30, ideal_size_m2=60,
+            neighborhood_weight=40, preferred_neighborhoods=("Letná", "Holešovice"),
+            land_weight=50, ideal_land_m2=900,
+            price_weight=60, max_good_price=4000000)
+
+    def test_an_absent_scoring_section_loads_as_no_preferences(self, tmp_path):
+        """Every weight is off and the ideals take the schema's defaults."""
+        loaded = load_config(_write(tmp_path, VALID))
+        assert loaded["profiles"]["p"]["scoring"] == preferences()
 
     def test_wrong_type_names_the_exact_key(self, tmp_path):
         broken = _broken(lambda c: c["profiles"]["p"]["search"].update(max_price="five milion"))
