@@ -140,8 +140,8 @@ def _shared_name_factor(
 
 
 def _disposition_factor(a: Listing, b: Listing) -> FactorResult:
-    disp_a = parse_disposition(a.disposition)
-    disp_b = parse_disposition(b.disposition)
+    disp_a = parse_disposition(a.disposition_raw_text)
+    disp_b = parse_disposition(b.disposition_raw_text)
     if disp_a is None or disp_b is None:
         return 0.0, False
     if disp_a == disp_b:
@@ -416,8 +416,8 @@ def promote_fields(kept: Listing, absorbed: Listing) -> tuple[dict, dict]:
         canonical["lon"] = kept_evidence[1] if kept_evidence else None
     _record_difference(differences, "location_raw_text", canonical["location_raw_text"], absorbed.location_raw_text)
 
-    kept_disposition = parse_disposition(kept.disposition)
-    absorbed_disposition = parse_disposition(absorbed.disposition)
+    kept_disposition = parse_disposition(kept.disposition_raw_text)
+    absorbed_disposition = parse_disposition(absorbed.disposition_raw_text)
     absorbed_code = absorbed_disposition.code if absorbed_disposition is not None else None
     canonical_disposition = kept_disposition.code if kept_disposition is not None else absorbed_code
     canonical["disposition"] = canonical_disposition

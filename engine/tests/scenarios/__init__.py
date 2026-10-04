@@ -33,7 +33,7 @@ DEFAULT_LISTING = {
     "title": "Pronájem bytu 2+kk 50 m²",
     "location_raw_text": "Praha 7",
     "size_m2": 50,
-    "disposition": "2+kk",
+    "disposition_raw_text": "2+kk",
 }
 
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")

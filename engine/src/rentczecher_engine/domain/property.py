@@ -14,7 +14,7 @@ class PropertyIdentity:
     title: str | None = None
     location_raw_text: str | None = None
     size_m2: int | None = None
-    disposition: str | None = None
+    disposition_raw_text: str | None = None
     lat: float | None = None
     lon: float | None = None
     land_m2: int | None = None

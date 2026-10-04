@@ -164,8 +164,8 @@ class TestBezrealitkyLive:
         listings = s.scrape()
         valid = {"1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1", "6+", "atypicky", "garsoniéra"}
         for l in listings:
-            if l.disposition:
-                assert l.disposition in valid, f"Unknown disposition: {l.disposition}"
+            if l.disposition_raw_text:
+                assert l.disposition_raw_text in valid, f"Unknown disposition: {l.disposition_raw_text}"
 
     def test_domazlice_returns_results(self, client):
         from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper

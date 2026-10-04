@@ -79,7 +79,7 @@ class ListingModel(BaseModel):
     location_raw_text: str | None
     resolved_location: LocationModel | None
     size_m2: int | None
-    disposition: str | None
+    disposition_raw_text: str | None
     first_seen_at: str
     viewed_at: str | None
     favourited_at: str | None
@@ -97,7 +97,7 @@ class ListingModel(BaseModel):
             location_raw_text=card.location_raw_text,
             resolved_location=LocationModel.from_location(resolved_location) if resolved_location else None,
             size_m2=card.size_m2,
-            disposition=card.disposition,
+            disposition_raw_text=card.disposition_raw_text,
             first_seen_at=card.first_seen_at,
             viewed_at=card.viewed_at,
             favourited_at=card.favourited_at,

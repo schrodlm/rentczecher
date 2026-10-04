@@ -16,7 +16,7 @@ describe('ListingCard', () => {
 
 	test('shows price, price per m², disposition, and size', async () => {
 		const { getByText } = await renderWithTranslator(ListingCard, {
-			listing: listing('sreality:1', { price: 21000, size_m2: 52, disposition: '2+kk' })
+			listing: listing('sreality:1', { price: 21000, size_m2: 52, disposition_raw_text: '2+kk' })
 		});
 		expect(getByText('21 000 Kč')).toBeInTheDocument();
 		expect(getByText('404 Kč/m²')).toBeInTheDocument();

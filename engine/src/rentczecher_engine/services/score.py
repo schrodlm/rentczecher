@@ -21,8 +21,8 @@ def compute_score(listing: Listing, profile: dict) -> int:
     # Disposition component
     w_disp = scoring_cfg.get("disposition_weight", 0)
     preferred = scoring_cfg.get("preferred_dispositions", [])
-    if w_disp and listing.disposition and preferred:
-        disp_lower = listing.disposition.lower()
+    if w_disp and listing.disposition_raw_text and preferred:
+        disp_lower = listing.disposition_raw_text.lower()
         preferred_lower = [d.lower() for d in preferred]
         if disp_lower in preferred_lower:
             idx = preferred_lower.index(disp_lower)

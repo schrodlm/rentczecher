@@ -16,7 +16,7 @@
       },
       "ListingModel": {
         "properties": {
-          "disposition": {
+          "disposition_raw_text": {
             "anyOf": [
               {
                 "type": "string"
@@ -25,7 +25,7 @@
                 "type": "null"
               }
             ],
-            "title": "Disposition"
+            "title": "Disposition Raw Text"
           },
           "favourited_at": {
             "anyOf": [
@@ -146,7 +146,7 @@
           "location_raw_text",
           "resolved_location",
           "size_m2",
-          "disposition",
+          "disposition_raw_text",
           "first_seen_at",
           "viewed_at",
           "favourited_at",

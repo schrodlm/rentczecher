@@ -8,4 +8,4 @@ scans:
     listings:
       - {id: "sreality:1301", price: 24500, location_raw_text: "Dukelských hrdinů, Praha 7", size_m2: 60, lat: 50.1001, lon: 14.4326}
       - {id: "bezrealitky:2301", price: 24000, location_raw_text: "Dukelských hrdinů, Praha 7", size_m2: 60, lat: 50.1002, lon: 14.4327}
-      - {id: "remax:3301", price: 19000, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition: "1+kk"}
+      - {id: "remax:3301", price: 19000, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition_raw_text: "1+kk"}

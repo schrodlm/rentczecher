@@ -31,7 +31,7 @@ class TestScoringAllZeroWeights:
             }
         }
         listing = _make_listing(
-            price=20000, size_m2=50, disposition="2+kk",
+            price=20000, size_m2=50, disposition_raw_text="2+kk",
             land_m2=500, location_raw_text="Praha 7 - Holesovice",
         )
         score = compute_score(listing, profile)
@@ -68,7 +68,7 @@ class TestConfigMissingOptionalKeys:
                 "ideal_size_m2": 55,
             }
         }
-        listing = _make_listing(disposition="2+kk", size_m2=50)
+        listing = _make_listing(disposition_raw_text="2+kk", size_m2=50)
         score = compute_score(listing, profile)
         assert isinstance(score, int)
 
@@ -117,7 +117,7 @@ class TestConfigMissingOptionalKeys:
         from rentczecher_engine.services.score import compute_score
 
         listing = _make_listing(
-            price=20000, size_m2=50, disposition="2+kk",
+            price=20000, size_m2=50, disposition_raw_text="2+kk",
             location_raw_text="Praha 7 - Holesovice",
         )
         # Empty scoring dict

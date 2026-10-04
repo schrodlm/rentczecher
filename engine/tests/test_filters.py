@@ -20,16 +20,16 @@ def _make_listing(**kwargs) -> Listing:
 
 
 def test_no_constraints_passes_everything_through():
-    listings = [_make_listing(disposition="2+kk"), _make_listing(id="a", disposition=None)]
+    listings = [_make_listing(disposition_raw_text="2+kk"), _make_listing(id="a", disposition_raw_text=None)]
     assert apply_filters(listings, SPEC) == listings
 
 
 def test_disposition_filter_excludes_non_matching_and_keeps_unknown():
     spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
                       dispositions=("2+kk",))
-    matching = _make_listing(id="match", disposition="2+kk")
-    other = _make_listing(id="other", disposition="3+1")
-    unknown = _make_listing(id="unknown", disposition=None)
+    matching = _make_listing(id="match", disposition_raw_text="2+kk")
+    other = _make_listing(id="other", disposition_raw_text="3+1")
+    unknown = _make_listing(id="unknown", disposition_raw_text=None)
 
     result = apply_filters([matching, other, unknown], spec)
 
@@ -39,7 +39,7 @@ def test_disposition_filter_excludes_non_matching_and_keeps_unknown():
 def test_disposition_filter_is_case_insensitive():
     spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
                       dispositions=("2+KK",))
-    listing = _make_listing(disposition="2+kk")
+    listing = _make_listing(disposition_raw_text="2+kk")
     assert apply_filters([listing], spec) == [listing]
 
 
@@ -47,7 +47,7 @@ def test_disposition_filter_rejects_a_studio_label_for_1kk():
     """The criterion compares raw labels, so a garsoniéra is not a 1+kk."""
     spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
                       dispositions=("1+kk",))
-    assert apply_filters([_make_listing(disposition="garsoniéra")], spec) == []
+    assert apply_filters([_make_listing(disposition_raw_text="garsoniéra")], spec) == []
 
 
 def test_disposition_filter_rejects_an_unparseable_label():
@@ -55,7 +55,7 @@ def test_disposition_filter_rejects_an_unparseable_label():
     criterion while a missing one passes."""
     spec = SearchSpec(offer_type="sale", estate_type="house", place="domazlice",
                       dispositions=("4+1",))
-    assert apply_filters([_make_listing(disposition="Rodinný")], spec) == []
+    assert apply_filters([_make_listing(disposition_raw_text="Rodinný")], spec) == []
 
 
 def test_min_size_excludes_smaller_and_keeps_unknown():
@@ -83,9 +83,9 @@ def test_min_land_excludes_smaller_and_keeps_unknown():
 def test_filters_combine():
     spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
                       dispositions=("2+kk",), min_size_m2=40)
-    keeper = _make_listing(id="keeper", disposition="2+kk", size_m2=50)
-    wrong_disposition = _make_listing(id="wrong-disp", disposition="3+1", size_m2=50)
-    too_small = _make_listing(id="too-small", disposition="2+kk", size_m2=30)
+    keeper = _make_listing(id="keeper", disposition_raw_text="2+kk", size_m2=50)
+    wrong_disposition = _make_listing(id="wrong-disp", disposition_raw_text="3+1", size_m2=50)
+    too_small = _make_listing(id="too-small", disposition_raw_text="2+kk", size_m2=30)
 
     result = apply_filters([keeper, wrong_disposition, too_small], spec)
 
