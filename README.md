@@ -69,7 +69,7 @@ $EDITOR ~/.config/rentczecher/config.yaml
 # 2) check it: typos and bad values are reported with the exact offending key
 engine/.venv/bin/rentczecher config validate
 
-# 3) dry run: scrape and print results, write no state
+# 3) dry run: scrape and log the counts, write no state
 .venv/bin/rentczecher --dry-run
 .venv/bin/rentczecher --dry-run --profile praha7-byty   # just one profile
 ```
@@ -149,7 +149,7 @@ A few things worth knowing:
 ```bash
 rentczecher                          # run every enabled profile (what cron calls)
 rentczecher --profile praha7-byty    # run one profile
-rentczecher --dry-run                # scrape + print, no state written
+rentczecher --dry-run                # scrape and log counts, no state written
 rentczecher --dry-run --profile X    # dry-run a single profile
 rentczecher config validate          # validate config.yaml (--path checks another file)
 rentczecher db migrate               # create/upgrade the SQLite schema (see note below)
