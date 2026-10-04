@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.listing import InboxCard
 from rentczecher_engine.domain.location import Location, Place
+from rentczecher_engine.domain.profile import Profile
 
 
 class ProfileModel(BaseModel):
@@ -23,12 +24,8 @@ class ProfileModel(BaseModel):
     enabled: bool
 
     @classmethod
-    def from_config(cls, profile_id: str, profile_config: dict) -> "ProfileModel":
-        return cls(
-            id=profile_id,
-            name=profile_config["name"],
-            enabled=profile_config.get("enabled", True),
-        )
+    def from_profile(cls, profile: Profile) -> "ProfileModel":
+        return cls(id=profile.id, name=profile.name, enabled=profile.enabled)
 
 
 class SiblingSourceModel(BaseModel):

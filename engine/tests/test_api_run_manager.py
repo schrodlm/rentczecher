@@ -8,8 +8,10 @@ from rentczecher_engine.adapters.api.events import EventBroker
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry, RunManager
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
+from tests.profiles import profile
 
 BASE = datetime(2026, 9, 1, tzinfo=timezone.utc)
+MATEJ = profile(id="matej")
 
 
 def _result(new: int) -> ProfileRunResult:
@@ -26,7 +28,7 @@ def _stub_runner(outcomes: list):
     per call: a ProfileRunResult to return or an exception to raise."""
     remaining = list(outcomes)
 
-    def run_profile(profile_config, deps, *, dry_run=False, on_scraper_done=None):
+    def run_profile(profile, deps, *, dry_run=False, on_scraper_done=None):
         outcome = remaining.pop(0)
         if isinstance(outcome, Exception):
             raise outcome
@@ -39,7 +41,7 @@ def _stub_runner(outcomes: list):
 
 def _manager(broker: EventBroker, run_profile) -> RunManager:
     return RunManager(
-        lambda profile_id: nullcontext(None),
+        lambda: nullcontext(None),
         broker,
         run_profile=run_profile,
         clock=lambda: BASE,
@@ -53,7 +55,7 @@ class TestRunManager:
         broker = EventBroker()
         manager = _manager(broker, _stub_runner([_result(new=2)]))
         with broker.subscribe() as events:
-            run_id = manager.trigger("matej", {"id": "matej"})
+            run_id = manager.trigger(MATEJ)
             collected = [events.get(timeout=2) for _ in range(4)]
         kinds = [event.kind for event in collected]
         assert kinds == ["run_started", "run_progress", "run_finished", "listings_arrived"]
@@ -64,7 +66,7 @@ class TestRunManager:
         broker = EventBroker()
         manager = _manager(broker, _stub_runner([_result(new=0)]))
         with broker.subscribe() as events:
-            manager.trigger("matej", {"id": "matej"})
+            manager.trigger(MATEJ)
             collected = [events.get(timeout=2) for _ in range(3)]
             assert collected[-1].kind == "run_finished"
             with pytest.raises(queue.Empty):
@@ -76,8 +78,8 @@ class TestRunManager:
         broker = EventBroker()
         manager = _manager(broker, _stub_runner([_result(new=0), _result(new=0)]))
         with broker.subscribe() as events:
-            first = manager.trigger("matej", {"id": "matej"})
-            second = manager.trigger("matej", {"id": "matej"})
+            first = manager.trigger(MATEJ)
+            second = manager.trigger(MATEJ)
             collected = [events.get(timeout=2) for _ in range(6)]
         assert [event.data["run_id"] for event in collected] == [first] * 3 + [second] * 3
 
@@ -87,8 +89,8 @@ class TestRunManager:
         broker = EventBroker()
         manager = _manager(broker, _stub_runner([RuntimeError("boom"), _result(new=0)]))
         with broker.subscribe() as events:
-            manager.trigger("matej", {"id": "matej"})
-            second = manager.trigger("matej", {"id": "matej"})
+            manager.trigger(MATEJ)
+            second = manager.trigger(MATEJ)
             failed = [events.get(timeout=2) for _ in range(2)]
             assert failed[-1].kind == "run_finished"
             assert failed[-1].data["status"] == "failed"
@@ -103,7 +105,7 @@ class TestRunManager:
         broker = EventBroker()
         manager = _manager(broker, _stub_runner([_result(new=0)]))
         with broker.subscribe() as events:
-            manager.trigger("matej", {"id": "matej"})
+            manager.trigger(MATEJ)
             while events.get(timeout=2).kind != "run_finished":
                 pass
         assert manager.last_health() == {

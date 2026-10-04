@@ -22,6 +22,7 @@ from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers import scraper_registry
 from rentczecher_engine.adapters.scrapers.client import build_client
 from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError
+from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 
 logging.basicConfig(
@@ -35,7 +36,7 @@ CONFIG_PATH = str(paths.config_path())
 PID_PATH = str(paths.pid_lock_path())
 
 
-def _load_config_or_exit() -> dict:
+def _load_config_or_exit() -> list[Profile]:
     try:
         return load_config(Path(CONFIG_PATH))
     except ConfigNotFoundError as error:
@@ -49,12 +50,11 @@ def _load_config_or_exit() -> dict:
 def validate_config(path: Path | None = None) -> int:
     config_file = path if path is not None else Path(CONFIG_PATH)
     try:
-        config = load_config(config_file)
+        profiles = load_config(config_file)
     except ConfigError as error:
         print(error, file=sys.stderr)
         return 1
-    profiles = config["profiles"]
-    enabled = sum(len(profile["scrapers"]) for profile in profiles.values())
+    enabled = sum(len(profile.portals) for profile in profiles)
     print(f"OK - {len(profiles)} profile(s), {enabled} scraper(s) enabled")
     return 0
 
@@ -83,11 +83,11 @@ def serve(port: int, allowed_origins: list[str], exit_with_parent: bool = False)
         log.error("RENTCZECHER_API_TOKEN must be set to run the API server")
         return 1
 
-    config = _load_config_or_exit()
+    profiles = _load_config_or_exit()
     db_file = paths.db_path()
     migrate.apply_pending_at(db_file)
 
-    api_deps = ApiDeps(config=config, db_path=db_file, scrapers=scraper_registry())
+    api_deps = ApiDeps(profiles=tuple(profiles), db_path=db_file, scrapers=scraper_registry())
     # Called from a shutdown request, long after the server below exists.
     def request_shutdown() -> None:
         server.should_exit = True
@@ -171,7 +171,7 @@ def _warn_if_repo_data_orphaned():
 def run(dry_run: bool = False, profile_filter: str | None = None):
     log.info("Using config: %s, data: %s", CONFIG_PATH, paths.data_dir())
     _warn_if_repo_data_orphaned()
-    config = _load_config_or_exit()
+    profiles = _load_config_or_exit()
 
     db_file = paths.db_path()
     db_file.parent.mkdir(parents=True, exist_ok=True)
@@ -184,30 +184,28 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
         migrate.apply_pending(conn)
         store = SqliteRunStore(conn)
 
-        profiles = config.get("profiles", {})
-
         if not profiles:
             log.error("No profiles defined in config.yaml")
             return
 
         gazetteer = Gazetteer()
         with build_client() as client:
-            for profile_id, profile in profiles.items():
-                if profile_filter and profile_id != profile_filter:
+            for profile in profiles:
+                if profile_filter and profile.id != profile_filter:
                     continue
-                if not profile.get("enabled", True):
-                    log.info("Profile %s is disabled, skipping", profile_id)
+                if not profile.enabled:
+                    log.info("Profile %s is disabled, skipping", profile.id)
                     continue
 
-                log.info("=== Profile: %s ===", profile.get("name", profile_id))
+                log.info("=== Profile: %s ===", profile.name)
                 if dry_run:
                     log.info("DRY RUN - no DB updates")
 
-                if not profile["scrapers"]:
-                    log.warning("Profile %s has no enabled scrapers", profile_id)
+                if not profile.portals:
+                    log.warning("Profile %s has no enabled scrapers", profile.id)
                     continue
 
-                scrapers = scraper_registry(profile["scrapers"])
+                scrapers = scraper_registry(profile.portals)
                 deps = PipelineDeps(
                     store=store,
                     clock=utc_now,
@@ -216,11 +214,11 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     gazetteer=gazetteer,
                 )
                 try:
-                    result = run_profile({**profile, "id": profile_id}, deps, dry_run=dry_run)
+                    result = run_profile(profile, deps, dry_run=dry_run)
                 except Exception:
-                    log.exception("Profile %s failed", profile_id)
+                    log.exception("Profile %s failed", profile.id)
                     continue
-                _log_run_result(profile_id, result)
+                _log_run_result(profile.id, result)
     finally:
         conn.close()
         _release_pidlock()

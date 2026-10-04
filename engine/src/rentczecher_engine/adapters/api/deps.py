@@ -1,5 +1,5 @@
-"""The long-lived facts every part of the server needs: the loaded config,
-the database path, and the scraper registry. Everything stateful, such as a
+"""The long-lived facts every part of the server needs: the profiles, the
+database path, and the scraper registry. Everything stateful, such as a
 connection or an HTTP client, is deliberately not held here but opened
 fresh on demand by the factory methods.
 
@@ -21,23 +21,23 @@ from rentczecher_engine.adapters.repositories.sqlite import connection
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.client import build_client
-from rentczecher_engine.domain.profile import Criteria
+from rentczecher_engine.domain.profile import Criteria, Profile
 from rentczecher_engine.services.pipeline import PipelineDeps
 from rentczecher_engine.services.scrape import Scraper
 
 
 @dataclass(frozen=True, slots=True)
 class ApiDeps:
-    config: dict
+    profiles: tuple[Profile, ...]
     db_path: Path
     scrapers: dict[str, Callable[[Criteria, object], Scraper]]
     gazetteer_db_path: Path | None = None
 
-    def profile_config(self, profile_id: str) -> dict | None:
-        profile = self.config.get("profiles", {}).get(profile_id)
-        if profile is None:
-            return None
-        return {**profile, "id": profile_id}
+    def profile(self, profile_id: str) -> Profile | None:
+        for profile in self.profiles:
+            if profile.id == profile_id:
+                return profile
+        return None
 
     @contextmanager
     def open_run_store(self) -> Iterator[SqliteRunStore]:
@@ -56,11 +56,9 @@ class ApiDeps:
             yield gazetteer
 
     @contextmanager
-    def build_pipeline_deps(self, profile_id: str) -> Iterator[PipelineDeps]:
+    def build_pipeline_deps(self) -> Iterator[PipelineDeps]:
         """A run's own connection, gazetteer and HTTP client, never shared
         with request handlers and all closed when the run finishes."""
-        if self.profile_config(profile_id) is None:
-            raise KeyError(profile_id)
         conn = connection.connect(self.db_path)
         try:
             with self.open_gazetteer() as gazetteer, build_client() as client:
@@ -75,16 +73,16 @@ class ApiDeps:
             conn.close()
 
 
-def require_profile(deps: ApiDeps, profile_id: str) -> dict:
+def require_profile(deps: ApiDeps, profile_id: str) -> Profile:
     """Looks up a profile or raises the 404 every route needs on an unknown
     profile_id, so the check has one home instead of one per route."""
-    profile = deps.profile_config(profile_id)
+    profile = deps.profile(profile_id)
     if profile is None:
         raise HTTPException(status_code=404, detail=f"unknown profile {profile_id!r}")
     return profile
 
 
-def resolve_profile(profile_id: str, request: Request) -> dict:
+def resolve_profile(profile_id: str, request: Request) -> Profile:
     """A path-based route dependency wrapping require_profile, for routes
     where profile_id is a path parameter FastAPI can inject directly."""
     deps: ApiDeps = request.app.state.api_deps

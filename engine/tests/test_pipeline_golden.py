@@ -12,19 +12,12 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, preferences
+from tests.profiles import profile
 
 GAZETTEER = Gazetteer()
 
 PROFILE_ID = "golden"
-PROFILE = {
-    "id": PROFILE_ID,
-    "name": "Golden profile",
-    "enabled": True,
-    "search": criteria(),
-    "scrapers": ["sreality"],
-    "scoring": preferences(),
-}
+PROFILE = profile(id=PROFILE_ID, name="Golden profile")
 
 STABLE = dict(
     id="sreality:stable", source="sreality",

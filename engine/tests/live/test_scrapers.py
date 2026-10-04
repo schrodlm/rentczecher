@@ -20,20 +20,21 @@ def client():
 from rentczecher_engine.adapters.config import paths  # noqa: E402
 from rentczecher_engine.adapters.config.loader import load_config  # noqa: E402
 from rentczecher_engine.domain.location import PlaceRef  # noqa: E402
-from rentczecher_engine.domain.profile import Criteria  # noqa: E402
+from rentczecher_engine.domain.profile import Criteria, Profile  # noqa: E402
 
 if paths.config_path().exists():
-    CONFIG = load_config(paths.config_path())
+    PROFILES = load_config(paths.config_path())
 else:
-    CONFIG = load_config(Path(__file__).parents[2] / "config.example.yaml")
+    PROFILES = load_config(Path(__file__).parents[2] / "config.example.yaml")
 
 
-def _get_profile(profile_id: str) -> dict:
-    return CONFIG["profiles"][profile_id]
+def _get_profile(profile_id: str) -> Profile:
+    (profile,) = [profile for profile in PROFILES if profile.id == profile_id]
+    return profile
 
 
 def _scraper(cls, profile_id: str, client):
-    return cls(_get_profile(profile_id)["search"], client)
+    return cls(_get_profile(profile_id).criteria, client)
 
 
 # ─── Sreality ───────────────────────────────────────────────
@@ -76,8 +77,8 @@ class TestSrealityLive:
         profile = _get_profile("praha7-byty")
         s = _scraper(SrealityScraper, "praha7-byty", client)
         listings = s.scrape()
-        max_price = profile["search"].max_price
-        min_price = profile["search"].min_price
+        max_price = profile.criteria.max_price
+        min_price = profile.criteria.min_price
         for l in listings:
             assert l.price <= max_price, f"Price {l.price} exceeds max {max_price}"
             assert l.price >= min_price, f"Price {l.price} below min {min_price}"
@@ -192,7 +193,7 @@ class TestRemaxLive:
         listings = s.scrape()
         for l in listings:
             assert l.price > 0
-            assert l.price <= profile["search"].max_price
+            assert l.price <= profile.criteria.max_price
 
     def test_praha7_titles_no_agent_id(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper

@@ -148,8 +148,7 @@ class Scenario:
             gazetteer = Gazetteer()
             # Read back through the engine's own loader, so the pipeline sees
             # the profile exactly as the app would.
-            loaded = load_config(home / "config.yaml")
-            profile_config = {**loaded["profiles"][self.profile_id], "id": self.profile_id}
+            (profile,) = load_config(home / "config.yaml")
             for scan in self.scans:
                 clock.current = now + scan.at
                 deps = PipelineDeps(
@@ -159,7 +158,7 @@ class Scenario:
                     scrapers=self._scrapers_for(scan, clock.current),
                     gazetteer=gazetteer,
                 )
-                run_profile(profile_config, deps)
+                run_profile(profile, deps)
             clock.current = now
             for listing_id in self.viewed:
                 store.mark_viewed(self.profile_id, listing_id)
