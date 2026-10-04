@@ -185,7 +185,7 @@ class TestLoader:
             price_weight=60, max_good_price=4000000)
 
     def test_an_absent_scoring_section_loads_as_no_preferences(self, tmp_path):
-        """Every weight is off and the ideals take the schema's defaults."""
+        """Every weight is off and every setting is left empty."""
         (loaded,) = load_config(_write(tmp_path, VALID))
         assert loaded.preferences == preferences()
 
@@ -226,6 +226,11 @@ class TestLoader:
         broken = _broken(lambda c: c["profiles"]["p"].update(
             scoring={"place_weight": 15, "preferred_places": [written]}))
         with pytest.raises(ConfigError, match=rf"profiles\.p\.scoring\.preferred_places: .*{message}"):
+            load_config(_write(tmp_path, broken))
+
+    def test_a_weighted_preference_without_its_setting_names_the_field(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"].update(scoring={"size_weight": 15}))
+        with pytest.raises(ConfigError, match=r"profiles\.p\.scoring: size_weight needs a positive ideal_size_m2"):
             load_config(_write(tmp_path, broken))
 
     def test_invalid_offer_type_is_rejected(self, tmp_path):
