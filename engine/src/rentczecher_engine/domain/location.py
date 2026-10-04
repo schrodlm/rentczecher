@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
+
+PlaceKind = Literal["kraj", "okres", "obec", "obvod", "mestska_cast", "cast_obce", "ulice"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +32,15 @@ class Place:
     name: str
     lat: float
     lon: float
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceRef:
+    """A place by the RÚIAN kind and code that identify it, without the
+    gazetteer's details."""
+
+    kind: PlaceKind
+    code: int
 
 
 @dataclass(frozen=True, slots=True)

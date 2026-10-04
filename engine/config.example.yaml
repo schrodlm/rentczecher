@@ -13,7 +13,7 @@ profiles:
     search:
       offer_type: rent          # rent | sale
       estate_type: flat         # flat | house | land | cottage
-      place: praha-7            # any Czech kraj or district; typos get suggestions
+      place: obvod Praha 7      # a kraj, okres or Praha obvod, by its kind and name
       min_price: 0
       max_price: 25000
       dispositions: []          # e.g. ["2+kk", "2+1"] - empty means all
@@ -45,7 +45,7 @@ profiles:
     search:
       offer_type: sale
       estate_type: house        # house | cottage | land
-      place: domazlice          # okres Domazlice
+      place: okres Domažlice
       min_price: 0
       max_price: 5000000
       dispositions: []

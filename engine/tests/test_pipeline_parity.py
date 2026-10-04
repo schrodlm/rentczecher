@@ -17,7 +17,7 @@ from pathlib import Path
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.location import ParsedPlace
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 
@@ -33,7 +33,7 @@ PROFILE = {
     "search": {
         "offer_type": "rent",
         "estate_type": "flat",
-        "place": "praha-7",
+        "place": PlaceRef("obvod", 78),
         "min_price": 0,
         "max_price": 25000,
         "dispositions": ["2+kk", "1+1"],
@@ -171,12 +171,6 @@ def _deps(store, scrapers):
         store=store, clock=utc_now, client=None, scrapers=scrapers,
         gazetteer=GAZETTEER,
     )
-
-
-def test_parity_profile_satisfies_the_config_schema():
-    """The golden fixture's profile must stay a valid real-world config."""
-    from rentczecher_engine.adapters.config.schema import ProfileConfig
-    ProfileConfig.model_validate(PROFILE)
 
 
 def test_pipeline_outcome_matches_golden(run_store, monkeypatch):

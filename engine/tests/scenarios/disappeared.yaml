@@ -2,7 +2,7 @@
 # scans in a row, while its neighbour kept being seen.
 profile:
   name: Praha 7 flats
-  search: {offer_type: rent, estate_type: flat, place: praha-7, max_price: 30000}
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
 scans:
   - at: -4d
     listings:

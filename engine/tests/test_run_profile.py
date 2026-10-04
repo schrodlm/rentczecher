@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
@@ -67,7 +68,7 @@ def _scraper(listings=(), error=None):
 def _profile_config(scrapers=("sreality",), **overrides):
     config = dict(
         id="praha7-byty", name="Praha 7 byty",
-        search={"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+        search={"offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78)},
         scrapers=list(scrapers),
     )
     config.update(overrides)
@@ -161,7 +162,7 @@ class TestCountsAndHealth:
     def test_an_unresolvable_place_aborts_the_profile_as_failed(self, caplog):
         class UnresolvablePlaceScraper:
             def __init__(self, spec, client):
-                raise PlaceNotFoundError(spec.place, ("praha-7",))
+                raise PlaceNotFoundError("obvod 78")
 
         deps = _deps(scrapers={"sreality": UnresolvablePlaceScraper})
 
@@ -171,8 +172,8 @@ class TestCountsAndHealth:
         assert result.status == "failed"
         assert result.counts.total == 0
         assert not any(r.exc_info for r in caplog.records), "an unresolvable place must not dump a stack trace"
-        assert "praha-7" in (result.error or "")
-        errors = [r for r in caplog.records if "praha-7" in r.getMessage()]
+        assert "obvod 78" in (result.error or "")
+        errors = [r for r in caplog.records if "obvod 78" in r.getMessage()]
         assert len(errors) == 1
 
     def test_a_seen_listing_reported_at_a_lower_price_counts_as_a_price_drop(self):

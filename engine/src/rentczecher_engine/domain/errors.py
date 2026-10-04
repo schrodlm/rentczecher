@@ -12,8 +12,10 @@ class ScraperBrokenError(Exception):
 
 
 class PlaceNotFoundError(Exception):
-    def __init__(self, place: str, suggestions: tuple[str, ...]):
-        self.place = place
-        self.suggestions = suggestions
-        hint = f" - did you mean: {', '.join(suggestions)}?" if suggestions else ""
-        super().__init__(f"unknown place {place!r}{hint}")
+    def __init__(self, place: str):
+        super().__init__(f"unknown place {place!r}")
+
+
+class AmbiguousPlaceError(Exception):
+    def __init__(self, place: str):
+        super().__init__(f"several places are called {place!r}")

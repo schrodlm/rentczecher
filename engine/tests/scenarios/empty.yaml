@@ -1,7 +1,7 @@
 # A profile that has scanned once and found nothing: the empty inbox.
 profile:
   name: Praha 7 flats
-  search: {offer_type: rent, estate_type: flat, place: praha-7, max_price: 30000}
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
 scans:
   - at: -1h
     listings: []

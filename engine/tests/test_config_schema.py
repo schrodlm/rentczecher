@@ -20,7 +20,7 @@ VALID = {
         "p": {
             "name": "P",
             "search": {"offer_type": "rent", "estate_type": "flat",
-                       "place": "praha-7", "max_price": 25000},
+                       "place": "obvod Praha 7", "max_price": 25000},
             "scrapers": ["sreality"],
         }
     },
@@ -58,9 +58,9 @@ class TestPlaceRequired:
         with pytest.raises(Exception, match="place"):
             ProfileConfig.model_validate(profile)
 
-    def test_unknown_place_fails_at_load_with_suggestions(self, tmp_path):
-        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(place="domzlice"))
-        with pytest.raises(ConfigError, match="did you mean.*domazlice"):
+    def test_unknown_place_fails_at_load(self, tmp_path):
+        broken = _broken(lambda c: c["profiles"]["p"]["search"].update(place="okres Domzlice"))
+        with pytest.raises(ConfigError, match="unknown place"):
             load_config(_write(tmp_path, broken))
 
 

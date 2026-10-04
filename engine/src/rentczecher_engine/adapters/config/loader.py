@@ -8,8 +8,17 @@ import yaml
 from pydantic import ValidationError
 
 from rentczecher_engine.adapters.config.schema import Config, StrictModel
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.scrapers.location_resolver import resolve
-from rentczecher_engine.domain.errors import ConfigError, ConfigNotFoundError, PlaceNotFoundError
+from rentczecher_engine.domain.errors import (
+    AmbiguousPlaceError,
+    ConfigError,
+    ConfigNotFoundError,
+    PlaceNotFoundError,
+)
+from rentczecher_engine.domain.location import PlaceKind, PlaceRef
+
+_SEARCHABLE_KINDS: dict[str, PlaceKind] = {"kraj": "kraj", "okres": "okres", "obvod": "obvod"}
 
 
 def load_config(path: Path) -> dict:
@@ -23,15 +32,29 @@ def load_config(path: Path) -> dict:
     except ValidationError as error:
         raise ConfigError(_readable(path.name, error)) from error
 
-    for profile_id, profile in config.profiles.items():
-        try:
-            resolve(profile.search.place)
-        except PlaceNotFoundError as error:
-            raise ConfigError(
-                f"{path.name}: profiles.{profile_id}.search.place: {error}"
-            ) from error
+    loaded = config.model_dump()
+    gazetteer = Gazetteer()
+    try:
+        for profile_id, profile in loaded["profiles"].items():
+            search = profile["search"]
+            search["place"] = _search_place(gazetteer, search["place"], f"{path.name}: profiles.{profile_id}")
+    finally:
+        gazetteer.close()
+    return loaded
 
-    return config.model_dump()
+
+def _search_place(gazetteer: Gazetteer, text: str, where: str) -> PlaceRef:
+    """A search place written as its kind and name, like 'obvod Praha 7'."""
+    written_kind, _, name = text.partition(" ")
+    kind = _SEARCHABLE_KINDS.get(written_kind.casefold())
+    if kind is None:
+        raise ConfigError(f"{where}.search.place: name a kraj, okres or obvod, like 'obvod Praha 7'")
+    try:
+        place = gazetteer.place_named(kind, name)
+        resolve(place)
+    except (PlaceNotFoundError, AmbiguousPlaceError) as error:
+        raise ConfigError(f"{where}.search.place: {error}") from error
+    return place
 
 
 def _readable(filename: str, error: ValidationError) -> str:

@@ -13,7 +13,8 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal, TypeVar
 
-from rentczecher_engine.domain.location import Location, ParsedPlace, Place
+from rentczecher_engine.domain.errors import AmbiguousPlaceError, PlaceNotFoundError
+from rentczecher_engine.domain.location import Location, ParsedPlace, Place, PlaceKind, PlaceRef
 from rentczecher_engine.domain.property import PropertyLocation
 
 # Portals disagree on decoration: sreality "Hlavní město Praha" is remax
@@ -37,6 +38,16 @@ _HOUSE_NUMBER = re.compile(r"\b\d+[a-z]?(\s*/\s*\d+[a-z]?)?\b")
 T = TypeVar("T")
 
 _UnitTable = Literal["kraje", "okresy", "obce", "obvody", "mestske_casti", "casti_obce", "ulice"]
+
+_TABLE_OF_KIND: dict[PlaceKind, _UnitTable] = {
+    "kraj": "kraje",
+    "okres": "okresy",
+    "obec": "obce",
+    "obvod": "obvody",
+    "mestska_cast": "mestske_casti",
+    "cast_obce": "casti_obce",
+    "ulice": "ulice",
+}
 
 _KINDS_MOST_SPECIFIC_FIRST = ("ulice", "cast_obce", "mestska_cast", "obec")
 
@@ -263,6 +274,17 @@ class Gazetteer:
             cislo_popisne=stored.cislo_popisne,
             cislo_orientacni=stored.cislo_orientacni,
         )
+
+    def place_named(self, kind: PlaceKind, name: str) -> PlaceRef:
+        """The one place of this kind with this name. Raises when none or
+        several carry it, since a search must never run on a guessed place."""
+        stmt = f"SELECT code FROM {_TABLE_OF_KIND[kind]} WHERE name_norm = ?"
+        rows = self._conn.execute(stmt, (normalize_name(name),)).fetchall()
+        if not rows:
+            raise PlaceNotFoundError(f"{kind} {name}")
+        if len(rows) > 1:
+            raise AmbiguousPlaceError(f"{kind} {name}")
+        return PlaceRef(kind=kind, code=rows[0]["code"])
 
     def _unit(self, table: _UnitTable, code: int | None) -> Place | None:
         if code is None:

@@ -4,9 +4,9 @@ Excluded from the default pytest run. Run deliberately with:
 python3 -m pytest -m live tests/live/test_scrapers.py -v
 These tests hit real APIs so they may be slow and results change over time.
 """
+from pathlib import Path
+
 import pytest
-import yaml
-import os
 
 from rentczecher_engine.adapters.scrapers.client import build_client  # noqa: E402
 
@@ -18,12 +18,14 @@ def client():
 
 # Load the resolved config, falling back to the example profiles.
 from rentczecher_engine.adapters.config import paths  # noqa: E402
+from rentczecher_engine.adapters.config.loader import load_config  # noqa: E402
+from rentczecher_engine.domain.location import PlaceRef  # noqa: E402
 from rentczecher_engine.domain.search import SearchSpec  # noqa: E402
 
 if paths.config_path().exists():
-    CONFIG = yaml.safe_load(paths.config_path().read_text())
+    CONFIG = load_config(paths.config_path())
 else:
-    CONFIG = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "..", "config.example.yaml")))
+    CONFIG = load_config(Path(__file__).parents[2] / "config.example.yaml")
 
 
 def _get_profile(profile_id: str) -> dict:
@@ -125,7 +127,7 @@ class TestSrealityLive:
 
     def test_pagination_collects_beyond_one_page(self, client):
         from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
-        spec = SearchSpec(offer_type="rent", estate_type="flat", place="praha-7",
+        spec = SearchSpec(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
                           min_price=0, max_price=0)
         listings = SrealityScraper(spec, client).scrape()
         assert len(listings) > 100, f"Expected multi-page collection, got {len(listings)}"

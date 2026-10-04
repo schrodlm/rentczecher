@@ -24,7 +24,7 @@ from rentczecher_engine.adapters.api.routes.events import iter_sse_events
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.dedup import DedupOutcome
-from rentczecher_engine.domain.location import Location, ParsedPlace
+from rentczecher_engine.domain.location import Location, ParsedPlace, PlaceRef
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.pipeline import ProfileRunResult, RunCounts
 
@@ -35,13 +35,13 @@ PROFILE_CONFIG = {
     "praha7-byty": {
         "name": "Praha 7 byty",
         "enabled": True,
-        "search": {"offer_type": "rent", "estate_type": "flat", "place": "praha-7"},
+        "search": {"offer_type": "rent", "estate_type": "flat", "place": PlaceRef("obvod", 78)},
         "scrapers": ["sreality"],
     },
     "domazlice-domy": {
         "name": "Domazlice domy",
         "enabled": False,
-        "search": {"offer_type": "sale", "estate_type": "house", "place": "domazlice"},
+        "search": {"offer_type": "sale", "estate_type": "house", "place": PlaceRef("okres", 3401)},
         "scrapers": ["sreality"],
     },
 }

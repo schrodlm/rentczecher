@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from rentczecher_engine.domain.location import PlaceRef
+
 
 @dataclass(frozen=True, slots=True)
 class SearchSpec:
@@ -8,7 +10,7 @@ class SearchSpec:
 
     offer_type: str
     estate_type: str
-    place: str
+    place: PlaceRef
     min_price: int = 0
     max_price: int = 0
     min_size_m2: int = 0
