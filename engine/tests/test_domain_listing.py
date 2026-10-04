@@ -7,6 +7,7 @@ import dataclasses
 
 import pytest
 
+from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.listing import Listing
 
 
@@ -106,6 +107,17 @@ class TestParsedPlace:
         listing = _listing(parsed_place=place)
         assert listing.parsed_place == place
         assert listing.parsed_place.names == ("Veletržní", "Praha 7")
+
+
+class TestDisposition:
+    def test_raw_text_parses_into_the_layout(self):
+        assert _listing(disposition_raw_text="garsoniéra").disposition == Disposition(rooms=1, kitchen="kitchenette")
+
+    def test_raw_text_naming_no_layout_has_no_disposition(self):
+        assert _listing(disposition_raw_text="Rodinný").disposition is None
+
+    def test_missing_raw_text_has_no_disposition(self):
+        assert _listing().disposition is None
 
 
 class TestEquality:
