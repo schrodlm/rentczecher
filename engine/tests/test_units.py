@@ -124,15 +124,16 @@ class TestScoring:
         from rentczecher_engine.services.score import compute_score
         assert compute_score(_make_listing(disposition_raw_text="2+KK"), self.DISPOSITION_ONLY) == 80
 
-    def test_a_studio_label_scores_as_not_preferred(self):
-        """Scoring compares raw labels, so a garsoniéra is not a preferred 1+kk."""
+    def test_a_studio_scores_as_a_preferred_1kk(self):
+        """Scoring compares layouts, so a garsoniéra is a preferred 1+kk."""
         from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(disposition_raw_text="garsoniéra"), self.DISPOSITION_ONLY) == 10
+        assert compute_score(_make_listing(disposition_raw_text="garsoniéra"), self.DISPOSITION_ONLY) == 100
 
-    def test_an_unparseable_disposition_scores_as_not_preferred(self):
-        """An unparseable label scores like any disposition outside the list."""
+    def test_an_unparseable_disposition_adds_nothing(self):
+        """A label that names no layout leaves the disposition unknown, so it
+        adds nothing, like a missing one."""
         from rentczecher_engine.services.score import compute_score
-        assert compute_score(_make_listing(disposition_raw_text="Rodinný"), self.DISPOSITION_ONLY) == 10
+        assert compute_score(_make_listing(disposition_raw_text="Rodinný"), self.DISPOSITION_ONLY) == 0
 
     def test_a_missing_disposition_adds_nothing(self):
         from rentczecher_engine.services.score import compute_score
@@ -145,8 +146,8 @@ class TestScoring:
         assert compute_score(_make_listing(disposition_raw_text="3+kk"), profile) == 20
         assert compute_score(_make_listing(disposition_raw_text="3+1"), profile) == 20
 
-    def test_a_preferred_list_compares_its_raw_labels(self):
-        """A garsoniéra in the preferred list does not stand for a 1+kk."""
+    def test_a_preferred_studio_stands_for_a_1kk(self):
+        """A garsoniéra in the preferred list ranks a 1+kk at its place."""
         from rentczecher_engine.services.score import compute_score
         profile = {"scoring": {"disposition_weight": 100, "preferred_dispositions": ["garsoniéra", "1+kk"]}}
-        assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 80
+        assert compute_score(_make_listing(disposition_raw_text="1+kk"), profile) == 100
