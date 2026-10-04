@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from rentczecher_engine.domain.disposition import Disposition
+from rentczecher_engine.domain.disposition import Disposition, Kitchen
 from rentczecher_engine.domain.location import PlaceRef
 
 
@@ -16,7 +16,9 @@ class Criteria:
     max_price: int = 0
     min_size_m2: int = 0
     min_land_m2: int = 0
-    dispositions: tuple[str, ...] = ()
+    min_rooms: int | None = None
+    max_rooms: int | None = None
+    kitchen: Kitchen | None = None
 
 
 @dataclass(frozen=True, slots=True)

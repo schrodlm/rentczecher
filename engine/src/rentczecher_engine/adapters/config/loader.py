@@ -82,7 +82,9 @@ def _criteria(search: SearchConfig, place: PlaceRef) -> Criteria:
         max_price=search.max_price,
         min_size_m2=search.min_size_m2,
         min_land_m2=search.min_land_m2,
-        dispositions=tuple(search.dispositions),
+        min_rooms=search.min_rooms,
+        max_rooms=search.max_rooms,
+        kitchen=search.kitchen,
     )
 
 

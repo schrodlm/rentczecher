@@ -25,42 +25,6 @@ def test_no_constraints_passes_everything_through():
     assert apply_filters(listings, CRITERIA) == listings
 
 
-def test_disposition_filter_excludes_non_matching_and_keeps_unknown():
-    criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        dispositions=("2+kk",))
-    matching = _make_listing(id="match", disposition_raw_text="2+kk")
-    other = _make_listing(id="other", disposition_raw_text="3+1")
-    unknown = _make_listing(id="unknown", disposition_raw_text=None)
-
-    result = apply_filters([matching, other, unknown], criteria)
-
-    assert [l.id for l in result] == ["match", "unknown"]
-
-
-def test_disposition_filter_is_case_insensitive():
-    criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        dispositions=("2+KK",))
-    listing = _make_listing(disposition_raw_text="2+kk")
-    assert apply_filters([listing], criteria) == [listing]
-
-
-def test_disposition_filter_accepts_a_studio_for_1kk():
-    """The criterion compares layouts, so a garsoniéra is a 1+kk."""
-    criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        dispositions=("1+kk",))
-    studio = _make_listing(disposition_raw_text="garsoniéra")
-    assert apply_filters([studio], criteria) == [studio]
-
-
-def test_disposition_filter_keeps_an_unparseable_label():
-    """A label that names no layout leaves the disposition unknown, and an
-    unknown disposition does not fail the criterion."""
-    criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-                        dispositions=("4+1",))
-    house = _make_listing(disposition_raw_text="Rodinný")
-    assert apply_filters([house], criteria) == [house]
-
-
 def test_min_size_excludes_smaller_and_keeps_unknown():
     criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_size_m2=40)
     big_enough = _make_listing(id="big", size_m2=50)
@@ -85,11 +49,11 @@ def test_min_land_excludes_smaller_and_keeps_unknown():
 
 def test_filters_combine():
     criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78),
-                        dispositions=("2+kk",), min_size_m2=40)
-    keeper = _make_listing(id="keeper", disposition_raw_text="2+kk", size_m2=50)
-    wrong_disposition = _make_listing(id="wrong-disp", disposition_raw_text="3+1", size_m2=50)
-    too_small = _make_listing(id="too-small", disposition_raw_text="2+kk", size_m2=30)
+                        min_size_m2=40, min_land_m2=200)
+    keeper = _make_listing(id="keeper", size_m2=50, land_m2=300)
+    too_little_land = _make_listing(id="little-land", size_m2=50, land_m2=100)
+    too_small = _make_listing(id="too-small", size_m2=30, land_m2=300)
 
-    result = apply_filters([keeper, wrong_disposition, too_small], criteria)
+    result = apply_filters([keeper, too_little_land, too_small], criteria)
 
     assert [l.id for l in result] == ["keeper"]
