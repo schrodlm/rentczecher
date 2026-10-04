@@ -50,9 +50,32 @@ a location.
 _Avoid_: geocoder, place database
 
 **Profile**:
-One person's saved search: portals, filters, scoring weights.
-Every scan is per-profile.
+One person's saved search: its criteria, its preferences and the portals it
+scans. Every scan is per-profile.
 _Avoid_: search, watch, subscription
+
+**Criteria**:
+What a listing must satisfy to be shown for a profile: the search place,
+rent or sale, the type of property, the price range, the minimum size or land
+and the range of dispositions. A listing failing one is never shown. A listing
+that cannot be confirmed inside the search place fails it, but a missing size,
+land or disposition does not fail a bound, since the portal simply did not say.
+_Avoid_: filters, search parameters
+
+**Search place**:
+The one place a profile's criteria require a listing to lie in. It may be any
+place, from a kraj down to a street.
+_Avoid_: location, area, region
+
+**Preference**:
+One weighted wish that raises a listing's score: a preferred disposition, an
+ideal size or land, a good price, or a preferred place. Preferences order the
+listings that meet the criteria and never hide one.
+_Avoid_: scoring setting, weight
+
+**Score**:
+How well a listing meets its profile's preferences.
+_Avoid_: rating, rank
 
 **Seen entry**:
 The per-profile record that a listing was observed: first/last seen, last
