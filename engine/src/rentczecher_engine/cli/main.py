@@ -152,8 +152,8 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
             for profile in profiles:
                 if profile_filter and profile.id != profile_filter:
                     continue
-                if not profile.enabled:
-                    log.info("Profile %s is disabled, skipping", profile.id)
+                if profile.paused_at is not None:
+                    log.info("Profile %s is paused, skipping", profile.id)
                     continue
 
                 log.info("=== Profile: %s ===", profile.name)

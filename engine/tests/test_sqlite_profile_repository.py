@@ -44,7 +44,7 @@ class TestAdd:
 
     def test_a_new_profile_is_not_paused(self, tmp_path):
         repo, _ = _repo(tmp_path)
-        assert repo.add("P", (), criteria(), preferences()).enabled
+        assert repo.add("P", (), criteria(), preferences()).paused_at is None
 
     def test_each_profile_gets_an_id_of_its_own(self, tmp_path):
         repo, _ = _repo(tmp_path)
@@ -87,8 +87,8 @@ class TestRead:
         assert repo.get(bare.id) == bare
         assert sorted(repo.list_profiles(), key=lambda profile: profile.name) == [bare, full]
 
-    def test_a_paused_profile_reads_as_not_enabled(self, tmp_path):
+    def test_a_paused_profile_reads_back_when_it_was_paused(self, tmp_path):
         repo, conn = _repo(tmp_path)
         added = repo.add("P", (), criteria(), preferences())
         conn.execute("UPDATE profiles SET paused_at = ? WHERE id = ?", (BASE.isoformat(), added.id))
-        assert repo.get(added.id).enabled is False
+        assert repo.get(added.id).paused_at == BASE.isoformat()

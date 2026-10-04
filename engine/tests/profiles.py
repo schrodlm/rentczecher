@@ -1,6 +1,6 @@
 """Profiles, search criteria and scoring preferences for tests: a plain
 rent/flat search of obvod Praha 7 with no bounds, every preference off unless
-a test turns it on, and an enabled profile scanning sreality with both, held
+a test turns it on, and an unpaused profile scanning sreality with both, held
 in memory or stored in a database."""
 
 import sqlite3
@@ -28,7 +28,7 @@ def preferences(**overrides) -> Preferences:
 
 def profile(**overrides) -> Profile:
     defaults = Profile(
-        id="p", name="P", enabled=True, portals=("sreality",),
+        id="p", name="P", paused_at=None, portals=("sreality",),
         criteria=criteria(), preferences=preferences(),
     )
     return replace(defaults, **overrides)

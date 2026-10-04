@@ -24,7 +24,7 @@ class SqliteProfileRepository:
         profile = Profile(
             id=str(uuid4()),
             name=name,
-            enabled=True,
+            paused_at=None,
             portals=tuple(sorted(portals)),
             criteria=criteria,
             preferences=preferences,
@@ -138,7 +138,7 @@ class SqliteProfileRepository:
         return Profile(
             id=row["id"],
             name=row["name"],
-            enabled=row["paused_at"] is None,
+            paused_at=row["paused_at"],
             portals=portals,
             criteria=self._to_criteria(row),
             preferences=self._to_preferences(row, preferred_dispositions, preferred_places),

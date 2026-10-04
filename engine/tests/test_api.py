@@ -49,7 +49,7 @@ def _api_deps(tmp_path: Path) -> ApiDeps:
 
 @pytest.fixture
 def praha7(tmp_path) -> Profile:
-    """An enabled Praha 7 flat search stored in the database the test's
+    """An unpaused Praha 7 flat search stored in the database the test's
     deps and client read."""
     with closing(connection.connect(_db(tmp_path))) as conn:
         return stored_profile(conn, name="Praha 7 byty")
@@ -180,7 +180,7 @@ class TestShutdown:
 
 
 class TestListProfiles:
-    def test_lists_every_profile_including_disabled(self, tmp_path, praha7):
+    def test_lists_every_profile_including_paused(self, tmp_path, praha7):
         with closing(connection.connect(_db(tmp_path))) as conn:
             domazlice = stored_profile(
                 conn, name="Domazlice domy",
@@ -191,8 +191,8 @@ class TestListProfiles:
         response = client.get("/v1/profiles", headers=_auth())
         body = response.json()
         assert {p["id"] for p in body} == {praha7.id, domazlice.id}
-        disabled = next(p for p in body if p["id"] == domazlice.id)
-        assert disabled["enabled"] is False
+        paused = next(p for p in body if p["id"] == domazlice.id)
+        assert paused["enabled"] is False
 
 
 def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location | None = None) -> None:

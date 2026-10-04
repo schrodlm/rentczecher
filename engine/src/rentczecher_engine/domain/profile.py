@@ -85,7 +85,7 @@ class Profile:
 
     id: str
     name: str
-    enabled: bool
+    paused_at: str | None
     portals: tuple[str, ...]
     criteria: Criteria
     preferences: Preferences

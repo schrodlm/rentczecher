@@ -25,7 +25,7 @@ class ProfileModel(BaseModel):
 
     @classmethod
     def from_profile(cls, profile: Profile) -> "ProfileModel":
-        return cls(id=profile.id, name=profile.name, enabled=profile.enabled)
+        return cls(id=profile.id, name=profile.name, enabled=profile.paused_at is None)
 
 
 class SiblingSourceModel(BaseModel):
