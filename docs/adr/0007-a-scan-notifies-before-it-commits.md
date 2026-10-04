@@ -1,6 +1,8 @@
 # 7. A scan notifies before it commits
 
-Status: accepted (2026-07), recorded 2026-10-01
+Status: accepted (2026-07), recorded 2026-10-01. The "notify, then commit"
+rule is superseded by [ADR 10](0010-notification-channels-are-api-clients.md),
+and "failures stay where they happen" still holds.
 
 ## Context
 
