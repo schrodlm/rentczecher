@@ -25,10 +25,22 @@ class Criteria:
     kitchen: Kitchen | None = None
 
     def __post_init__(self) -> None:
-        for name, bound in (("min_price", self.min_price), ("max_price", self.max_price),
-                            ("min_size_m2", self.min_size_m2), ("min_land_m2", self.min_land_m2)):
-            if bound is not None and bound <= 0:
-                raise ValueError(f"{name} must be positive, or left unset for no bound")
+        if self.min_price is not None and self.min_price <= 0:
+            raise ValueError("min_price must be positive, or left unset for no bound")
+        if self.max_price is not None and self.max_price <= 0:
+            raise ValueError("max_price must be positive, or left unset for no bound")
+        if self.min_size_m2 is not None and self.min_size_m2 <= 0:
+            raise ValueError("min_size_m2 must be positive, or left unset for no bound")
+        if self.min_land_m2 is not None and self.min_land_m2 <= 0:
+            raise ValueError("min_land_m2 must be positive, or left unset for no bound")
+        if self.min_rooms is not None and not 1 <= self.min_rooms <= 9:
+            raise ValueError("min_rooms must be 1 to 9, or left unset for no bound")
+        if self.max_rooms is not None and not 1 <= self.max_rooms <= 9:
+            raise ValueError("max_rooms must be 1 to 9, or left unset for no bound")
+        if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
+            raise ValueError("min_price must not exceed max_price")
+        if self.min_rooms is not None and self.max_rooms is not None and self.min_rooms > self.max_rooms:
+            raise ValueError("min_rooms must not exceed max_rooms")
 
 
 @dataclass(frozen=True, slots=True)
