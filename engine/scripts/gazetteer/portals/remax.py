@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import httpx
 
-from .portal import BROWSER_HEADERS, MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
+from .portal import BROWSER_HEADERS, PRAHA_KRAJ, MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
 
 FORM_URL = "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1"
 
@@ -53,13 +53,23 @@ class Remax:
         ])
 
 
+def _official_kraj_name(heading: str) -> str:
+    """The form drops the word kraj ('Plzeňský') and calls the capital
+    'Praha'. RÚIAN names them 'Plzeňský kraj' and 'Hlavní město Praha'."""
+    if heading == "Praha":
+        return PRAHA_KRAJ
+    if heading == "Vysočina":
+        return "Kraj Vysočina"
+    return f"{heading} kraj"
+
+
 def parse_search_form(html: str) -> PortalPlaces[int, RemaxDistrict]:
     regions: dict[str, int] = {}
     districts: dict[str, RemaxDistrict] = {}
     chunks = _HEADING.split(html)
     for heading, chunk in zip(chunks[1::2], chunks[2::2]):
         for region_id, district_id, label in _CHECKBOX.findall(chunk):
-            add_unique(regions, heading.strip(), int(region_id), "remax")
+            add_unique(regions, _official_kraj_name(heading.strip()), int(region_id), "remax")
             add_unique(districts, label.strip(), RemaxDistrict(int(region_id), int(district_id)), "remax")
     if not districts:
         raise SystemExit("remax: no region checkboxes in the search form, has its shape changed?")

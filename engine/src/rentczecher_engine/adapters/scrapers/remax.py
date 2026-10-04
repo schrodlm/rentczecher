@@ -34,6 +34,18 @@ def _house_numbers(street_slot: str) -> tuple[str | None, str | None]:
     return popisne, orientacni
 
 
+def _names_kraj(segment: str) -> bool:
+    """'Karlovarský kraj' and 'Kraj Vysočina' name the kraj, which the
+    address adds after everything finer."""
+    folded = segment.casefold()
+    return folded.endswith("kraj") or folded.startswith("kraj ")
+
+
+# A Praha address names the capital in both the okres and the kraj slot:
+# 'Rybná , Hlavní město Praha , Praha 1, Hlavní město Praha'.
+_PRAHA = "hlavní město praha"
+
+
 def _parse_location(location: str, title: str) -> ParsedPlace:
     """The address slot before the kraj holds the okres, not the town - a
     property labeled 'Domažlice' may lie anywhere in that district. Praha
@@ -45,12 +57,14 @@ def _parse_location(location: str, title: str) -> ParsedPlace:
     names: list[str] = []
     district = None
     segments = [s.strip() for s in location.split(",") if s.strip()]
+    in_praha = any(segment.casefold() == _PRAHA for segment in segments)
+    segments = [segment for segment in segments if segment.casefold() != _PRAHA]
     for at, segment in enumerate(segments):
-        if segment.casefold().endswith("kraj"):
+        if _names_kraj(segment):
             continue
         head, *tail = (part.strip() for part in re.split(r"\s+[-–]\s+", segment))
-        is_last_bare_slot = at == len(segments) - 1 or segments[at + 1].casefold().endswith("kraj")
-        if (is_last_bare_slot and district is None
+        is_last_bare_slot = at == len(segments) - 1 or _names_kraj(segments[at + 1])
+        if (is_last_bare_slot and district is None and not in_praha
                 and head != "Praha" and not any(ch.isdigit() for ch in head)):
             district = head
         elif head not in names:
