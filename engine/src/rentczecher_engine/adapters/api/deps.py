@@ -43,6 +43,20 @@ class ApiDeps:
             return SqliteProfileRepository(conn).get(profile_id)
 
     @contextmanager
+    def edit_profiles(self) -> Iterator[SqliteProfileRepository]:
+        """One unit of work: committed when the block completes, rolled back
+        when it raises."""
+        conn = connection.connect(self.db_path)
+        try:
+            yield SqliteProfileRepository(conn)
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    @contextmanager
     def open_run_store(self) -> Iterator[SqliteRunStore]:
         """A store over its own connection, closed when the caller is done
         reading - a request handler opens one, reads, and lets it go."""

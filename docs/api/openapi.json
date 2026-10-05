@@ -1,6 +1,247 @@
 {
   "components": {
     "schemas": {
+      "CriteriaBody": {
+        "additionalProperties": false,
+        "properties": {
+          "estate_type": {
+            "enum": [
+              "flat",
+              "house",
+              "land",
+              "cottage"
+            ],
+            "title": "Estate Type",
+            "type": "string"
+          },
+          "kitchen": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kitchenette",
+                  "separate"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kitchen"
+          },
+          "max_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Price"
+          },
+          "max_rooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Rooms"
+          },
+          "min_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Land M2"
+          },
+          "min_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Price"
+          },
+          "min_rooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Rooms"
+          },
+          "min_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Size M2"
+          },
+          "offer_type": {
+            "enum": [
+              "rent",
+              "sale"
+            ],
+            "title": "Offer Type",
+            "type": "string"
+          },
+          "place": {
+            "$ref": "#/components/schemas/PlaceRefModel"
+          }
+        },
+        "required": [
+          "offer_type",
+          "estate_type",
+          "place",
+          "min_price",
+          "max_price",
+          "min_size_m2",
+          "min_land_m2",
+          "min_rooms",
+          "max_rooms",
+          "kitchen"
+        ],
+        "title": "CriteriaBody",
+        "type": "object"
+      },
+      "CriteriaModel": {
+        "properties": {
+          "estate_type": {
+            "enum": [
+              "flat",
+              "house",
+              "land",
+              "cottage"
+            ],
+            "title": "Estate Type",
+            "type": "string"
+          },
+          "kitchen": {
+            "anyOf": [
+              {
+                "enum": [
+                  "kitchenette",
+                  "separate"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kitchen"
+          },
+          "max_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Price"
+          },
+          "max_rooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Rooms"
+          },
+          "min_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Land M2"
+          },
+          "min_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Price"
+          },
+          "min_rooms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Rooms"
+          },
+          "min_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Size M2"
+          },
+          "offer_type": {
+            "enum": [
+              "rent",
+              "sale"
+            ],
+            "title": "Offer Type",
+            "type": "string"
+          },
+          "place": {
+            "$ref": "#/components/schemas/NamedPlaceModel"
+          }
+        },
+        "required": [
+          "offer_type",
+          "estate_type",
+          "place",
+          "min_price",
+          "max_price",
+          "min_size_m2",
+          "min_land_m2",
+          "min_rooms",
+          "max_rooms",
+          "kitchen"
+        ],
+        "title": "CriteriaModel",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -294,6 +535,105 @@
         "title": "LocationModel",
         "type": "object"
       },
+      "NamedPlaceModel": {
+        "description": "A place with its name and the names of the obec and okres it lies\nin. The name is None only for a stored place the gazetteer no longer\nknows.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "kraj",
+              "okres",
+              "obec",
+              "obvod",
+              "mestska_cast",
+              "cast_obce",
+              "ulice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "obec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obec"
+          },
+          "okres": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Okres"
+          }
+        },
+        "required": [
+          "kind",
+          "code",
+          "name",
+          "obec",
+          "okres"
+        ],
+        "title": "NamedPlaceModel",
+        "type": "object"
+      },
+      "NewProfileBody": {
+        "additionalProperties": false,
+        "properties": {
+          "criteria": {
+            "$ref": "#/components/schemas/CriteriaBody"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "portals": {
+            "items": {
+              "enum": [
+                "sreality",
+                "bezrealitky",
+                "remax"
+              ],
+              "type": "string"
+            },
+            "title": "Portals",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/PreferencesBody"
+          }
+        },
+        "required": [
+          "name",
+          "portals",
+          "criteria",
+          "preferences"
+        ],
+        "title": "NewProfileBody",
+        "type": "object"
+      },
       "PlaceModel": {
         "properties": {
           "code": {
@@ -310,6 +650,34 @@
           "name"
         ],
         "title": "PlaceModel",
+        "type": "object"
+      },
+      "PlaceRefModel": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "kraj",
+              "okres",
+              "obec",
+              "obvod",
+              "mestska_cast",
+              "cast_obce",
+              "ulice"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "code"
+        ],
+        "title": "PlaceRefModel",
         "type": "object"
       },
       "PortalHealthModel": {
@@ -357,11 +725,233 @@
         "title": "PortalHealthModel",
         "type": "object"
       },
+      "PreferencesBody": {
+        "additionalProperties": false,
+        "properties": {
+          "disposition_weight": {
+            "title": "Disposition Weight",
+            "type": "number"
+          },
+          "ideal_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Land M2"
+          },
+          "ideal_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Size M2"
+          },
+          "land_weight": {
+            "title": "Land Weight",
+            "type": "number"
+          },
+          "max_good_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Good Price"
+          },
+          "place_weight": {
+            "title": "Place Weight",
+            "type": "number"
+          },
+          "preferred_dispositions": {
+            "items": {
+              "enum": [
+                "1+kk",
+                "1+1",
+                "2+kk",
+                "2+1",
+                "3+kk",
+                "3+1",
+                "4+kk",
+                "4+1",
+                "5+kk",
+                "5+1",
+                "6+kk",
+                "6+1",
+                "7+kk",
+                "7+1",
+                "8+kk",
+                "8+1",
+                "9+kk",
+                "9+1",
+                "atypicky"
+              ],
+              "type": "string"
+            },
+            "title": "Preferred Dispositions",
+            "type": "array"
+          },
+          "preferred_places": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceRefModel"
+            },
+            "title": "Preferred Places",
+            "type": "array"
+          },
+          "price_per_m2_weight": {
+            "title": "Price Per M2 Weight",
+            "type": "number"
+          },
+          "price_weight": {
+            "title": "Price Weight",
+            "type": "number"
+          },
+          "size_weight": {
+            "title": "Size Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "price_per_m2_weight",
+          "disposition_weight",
+          "preferred_dispositions",
+          "size_weight",
+          "ideal_size_m2",
+          "place_weight",
+          "preferred_places",
+          "land_weight",
+          "ideal_land_m2",
+          "price_weight",
+          "max_good_price"
+        ],
+        "title": "PreferencesBody",
+        "type": "object"
+      },
+      "PreferencesModel": {
+        "properties": {
+          "disposition_weight": {
+            "title": "Disposition Weight",
+            "type": "number"
+          },
+          "ideal_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Land M2"
+          },
+          "ideal_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Size M2"
+          },
+          "land_weight": {
+            "title": "Land Weight",
+            "type": "number"
+          },
+          "max_good_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Good Price"
+          },
+          "place_weight": {
+            "title": "Place Weight",
+            "type": "number"
+          },
+          "preferred_dispositions": {
+            "items": {
+              "enum": [
+                "1+kk",
+                "1+1",
+                "2+kk",
+                "2+1",
+                "3+kk",
+                "3+1",
+                "4+kk",
+                "4+1",
+                "5+kk",
+                "5+1",
+                "6+kk",
+                "6+1",
+                "7+kk",
+                "7+1",
+                "8+kk",
+                "8+1",
+                "9+kk",
+                "9+1",
+                "atypicky"
+              ],
+              "type": "string"
+            },
+            "title": "Preferred Dispositions",
+            "type": "array"
+          },
+          "preferred_places": {
+            "items": {
+              "$ref": "#/components/schemas/NamedPlaceModel"
+            },
+            "title": "Preferred Places",
+            "type": "array"
+          },
+          "price_per_m2_weight": {
+            "title": "Price Per M2 Weight",
+            "type": "number"
+          },
+          "price_weight": {
+            "title": "Price Weight",
+            "type": "number"
+          },
+          "size_weight": {
+            "title": "Size Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "price_per_m2_weight",
+          "disposition_weight",
+          "preferred_dispositions",
+          "size_weight",
+          "ideal_size_m2",
+          "place_weight",
+          "preferred_places",
+          "land_weight",
+          "ideal_land_m2",
+          "price_weight",
+          "max_good_price"
+        ],
+        "title": "PreferencesModel",
+        "type": "object"
+      },
       "ProfileModel": {
         "properties": {
-          "enabled": {
-            "title": "Enabled",
-            "type": "boolean"
+          "criteria": {
+            "$ref": "#/components/schemas/CriteriaModel"
           },
           "id": {
             "title": "Id",
@@ -370,14 +960,80 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "paused_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused At"
+          },
+          "portals": {
+            "items": {
+              "enum": [
+                "sreality",
+                "bezrealitky",
+                "remax"
+              ],
+              "type": "string"
+            },
+            "title": "Portals",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/PreferencesModel"
           }
         },
         "required": [
           "id",
           "name",
-          "enabled"
+          "paused_at",
+          "portals",
+          "criteria",
+          "preferences"
         ],
         "title": "ProfileModel",
+        "type": "object"
+      },
+      "ProfileUpdateBody": {
+        "additionalProperties": false,
+        "description": "Everything about a profile but its criteria, which stay as created.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "portals": {
+            "items": {
+              "enum": [
+                "sreality",
+                "bezrealitky",
+                "remax"
+              ],
+              "type": "string"
+            },
+            "title": "Portals",
+            "type": "array"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/PreferencesBody"
+          }
+        },
+        "required": [
+          "name",
+          "paused",
+          "portals",
+          "preferences"
+        ],
+        "title": "ProfileUpdateBody",
         "type": "object"
       },
       "RunCountsModel": {
@@ -770,6 +1426,224 @@
           }
         },
         "summary": "List Profiles"
+      },
+      "post": {
+        "operationId": "create_profile_v1_profiles_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProfileBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Profile"
+      }
+    },
+    "/v1/profiles/{profile_id}": {
+      "delete": {
+        "operationId": "delete_profile_v1_profiles__profile_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Profile"
+      },
+      "get": {
+        "operationId": "get_profile_v1_profiles__profile_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Profile"
+      },
+      "put": {
+        "operationId": "update_profile_v1_profiles__profile_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Profile"
       }
     },
     "/v1/profiles/{profile_id}/listings": {

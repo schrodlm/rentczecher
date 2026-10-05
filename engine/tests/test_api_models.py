@@ -6,11 +6,11 @@ from tests.profiles import profile
 
 
 class TestProfileModel:
-    def test_a_paused_profile_is_not_enabled(self):
-        """A paused profile goes out as not enabled."""
+    def test_a_paused_profile_goes_out_with_its_paused_at(self):
+        """A paused profile goes out with the time it was paused."""
         paused = profile(id="matej", name="Matěj", paused_at="2026-10-04T00:00:00+00:00")
-        model = ProfileModel.from_profile(paused)
-        assert model.enabled is False
+        model = ProfileModel.from_profile(paused, named_places={})
+        assert model.paused_at == "2026-10-04T00:00:00+00:00"
 
 
 class TestListingModel:
