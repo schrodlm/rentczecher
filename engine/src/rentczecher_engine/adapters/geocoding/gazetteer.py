@@ -56,6 +56,30 @@ _SEARCH_MAX_RESULTS = 20
 # the cap.
 _SEARCH_MAX_CANDIDATES = 2000
 
+# Every place of every kind in one row shape, with the obec, okres and kraj
+# codes a query filters by.
+_EVERY_PLACE = """
+    SELECT 'kraj' AS kind, code, name, name_norm,
+           NULL AS obec_code, NULL AS obec_norm, NULL AS okres_code, code AS kraj_code,
+           lat, lon
+    FROM kraje
+    UNION ALL
+    SELECT 'okres' AS kind, code, name, name_norm,
+           NULL AS obec_code, NULL AS obec_norm, code AS okres_code, kraj_code,
+           lat, lon
+    FROM okresy
+    UNION ALL
+    SELECT 'obvod' AS kind, ob.code, ob.name, ob.name_norm,
+           ob.obec_code, o.name_norm AS obec_norm, o.okres_code, o.kraj_code,
+           ob.lat, ob.lon
+    FROM obvody ob JOIN obce o ON o.code = ob.obec_code
+    UNION ALL
+    SELECT p.kind, p.code, p.name, p.name_norm,
+           p.obec_code, p.obec_norm, o.okres_code, o.kraj_code,
+           p.lat, p.lon
+    FROM places p JOIN obce o ON o.code = p.obec_code
+"""
+
 # The schema this code reads. The build stamps it into the file, and a file
 # built for another schema is refused rather than misread.
 SCHEMA_VERSION = 4
@@ -388,28 +412,8 @@ class Gazetteer:
 
     def _places_starting_with(self, prefix: str, kinds: tuple[PlaceKind, ...] | None, kraj_code: int | None,
                               okres_code: int | None, obec_code: int | None, limit: int) -> sqlite3.Cursor:
-        stmt = """
-            SELECT kind, code, name, name_norm, obec_code, obec_norm, lat, lon FROM (
-                SELECT 'kraj' AS kind, code, name, name_norm,
-                       NULL AS obec_code, NULL AS obec_norm, NULL AS okres_code, code AS kraj_code,
-                       lat, lon
-                FROM kraje
-                UNION ALL
-                SELECT 'okres' AS kind, code, name, name_norm,
-                       NULL AS obec_code, NULL AS obec_norm, code AS okres_code, kraj_code,
-                       lat, lon
-                FROM okresy
-                UNION ALL
-                SELECT 'obvod' AS kind, ob.code, ob.name, ob.name_norm,
-                       ob.obec_code, o.name_norm AS obec_norm, o.okres_code, o.kraj_code,
-                       ob.lat, ob.lon
-                FROM obvody ob JOIN obce o ON o.code = ob.obec_code
-                UNION ALL
-                SELECT p.kind, p.code, p.name, p.name_norm,
-                       p.obec_code, p.obec_norm, o.okres_code, o.kraj_code,
-                       p.lat, p.lon
-                FROM places p JOIN obce o ON o.code = p.obec_code
-            )
+        stmt = f"""
+            SELECT kind, code, name, name_norm, obec_code, obec_norm, lat, lon FROM ({_EVERY_PLACE})
             WHERE substr(name_norm, 1, length(:prefix)) = :prefix
               AND (:kinds IS NULL OR kind IN (SELECT value FROM json_each(:kinds)))
               AND (:kraj_code IS NULL OR kraj_code = :kraj_code)
