@@ -11,7 +11,7 @@ refactor."""
 from collections.abc import Mapping
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition, DispositionCode, Kitchen, parse_disposition
@@ -24,7 +24,8 @@ class PlaceRefModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kind: PlaceKind
-    code: int
+    # RÚIAN codes are positive, and the gazetteer stores them as 64-bit integers.
+    code: int = Field(gt=0, lt=2**63)
 
     def to_place_ref(self) -> PlaceRef:
         return PlaceRef(kind=self.kind, code=self.code)

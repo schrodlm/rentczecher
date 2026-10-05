@@ -656,6 +656,8 @@
         "additionalProperties": false,
         "properties": {
           "code": {
+            "exclusiveMaximum": 9.223372036854776e+18,
+            "exclusiveMinimum": 0.0,
             "title": "Code",
             "type": "integer"
           },
@@ -1376,6 +1378,110 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/v1/places": {
+      "get": {
+        "description": "Places whose name starts with q, optionally only those at least\npartly inside within, given as <kind>:<code>, and only of the given\nkinds.",
+        "operationId": "search_places_v1_places_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "within",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Within"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "kraj",
+                      "okres",
+                      "obec",
+                      "obvod",
+                      "mestska_cast",
+                      "cast_obce",
+                      "ulice"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NamedPlaceModel"
+                  },
+                  "title": "Response Search Places V1 Places Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Places"
       }
     },
     "/v1/profiles": {
