@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from typing import Literal
 
@@ -63,6 +64,17 @@ class Preferences:
     max_good_price: int | None
 
     def __post_init__(self) -> None:
+        weights = {
+            "price_per_m2_weight": self.price_per_m2_weight,
+            "disposition_weight": self.disposition_weight,
+            "size_weight": self.size_weight,
+            "place_weight": self.place_weight,
+            "land_weight": self.land_weight,
+            "price_weight": self.price_weight,
+        }
+        for name, weight in weights.items():
+            if not math.isfinite(weight) or weight < 0:
+                raise ValueError(f"{name} must be finite and not negative")
         if len(set(self.preferred_dispositions)) != len(self.preferred_dispositions):
             raise ValueError("preferred_dispositions must not repeat")
         if len(set(self.preferred_places)) != len(self.preferred_places):
