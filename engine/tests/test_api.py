@@ -192,7 +192,7 @@ class TestListProfiles:
         body = response.json()
         assert {p["id"] for p in body} == {praha7.id, domazlice.id}
         paused = next(p for p in body if p["id"] == domazlice.id)
-        assert paused["enabled"] is False
+        assert paused["paused_at"] == BASE.isoformat()
 
 
 def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location | None = None) -> None:
