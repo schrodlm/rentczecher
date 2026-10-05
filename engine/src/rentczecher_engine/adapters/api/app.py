@@ -20,7 +20,7 @@ from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker
 from rentczecher_engine.adapters.api.routes import events, health, listings, profiles, runs, shutdown
 from rentczecher_engine.adapters.api.run_manager import PipelineRunner, RunManager
-from rentczecher_engine.domain.errors import ProfileNotFoundError
+from rentczecher_engine.domain.errors import PlaceNotFoundError, ProfileNotFoundError
 from rentczecher_engine.services.pipeline import run_profile as default_run_profile
 
 
@@ -45,11 +45,14 @@ def create_app(
         app.add_middleware(
             CORSMiddleware,
             allow_origins=allowed_origins,
-            allow_methods=["GET", "POST", "PATCH"],
+            # Starlette allows only GET by default, so every other method a
+            # route serves must be listed here or the browser blocks it.
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
             allow_headers=["Authorization"],
         )
 
     app.add_exception_handler(ProfileNotFoundError, _not_found)
+    app.add_exception_handler(PlaceNotFoundError, _unprocessable)
 
     auth = BearerAuth(token)
     events_auth = BearerOrQueryTokenAuth(token)
@@ -72,3 +75,7 @@ def create_app(
 
 def _not_found(request: Request, error: Exception) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": str(error)})
+
+
+def _unprocessable(request: Request, error: Exception) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": str(error)})
