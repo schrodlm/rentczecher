@@ -6,7 +6,7 @@ from uuid import uuid4
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import PlaceRef
-from rentczecher_engine.domain.profile import Criteria, Preferences, Profile
+from rentczecher_engine.domain.profile import Criteria, Portal, Preferences, Profile
 
 
 class SqliteProfileRepository:
@@ -18,7 +18,7 @@ class SqliteProfileRepository:
         self._conn.row_factory = sqlite3.Row
         self._now = now
 
-    def add(self, name: str, portals: tuple[str, ...], criteria: Criteria, preferences: Preferences) -> Profile:
+    def add(self, name: str, portals: tuple[Portal, ...], criteria: Criteria, preferences: Preferences) -> Profile:
         """Stores a new, unpaused profile and returns it as it reads back:
         with its generated id, and its portals, which have no order, sorted."""
         profile = Profile(
@@ -39,7 +39,7 @@ class SqliteProfileRepository:
         self._insert_preferences(profile.id, profile.preferences)
         return profile
 
-    def update(self, profile_id: str, name: str, paused: bool, portals: tuple[str, ...],
+    def update(self, profile_id: str, name: str, paused: bool, portals: tuple[Portal, ...],
                preferences: Preferences) -> Profile | None:
         """Everything but the criteria, which stay as created. None for an
         unknown id."""
@@ -146,7 +146,7 @@ class SqliteProfileRepository:
             criteria.kitchen,
         ))
 
-    def _insert_portals(self, profile_id: str, portals: tuple[str, ...]) -> None:
+    def _insert_portals(self, profile_id: str, portals: tuple[Portal, ...]) -> None:
         stmt = "INSERT INTO profile_portals (profile_id, portal) VALUES (?, ?)"
         for portal in portals:
             self._conn.execute(stmt, (profile_id, portal))
@@ -177,7 +177,7 @@ class SqliteProfileRepository:
         for rank, place in enumerate(preferences.preferred_places, start=1):
             self._conn.execute(stmt, (profile_id, place.kind, place.code, rank))
 
-    def _to_profile(self, row: sqlite3.Row, portals: tuple[str, ...],
+    def _to_profile(self, row: sqlite3.Row, portals: tuple[Portal, ...],
                     preferred_dispositions: tuple[Disposition, ...],
                     preferred_places: tuple[PlaceRef, ...]) -> Profile:
         return Profile(
@@ -219,7 +219,7 @@ class SqliteProfileRepository:
             max_good_price=row["max_good_price"],
         )
 
-    def _portals(self, profile_id: str) -> tuple[str, ...]:
+    def _portals(self, profile_id: str) -> tuple[Portal, ...]:
         stmt = "SELECT portal FROM profile_portals WHERE profile_id = ? ORDER BY portal"
         return tuple(row["portal"] for row in self._conn.execute(stmt, (profile_id,)))
 

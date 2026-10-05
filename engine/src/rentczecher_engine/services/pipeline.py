@@ -103,8 +103,8 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
     run_id = str(uuid4())
     started_at = deps.clock()
 
-    enabled = {name: cls for name, cls in deps.scrapers.items()
-              if name in profile.portals}
+    enabled: Mapping[str, Callable[[Criteria, object], Scraper]] = {
+        name: cls for name, cls in deps.scrapers.items() if name in profile.portals}
     try:
         scraped, scraper_health = scrape_all(enabled, profile.criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
