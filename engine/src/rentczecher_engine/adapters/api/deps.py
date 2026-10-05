@@ -14,7 +14,7 @@ from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection
@@ -22,6 +22,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.client import build_client
+from rentczecher_engine.domain.errors import ProfileNotFoundError
 from rentczecher_engine.domain.profile import Criteria, Profile
 from rentczecher_engine.services.pipeline import PipelineDeps
 from rentczecher_engine.services.scrape import Scraper
@@ -76,11 +77,10 @@ class ApiDeps:
 
 
 def require_profile(deps: ApiDeps, profile_id: str) -> Profile:
-    """Looks up a profile or raises the 404 every route needs on an unknown
-    profile_id, so the check has one home instead of one per route."""
+    """The profile, or ProfileNotFoundError, which the app answers with a 404."""
     profile = deps.profile(profile_id)
     if profile is None:
-        raise HTTPException(status_code=404, detail=f"unknown profile {profile_id!r}")
+        raise ProfileNotFoundError(profile_id)
     return profile
 
 
