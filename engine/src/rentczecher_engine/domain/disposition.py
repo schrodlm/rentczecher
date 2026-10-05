@@ -9,13 +9,17 @@ therefore splits real matches.
 import re
 import unicodedata
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 Kitchen = Literal["kitchenette", "separate"]
+DispositionCode = Literal[
+    "1+kk", "1+1", "2+kk", "2+1", "3+kk", "3+1", "4+kk", "4+1", "5+kk", "5+1",
+    "6+kk", "6+1", "7+kk", "7+1", "8+kk", "8+1", "9+kk", "9+1", "atypicky",
+]
 
 # A studio (garsoniéra, garsonka) is a 1+kk by another name.
 _STUDIO_SYNONYMS = {"garsoniera", "garsonka"}
-_ATYPICAL_CODE = "atypicky"
+_ATYPICAL_CODE: DispositionCode = "atypicky"
 _LAYOUT = re.compile(r"^([1-9])\s*\+\s*(kk|1)$")
 
 
@@ -30,13 +34,15 @@ class Disposition:
     def __post_init__(self) -> None:
         if (self.rooms is None) != (self.kitchen is None):
             raise ValueError("a disposition has both rooms and a kitchen, or neither")
+        if self.rooms is not None and not 1 <= self.rooms <= 9:
+            raise ValueError("a disposition has 1 to 9 rooms")
 
     @property
-    def code(self) -> str:
+    def code(self) -> DispositionCode:
         """The canonical spelling: '2+kk', '2+1' or 'atypicky'."""
         if self.rooms is None or self.kitchen is None:
             return _ATYPICAL_CODE
-        return f"{self.rooms}+{'kk' if self.kitchen == 'kitchenette' else '1'}"
+        return cast(DispositionCode, f"{self.rooms}+{'kk' if self.kitchen == 'kitchenette' else '1'}")
 
 
 ATYPICAL = Disposition(rooms=None, kitchen=None)
