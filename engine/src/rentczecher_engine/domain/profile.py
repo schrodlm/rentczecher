@@ -6,6 +6,7 @@ from rentczecher_engine.domain.location import PlaceRef
 
 OfferType = Literal["rent", "sale"]
 EstateType = Literal["flat", "house", "land", "cottage"]
+Portal = Literal["sreality", "bezrealitky", "remax"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,7 +87,7 @@ class Profile:
     id: str
     name: str
     paused_at: str | None
-    portals: tuple[str, ...]
+    portals: tuple[Portal, ...]
     criteria: Criteria
     preferences: Preferences
 
