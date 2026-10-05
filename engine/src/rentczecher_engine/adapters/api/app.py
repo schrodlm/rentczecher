@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker
-from rentczecher_engine.adapters.api.routes import events, health, listings, profiles, runs, shutdown
+from rentczecher_engine.adapters.api.routes import events, health, listings, places, profiles, runs, shutdown
 from rentczecher_engine.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ProfileNotFoundError
 from rentczecher_engine.services.pipeline import run_profile as default_run_profile
@@ -61,7 +61,7 @@ def create_app(
     app.state.run_manager = RunManager(
         api_deps.build_pipeline_deps, app.state.event_broker, run_profile=run_profile)
 
-    for router in (profiles.router, listings.router, runs.router, health.router):
+    for router in (profiles.router, places.router, listings.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])
     app.include_router(events.router, dependencies=[Depends(events_auth)])
 
