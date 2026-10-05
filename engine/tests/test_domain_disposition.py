@@ -3,9 +3,11 @@
 Run: python3 -m pytest tests/test_domain_disposition.py -v
 """
 
+from typing import get_args
+
 import pytest
 
-from rentczecher_engine.domain.disposition import ATYPICAL, Disposition, parse_disposition
+from rentczecher_engine.domain.disposition import ATYPICAL, Disposition, DispositionCode, parse_disposition
 
 
 def _code(raw: str | None) -> str | None:
@@ -71,3 +73,15 @@ class TestDisposition:
             Disposition(rooms=2, kitchen=None)
         with pytest.raises(ValueError):
             Disposition(rooms=None, kitchen="separate")
+
+    @pytest.mark.parametrize("rooms", [0, 10])
+    def test_rooms_outside_one_to_nine_are_refused(self, rooms):
+        with pytest.raises(ValueError):
+            Disposition(rooms=rooms, kitchen="separate")
+
+    def test_codes_are_exactly_the_disposition_code_literal(self):
+        codes = {ATYPICAL.code}
+        for rooms in range(1, 10):
+            for kitchen in ("kitchenette", "separate"):
+                codes.add(Disposition(rooms=rooms, kitchen=kitchen).code)
+        assert codes == set(get_args(DispositionCode))

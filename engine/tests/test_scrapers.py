@@ -5,11 +5,12 @@ Run: python3 -m pytest tests/test_scrapers.py -v
 
 import json
 from pathlib import Path
+from typing import get_args
 
 import httpx
 import pytest
 
-from rentczecher_engine.adapters.scrapers import bezrealitky, remax, sreality
+from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS, bezrealitky, remax, sreality
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher_engine.adapters.scrapers.bezrealitky import _parse_location as _bez_parse_location
 from rentczecher_engine.adapters.scrapers.client import build_client
@@ -19,7 +20,7 @@ from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
 from rentczecher_engine.adapters.scrapers.sreality import _parse_location as _sreality_parse_location
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
-from rentczecher_engine.domain.profile import Criteria
+from rentczecher_engine.domain.profile import Criteria, Portal
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sreality"
 
@@ -684,6 +685,11 @@ class TestRemaxPlaceBasedUrl:
         url = RemaxScraper(criteria, _refusing_client())._build_url()
         assert url.count("regions%5B43%5D") == 7
         assert "regions%5B43%5D%5B3401%5D=on" in url
+
+
+class TestPortalCoverage:
+    def test_every_portal_has_a_scraper(self):
+        assert set(ALL_SCRAPERS) == set(get_args(Portal))
 
 
 class TestEstateOfferTypeCoverage:
