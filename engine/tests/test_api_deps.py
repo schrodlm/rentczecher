@@ -2,10 +2,10 @@ from contextlib import closing
 from pathlib import Path
 
 import pytest
-from fastapi import HTTPException
 
 from rentczecher_engine.adapters.api.deps import ApiDeps, require_profile
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
+from rentczecher_engine.domain.errors import ProfileNotFoundError
 from rentczecher_engine.domain.profile import Profile
 from tests.profiles import stored_profile
 
@@ -43,8 +43,7 @@ class TestRequireProfile:
         """A known id resolves to its profile."""
         assert require_profile(_deps(tmp_path), matej.id).id == matej.id
 
-    def test_unknown_profile_raises_404(self, tmp_path, matej):
-        """An unknown id raises the 404 routes rely on."""
-        with pytest.raises(HTTPException) as excinfo:
+    def test_unknown_profile_raises_profile_not_found(self, tmp_path, matej):
+        """An unknown id raises ProfileNotFoundError."""
+        with pytest.raises(ProfileNotFoundError):
             require_profile(_deps(tmp_path), "ghost")
-        assert excinfo.value.status_code == 404

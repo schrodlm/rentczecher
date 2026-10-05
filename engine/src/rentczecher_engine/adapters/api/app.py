@@ -11,14 +11,16 @@ reachable without the token.
 
 from collections.abc import Callable
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker
 from rentczecher_engine.adapters.api.routes import events, health, listings, profiles, runs, shutdown
 from rentczecher_engine.adapters.api.run_manager import PipelineRunner, RunManager
+from rentczecher_engine.domain.errors import ProfileNotFoundError
 from rentczecher_engine.services.pipeline import run_profile as default_run_profile
 
 
@@ -47,6 +49,8 @@ def create_app(
             allow_headers=["Authorization"],
         )
 
+    app.add_exception_handler(ProfileNotFoundError, _not_found)
+
     auth = BearerAuth(token)
     events_auth = BearerOrQueryTokenAuth(token)
     app.state.api_deps = api_deps
@@ -64,3 +68,7 @@ def create_app(
         app.include_router(shutdown.router, dependencies=[Depends(auth)])
 
     return app
+
+
+def _not_found(request: Request, error: Exception) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(error)})
