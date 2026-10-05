@@ -4,6 +4,7 @@ Run: python3 -m pytest tests/test_profile.py -v
 """
 
 import dataclasses
+import math
 
 import pytest
 
@@ -48,6 +49,19 @@ class TestPreferenceSettings:
                     place_weight=10, preferred_places=(PlaceRef("obvod", 78),),
                     land_weight=10, ideal_land_m2=1,
                     price_weight=10, max_good_price=1)
+
+
+class TestPreferenceWeights:
+    """A weight is finite and never negative."""
+
+    @pytest.mark.parametrize("weight", [
+        "price_per_m2_weight", "disposition_weight", "size_weight",
+        "place_weight", "land_weight", "price_weight",
+    ])
+    @pytest.mark.parametrize("value", [-1, math.inf, math.nan])
+    def test_a_negative_or_non_finite_weight_is_rejected(self, weight, value):
+        with pytest.raises(ValueError, match=f"{weight} must be finite and not negative"):
+            preferences(**{weight: value})
 
 
 class TestCriteriaBounds:
