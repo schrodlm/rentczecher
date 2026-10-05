@@ -266,13 +266,14 @@ class TestCreateProfile:
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"place": {"kind": "obvod", "code": 999_999_999}}),
         _new_profile_body(preferences=_preferences_body(
             place_weight=10, preferred_places=[{"kind": "cast_obce", "code": 999_999_999}])),
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"place": {"kind": "obvod", "code": 2**70}}),
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"min_price": 30000}),
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"max_price": 2**70}),
         _new_profile_body(portals=["sreality", "sreality"]),
         _new_profile_body(portals=["idnes"]),
         _new_profile_body(preferences=_preferences_body(preferred_dispositions=["2+2"])),
         _new_profile_body(colour="blue"),
-    ], ids=["unknown place", "unknown preferred place", "min above max", "price too large to store",
+    ], ids=["unknown place", "unknown preferred place", "place code too large to store", "min above max", "price too large to store",
             "repeated portal", "unknown portal", "unknown disposition", "unknown field"])
     def test_an_invalid_profile_is_422_and_stores_nothing(self, tmp_path, body):
         client = _client(tmp_path)
@@ -328,6 +329,37 @@ class TestDeleteProfile:
     def test_unknown_profile_is_404(self, tmp_path):
         response = _client(tmp_path).delete("/v1/profiles/nope", headers=_auth())
         assert response.status_code == 404
+
+
+class TestSearchPlaces:
+    def test_finds_places_by_the_start_of_their_name_with_their_obec_and_okres(self, tmp_path):
+        response = _client(tmp_path).get("/v1/places", headers=_auth(), params={"q": "holešovice", "kind": "cast_obce"})
+        assert response.json() == [
+            {"kind": "cast_obce", "code": 490067, "name": "Holešovice", "obec": "Praha", "okres": None},
+            {"kind": "cast_obce", "code": 41114, "name": "Holešovice", "obec": "Chroustovice", "okres": "Chrudim"},
+        ]
+
+    def test_within_keeps_places_at_least_partly_inside_it(self, tmp_path):
+        response = _client(tmp_path).get("/v1/places", headers=_auth(), params={"q": "holeš", "within": "obvod:78"})
+        assert [(place["kind"], place["name"]) for place in response.json()] == [("cast_obce", "Holešovice")]
+
+    def test_kinds_narrow_the_results(self, tmp_path):
+        params = {"q": "domaž", "kind": ["okres", "obec"]}
+        response = _client(tmp_path).get("/v1/places", headers=_auth(), params=params)
+        assert {place["kind"] for place in response.json()} == {"okres", "obec"}
+
+    @pytest.mark.parametrize("params", [
+        {},
+        {"q": "na", "within": "obvod:999999999"},
+        {"q": "na", "within": "obvod"},
+        {"q": "na", "within": "nope:1"},
+        {"q": "na", "within": f"obvod:{2**70}"},
+        {"q": "na", "kind": "nope"},
+    ], ids=["no query", "unknown within", "within without code", "within of no kind",
+            "within code too large to store", "unknown kind"])
+    def test_an_invalid_search_is_422(self, tmp_path, params):
+        response = _client(tmp_path).get("/v1/places", headers=_auth(), params=params)
+        assert response.status_code == 422
 
 
 def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location | None = None) -> None:
