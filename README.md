@@ -69,9 +69,12 @@ engine/.venv/bin/rentczecher --dry-run --profile <profile id>   # just one profi
 
 ## Profiles
 
-Profiles are user data in the database. Creating them from the app comes with
-the profile API and the editor screen (issues #16 and #11). Today a profile
-only exists through a scenario seed or the repository.
+Profiles are user data in the database, created, edited and deleted through
+the engine's API (`/v1/profiles`). The app's editor screen (issue #11) will be
+built on it. Places are picked from the gazetteer through `/v1/places`, which
+finds real places by the start of their official name, so a profile only ever
+holds a place that exists. The full contract is in
+[`docs/api/openapi.json`](docs/api/openapi.json).
 
 Each profile is a self-contained search with three parts:
 
@@ -83,8 +86,13 @@ Each profile is a self-contained search with three parts:
   search place.
 - **Preferences** only score and order what is shown. Each has a weight, and
   all but price per m² have a setting: an ideal size or land area, a good
-  price, and ranked preferred dispositions and places. A setting may be empty
-  only while its weight is 0.
+  price, and ranked preferred dispositions and places. A weight is never
+  negative, and a setting may be empty only while its weight is 0.
+
+The criteria are fixed once a profile is created, since listings already
+tracked were found under them. Everything else can change: the name, the
+portals, the preferences and whether the profile is paused. Listings from a
+portal taken off a profile stay, and new scans just stop visiting it.
 
 A few things worth knowing:
 
