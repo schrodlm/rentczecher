@@ -374,6 +374,17 @@ class Gazetteer:
             raise AmbiguousPlaceError(f"{kind} {name}")
         return PlaceRef(kind=kind, code=rows[0]["code"])
 
+    def named_place(self, place: PlaceRef) -> PlaceMatch | None:
+        """None when the gazetteer does not know the place."""
+        stmt = f"""
+            SELECT kind, code, name, name_norm, obec_code, obec_norm, lat, lon FROM ({_EVERY_PLACE})
+            WHERE kind = ? AND code = ?
+        """
+        row = self._conn.execute(stmt, (place.kind, place.code)).fetchone()
+        if row is None:
+            return None
+        return _to_place_match(row, self._location_of(row))
+
     def search_places(self, query: str, within: PlaceRef | None = None,
                       kinds: tuple[PlaceKind, ...] | None = None) -> list[PlaceMatch]:
         """Places whose name starts with the query, coarsest kind first, then
