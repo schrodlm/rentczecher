@@ -139,6 +139,18 @@ class TestCors:
         assert response.status_code == 200
         assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
 
+    @pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
+    def test_preflight_grants_every_method_a_route_serves(self, tmp_path, method):
+        app = create_app(TOKEN, _api_deps(tmp_path), run_profile=_stub_run_profile(),
+                         allowed_origins=["http://localhost:5173"])
+        response = TestClient(app).options("/v1/profiles", headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": method,
+            "Access-Control-Request-Headers": "authorization",
+        })
+        assert response.status_code == 200
+        assert method in response.headers["access-control-allow-methods"]
+
     def test_preflight_is_refused_without_configured_origins(self, tmp_path):
         """No origins granted means no CORS surface at all: the preflight
         dies on the missing OPTIONS route."""
@@ -193,6 +205,129 @@ class TestListProfiles:
         assert {p["id"] for p in body} == {praha7.id, domazlice.id}
         paused = next(p for p in body if p["id"] == domazlice.id)
         assert paused["paused_at"] == BASE.isoformat()
+
+
+def _new_profile_body(**overrides) -> dict:
+    body = {
+        "name": "Praha 7 byty",
+        "portals": ["sreality", "remax"],
+        "criteria": {
+            "offer_type": "rent", "estate_type": "flat", "place": {"kind": "obvod", "code": 78},
+            "min_price": None, "max_price": 25000, "min_size_m2": None, "min_land_m2": None,
+            "min_rooms": None, "max_rooms": None, "kitchen": None,
+        },
+        "preferences": _preferences_body(),
+    }
+    return body | overrides
+
+
+def _preferences_body(**overrides) -> dict:
+    body = {
+        "price_per_m2_weight": 0, "disposition_weight": 0, "preferred_dispositions": [],
+        "size_weight": 0, "ideal_size_m2": None, "place_weight": 0, "preferred_places": [],
+        "land_weight": 0, "ideal_land_m2": None, "price_weight": 0, "max_good_price": None,
+    }
+    return body | overrides
+
+
+def _update_body(**overrides) -> dict:
+    body = {"name": "Praha 7 byty", "paused": False, "portals": ["sreality"], "preferences": _preferences_body()}
+    return body | overrides
+
+
+class TestGetProfile:
+    def test_names_the_places_it_stores_as_codes(self, tmp_path, praha7):
+        response = _client(tmp_path).get(f"/v1/profiles/{praha7.id}", headers=_auth())
+        assert response.json()["criteria"]["place"] == {
+            "kind": "obvod", "code": 78, "name": "Praha 7", "obec": "Praha", "okres": None}
+
+    def test_a_place_the_gazetteer_no_longer_knows_goes_out_unnamed(self, tmp_path):
+        with closing(connection.connect(_db(tmp_path))) as conn:
+            stored = stored_profile(conn, criteria=criteria(place=PlaceRef("obvod", 999_999_999)))
+        response = _client(tmp_path).get(f"/v1/profiles/{stored.id}", headers=_auth())
+        assert response.json()["criteria"]["place"] == {
+            "kind": "obvod", "code": 999_999_999, "name": None, "obec": None, "okres": None}
+
+    def test_unknown_profile_is_404(self, tmp_path):
+        response = _client(tmp_path).get("/v1/profiles/nope", headers=_auth())
+        assert response.status_code == 404
+
+
+class TestCreateProfile:
+    def test_a_created_profile_reads_back_as_it_was_answered(self, tmp_path):
+        client = _client(tmp_path)
+        created = client.post("/v1/profiles", headers=_auth(), json=_new_profile_body())
+        assert created.status_code == 201
+        assert created.json()["paused_at"] is None
+        assert created.json()["portals"] == ["remax", "sreality"]
+        assert client.get(f"/v1/profiles/{created.json()['id']}", headers=_auth()).json() == created.json()
+
+    @pytest.mark.parametrize("body", [
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"place": {"kind": "obvod", "code": 999_999_999}}),
+        _new_profile_body(preferences=_preferences_body(
+            place_weight=10, preferred_places=[{"kind": "cast_obce", "code": 999_999_999}])),
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"min_price": 30000}),
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"max_price": 2**70}),
+        _new_profile_body(portals=["sreality", "sreality"]),
+        _new_profile_body(portals=["idnes"]),
+        _new_profile_body(preferences=_preferences_body(preferred_dispositions=["2+2"])),
+        _new_profile_body(colour="blue"),
+    ], ids=["unknown place", "unknown preferred place", "min above max", "price too large to store",
+            "repeated portal", "unknown portal", "unknown disposition", "unknown field"])
+    def test_an_invalid_profile_is_422_and_stores_nothing(self, tmp_path, body):
+        client = _client(tmp_path)
+        response = client.post("/v1/profiles", headers=_auth(), json=body)
+        assert response.status_code == 422
+        assert client.get("/v1/profiles", headers=_auth()).json() == []
+
+
+class TestUpdateProfile:
+    def test_everything_but_the_criteria_changes(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        body = _update_body(name="Byty", portals=["bezrealitky"], preferences=_preferences_body(
+            place_weight=10, preferred_places=[{"kind": "cast_obce", "code": 490067}]))
+        response = client.put(f"/v1/profiles/{praha7.id}", headers=_auth(), json=body)
+        assert response.status_code == 200
+        updated = client.get(f"/v1/profiles/{praha7.id}", headers=_auth()).json()
+        assert (updated["name"], updated["portals"]) == ("Byty", ["bezrealitky"])
+        assert [place["name"] for place in updated["preferences"]["preferred_places"]] == ["Holešovice"]
+        assert updated["criteria"]["place"]["code"] == 78
+
+    def test_pausing_stamps_the_time_and_resuming_clears_it(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        paused = client.put(f"/v1/profiles/{praha7.id}", headers=_auth(), json=_update_body(paused=True))
+        assert paused.json()["paused_at"] is not None
+        resumed = client.put(f"/v1/profiles/{praha7.id}", headers=_auth(), json=_update_body(paused=False))
+        assert resumed.json()["paused_at"] is None
+
+    @pytest.mark.parametrize("body", [
+        _update_body(criteria=_new_profile_body()["criteria"]),
+        _update_body(preferences=_preferences_body(
+            place_weight=10, preferred_places=[{"kind": "cast_obce", "code": 999_999_999}])),
+        _update_body(preferences=_preferences_body(size_weight=10)),
+        _update_body(preferences=_preferences_body(ideal_size_m2=2**70)),
+    ], ids=["criteria", "unknown preferred place", "weight without its setting", "size too large to store"])
+    def test_an_invalid_update_is_422_and_changes_nothing(self, tmp_path, praha7, body):
+        client = _client(tmp_path)
+        before = client.get(f"/v1/profiles/{praha7.id}", headers=_auth()).json()
+        response = client.put(f"/v1/profiles/{praha7.id}", headers=_auth(), json=body | {"name": "Changed"})
+        assert response.status_code == 422
+        assert client.get(f"/v1/profiles/{praha7.id}", headers=_auth()).json() == before
+
+    def test_unknown_profile_is_404(self, tmp_path):
+        response = _client(tmp_path).put("/v1/profiles/nope", headers=_auth(), json=_update_body())
+        assert response.status_code == 404
+
+
+class TestDeleteProfile:
+    def test_a_deleted_profile_is_gone(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        assert client.delete(f"/v1/profiles/{praha7.id}", headers=_auth()).status_code == 204
+        assert client.get(f"/v1/profiles/{praha7.id}", headers=_auth()).status_code == 404
+
+    def test_unknown_profile_is_404(self, tmp_path):
+        response = _client(tmp_path).delete("/v1/profiles/nope", headers=_auth())
+        assert response.status_code == 404
 
 
 def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location | None = None) -> None:
