@@ -10,10 +10,9 @@ from typing import get_args
 import pytest
 
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
-from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS
 from rentczecher_engine.domain.disposition import ATYPICAL, Disposition
 from rentczecher_engine.domain.location import PlaceKind
-from rentczecher_engine.domain.profile import EstateType, OfferType
+from rentczecher_engine.domain.profile import EstateType, OfferType, Portal
 
 EXPECTED_TABLES = {
     "profiles", "properties", "property_images", "listings",
@@ -215,7 +214,7 @@ class TestProfilesMigration:
     def test_lookups_hold_the_engine_vocabularies(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
-        assert {row[0] for row in conn.execute("SELECT name FROM portals")} == set(ALL_SCRAPERS)
+        assert {row[0] for row in conn.execute("SELECT name FROM portals")} == set(get_args(Portal))
         assert {row[0] for row in conn.execute("SELECT name FROM offer_types")} == set(get_args(OfferType))
         assert {row[0] for row in conn.execute("SELECT name FROM estate_types")} == set(get_args(EstateType))
         assert {row[0] for row in conn.execute("SELECT name FROM place_kinds")} == set(get_args(PlaceKind))
