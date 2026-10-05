@@ -17,7 +17,7 @@ from rentczecher_engine.adapters.geocoding.gazetteer import (
     open_gazetteer,
 )
 from rentczecher_engine.domain.errors import AmbiguousPlaceError, PlaceNotFoundError
-from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
+from rentczecher_engine.domain.location import ParsedPlace, PlaceMatch, PlaceRef
 from rentczecher_engine.services.assemble import assemble_location
 
 # No gazetteer unit holds this code.
@@ -382,6 +382,26 @@ class TestPlaceNamed:
     def test_a_name_several_places_carry_raises(self, gazetteer):
         with pytest.raises(AmbiguousPlaceError):
             gazetteer.place_named("cast_obce", "Holešovice")
+
+
+class TestNamedPlace:
+    """A place known by its kind and code reads back with its names."""
+
+    @pytest.mark.parametrize("expected", [
+        PlaceMatch(PlaceRef("kraj", 43), name="Plzeňský kraj", obec=None, okres=None),
+        PlaceMatch(PlaceRef("okres", 3401), name="Domažlice", obec=None, okres=None),
+        PlaceMatch(PlaceRef("obec", 553425), name="Domažlice", obec=None, okres="Domažlice"),
+        PlaceMatch(PlaceRef("obvod", 78), name="Praha 7", obec="Praha", okres=None),
+        PlaceMatch(PlaceRef("mestska_cast", 500186), name="Praha 7", obec="Praha", okres=None),
+        PlaceMatch(PlaceRef("cast_obce", 41114), name="Holešovice", obec="Chroustovice", okres="Chrudim"),
+        PlaceMatch(PlaceRef("ulice", 37141), name="Veletržní", obec="Brno", okres="Brno-město"),
+    ])
+    def test_every_kind_reads_back_named(self, gazetteer, expected):
+        assert gazetteer.named_place(expected.place) == expected
+
+    @pytest.mark.parametrize("kind", KINDS_COARSEST_FIRST)
+    def test_an_unknown_place_is_none(self, gazetteer, kind):
+        assert gazetteer.named_place(PlaceRef(kind, CANCELLED_CODE)) is None
 
 
 class TestSearchPlaces:
