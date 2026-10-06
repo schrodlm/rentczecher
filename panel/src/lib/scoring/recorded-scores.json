@@ -1,0 +1,1204 @@
+{
+	"about": "Scores the engine's own formula gave these listings, recorded before the formula left the engine. The panel's port must give the same score for every case.",
+	"cases": [
+		{
+			"name": "no weights score nothing",
+			"listing": {
+				"price": 20000,
+				"size_m2": 50,
+				"land_m2": 500,
+				"disposition": "2+kk",
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 78,
+						"name": "obvod 78"
+					},
+					"mestska_cast": {
+						"code": 500186,
+						"name": "mestska_cast 500186"
+					},
+					"cast_obce": {
+						"code": 490067,
+						"name": "cast_obce 490067"
+					},
+					"ulice": {
+						"code": 477613,
+						"name": "ulice 477613"
+					},
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "price per m2 at 300 scores full",
+			"listing": {
+				"price": 15000,
+				"size_m2": 50,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "price per m2 below 300 is capped at full",
+			"listing": {
+				"price": 5000,
+				"size_m2": 50,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "price per m2 halfway scores half",
+			"listing": {
+				"price": 21250,
+				"size_m2": 50,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 50
+		},
+		{
+			"name": "price per m2 at 550 scores none",
+			"listing": {
+				"price": 27500,
+				"size_m2": 50,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "price per m2 above 550 scores none",
+			"listing": {
+				"price": 40000,
+				"size_m2": 50,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "price per m2 skips a listing without size",
+			"listing": {
+				"price": 15000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "price per m2 skips a zero size",
+			"listing": {
+				"price": 15000,
+				"size_m2": 0,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 100,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "first preferred layout scores full",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": "2+kk",
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 100,
+				"preferred_dispositions": [
+					"2+kk",
+					"3+kk"
+				],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "second preferred layout scores 80",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": "3+kk",
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 100,
+				"preferred_dispositions": [
+					"2+kk",
+					"3+kk"
+				],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 80
+		},
+		{
+			"name": "a late preferred layout floors at 20",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": "5+1",
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 100,
+				"preferred_dispositions": [
+					"1+kk",
+					"1+1",
+					"2+kk",
+					"2+1",
+					"3+kk",
+					"5+1"
+				],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 20
+		},
+		{
+			"name": "an unlisted layout scores 10",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": "4+1",
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 100,
+				"preferred_dispositions": [
+					"2+kk"
+				],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 10
+		},
+		{
+			"name": "a listing without a layout gets no layout points",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 100,
+				"preferred_dispositions": [
+					"2+kk"
+				],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "half the ideal size scores half",
+			"listing": {
+				"price": 20000,
+				"size_m2": 35,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 100,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 50
+		},
+		{
+			"name": "the ideal size scores full",
+			"listing": {
+				"price": 20000,
+				"size_m2": 70,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 100,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "above the ideal size is capped at full",
+			"listing": {
+				"price": 20000,
+				"size_m2": 140,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 100,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "size skips a listing without size",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 100,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "in the first preferred place scores full",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 78,
+						"name": "obvod 78"
+					},
+					"mestska_cast": {
+						"code": 500186,
+						"name": "mestska_cast 500186"
+					},
+					"cast_obce": {
+						"code": 490067,
+						"name": "cast_obce 490067"
+					},
+					"ulice": {
+						"code": 477613,
+						"name": "ulice 477613"
+					},
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "obvod",
+						"code": 78
+					},
+					{
+						"kind": "obvod",
+						"code": 86
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "in the second preferred place scores 80",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 78,
+						"name": "obvod 78"
+					},
+					"mestska_cast": {
+						"code": 500186,
+						"name": "mestska_cast 500186"
+					},
+					"cast_obce": {
+						"code": 490067,
+						"name": "cast_obce 490067"
+					},
+					"ulice": {
+						"code": 477613,
+						"name": "ulice 477613"
+					},
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "obvod",
+						"code": 86
+					},
+					{
+						"kind": "cast_obce",
+						"code": 490067
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 80
+		},
+		{
+			"name": "the first matching place counts",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 78,
+						"name": "obvod 78"
+					},
+					"mestska_cast": {
+						"code": 500186,
+						"name": "mestska_cast 500186"
+					},
+					"cast_obce": {
+						"code": 490067,
+						"name": "cast_obce 490067"
+					},
+					"ulice": {
+						"code": 477613,
+						"name": "ulice 477613"
+					},
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "obvod",
+						"code": 86
+					},
+					{
+						"kind": "obvod",
+						"code": 78
+					},
+					{
+						"kind": "cast_obce",
+						"code": 490067
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 80
+		},
+		{
+			"name": "lying in a preferred okres matches",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": {
+					"kraj": {
+						"code": 43,
+						"name": "kraj 43"
+					},
+					"okres": {
+						"code": 3401,
+						"name": "okres 3401"
+					},
+					"obec": {
+						"code": 553425,
+						"name": "obec 553425"
+					},
+					"obvod": null,
+					"mestska_cast": null,
+					"cast_obce": null,
+					"ulice": null,
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "okres",
+						"code": 3401
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "in no preferred place scores 20",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 86,
+						"name": "obvod 86"
+					},
+					"mestska_cast": {
+						"code": 500208,
+						"name": "mestska_cast 500208"
+					},
+					"cast_obce": {
+						"code": 400637,
+						"name": "cast_obce 400637"
+					},
+					"ulice": null,
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "obvod",
+						"code": 78
+					},
+					{
+						"kind": "cast_obce",
+						"code": 490067
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 20
+		},
+		{
+			"name": "a listing without a location scores 20",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 100,
+				"preferred_places": [
+					{
+						"kind": "obvod",
+						"code": 78
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 20
+		},
+		{
+			"name": "half the ideal land scores half",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": 400,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 100,
+				"ideal_land_m2": 800,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 50
+		},
+		{
+			"name": "above the ideal land is capped at full",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": 2000,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 100,
+				"ideal_land_m2": 800,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 100
+		},
+		{
+			"name": "land skips a listing without land",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 100,
+				"ideal_land_m2": 800,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 0
+		},
+		{
+			"name": "at the good price scores full",
+			"listing": {
+				"price": 20000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 100
+		},
+		{
+			"name": "below the good price is capped at full",
+			"listing": {
+				"price": 10000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 100
+		},
+		{
+			"name": "one and a half times the good price scores half",
+			"listing": {
+				"price": 30000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 50
+		},
+		{
+			"name": "twice the good price scores none",
+			"listing": {
+				"price": 40000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 0
+		},
+		{
+			"name": "above twice the good price scores none",
+			"listing": {
+				"price": 60000,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 0
+		},
+		{
+			"name": "a zero price gets no price points",
+			"listing": {
+				"price": 0,
+				"size_m2": null,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 0,
+				"ideal_size_m2": null,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 100,
+				"max_good_price": 20000
+			},
+			"score": 0
+		},
+		{
+			"name": "weights scale each part",
+			"listing": {
+				"price": 20000,
+				"size_m2": 35,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 40,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 60,
+				"max_good_price": 20000
+			},
+			"score": 80
+		},
+		{
+			"name": "weights above 100 in total exceed 100",
+			"listing": {
+				"price": 20000,
+				"size_m2": 70,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 80,
+				"ideal_size_m2": 70,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 80,
+				"max_good_price": 20000
+			},
+			"score": 160
+		},
+		{
+			"name": "a total of 2.5 rounds half to even, down to 2",
+			"listing": {
+				"price": 20000,
+				"size_m2": 5,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 50,
+				"ideal_size_m2": 100,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 2
+		},
+		{
+			"name": "a total of 3.5 rounds half to even, up to 4",
+			"listing": {
+				"price": 20000,
+				"size_m2": 7,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 50,
+				"ideal_size_m2": 100,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 4
+		},
+		{
+			"name": "a total of 12.5 rounds half to even, down to 12",
+			"listing": {
+				"price": 20000,
+				"size_m2": 25,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 50,
+				"ideal_size_m2": 100,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 12
+		},
+		{
+			"name": "a total just above a half rounds up",
+			"listing": {
+				"price": 20000,
+				"size_m2": 51,
+				"land_m2": null,
+				"disposition": null,
+				"resolved_location": null
+			},
+			"preferences": {
+				"price_per_m2_weight": 0,
+				"disposition_weight": 0,
+				"preferred_dispositions": [],
+				"size_weight": 5,
+				"ideal_size_m2": 100,
+				"place_weight": 0,
+				"preferred_places": [],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 0,
+				"max_good_price": null
+			},
+			"score": 3
+		},
+		{
+			"name": "a full profile adds every part",
+			"listing": {
+				"price": 24000,
+				"size_m2": 60,
+				"land_m2": null,
+				"disposition": "3+kk",
+				"resolved_location": {
+					"kraj": {
+						"code": 19,
+						"name": "kraj 19"
+					},
+					"okres": null,
+					"obec": {
+						"code": 554782,
+						"name": "obec 554782"
+					},
+					"obvod": {
+						"code": 78,
+						"name": "obvod 78"
+					},
+					"mestska_cast": {
+						"code": 500186,
+						"name": "mestska_cast 500186"
+					},
+					"cast_obce": {
+						"code": 490067,
+						"name": "cast_obce 490067"
+					},
+					"ulice": {
+						"code": 477613,
+						"name": "ulice 477613"
+					},
+					"cislo_popisne": null,
+					"cislo_orientacni": null
+				}
+			},
+			"preferences": {
+				"price_per_m2_weight": 10,
+				"disposition_weight": 25,
+				"preferred_dispositions": [
+					"2+kk",
+					"3+kk"
+				],
+				"size_weight": 20,
+				"ideal_size_m2": 70,
+				"place_weight": 20,
+				"preferred_places": [
+					{
+						"kind": "cast_obce",
+						"code": 490067
+					},
+					{
+						"kind": "obvod",
+						"code": 86
+					}
+				],
+				"land_weight": 0,
+				"ideal_land_m2": null,
+				"price_weight": 25,
+				"max_good_price": 22000
+			},
+			"score": 86
+		}
+	]
+}
