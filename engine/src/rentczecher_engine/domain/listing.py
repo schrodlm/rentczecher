@@ -159,7 +159,7 @@ class InboxCard:
     baseline when the previous observation was higher, and sibling postings
     of the same property on other portals.
 
-    title/location_raw_text/size_m2/disposition_raw_text/price are nullable: a card can exist
+    title/location_raw_text/size_m2/land_m2/disposition_raw_text/price are nullable: a card can exist
     before its property has facts or before any price was ever observed.
     property_location is None until a posting's text resolves to a place,
     and disposition is None when the property's text names no layout.
@@ -172,6 +172,7 @@ class InboxCard:
     location_raw_text: str | None
     property_location: PropertyLocation | None
     size_m2: int | None
+    land_m2: int | None
     disposition_raw_text: str | None
     disposition: Disposition | None
     first_seen_at: str

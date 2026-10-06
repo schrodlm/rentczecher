@@ -298,6 +298,17 @@
             "title": "Id",
             "type": "string"
           },
+          "land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Land M2"
+          },
           "location_raw_text": {
             "anyOf": [
               {
@@ -398,6 +409,7 @@
           "location_raw_text",
           "resolved_location",
           "size_m2",
+          "land_m2",
           "disposition_raw_text",
           "disposition",
           "first_seen_at",
