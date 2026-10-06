@@ -10,6 +10,10 @@
 	import ListingFeed from '$lib/components/ListingFeed.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
+	// PROTOTYPE, throwaway: the profile editor variants.
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import ProfileEditorPrototype from '$lib/prototype/profile-editor/ProfileEditorPrototype.svelte';
 
 	const t = getTranslatorContext();
 	// Built on mount, once the connection is known. Every use below runs
@@ -27,6 +31,21 @@
 	let listings = $state<ListingModel[] | null>(null);
 	let listingsError = $state<string | null>(null);
 	let newCounts = $state<Record<string, number>>({});
+
+	const editor = $derived(page.url.searchParams.get('editor'));
+	const editedProfile = $derived(profiles?.find((p) => p.id === editor) ?? null);
+
+	function openEditor(target: string): void {
+		const url = new URL(page.url);
+		url.searchParams.set('editor', target);
+		void goto(url, { replaceState: true, noScroll: true });
+	}
+
+	function closeEditor(): void {
+		const url = new URL(page.url);
+		url.searchParams.delete('editor');
+		void goto(url, { replaceState: true, noScroll: true });
+	}
 
 	const newListings = $derived(
 		[...(listings ?? [])]
@@ -166,6 +185,7 @@
 					<span class="tabs__status">{t.t('Loading profiles...')}</span>
 				{:else if profiles.length === 0}
 					<span class="tabs__status">{t.t('No profiles yet')}</span>
+					<button class="tab tab--add" title={t.t('Add profile')} onclick={() => openEditor('new')}>+</button>
 				{:else}
 					{#each profiles as profile (profile.id)}
 						<button
@@ -177,9 +197,22 @@
 							{#if newCounts[profile.id]}
 								<span class="tab__count">{newCounts[profile.id]}</span>
 							{/if}
+							{#if profile.id === selectedProfileId}
+								<span
+									class="tab__edit"
+									role="button"
+									tabindex="0"
+									title="Edit profile"
+									onclick={(e) => {
+										e.stopPropagation();
+										openEditor(profile.id);
+									}}
+									onkeydown={() => openEditor(profile.id)}>✎</span
+								>
+							{/if}
 						</button>
 					{/each}
-					<button class="tab tab--add" title={t.t('Add profile')}>+</button>
+					<button class="tab tab--add" title={t.t('Add profile')} onclick={() => openEditor('new')}>+</button>
 				{/if}
 			</nav>
 			<InboxHeader
@@ -195,6 +228,12 @@
 			<p class="engine-stopped" role="alert">
 				{t.t('rentczecher stopped working. Restart the app to continue.')}
 			</p>
+		{/if}
+
+		{#if editor !== null && (profiles !== null || editor === 'new')}
+			{#key editor}
+				<ProfileEditorPrototype profile={editor === 'new' ? null : editedProfile} onclose={closeEditor} />
+			{/key}
 		{/if}
 
 		{#if listingsError}
@@ -308,6 +347,11 @@
 	.tab--add {
 		font-weight: 700;
 		padding: var(--space-2);
+	}
+
+	.tab__edit {
+		color: var(--color-bronze);
+		cursor: pointer;
 	}
 
 	.tab__count {
