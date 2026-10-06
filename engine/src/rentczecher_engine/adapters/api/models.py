@@ -263,6 +263,7 @@ class ListingModel(BaseModel):
     location_raw_text: str | None
     resolved_location: LocationModel | None
     size_m2: int | None
+    land_m2: int | None
     disposition_raw_text: str | None
     disposition: str | None
     first_seen_at: str
@@ -282,6 +283,7 @@ class ListingModel(BaseModel):
             location_raw_text=card.location_raw_text,
             resolved_location=LocationModel.from_location(resolved_location) if resolved_location else None,
             size_m2=card.size_m2,
+            land_m2=card.land_m2,
             disposition_raw_text=card.disposition_raw_text,
             disposition=card.disposition.code if card.disposition is not None else None,
             first_seen_at=card.first_seen_at,
