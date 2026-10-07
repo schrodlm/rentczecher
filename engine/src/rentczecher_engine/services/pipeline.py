@@ -23,7 +23,6 @@ from rentczecher_engine.services.diff import classify
 from rentczecher_engine.services.filters import apply_filters
 from rentczecher_engine.services.locate import PlaceResolver, locate_listings
 from rentczecher_engine.services.scrape import Scraper, scrape_all
-from rentczecher_engine.services.score import compute_score
 
 log = logging.getLogger("rentczecher")
 
@@ -116,12 +115,10 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)
-    survivors = [listing.with_annotations(score=compute_score(listing, profile.preferences))
-                for listing in outcome.survivors]
 
-    current_ids = {listing.id for listing in survivors} | {m.absorbed_id for m in outcome.merges}
+    current_ids = {listing.id for listing in outcome.survivors} | {m.absorbed_id for m in outcome.merges}
     disappeared = deps.store.pending_disappeared(profile_id, current_ids)
-    diff = classify(survivors, deps.store.seen_ids(profile_id), deps.store.latest_prices(profile_id))
+    diff = classify(outcome.survivors, deps.store.seen_ids(profile_id), deps.store.latest_prices(profile_id))
 
     if not dry_run:
         deps.store.persist_outcome(
@@ -129,7 +126,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
         deps.store.prune(profile_id)
 
     finished_at = deps.clock()
-    counts = RunCounts(total=len(survivors), new=len(diff.new),
+    counts = RunCounts(total=len(outcome.survivors), new=len(diff.new),
                        price_drops=len(diff.price_drops), disappeared=len(disappeared))
     return ProfileRunResult(
         profile_id=profile_id, run_id=run_id, started_at=started_at, finished_at=finished_at,

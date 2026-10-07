@@ -30,7 +30,7 @@ class TestImmutability:
     def test_annotation_fields_cannot_be_assigned(self):
         listing = _listing()
         with pytest.raises(dataclasses.FrozenInstanceError):
-            listing.annotations.score = 99
+            listing.annotations.price_drop_from = 99
 
     def test_listing_halves_cannot_be_reassigned(self):
         listing = _listing()
@@ -44,7 +44,7 @@ class TestImmutability:
         # TypeError/AttributeError rather than FrozenInstanceError.
         listing = _listing()
         with pytest.raises((TypeError, AttributeError)):
-            listing.score = 5
+            listing.price_drop_from = 5
         with pytest.raises((TypeError, AttributeError)):
             listing.price = 5
 
@@ -52,14 +52,14 @@ class TestImmutability:
 class TestWithAnnotations:
     def test_returns_new_listing_and_leaves_original_untouched(self):
         original = _listing()
-        scored = original.with_annotations(score=73)
-        assert scored is not original
-        assert scored.score == 73
-        assert original.score == 0
+        dropped = original.with_annotations(price_drop_from=73)
+        assert dropped is not original
+        assert dropped.price_drop_from == 73
+        assert original.price_drop_from is None
 
     def test_scraped_half_is_shared_not_copied(self):
         original = _listing()
-        annotated = original.with_annotations(score=1).with_annotations(price_drop_from=100)
+        annotated = original.with_annotations(cross_source=("remax",)).with_annotations(price_drop_from=100)
         assert annotated.scraped is original.scraped
 
     def test_unknown_annotation_is_rejected(self):
@@ -69,9 +69,9 @@ class TestWithAnnotations:
 
 class TestBuild:
     def test_splits_flat_kwargs_into_both_halves(self):
-        listing = _listing(size_m2=55, score=40, cross_source=("remax",))
+        listing = _listing(size_m2=55, price_drop_from=40, cross_source=("remax",))
         assert listing.scraped.size_m2 == 55
-        assert listing.annotations.score == 40
+        assert listing.annotations.price_drop_from == 40
         assert listing.annotations.cross_source == ("remax",)
 
     def test_unknown_field_fails_loudly(self):
@@ -79,10 +79,10 @@ class TestBuild:
             _listing(prize=21000)
 
     def test_passthroughs_read_both_halves(self):
-        listing = _listing(size_m2=55, score=40)
+        listing = _listing(size_m2=55, price_drop_from=40)
         assert listing.price == 21000
         assert listing.size_m2 == 55
-        assert listing.score == 40
+        assert listing.price_drop_from == 40
         assert listing.cross_source == ()
 
 
@@ -125,4 +125,4 @@ class TestEquality:
         assert _listing() == _listing()
 
     def test_different_annotations_are_not_equal(self):
-        assert _listing() != _listing().with_annotations(score=1)
+        assert _listing() != _listing().with_annotations(price_drop_from=1)

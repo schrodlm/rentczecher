@@ -35,7 +35,6 @@ class ScrapedListing:
 
 @dataclass(frozen=True, slots=True)
 class ListingAnnotations:
-    score: int = 0
     price_drop_from: int | None = None
     cross_source: tuple[str, ...] = ()
     resolved_location: Location | None = None
@@ -126,10 +125,6 @@ class Listing:
     @property
     def parsed_place(self) -> ParsedPlace:
         return self.scraped.parsed_place
-
-    @property
-    def score(self) -> int:
-        return self.annotations.score
 
     @property
     def price_drop_from(self) -> int | None:
