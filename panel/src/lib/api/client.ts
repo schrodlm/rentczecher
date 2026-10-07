@@ -4,6 +4,8 @@ import type { components, paths } from './types.gen';
 export type ProfileModel = components['schemas']['ProfileModel'];
 export type NewProfileBody = components['schemas']['NewProfileBody'];
 export type ProfileUpdateBody = components['schemas']['ProfileUpdateBody'];
+export type PlaceRef = components['schemas']['PlaceRefModel'];
+export type NamedPlace = components['schemas']['NamedPlaceModel'];
 export type ListingModel = components['schemas']['ListingModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
@@ -53,6 +55,21 @@ export class SidecarClient {
 		if (!response.ok) {
 			throw this.httpError(response);
 		}
+	}
+
+	/* Places whose official name starts with the query, broadest kind first,
+	optionally only those at least partly inside one place and of some kinds. */
+	async searchPlaces(query: string, within?: PlaceRef, kinds?: PlaceRef['kind'][]): Promise<NamedPlace[]> {
+		const { data, response } = await this.api.GET('/v1/places', {
+			params: {
+				query: {
+					q: query,
+					within: within ? `${within.kind}:${within.code}` : undefined,
+					kind: kinds
+				}
+			}
+		});
+		return this.require(data, response);
 	}
 
 	async listListings(profileId: string, filter: ListingFilter = 'new'): Promise<ListingModel[]> {
