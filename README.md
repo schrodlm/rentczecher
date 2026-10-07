@@ -32,8 +32,8 @@ hosted. Your searches and your history stay on your disk.
   shown once, with links to its other portals, keeping whichever copy carries
   more detail.
 - **Preference scoring.** A 0–100 score per listing from weights you set (price
-  per m², disposition, size, preferred places, land area, total price). It is
-  computed but not shown anywhere yet.
+  per m², disposition, size, preferred places, land area, total price). The
+  app computes it in the panel and does not show it yet.
 - **Price drops and disappearances.** A listing whose price fell shows its old
   price next to the new one. A listing gone for three consecutive runs counts
   as disappeared in the scan's results. Three misses filters out portal API

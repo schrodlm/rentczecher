@@ -75,8 +75,6 @@ locate_listings(listings, gazetteer)                    # services/locate
    ▼
 cross_source_dedup(listings, gazetteer)                 # services/dedup
    ▼
-compute_score(listing, preferences)                     # services/score
-   ▼
 store.pending_disappeared(...)   and   classify(survivors, seen_ids, latest_prices)
    ▼
 store.persist_outcome(...)   then   store.prune(...)
@@ -102,7 +100,7 @@ without corrupting it.
   title, price, `location_raw_text` (the portal's own location text), url,
   optional size/disposition/gps/land/charges, plus a `ParsedPlace` (the place
   names and house numbers the scraper pulled out).
-- `ListingAnnotations` (frozen): the pipeline's conclusions. score,
+- `ListingAnnotations` (frozen): the pipeline's conclusions.
   `price_drop_from`, `cross_source`, and `resolved_location` (the
   gazetteer-resolved `Location`, `None` means unlocatable, not unasked).
 - `Location` (frozen): one `Place` (RÚIAN code, name, point) per kind, with
@@ -115,14 +113,14 @@ without corrupting it.
   The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
   replaces facts, the pipeline replaces annotations, and the two never tangle.
 - `Profile` (frozen): one saved search, read from the database. Its id (a
-  UUID), name, `enabled` (false while paused), its portals, its `Criteria`
+  UUID), name, `paused_at` (when it was paused, `None` while scanning), its portals, its `Criteria`
   and its `Preferences`.
 - `Criteria`: portal-neutral search intent, handed to every scraper and the
   filter. The search place is a `PlaceRef` (RÚIAN kind and code).
-- `Preferences`: the scoring weights and their settings. Price per m² has a
-  weight only. Its curve is fixed in `services/score.py`. Scoring has no
-  hidden defaults. A preferred place matches when the listing's resolved location is
-  that place or lies inside it.
+- `Preferences`: the scoring weights and their settings, stored and served
+  but never applied here. Each client scores listings itself (ADR 11), the
+  panel in `panel/src/lib/scoring/score.ts`. A weighted preference needs its
+  setting, so there are no hidden defaults.
 
 ### Scrapers
 

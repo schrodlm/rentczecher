@@ -75,7 +75,8 @@ listings that meet the criteria and never hide one.
 _Avoid_: scoring setting, weight
 
 **Score**:
-How well a listing meets its profile's preferences.
+How well a listing meets its profile's preferences, worked out by each client
+that presents listings. The engine stores preferences and never scores.
 _Avoid_: rating, rank
 
 **Seen entry**:
