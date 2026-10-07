@@ -5,6 +5,7 @@ Run from engine/: uv run python -m scripts.gazetteer build
 
 import argparse
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from .verify import verify_gazetteer
 
 SHIPPED_PATH = (Path(__file__).resolve().parents[2]
                 / "src" / "rentczecher_engine" / "adapters" / "geocoding" / "gazetteer.sqlite")
+PANEL = Path(__file__).resolve().parents[3] / "panel"
 
 
 def main() -> None:
@@ -44,6 +46,9 @@ def main() -> None:
         verify_gazetteer(built)
         shutil.copyfile(built, args.out)
     print(f"Wrote {args.out} ({args.out.stat().st_size / 1e6:.1f} MB)")
+    # The panel's map offers places by the shipped file's codes.
+    if args.out == SHIPPED_PATH:
+        subprocess.run(["uv", "run", "scripts/czech_map.py"], cwd=PANEL, check=True)
 
 
 if __name__ == "__main__":

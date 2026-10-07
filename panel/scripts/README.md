@@ -4,7 +4,7 @@
 |---|---|
 | `build-locales.ts` | Turns the `.po` catalogs into the JSON the panel loads. Runs on every `npm run dev`, `build` and `test`. |
 | `extract-locales.ts` | Checks, or with `--write` updates, that the catalogs hold every string the panel uses. |
-| `czech_map.py` | Draws the map of Czechia the search place is picked on. Run once, by hand, with `uv run scripts/czech_map.py`. |
+| `czech_map.py` | Draws the map of Czechia the search place is picked on. The gazetteer build runs it, and `uv run scripts/czech_map.py` redraws it by hand. |
 
 ## How the map is drawn
 
