@@ -19,7 +19,7 @@ hosted. Your searches and your history stay on your disk.
   Next.js data), RE/MAX Czech (HTML). Each is a separate scraper. If one breaks
   or a site is down, the others still run.
 - **Any search, described once.** A profile says what you're looking for (offer
-  type, estate type, a place, price bounds, minimum size or land, a room range)
+  type, estate type, a place, price and size ranges, minimum land, the dispositions)
   and which portals to ask. You never paste portal-specific URLs or region ids.
   The place is resolved to each portal's own search parameters for you.
 - **Official Czech places.** A search place is a kraj, an okres or a Praha
@@ -79,9 +79,9 @@ holds a place that exists. The full contract is in
 Each profile is a self-contained search with three parts:
 
 - **Criteria** decide whether a listing is shown: rent or sale, the estate type
-  (flat, house, land or cottage), the search place, price bounds, a minimum
-  size or land area, a room range from 1 to 9 and a kitchen kind. An unset
-  bound is no bound.
+  (flat, house, land or cottage), the search place, price and size ranges, a
+  minimum land area and the dispositions you accept, such as 2+kk or 3+1. An
+  unset bound is no bound, and no dispositions accept any.
 - **Portals** are the sites it scans. The location comes entirely from the
   search place.
 - **Preferences** only score and order what is shown. Each has a weight, and

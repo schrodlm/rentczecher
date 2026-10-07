@@ -32,9 +32,11 @@ erDiagram
     estate_types ||--o{ profile_criteria : "typed as"
     place_kinds  ||--o{ profile_criteria : "placed by"
     portals      ||--o{ profile_portals  : "scanned as"
+    dispositions ||--o{ accepted_dispositions : "accepted as"
     dispositions ||--o{ preferred_dispositions : "preferred as"
     place_kinds  ||--o{ preferred_places : "placed by"
     dispositions ||--o{ properties       : "laid out as"
+    profiles   ||--o{ accepted_dispositions : "accepts"
     profiles   ||--o{ profile_portals    : "scans"
     profiles   ||--o| profile_preferences : "scores by"
     profiles   ||--o{ preferred_dispositions : "prefers"
@@ -57,7 +59,8 @@ erDiagram
 | Table | Holds |
 |---|---|
 | `profiles` | One row per saved search: `id`, `name`, `paused_at` (null while it scans), `created_at`. |
-| `profile_criteria` | What a listing must satisfy to be shown, one row per profile: rent or sale, the type of property, the search place as a RÚIAN kind and code, the price, size and land bounds, the room range and the kitchen kind. A null bound is no bound. |
+| `profile_criteria` | What a listing must satisfy to be shown, one row per profile: rent or sale, the type of property, the search place as a RÚIAN kind and code, the price and size ranges and the minimum land. A null bound is no bound. |
+| `accepted_dispositions` | The dispositions a profile's criteria accept, one row each. None accepts any. |
 | `profile_portals` | The portals a profile scans, one row each. |
 | `profile_preferences` | A profile's scoring weights and their settings, one row per profile. A setting may be null only while its weight is 0. |
 | `preferred_dispositions`, `preferred_places` | A profile's preferred dispositions and places, ranked, rank 1 the most preferred. |
