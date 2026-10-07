@@ -14,7 +14,7 @@ BASE = datetime(2026, 9, 18, 6, 0, 0, tzinfo=timezone.utc)
 
 FULL_CRITERIA = criteria(
     offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
-    min_price=1000000, max_price=5000000, min_size_m2=80, min_land_m2=600,
+    min_price=1000000, max_price=5000000, min_size_m2=80, max_size_m2=200, min_land_m2=600,
     min_rooms=3, max_rooms=5, kitchen="separate",
 )
 FULL_PREFERENCES = preferences(

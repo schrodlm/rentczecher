@@ -37,6 +37,17 @@ def test_min_size_excludes_smaller_and_keeps_unknown():
     assert [l.id for l in result] == ["big", "unknown"]
 
 
+def test_max_size_excludes_larger_and_keeps_unknown():
+    criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_size_m2=60)
+    small_enough = _make_listing(id="small", size_m2=60)
+    too_big = _make_listing(id="big", size_m2=70)
+    unknown = _make_listing(id="unknown", size_m2=None)
+
+    result = apply_filters([small_enough, too_big, unknown], criteria)
+
+    assert [l.id for l in result] == ["small", "unknown"]
+
+
 def test_min_land_excludes_smaller_and_keeps_unknown():
     criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_land_m2=200)
     big_enough = _make_listing(id="big", land_m2=300)

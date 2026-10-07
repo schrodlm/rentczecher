@@ -181,15 +181,15 @@ class TestProfilesMigration:
 
     VALID_CRITERIA = {
         "profile_id": "p", "offer_type": "rent", "estate_type": "flat", "place_kind": "obvod",
-        "place_code": 78, "min_price": 1, "max_price": 2, "min_size_m2": 1, "min_land_m2": 1,
+        "place_code": 78, "min_price": 1, "max_price": 2, "min_size_m2": 1, "max_size_m2": 1, "min_land_m2": 1,
         "min_rooms": 2, "max_rooms": 2, "kitchen": "kitchenette",
     }
     INSERT_CRITERIA = """
         INSERT INTO profile_criteria
             (profile_id, offer_type, estate_type, place_kind, place_code, min_price, max_price,
-             min_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
+             min_size_m2, max_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
         VALUES (:profile_id, :offer_type, :estate_type, :place_kind, :place_code, :min_price, :max_price,
-                :min_size_m2, :min_land_m2, :min_rooms, :max_rooms, :kitchen)
+                :min_size_m2, :max_size_m2, :min_land_m2, :min_rooms, :max_rooms, :kitchen)
     """
 
     VALID_PREFERENCES = {
@@ -244,7 +244,7 @@ class TestProfilesMigration:
                      "VALUES ('p', 'cast_obce', 490024, 1)")
 
     @pytest.mark.parametrize("column, value", [
-        ("min_price", 0), ("max_price", -1), ("min_size_m2", 0), ("min_land_m2", 0),
+        ("min_price", 0), ("max_price", -1), ("min_size_m2", 0), ("max_size_m2", 0), ("min_land_m2", 0),
         ("min_rooms", 0), ("max_rooms", 10), ("kitchen", "none"),
         ("offer_type", "lease"), ("estate_type", "garage"), ("place_kind", "street"),
     ])
@@ -253,7 +253,9 @@ class TestProfilesMigration:
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute(self.INSERT_CRITERIA, {**self.VALID_CRITERIA, column: value})
 
-    @pytest.mark.parametrize("low, high", [("min_price", "max_price"), ("min_rooms", "max_rooms")])
+    @pytest.mark.parametrize("low, high", [
+        ("min_price", "max_price"), ("min_size_m2", "max_size_m2"), ("min_rooms", "max_rooms"),
+    ])
     def test_criteria_reject_a_range_running_backwards(self, tmp_path, low, high):
         conn = self._migrated_with_profile(tmp_path)
         with pytest.raises(sqlite3.IntegrityError):
