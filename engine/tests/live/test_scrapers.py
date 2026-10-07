@@ -9,10 +9,10 @@ import pytest
 from rentczecher_engine.adapters.scrapers.client import build_client
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria
-from tests.profiles import criteria
+from tests.profiles import criteria, layouts
 
 SEARCHES: dict[str, Criteria] = {
-    "praha7-byty": criteria(max_price=25000, min_rooms=2, max_rooms=3, kitchen="kitchenette"),
+    "praha7-byty": criteria(max_price=25000, dispositions=layouts("2+kk", "3+kk")),
     "domazlice-domy": criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
                                max_price=5000000, min_land_m2=500),
 }

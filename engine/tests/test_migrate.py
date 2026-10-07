@@ -58,8 +58,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 12
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 13
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -182,14 +182,13 @@ class TestProfilesMigration:
     VALID_CRITERIA = {
         "profile_id": "p", "offer_type": "rent", "estate_type": "flat", "place_kind": "obvod",
         "place_code": 78, "min_price": 1, "max_price": 2, "min_size_m2": 1, "max_size_m2": 1, "min_land_m2": 1,
-        "min_rooms": 2, "max_rooms": 2, "kitchen": "kitchenette",
     }
     INSERT_CRITERIA = """
         INSERT INTO profile_criteria
             (profile_id, offer_type, estate_type, place_kind, place_code, min_price, max_price,
-             min_size_m2, max_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
+             min_size_m2, max_size_m2, min_land_m2)
         VALUES (:profile_id, :offer_type, :estate_type, :place_kind, :place_code, :min_price, :max_price,
-                :min_size_m2, :max_size_m2, :min_land_m2, :min_rooms, :max_rooms, :kitchen)
+                :min_size_m2, :max_size_m2, :min_land_m2)
     """
 
     VALID_PREFERENCES = {
@@ -229,7 +228,7 @@ class TestProfilesMigration:
         conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
                      "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
         conn.commit()
-        assert migrate.apply_pending(conn) == [11, 12]
+        assert migrate.apply_pending(conn) == [11, 12, 13]
         assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
@@ -245,7 +244,6 @@ class TestProfilesMigration:
 
     @pytest.mark.parametrize("column, value", [
         ("min_price", 0), ("max_price", -1), ("min_size_m2", 0), ("max_size_m2", 0), ("min_land_m2", 0),
-        ("min_rooms", 0), ("max_rooms", 10), ("kitchen", "none"),
         ("offer_type", "lease"), ("estate_type", "garage"), ("place_kind", "street"),
     ])
     def test_criteria_reject_an_out_of_range_value(self, tmp_path, column, value):
@@ -254,7 +252,7 @@ class TestProfilesMigration:
             conn.execute(self.INSERT_CRITERIA, {**self.VALID_CRITERIA, column: value})
 
     @pytest.mark.parametrize("low, high", [
-        ("min_price", "max_price"), ("min_size_m2", "max_size_m2"), ("min_rooms", "max_rooms"),
+        ("min_price", "max_price"), ("min_size_m2", "max_size_m2"),
     ])
     def test_criteria_reject_a_range_running_backwards(self, tmp_path, low, high):
         conn = self._migrated_with_profile(tmp_path)

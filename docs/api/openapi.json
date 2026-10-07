@@ -4,6 +4,34 @@
       "CriteriaBody": {
         "additionalProperties": false,
         "properties": {
+          "dispositions": {
+            "items": {
+              "enum": [
+                "1+kk",
+                "1+1",
+                "2+kk",
+                "2+1",
+                "3+kk",
+                "3+1",
+                "4+kk",
+                "4+1",
+                "5+kk",
+                "5+1",
+                "6+kk",
+                "6+1",
+                "7+kk",
+                "7+1",
+                "8+kk",
+                "8+1",
+                "9+kk",
+                "9+1",
+                "atypicky"
+              ],
+              "type": "string"
+            },
+            "title": "Dispositions",
+            "type": "array"
+          },
           "estate_type": {
             "enum": [
               "flat",
@@ -13,21 +41,6 @@
             ],
             "title": "Estate Type",
             "type": "string"
-          },
-          "kitchen": {
-            "anyOf": [
-              {
-                "enum": [
-                  "kitchenette",
-                  "separate"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kitchen"
           },
           "max_price": {
             "anyOf": [
@@ -39,17 +52,6 @@
               }
             ],
             "title": "Max Price"
-          },
-          "max_rooms": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Rooms"
           },
           "max_size_m2": {
             "anyOf": [
@@ -83,17 +85,6 @@
               }
             ],
             "title": "Min Price"
-          },
-          "min_rooms": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Rooms"
           },
           "min_size_m2": {
             "anyOf": [
@@ -127,15 +118,41 @@
           "min_size_m2",
           "max_size_m2",
           "min_land_m2",
-          "min_rooms",
-          "max_rooms",
-          "kitchen"
+          "dispositions"
         ],
         "title": "CriteriaBody",
         "type": "object"
       },
       "CriteriaModel": {
         "properties": {
+          "dispositions": {
+            "items": {
+              "enum": [
+                "1+kk",
+                "1+1",
+                "2+kk",
+                "2+1",
+                "3+kk",
+                "3+1",
+                "4+kk",
+                "4+1",
+                "5+kk",
+                "5+1",
+                "6+kk",
+                "6+1",
+                "7+kk",
+                "7+1",
+                "8+kk",
+                "8+1",
+                "9+kk",
+                "9+1",
+                "atypicky"
+              ],
+              "type": "string"
+            },
+            "title": "Dispositions",
+            "type": "array"
+          },
           "estate_type": {
             "enum": [
               "flat",
@@ -145,21 +162,6 @@
             ],
             "title": "Estate Type",
             "type": "string"
-          },
-          "kitchen": {
-            "anyOf": [
-              {
-                "enum": [
-                  "kitchenette",
-                  "separate"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kitchen"
           },
           "max_price": {
             "anyOf": [
@@ -171,17 +173,6 @@
               }
             ],
             "title": "Max Price"
-          },
-          "max_rooms": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Rooms"
           },
           "max_size_m2": {
             "anyOf": [
@@ -216,17 +207,6 @@
             ],
             "title": "Min Price"
           },
-          "min_rooms": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Rooms"
-          },
           "min_size_m2": {
             "anyOf": [
               {
@@ -259,9 +239,7 @@
           "min_size_m2",
           "max_size_m2",
           "min_land_m2",
-          "min_rooms",
-          "max_rooms",
-          "kitchen"
+          "dispositions"
         ],
         "title": "CriteriaModel",
         "type": "object"

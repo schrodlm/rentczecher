@@ -1,5 +1,6 @@
 import sqlite3
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import datetime
 from uuid import uuid4
 
@@ -20,13 +21,15 @@ class SqliteProfileRepository:
 
     def add(self, name: str, portals: tuple[Portal, ...], criteria: Criteria, preferences: Preferences) -> Profile:
         """Stores a new, unpaused profile and returns it as it reads back:
-        with its generated id, and its portals, which have no order, sorted."""
+        with its generated id, and its portals and accepted dispositions,
+        which have no order, sorted."""
+        accepted = tuple(sorted(criteria.dispositions, key=lambda disposition: disposition.code))
         profile = Profile(
             id=str(uuid4()),
             name=name,
             paused_at=None,
             portals=tuple(sorted(portals)),
-            criteria=criteria,
+            criteria=replace(criteria, dispositions=accepted),
             preferences=preferences,
         )
         stmt = """
@@ -78,7 +81,7 @@ class SqliteProfileRepository:
         stmt = """
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
-                   c.min_size_m2, c.max_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
+                   c.min_size_m2, c.max_size_m2, c.min_land_m2,
                    r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
                    r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
             FROM profiles p
@@ -94,7 +97,7 @@ class SqliteProfileRepository:
         stmt = """
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
-                   c.min_size_m2, c.max_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
+                   c.min_size_m2, c.max_size_m2, c.min_land_m2,
                    r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
                    r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
             FROM profiles p
@@ -110,6 +113,7 @@ class SqliteProfileRepository:
         return self._to_profile(
             row,
             portals=self._portals(profile_id),
+            accepted_dispositions=self._accepted_dispositions(profile_id),
             preferred_dispositions=self._preferred_dispositions(profile_id),
             preferred_places=self._preferred_places(profile_id),
         )
@@ -128,8 +132,8 @@ class SqliteProfileRepository:
         stmt = """
             INSERT INTO profile_criteria
                 (profile_id, offer_type, estate_type, place_kind, place_code, min_price, max_price,
-                 min_size_m2, max_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 min_size_m2, max_size_m2, min_land_m2)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
             profile_id,
@@ -142,10 +146,10 @@ class SqliteProfileRepository:
             criteria.min_size_m2,
             criteria.max_size_m2,
             criteria.min_land_m2,
-            criteria.min_rooms,
-            criteria.max_rooms,
-            criteria.kitchen,
         ))
+        stmt = "INSERT INTO accepted_dispositions (profile_id, disposition) VALUES (?, ?)"
+        for disposition in criteria.dispositions:
+            self._conn.execute(stmt, (profile_id, disposition.code))
 
     def _insert_portals(self, profile_id: str, portals: tuple[Portal, ...]) -> None:
         stmt = "INSERT INTO profile_portals (profile_id, portal) VALUES (?, ?)"
@@ -179,6 +183,7 @@ class SqliteProfileRepository:
             self._conn.execute(stmt, (profile_id, place.kind, place.code, rank))
 
     def _to_profile(self, row: sqlite3.Row, portals: tuple[Portal, ...],
+                    accepted_dispositions: tuple[Disposition, ...],
                     preferred_dispositions: tuple[Disposition, ...],
                     preferred_places: tuple[PlaceRef, ...]) -> Profile:
         return Profile(
@@ -186,11 +191,11 @@ class SqliteProfileRepository:
             name=row["name"],
             paused_at=row["paused_at"],
             portals=portals,
-            criteria=self._to_criteria(row),
+            criteria=self._to_criteria(row, accepted_dispositions),
             preferences=self._to_preferences(row, preferred_dispositions, preferred_places),
         )
 
-    def _to_criteria(self, row: sqlite3.Row) -> Criteria:
+    def _to_criteria(self, row: sqlite3.Row, accepted_dispositions: tuple[Disposition, ...]) -> Criteria:
         return Criteria(
             offer_type=row["offer_type"],
             estate_type=row["estate_type"],
@@ -200,9 +205,7 @@ class SqliteProfileRepository:
             min_size_m2=row["min_size_m2"],
             max_size_m2=row["max_size_m2"],
             min_land_m2=row["min_land_m2"],
-            min_rooms=row["min_rooms"],
-            max_rooms=row["max_rooms"],
-            kitchen=row["kitchen"],
+            dispositions=accepted_dispositions,
         )
 
     def _to_preferences(self, row: sqlite3.Row, preferred_dispositions: tuple[Disposition, ...],
@@ -224,6 +227,10 @@ class SqliteProfileRepository:
     def _portals(self, profile_id: str) -> tuple[Portal, ...]:
         stmt = "SELECT portal FROM profile_portals WHERE profile_id = ? ORDER BY portal"
         return tuple(row["portal"] for row in self._conn.execute(stmt, (profile_id,)))
+
+    def _accepted_dispositions(self, profile_id: str) -> tuple[Disposition, ...]:
+        stmt = "SELECT disposition FROM accepted_dispositions WHERE profile_id = ? ORDER BY disposition"
+        return tuple(_stored_disposition(row["disposition"]) for row in self._conn.execute(stmt, (profile_id,)))
 
     def _preferred_dispositions(self, profile_id: str) -> tuple[Disposition, ...]:
         stmt = "SELECT disposition FROM preferred_dispositions WHERE profile_id = ? ORDER BY rank"

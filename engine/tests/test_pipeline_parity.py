@@ -21,7 +21,7 @@ from rentczecher_engine.domain.location import ParsedPlace
 from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, stored_profile
+from tests.profiles import criteria, layouts, stored_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -36,7 +36,7 @@ def _stored_parity_profile(conn) -> Profile:
         portals=("sreality", "bezrealitky", "remax"),
         criteria=criteria(
             max_price=25000,
-            max_rooms=2,
+            dispositions=layouts("1+kk", "1+1", "2+kk", "2+1"),
             min_size_m2=30,
         ),
     )

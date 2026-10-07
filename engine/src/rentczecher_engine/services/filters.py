@@ -22,11 +22,7 @@ def apply_filters(listings: list[Listing], criteria: Criteria) -> list[Listing]:
 
 
 def _fits_layout(disposition: Disposition | None, criteria: Criteria) -> bool:
-    # An unknown or atypical layout states no rooms or kitchen, so no bound can fail it.
-    if disposition is None or disposition.rooms is None:
+    # A listing that states no layout passes: an unknown layout is no mismatch.
+    if not criteria.dispositions or disposition is None:
         return True
-    if criteria.min_rooms is not None and disposition.rooms < criteria.min_rooms:
-        return False
-    if criteria.max_rooms is not None and disposition.rooms > criteria.max_rooms:
-        return False
-    return criteria.kitchen is None or disposition.kitchen == criteria.kitchen
+    return disposition in criteria.dispositions

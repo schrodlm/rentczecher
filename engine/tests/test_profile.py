@@ -66,7 +66,7 @@ class TestPreferenceWeights:
 
 class TestCriteriaBounds:
     """A bound is positive or unset, unset being the only way to say no
-    bound. Rooms run 1 to 9, and a range never runs backwards."""
+    bound, and a range never runs backwards."""
 
     @pytest.mark.parametrize("bound", ["min_price", "max_price", "min_size_m2", "max_size_m2", "min_land_m2"])
     @pytest.mark.parametrize("value", [0, -1])
@@ -74,22 +74,12 @@ class TestCriteriaBounds:
         with pytest.raises(ValueError, match=f"{bound} must be positive"):
             criteria(**{bound: value})
 
-    @pytest.mark.parametrize("bound", ["min_rooms", "max_rooms"])
-    @pytest.mark.parametrize("rooms", [0, 10])
-    def test_a_room_count_outside_one_to_nine_is_rejected(self, bound, rooms):
-        with pytest.raises(ValueError, match=f"{bound} must be 1 to 9"):
-            criteria(**{bound: rooms})
-
     @pytest.mark.parametrize(("low", "high"), [
-        ("min_price", "max_price"), ("min_size_m2", "max_size_m2"), ("min_rooms", "max_rooms"),
+        ("min_price", "max_price"), ("min_size_m2", "max_size_m2"),
     ])
     def test_a_range_running_backwards_is_rejected(self, low, high):
         with pytest.raises(ValueError, match=f"{low} must not exceed {high}"):
             criteria(**{low: 3, high: 2})
-
-    @pytest.mark.parametrize("rooms", [1, 9])
-    def test_a_range_of_one_room_count_at_either_end_is_accepted(self, rooms):
-        criteria(min_rooms=rooms, max_rooms=rooms)
 
     def test_a_bound_of_one_is_accepted(self):
         criteria(min_price=1, max_price=1, min_size_m2=1, max_size_m2=1, min_land_m2=1)
