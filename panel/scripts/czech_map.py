@@ -125,6 +125,10 @@ def ring_area(ring: np.ndarray) -> float:
 
 def main() -> None:
     db = sqlite3.connect(GAZETTEER)
+    # The gazetteer's build stamp, so a map drawn from another build is told
+    # apart from the shipped one.
+    stamp = {key: value for key, value in db.execute(
+        "SELECT key, value FROM meta WHERE key IN ('generated_at', 'source')")}
     kraje = dict(db.execute("SELECT code, name FROM kraje"))
     okresy = {code: (name, kraj) for code, name, kraj in db.execute("SELECT code, name, kraj_code FROM okresy")}
     obvody = dict(db.execute("SELECT code, name FROM obvody"))
@@ -169,7 +173,7 @@ def main() -> None:
     out_obce = [town for towns in towns_by_okres.values()
                 for town in sorted(towns, key=lambda town: -town["streets"])[:TOWNS_PER_OKRES]]
 
-    out = {"width": WIDTH, "height": HEIGHT, "kraje": out_kraje, "okresy": out_okresy,
+    out = {"gazetteer": stamp, "width": WIDTH, "height": HEIGHT, "kraje": out_kraje, "okresy": out_okresy,
            "obvody": out_obvody, "obce": out_obce}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
