@@ -272,9 +272,12 @@ class TestCreateProfile:
         _new_profile_body(portals=["sreality", "sreality"]),
         _new_profile_body(portals=["idnes"]),
         _new_profile_body(preferences=_preferences_body(preferred_dispositions=["2+2"])),
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"dispositions": ["2+kk", "2+kk"]}),
+        _new_profile_body(criteria=_new_profile_body()["criteria"] | {"dispositions": ["2+2"]}),
         _new_profile_body(colour="blue"),
     ], ids=["unknown place", "unknown preferred place", "place code too large to store", "min above max", "price too large to store",
-            "repeated portal", "unknown portal", "unknown disposition", "unknown field"])
+            "repeated portal", "unknown portal", "unknown disposition", "repeated accepted disposition",
+            "unknown accepted disposition", "unknown field"])
     def test_an_invalid_profile_is_422_and_stores_nothing(self, tmp_path, body):
         client = _client(tmp_path)
         response = client.post("/v1/profiles", headers=_auth(), json=body)
