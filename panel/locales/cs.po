@@ -142,3 +142,15 @@ msgstr "kraj"
 
 msgid "street"
 msgstr "ulice"
+
+msgid "Clear the place"
+msgstr "Zrušit místo"
+
+msgid "No place picked yet"
+msgstr "Zatím není vybráno žádné místo"
+
+msgid "Search a place by name: a town, part of town, street..."
+msgstr "Hledejte místo podle názvu: obec, část obce, ulice..."
+
+msgid "Searching in"
+msgstr "Vybrané místo"
