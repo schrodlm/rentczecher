@@ -59,6 +59,13 @@ class TestAdd:
         assert added.portals == ("bezrealitky", "remax", "sreality")
         assert repo.get(added.id).portals == ("bezrealitky", "remax", "sreality")
 
+    def test_accepted_dispositions_read_back_sorted(self, tmp_path):
+        """Accepted dispositions have no order, so they come back sorted by code."""
+        repo, _ = _repo(tmp_path)
+        added = repo.add("P", (), criteria(dispositions=layouts("atypicky", "2+kk", "1+kk", "1+1")), preferences())
+        assert added.criteria.dispositions == layouts("1+1", "1+kk", "2+kk", "atypicky")
+        assert repo.get(added.id) == added
+
     def test_adding_leaves_the_commit_to_the_caller(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.add("P", ("sreality",), criteria(), preferences())

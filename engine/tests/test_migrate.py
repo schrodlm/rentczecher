@@ -318,6 +318,65 @@ class TestProfilesMigration:
             conn.execute(stmt)
 
 
+class TestAcceptedDispositionsMigration:
+    """A profile's room range and kitchen kind become the dispositions they
+    covered, and no range none, which accepts any."""
+
+    NOW = "2026-10-07T00:00:00+00:00"
+
+    def _accepted_after_migrating(self, tmp_path, min_rooms, max_rooms, kitchen):
+        conn = _db_at_version(tmp_path, 12)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        conn.execute(
+            "INSERT INTO profile_criteria (profile_id, offer_type, estate_type, place_kind, place_code, "
+            "min_rooms, max_rooms, kitchen) VALUES ('p', 'rent', 'flat', 'obvod', 78, ?, ?, ?)",
+            (min_rooms, max_rooms, kitchen))
+        conn.commit()
+        assert migrate.apply_pending(conn) == [13]
+        stmt = "SELECT disposition FROM accepted_dispositions WHERE profile_id = 'p' ORDER BY disposition"
+        return [row[0] for row in conn.execute(stmt)]
+
+    def test_a_range_with_a_kitchen_becomes_the_dispositions_it_covered(self, tmp_path):
+        assert self._accepted_after_migrating(tmp_path, 2, 3, "kitchenette") == ["2+kk", "3+kk"]
+
+    def test_a_range_without_a_kitchen_covers_both_kinds(self, tmp_path):
+        assert self._accepted_after_migrating(tmp_path, 8, None, None) == ["8+1", "8+kk", "9+1", "9+kk"]
+
+    def test_a_kitchen_alone_covers_every_room_count(self, tmp_path):
+        assert self._accepted_after_migrating(tmp_path, None, None, "separate") == [
+            "1+1", "2+1", "3+1", "4+1", "5+1", "6+1", "7+1", "8+1", "9+1"]
+
+    def test_no_range_accepts_any_disposition(self, tmp_path):
+        assert self._accepted_after_migrating(tmp_path, None, None, None) == []
+
+    def test_the_search_keeps_its_other_bounds(self, tmp_path):
+        conn = _db_at_version(tmp_path, 12)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        conn.execute(
+            "INSERT INTO profile_criteria (profile_id, offer_type, estate_type, place_kind, place_code, "
+            "min_price, max_price, min_size_m2, max_size_m2, min_land_m2, min_rooms) "
+            "VALUES ('p', 'sale', 'house', 'okres', 3401, 1, 2, 3, 4, 5, 2)")
+        conn.commit()
+        migrate.apply_pending(conn)
+        row = conn.execute("SELECT * FROM profile_criteria").fetchone()
+        assert tuple(row) == ("p", "sale", "house", "okres", 3401, 1, 2, 3, 4, 5)
+
+    def test_an_unknown_disposition_is_refused(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute("INSERT INTO accepted_dispositions (profile_id, disposition) VALUES ('p', '2+2')")
+
+    def test_deleting_a_profile_deletes_its_accepted_dispositions(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        conn.execute("INSERT INTO accepted_dispositions (profile_id, disposition) VALUES ('p', '2+kk')")
+        conn.execute("DELETE FROM profiles WHERE id = 'p'")
+        assert conn.execute("SELECT count(*) FROM accepted_dispositions").fetchone()[0] == 0
+
+
 class TestConcurrentWriters:
     """busy_timeout, not luck, lets a second writer wait out a held write lock."""
 

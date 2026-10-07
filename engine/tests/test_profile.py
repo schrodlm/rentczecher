@@ -93,6 +93,10 @@ class TestUniqueEntries:
         with pytest.raises(ValueError, match="preferred_dispositions must not repeat"):
             preferences(preferred_dispositions=layouts("garsoniéra", "1+kk"))
 
+    def test_a_repeated_accepted_disposition_is_rejected(self):
+        with pytest.raises(ValueError, match="dispositions must not repeat"):
+            criteria(dispositions=layouts("garsoniéra", "1+kk"))
+
     def test_a_repeated_preferred_place_is_rejected(self):
         with pytest.raises(ValueError, match="preferred_places must not repeat"):
             preferences(preferred_places=(PlaceRef("obvod", 78), PlaceRef("obvod", 78)))

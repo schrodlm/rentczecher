@@ -59,6 +59,37 @@ def test_min_land_excludes_smaller_and_keeps_unknown():
     assert [l.id for l in result] == ["big", "unknown"]
 
 
+def _layouts_kept(listing_layouts: dict[str, str | None], accepted: tuple) -> list[str]:
+    listings = [_make_listing(id=listing_id, disposition_raw_text=layout)
+                for listing_id, layout in listing_layouts.items()]
+    return [l.id for l in apply_filters(listings, criteria(dispositions=accepted))]
+
+
+def test_no_accepted_disposition_accepts_any_layout():
+    kept = _layouts_kept({"two": "2+kk", "five": "5+1", "atypical": "Atypický"}, ())
+    assert kept == ["two", "five", "atypical"]
+
+
+def test_only_an_accepted_disposition_passes():
+    kept = _layouts_kept({"two": "2+kk", "three": "3+1", "four": "4+kk"}, layouts("2+kk", "4+kk"))
+    assert kept == ["two", "four"]
+
+
+def test_a_studio_passes_as_an_accepted_1kk():
+    assert _layouts_kept({"studio": "Garsoniéra", "one-separate": "1+1"}, layouts("1+kk")) == ["studio"]
+
+
+def test_a_listing_stating_no_layout_passes():
+    """A layout the listing does not state, or a label naming no layout,
+    gives nothing to mismatch."""
+    assert _layouts_kept({"missing": None, "building": "Rodinný"}, layouts("2+kk")) == ["missing", "building"]
+
+
+def test_an_atypical_layout_passes_only_when_accepted():
+    assert _layouts_kept({"atypical": "Atypický"}, layouts("2+kk")) == []
+    assert _layouts_kept({"atypical": "Atypický"}, layouts("2+kk", "atypicky")) == ["atypical"]
+
+
 def test_filters_combine():
     keeper = _make_listing(id="keeper", size_m2=50, land_m2=300)
     too_little_land = _make_listing(id="little-land", size_m2=50, land_m2=100)
