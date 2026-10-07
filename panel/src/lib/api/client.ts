@@ -2,6 +2,8 @@ import createClient from 'openapi-fetch';
 import type { components, paths } from './types.gen';
 
 export type ProfileModel = components['schemas']['ProfileModel'];
+export type NewProfileBody = components['schemas']['NewProfileBody'];
+export type ProfileUpdateBody = components['schemas']['ProfileUpdateBody'];
 export type ListingModel = components['schemas']['ListingModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
@@ -29,6 +31,28 @@ export class SidecarClient {
 	async listProfiles(): Promise<ProfileModel[]> {
 		const { data, response } = await this.api.GET('/v1/profiles');
 		return this.require(data, response);
+	}
+
+	async createProfile(body: NewProfileBody): Promise<ProfileModel> {
+		const { data, response } = await this.api.POST('/v1/profiles', { body });
+		return this.require(data, response);
+	}
+
+	async updateProfile(profileId: string, body: ProfileUpdateBody): Promise<ProfileModel> {
+		const { data, response } = await this.api.PUT('/v1/profiles/{profile_id}', {
+			params: { path: { profile_id: profileId } },
+			body
+		});
+		return this.require(data, response);
+	}
+
+	async deleteProfile(profileId: string): Promise<void> {
+		const { response } = await this.api.DELETE('/v1/profiles/{profile_id}', {
+			params: { path: { profile_id: profileId } }
+		});
+		if (!response.ok) {
+			throw this.httpError(response);
+		}
 	}
 
 	async listListings(profileId: string, filter: ListingFilter = 'new'): Promise<ListingModel[]> {
