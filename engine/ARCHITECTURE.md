@@ -69,7 +69,7 @@ scrape_all(scrapers, criteria, client)                  # services/scrape, per s
    │      fetch → parse → list[Listing]                   fetch/parse split
    │      (ScraperBrokenError = contract changed, isolated per scraper)
    ▼
-apply_filters(listings, criteria)                       # room range, kitchen / min size / min land
+apply_filters(listings, criteria)                       # accepted dispositions / size range / min land
    ▼
 locate_listings(listings, gazetteer)                    # services/locate
    ▼
