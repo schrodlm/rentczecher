@@ -94,3 +94,27 @@ msgstr "rentczecher přestal fungovat. Pro pokračování aplikaci restartujte."
 
 msgid "atypical layout"
 msgstr "atypická dispozice"
+
+msgid "Back"
+msgstr "Zpět"
+
+msgid "Click a Praha district to search there."
+msgstr "Klikněte na pražský obvod a hledejte v něm."
+
+msgid "Click a region to zoom in."
+msgstr "Klikněte na oblast a přibližte ji."
+
+msgid "Click a town to search there. For a smaller village, search it by name."
+msgstr "Klikněte na obec a hledejte v ní. Menší obec vyhledejte podle názvu."
+
+msgid "Czechia"
+msgstr "Česko"
+
+msgid "Map of Czechia"
+msgstr "Mapa Česka"
+
+msgid "Search the whole area"
+msgstr "Hledat v celé oblasti"
+
+msgid "Searching the whole area"
+msgstr "Hledá se v celé oblasti"
