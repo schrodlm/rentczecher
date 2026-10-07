@@ -58,8 +58,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 12
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -229,7 +229,7 @@ class TestProfilesMigration:
         conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
                      "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
         conn.commit()
-        assert migrate.apply_pending(conn) == [11]
+        assert migrate.apply_pending(conn) == [11, 12]
         assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1

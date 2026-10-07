@@ -64,6 +64,7 @@ class CriteriaBody(BaseModel):
     min_price: int | None
     max_price: int | None
     min_size_m2: int | None
+    max_size_m2: int | None
     min_land_m2: int | None
     min_rooms: int | None
     max_rooms: int | None
@@ -77,6 +78,7 @@ class CriteriaBody(BaseModel):
             min_price=self.min_price,
             max_price=self.max_price,
             min_size_m2=self.min_size_m2,
+            max_size_m2=self.max_size_m2,
             min_land_m2=self.min_land_m2,
             min_rooms=self.min_rooms,
             max_rooms=self.max_rooms,
@@ -142,6 +144,7 @@ class CriteriaModel(BaseModel):
     min_price: int | None
     max_price: int | None
     min_size_m2: int | None
+    max_size_m2: int | None
     min_land_m2: int | None
     min_rooms: int | None
     max_rooms: int | None
@@ -156,6 +159,7 @@ class CriteriaModel(BaseModel):
             min_price=criteria.min_price,
             max_price=criteria.max_price,
             min_size_m2=criteria.min_size_m2,
+            max_size_m2=criteria.max_size_m2,
             min_land_m2=criteria.min_land_m2,
             min_rooms=criteria.min_rooms,
             max_rooms=criteria.max_rooms,

@@ -78,7 +78,7 @@ class SqliteProfileRepository:
         stmt = """
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
-                   c.min_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
+                   c.min_size_m2, c.max_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
                    r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
                    r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
             FROM profiles p
@@ -94,7 +94,7 @@ class SqliteProfileRepository:
         stmt = """
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
-                   c.min_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
+                   c.min_size_m2, c.max_size_m2, c.min_land_m2, c.min_rooms, c.max_rooms, c.kitchen,
                    r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
                    r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
             FROM profiles p
@@ -128,8 +128,8 @@ class SqliteProfileRepository:
         stmt = """
             INSERT INTO profile_criteria
                 (profile_id, offer_type, estate_type, place_kind, place_code, min_price, max_price,
-                 min_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 min_size_m2, max_size_m2, min_land_m2, min_rooms, max_rooms, kitchen)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
             profile_id,
@@ -140,6 +140,7 @@ class SqliteProfileRepository:
             criteria.min_price,
             criteria.max_price,
             criteria.min_size_m2,
+            criteria.max_size_m2,
             criteria.min_land_m2,
             criteria.min_rooms,
             criteria.max_rooms,
@@ -197,6 +198,7 @@ class SqliteProfileRepository:
             min_price=row["min_price"],
             max_price=row["max_price"],
             min_size_m2=row["min_size_m2"],
+            max_size_m2=row["max_size_m2"],
             min_land_m2=row["min_land_m2"],
             min_rooms=row["min_rooms"],
             max_rooms=row["max_rooms"],

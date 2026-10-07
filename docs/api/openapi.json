@@ -51,6 +51,17 @@
             ],
             "title": "Max Rooms"
           },
+          "max_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Size M2"
+          },
           "min_land_m2": {
             "anyOf": [
               {
@@ -114,6 +125,7 @@
           "min_price",
           "max_price",
           "min_size_m2",
+          "max_size_m2",
           "min_land_m2",
           "min_rooms",
           "max_rooms",
@@ -170,6 +182,17 @@
               }
             ],
             "title": "Max Rooms"
+          },
+          "max_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Size M2"
           },
           "min_land_m2": {
             "anyOf": [
@@ -234,6 +257,7 @@
           "min_price",
           "max_price",
           "min_size_m2",
+          "max_size_m2",
           "min_land_m2",
           "min_rooms",
           "max_rooms",
