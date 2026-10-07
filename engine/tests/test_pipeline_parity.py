@@ -1,7 +1,7 @@
 """Golden test pinning the exact end-to-end pipeline behavior.
 
 Feeds a fixed set of fixture listings through run_profile (filters,
-cross-source dedup, scoring, price drops, disappearances, commit)
+cross-source dedup, price drops, disappearances, commit)
 and compares the full outcome against a committed
 golden file. Regenerate deliberately with:
 PARITY_REGEN=1 python3 -m pytest tests/test_pipeline_parity.py
@@ -17,11 +17,11 @@ from pathlib import Path
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
+from rentczecher_engine.domain.location import ParsedPlace
 from rentczecher_engine.domain.profile import Profile
 from rentczecher_engine.services import pipeline
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import criteria, layouts, preferences, stored_profile
+from tests.profiles import criteria, stored_profile
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parity"
 GOLDEN = FIXTURES / "golden.json"
@@ -38,15 +38,6 @@ def _stored_parity_profile(conn) -> Profile:
             max_price=25000,
             max_rooms=2,
             min_size_m2=30,
-        ),
-        preferences=preferences(
-            price_per_m2_weight=40,
-            disposition_weight=30,
-            preferred_dispositions=layouts("2+kk", "1+1"),
-            size_weight=15,
-            ideal_size_m2=55,
-            place_weight=15,
-            preferred_places=(PlaceRef("cast_obce", 490067), PlaceRef("cast_obce", 490024)),
         ),
     )
 
@@ -121,7 +112,6 @@ def _listing_snapshot(listing):
         "lon": listing.lon,
         "charges": listing.charges,
         "land_m2": listing.land_m2,
-        "score": listing.score,
         "price_drop_from": listing.price_drop_from,
         "cross_source": sorted(listing.cross_source),
     }

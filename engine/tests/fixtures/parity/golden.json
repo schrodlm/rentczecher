@@ -14,7 +14,6 @@
    "lon": 14.4499,
    "charges": null,
    "land_m2": null,
-   "score": 53,
    "price_drop_from": null,
    "cross_source": []
   },
@@ -32,7 +31,6 @@
    "lon": 14.4408,
    "charges": 3000,
    "land_m2": null,
-   "score": 84,
    "price_drop_from": null,
    "cross_source": [
     "remax",
@@ -53,7 +51,6 @@
    "lon": null,
    "charges": 2500,
    "land_m2": null,
-   "score": 85,
    "price_drop_from": null,
    "cross_source": [
     "remax"
@@ -75,7 +72,6 @@
    "lon": 14.4287,
    "charges": null,
    "land_m2": null,
-   "score": 50,
    "price_drop_from": 24000,
    "cross_source": []
   }
