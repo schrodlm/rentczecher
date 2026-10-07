@@ -22,8 +22,8 @@ from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.location import ParsedPlace, PlaceKind
-from rentczecher_engine.domain.profile import Criteria
+from rentczecher_engine.domain.location import ParsedPlace, PlaceKind, PlaceRef
+from rentczecher_engine.domain.profile import Criteria, Preferences
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 from tests.profiles import layouts, preferences
 
@@ -40,6 +40,9 @@ DEFAULT_LISTING = {
 
 _SEARCH_KEYS = {"offer_type", "estate_type", "place", "min_price", "max_price",
                 "min_size_m2", "max_size_m2", "min_land_m2", "dispositions"}
+_PREFERENCE_KEYS = {"price_per_m2_weight", "disposition_weight", "preferred_dispositions",
+                    "size_weight", "ideal_size_m2", "place_weight", "preferred_places",
+                    "land_weight", "ideal_land_m2", "price_weight", "max_good_price"}
 
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
@@ -112,7 +115,7 @@ class Scenario:
         unknown = set(raw) - {"profile", "scans", "viewed"}
         if unknown:
             raise ValueError(f"scenario {name!r}: unknown keys {sorted(unknown)}")
-        unknown_profile = set(raw["profile"]) - {"name", "search"}
+        unknown_profile = set(raw["profile"]) - {"name", "search", "portals", "preferences"}
         if unknown_profile:
             raise ValueError(f"scenario {name!r}: unknown profile keys {sorted(unknown_profile)}")
         scans = tuple(
@@ -122,6 +125,13 @@ class Scenario:
         return cls(name, raw["profile"], scans, tuple(raw.get("viewed", ())))
 
     def portals(self) -> list[str]:
+        """The portals the profile states, or else every portal any scan saw
+        a listing from."""
+        if "portals" in self.profile:
+            return sorted(self.profile["portals"])
+        return self._sources()
+
+    def _sources(self) -> list[str]:
         """Every portal any scan saw a listing from, so each scan runs them
         all and a listing one portal stops returning counts as missed."""
         sources = {_source_of(listing["id"]) for scan in self.scans for listing in scan.listings}
@@ -146,7 +156,7 @@ class Scenario:
             if self.scans:
                 clock.current = now + self.scans[0].at
             profile = SqliteProfileRepository(conn, now=clock).add(
-                self.profile["name"], tuple(self.portals()), self._criteria(gazetteer), preferences())
+                self.profile["name"], tuple(self.portals()), self._criteria(gazetteer), self._preferences(gazetteer))
             conn.commit()
             for scan in self.scans:
                 clock.current = now + scan.at
@@ -173,15 +183,10 @@ class Scenario:
         unknown = set(search) - _SEARCH_KEYS
         if unknown:
             raise ValueError(f"scenario {self.name!r}: unknown search keys {sorted(unknown)}")
-        kind, _, place_name = search["place"].partition(" ")
-        place_kinds = get_args(PlaceKind)
-        if kind not in place_kinds:
-            raise ValueError(
-                f"scenario {self.name!r}: unknown place kind {kind!r}, expected one of {list(place_kinds)}")
         return Criteria(
             offer_type=search["offer_type"],
             estate_type=search["estate_type"],
-            place=gazetteer.place_named(kind, place_name),
+            place=self._place(gazetteer, search["place"]),
             min_price=search.get("min_price"),
             max_price=search.get("max_price"),
             min_size_m2=search.get("min_size_m2"),
@@ -190,8 +195,37 @@ class Scenario:
             dispositions=layouts(*search.get("dispositions", [])),
         )
 
+    def _preferences(self, gazetteer: Gazetteer) -> Preferences:
+        """The profile's preferences, every one off unless the scenario sets
+        it, with preferred places written like the search place."""
+        stated = self.profile.get("preferences", {})
+        unknown = set(stated) - _PREFERENCE_KEYS
+        if unknown:
+            raise ValueError(f"scenario {self.name!r}: unknown preference keys {sorted(unknown)}")
+        return preferences(
+            price_per_m2_weight=stated.get("price_per_m2_weight", 0),
+            disposition_weight=stated.get("disposition_weight", 0),
+            preferred_dispositions=layouts(*stated.get("preferred_dispositions", [])),
+            size_weight=stated.get("size_weight", 0),
+            ideal_size_m2=stated.get("ideal_size_m2"),
+            place_weight=stated.get("place_weight", 0),
+            preferred_places=tuple(self._place(gazetteer, written) for written in stated.get("preferred_places", [])),
+            land_weight=stated.get("land_weight", 0),
+            ideal_land_m2=stated.get("ideal_land_m2"),
+            price_weight=stated.get("price_weight", 0),
+            max_good_price=stated.get("max_good_price"),
+        )
+
+    def _place(self, gazetteer: Gazetteer, written: str) -> PlaceRef:
+        kind, _, place_name = written.partition(" ")
+        place_kinds = get_args(PlaceKind)
+        if kind not in place_kinds:
+            raise ValueError(
+                f"scenario {self.name!r}: unknown place kind {kind!r}, expected one of {list(place_kinds)}")
+        return gazetteer.place_named(kind, place_name)
+
     def _scrapers_for(self, scan: ScenarioScan, scraped_at: datetime) -> dict[str, Callable[[Criteria, object], ScenarioScraper]]:
-        by_portal: dict[str, list[Listing]] = {portal: [] for portal in self.portals()}
+        by_portal: dict[str, list[Listing]] = {portal: [] for portal in self._sources()}
         for fields in scan.listings:
             listing = _build_listing(fields, scraped_at)
             by_portal[listing.source].append(listing)
