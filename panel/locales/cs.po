@@ -118,3 +118,27 @@ msgstr "Hledat v celé oblasti"
 
 msgid "Searching the whole area"
 msgstr "Hledá se v celé oblasti"
+
+msgid "Places found"
+msgstr "Nalezená místa"
+
+msgid "borough"
+msgstr "městská část"
+
+msgid "city district"
+msgstr "obvod"
+
+msgid "district"
+msgstr "okres"
+
+msgid "municipality"
+msgstr "obec"
+
+msgid "part of a municipality"
+msgstr "část obce"
+
+msgid "region"
+msgstr "kraj"
+
+msgid "street"
+msgstr "ulice"
