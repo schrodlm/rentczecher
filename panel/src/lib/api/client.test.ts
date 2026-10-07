@@ -112,3 +112,33 @@ describe('deleteProfile', () => {
 		await expect(new SidecarClient(BASE_URL, TOKEN).deleteProfile('p1')).rejects.toThrow('404');
 	});
 });
+
+describe('searchPlaces', () => {
+	const HOLESOVICE = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null };
+
+	test('asks for places starting with the query and returns them', async () => {
+		answerWith(200, [HOLESOVICE]);
+		const places = await new SidecarClient(BASE_URL, TOKEN).searchPlaces('holeš');
+
+		const url = new URL(requests[0].url);
+		expect(url.pathname).toBe('/v1/places');
+		expect([...url.searchParams]).toEqual([['q', 'holeš']]);
+		expect(places).toEqual([HOLESOVICE]);
+	});
+
+	test('sends the place to search inside as kind and code, and each kind', async () => {
+		answerWith(200, []);
+		await new SidecarClient(BASE_URL, TOKEN).searchPlaces('ho', { kind: 'obvod', code: 78 }, ['cast_obce', 'ulice']);
+
+		const url = new URL(requests[0].url);
+		expect(url.searchParams.get('within')).toBe('obvod:78');
+		expect(url.searchParams.getAll('kind')).toEqual(['cast_obce', 'ulice']);
+	});
+
+	test('throws when the engine refuses the search', async () => {
+		answerWith(422, { detail: "unknown place 'obvod 7'" });
+		await expect(
+			new SidecarClient(BASE_URL, TOKEN).searchPlaces('ho', { kind: 'obvod', code: 7 })
+		).rejects.toThrow('422');
+	});
+});
