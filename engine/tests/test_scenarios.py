@@ -8,7 +8,10 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from rentczecher_engine.adapters.repositories.sqlite import connection
+from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
+from rentczecher_engine.domain.location import PlaceRef
+from tests.profiles import layouts, preferences
 from tests.scenarios import Scenario, offset_from_now
 
 NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
@@ -113,6 +116,60 @@ scans:
 """)
     with pytest.raises(TypeError, match="sise_m2"):
         scenario.replay_into(tmp_path, NOW)
+
+
+STATED_PROFILE = """
+profile:
+  name: Stated
+  portals: [bezrealitky]
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7}
+  preferences:
+    disposition_weight: 30
+    preferred_dispositions: [3+kk, 2+kk]
+    place_weight: 20
+    preferred_places: [mestska_cast Praha 7]
+    price_weight: 50
+    max_good_price: 22000
+scans:
+  - at: -1h
+    listings:
+      - {id: "sreality:1", price: 20000}
+      - {id: "bezrealitky:1", price: 21000}
+"""
+
+
+def _stored_profile(tmp_path, text):
+    profile_id = Scenario.from_text("stated", text).replay_into(tmp_path, NOW)
+    conn = connection.connect(tmp_path / "data" / "rentczecher.db")
+    return SqliteProfileRepository(conn).get(profile_id), SqliteRunStore(conn)
+
+
+def test_a_profile_scans_the_portals_it_states(tmp_path):
+    """A listing from a portal the profile does not scan is not tracked."""
+    profile, store = _stored_profile(tmp_path, STATED_PROFILE)
+    assert profile.portals == ("bezrealitky",)
+    assert [card.id for card in store.inbox_listings(profile.id)] == ["bezrealitky:1"]
+
+
+def test_a_profile_stating_no_portals_scans_every_portal_its_scans_saw(tmp_path):
+    text = STATED_PROFILE.replace("  portals: [bezrealitky]\n", "")
+    profile, _ = _stored_profile(tmp_path, text)
+    assert profile.portals == ("bezrealitky", "sreality")
+
+
+def test_a_profile_keeps_the_preferences_it_states_and_the_rest_off(tmp_path):
+    profile, _ = _stored_profile(tmp_path, STATED_PROFILE)
+    assert profile.preferences == preferences(
+        disposition_weight=30, preferred_dispositions=layouts("3+kk", "2+kk"),
+        place_weight=20, preferred_places=(PlaceRef("mestska_cast", 500186),),
+        price_weight=50, max_good_price=22000,
+    )
+
+
+def test_an_unknown_preference_key_fails_loudly(tmp_path):
+    text = STATED_PROFILE.replace("price_weight: 50", "price_wieght: 50")
+    with pytest.raises(ValueError, match="unknown preference keys \\['price_wieght'\\]"):
+        Scenario.from_text("typo", text).replay_into(tmp_path, NOW)
 
 
 @pytest.mark.parametrize("text, expected", [
