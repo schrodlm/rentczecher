@@ -46,7 +46,7 @@ class TestDbMigrate:
         assert db.exists()
         import sqlite3
         conn = sqlite3.connect(db)
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 12
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "properties" in tables and "listings" in tables
 

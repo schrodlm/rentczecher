@@ -12,6 +12,9 @@ def apply_filters(listings: list[Listing], criteria: Criteria) -> list[Listing]:
     if criteria.min_size_m2 is not None:
         result = [l for l in result if l.size_m2 is None or l.size_m2 >= criteria.min_size_m2]
 
+    if criteria.max_size_m2 is not None:
+        result = [l for l in result if l.size_m2 is None or l.size_m2 <= criteria.max_size_m2]
+
     if criteria.min_land_m2 is not None:
         result = [l for l in result if l.land_m2 is None or l.land_m2 >= criteria.min_land_m2]
 
