@@ -1,0 +1,29 @@
+# A profile with every criterion and preference set, the one to open the
+# profile editor on, after a scan that found a few flats.
+profile:
+  name: Praha 7 byty
+  portals: [sreality, bezrealitky]
+  search:
+    offer_type: rent
+    estate_type: flat
+    place: obvod Praha 7
+    min_price: 15000
+    max_price: 30000
+    min_size_m2: 40
+    max_size_m2: 90
+    dispositions: [2+kk, 2+1, 3+kk]
+  preferences:
+    disposition_weight: 25
+    preferred_dispositions: [3+kk, 2+kk]
+    size_weight: 20
+    ideal_size_m2: 70
+    place_weight: 20
+    preferred_places: [cast_obce Bubeneč, cast_obce Troja]
+    price_weight: 35
+    max_good_price: 22000
+scans:
+  - at: -1h
+    listings:
+      - {id: "sreality:1101", price: 21500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 64, disposition_raw_text: "2+kk"}
+      - {id: "sreality:1102", price: 27900, location_raw_text: "Veletržní, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:2101", price: 18900, location_raw_text: "Letohradská, Praha 7", size_m2: 52, disposition_raw_text: "2+1"}
