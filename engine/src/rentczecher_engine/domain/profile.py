@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 from typing import Literal
 
-from rentczecher_engine.domain.disposition import Disposition, Kitchen
+from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.location import PlaceRef
 
 OfferType = Literal["rent", "sale"]
@@ -23,9 +23,8 @@ class Criteria:
     min_size_m2: int | None = None
     max_size_m2: int | None = None
     min_land_m2: int | None = None
-    min_rooms: int | None = None
-    max_rooms: int | None = None
-    kitchen: Kitchen | None = None
+    # Empty accepts any disposition.
+    dispositions: tuple[Disposition, ...] = ()
 
     def __post_init__(self) -> None:
         if self.min_price is not None and self.min_price <= 0:
@@ -38,16 +37,12 @@ class Criteria:
             raise ValueError("max_size_m2 must be positive, or left unset for no bound")
         if self.min_land_m2 is not None and self.min_land_m2 <= 0:
             raise ValueError("min_land_m2 must be positive, or left unset for no bound")
-        if self.min_rooms is not None and not 1 <= self.min_rooms <= 9:
-            raise ValueError("min_rooms must be 1 to 9, or left unset for no bound")
-        if self.max_rooms is not None and not 1 <= self.max_rooms <= 9:
-            raise ValueError("max_rooms must be 1 to 9, or left unset for no bound")
         if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
             raise ValueError("min_price must not exceed max_price")
         if self.min_size_m2 is not None and self.max_size_m2 is not None and self.min_size_m2 > self.max_size_m2:
             raise ValueError("min_size_m2 must not exceed max_size_m2")
-        if self.min_rooms is not None and self.max_rooms is not None and self.min_rooms > self.max_rooms:
-            raise ValueError("min_rooms must not exceed max_rooms")
+        if len(set(self.dispositions)) != len(self.dispositions):
+            raise ValueError("dispositions must not repeat")
 
 
 @dataclass(frozen=True, slots=True)

@@ -214,7 +214,7 @@ def _new_profile_body(**overrides) -> dict:
         "criteria": {
             "offer_type": "rent", "estate_type": "flat", "place": {"kind": "obvod", "code": 78},
             "min_price": None, "max_price": 25000, "min_size_m2": None, "max_size_m2": None, "min_land_m2": None,
-            "min_rooms": None, "max_rooms": None, "kitchen": None,
+            "dispositions": [],
         },
         "preferences": _preferences_body(),
     }

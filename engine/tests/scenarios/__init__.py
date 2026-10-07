@@ -25,7 +25,7 @@ from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.domain.location import ParsedPlace, PlaceKind
 from rentczecher_engine.domain.profile import Criteria
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
-from tests.profiles import preferences
+from tests.profiles import layouts, preferences
 
 SCENARIOS_DIR = Path(__file__).parent
 
@@ -39,7 +39,7 @@ DEFAULT_LISTING = {
 }
 
 _SEARCH_KEYS = {"offer_type", "estate_type", "place", "min_price", "max_price",
-                "min_size_m2", "max_size_m2", "min_land_m2", "min_rooms", "max_rooms", "kitchen"}
+                "min_size_m2", "max_size_m2", "min_land_m2", "dispositions"}
 
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
@@ -187,9 +187,7 @@ class Scenario:
             min_size_m2=search.get("min_size_m2"),
             max_size_m2=search.get("max_size_m2"),
             min_land_m2=search.get("min_land_m2"),
-            min_rooms=search.get("min_rooms"),
-            max_rooms=search.get("max_rooms"),
-            kitchen=search.get("kitchen"),
+            dispositions=layouts(*search.get("dispositions", [])),
         )
 
     def _scrapers_for(self, scan: ScenarioScan, scraped_at: datetime) -> dict[str, Callable[[Criteria, object], ScenarioScraper]]:

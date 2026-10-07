@@ -14,7 +14,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
-from rentczecher_engine.domain.disposition import Disposition, DispositionCode, Kitchen, parse_disposition
+from rentczecher_engine.domain.disposition import Disposition, DispositionCode, parse_disposition
 from rentczecher_engine.domain.listing import InboxCard
 from rentczecher_engine.domain.location import Location, Place, PlaceKind, PlaceMatch, PlaceRef
 from rentczecher_engine.domain.profile import Criteria, EstateType, OfferType, Portal, Preferences, Profile
@@ -66,9 +66,7 @@ class CriteriaBody(BaseModel):
     min_size_m2: int | None
     max_size_m2: int | None
     min_land_m2: int | None
-    min_rooms: int | None
-    max_rooms: int | None
-    kitchen: Kitchen | None
+    dispositions: list[DispositionCode]
 
     def to_criteria(self) -> Criteria:
         return Criteria(
@@ -80,9 +78,7 @@ class CriteriaBody(BaseModel):
             min_size_m2=self.min_size_m2,
             max_size_m2=self.max_size_m2,
             min_land_m2=self.min_land_m2,
-            min_rooms=self.min_rooms,
-            max_rooms=self.max_rooms,
-            kitchen=self.kitchen,
+            dispositions=tuple(_disposition(code) for code in self.dispositions),
         )
 
 
@@ -146,9 +142,7 @@ class CriteriaModel(BaseModel):
     min_size_m2: int | None
     max_size_m2: int | None
     min_land_m2: int | None
-    min_rooms: int | None
-    max_rooms: int | None
-    kitchen: Kitchen | None
+    dispositions: list[DispositionCode]
 
     @classmethod
     def from_criteria(cls, criteria: Criteria, named_places: Mapping[PlaceRef, PlaceMatch]) -> "CriteriaModel":
@@ -161,9 +155,7 @@ class CriteriaModel(BaseModel):
             min_size_m2=criteria.min_size_m2,
             max_size_m2=criteria.max_size_m2,
             min_land_m2=criteria.min_land_m2,
-            min_rooms=criteria.min_rooms,
-            max_rooms=criteria.max_rooms,
-            kitchen=criteria.kitchen,
+            dispositions=[disposition.code for disposition in criteria.dispositions],
         )
 
 
