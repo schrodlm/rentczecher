@@ -22,6 +22,10 @@ Rebuild after changing `schema.sql` or `normalize_name`, bumping
 first, since the engine refuses a file built for another version. The root
 README lists the other reasons to rebuild.
 
+A build that replaces the shipped file also redraws the panel's map of
+Czechia from it (`panel/scripts/czech_map.py`), since the map offers places
+by their codes. A test fails while the map was drawn from another build.
+
 ## What it does
 
 1. **Download** (`sources.py`) the two RÚIAN files: the state file (official
