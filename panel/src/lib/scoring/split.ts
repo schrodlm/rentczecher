@@ -16,24 +16,26 @@ export function moveDivider(weights: Weights, left: Preference, right: Preferenc
 
 /* Gives a preference an equal share of the bar, taken from the counting
 ones in proportion. */
-export function switchOn(weights: Weights, preference: Preference, counting: readonly Preference[]): Weights {
+function switchOn(weights: Weights, preference: Preference, counting: readonly Preference[]): Weights {
 	const others = counting.filter((other) => other !== preference);
 	const share = Math.round(100 / (others.length + 1));
 	const shared = { ...scaledTo(weights, others, 100 - share), [preference]: share };
 	return liftedToMinimum(shared, [...others, preference]);
 }
 
-/* Hands a preference's share back to the counting ones in proportion. */
-export function switchOff(weights: Weights, preference: Preference, counting: readonly Preference[]): Weights {
-	const others = counting.filter((other) => other !== preference);
-	return scaledTo(weights, others, 100);
-}
-
 /* The counting preferences' weights scaled to add up to 100, every other
-preference at 0. A preference stops counting when its preferred value is
-cleared, and the rest grow to fill its share. */
+preference at 0. One that counts but weighs nothing yet, such as one whose
+preferred value was just set, gets an equal share taken from the rest. One
+that stops counting hands its share back to the rest in proportion. */
 export function settled(weights: Weights, counting: readonly Preference[]): Weights {
-	return scaledTo(weights, counting, 100);
+	const weighed = counting.filter((preference) => weights[preference] > 0);
+	let shared = scaledTo(weights, weighed, 100);
+	let on = weighed;
+	for (const newcomer of counting.filter((preference) => weights[preference] === 0)) {
+		shared = switchOn(shared, newcomer, on);
+		on = [...on, newcomer];
+	}
+	return shared;
 }
 
 /* Raises every preference below the minimum to it, taking the points from

@@ -40,16 +40,16 @@ export function isReady(preference: Preference, values: PreferredValues): boolea
 	return values.preferred_places.length > 0;
 }
 
-/* The preferences that count towards the score: those that fit the estate,
-have their preferred value and are switched on. */
-export function countingFor(values: PreferredValues, weights: Weights, estateType: EstateType): Preference[] {
-	return preferencesFor(estateType).filter((preference) => isReady(preference, values) && weights[preference] > 0);
+/* The preferences that count towards the score: those that fit the estate
+and have their preferred value. */
+export function countingFor(values: PreferredValues, estateType: EstateType): Preference[] {
+	return preferencesFor(estateType).filter((preference) => isReady(preference, values));
 }
 
 /* The weights a profile stores: the counting preferences' weights grown to add
 up to 100, every other preference at 0. */
 export function storedWeights(values: PreferredValues, weights: Weights, estateType: EstateType): Weights {
-	return settled(weights, countingFor(values, weights, estateType));
+	return settled(weights, countingFor(values, estateType));
 }
 
 /* The preferences a profile stores: each one's preferred value and its
