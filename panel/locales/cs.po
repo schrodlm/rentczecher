@@ -166,3 +166,6 @@ msgstr "{name} od"
 
 msgid "{name} to"
 msgstr "{name} do"
+
+msgid "atypical"
+msgstr "atypická"
