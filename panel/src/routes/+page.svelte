@@ -7,6 +7,8 @@
 	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
 	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
+	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
+	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
 	import ListingFeed from '$lib/components/ListingFeed.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
@@ -27,6 +29,9 @@
 	let listings = $state<ListingModel[] | null>(null);
 	let listingsError = $state<string | null>(null);
 	let newCounts = $state<Record<string, number>>({});
+	// The profile open in the editor, with the id it is stored under, or null
+	// for a new one.
+	let editing = $state<{ draft: ProfileDraft; profileId: string | null } | null>(null);
 
 	const newListings = $derived(
 		[...(listings ?? [])]
@@ -112,6 +117,43 @@
 		});
 	}
 
+	function openNewProfile(): void {
+		editing = { draft: ProfileDraft.blank(), profileId: null };
+	}
+
+	function openStoredProfile(profile: ProfileModel): void {
+		editing = { draft: ProfileDraft.of(profile), profileId: profile.id };
+	}
+
+	async function saveProfile(): Promise<void> {
+		if (editing === null || profiles === null) return;
+		const { draft, profileId } = editing;
+		if (profileId === null) {
+			const created = await client.createProfile(draft.newProfileBody());
+			profiles = [...profiles, created];
+			newCounts = { ...newCounts, [created.id]: 0 };
+			editing = null;
+			selectProfile(created.id);
+			return;
+		}
+		const updated = await client.updateProfile(profileId, draft.updateBody());
+		profiles = profiles.map((profile) => (profile.id === updated.id ? updated : profile));
+		editing = null;
+	}
+
+	async function deleteProfile(): Promise<void> {
+		if (editing === null || editing.profileId === null || profiles === null) return;
+		const profileId = editing.profileId;
+		await client.deleteProfile(profileId);
+		profiles = profiles.filter((profile) => profile.id !== profileId);
+		editing = null;
+		if (selectedProfileId !== profileId) return;
+		selectedProfileId = null;
+		listings = null;
+		runProgress.disconnect();
+		if (profiles.length > 0) selectProfile(profiles[0].id);
+	}
+
 	async function handleRun(): Promise<void> {
 		if (selectedProfileId === null) return;
 		runError = null;
@@ -164,9 +206,10 @@
 					</span>
 				{:else if profiles === null}
 					<span class="tabs__status">{t.t('Loading profiles...')}</span>
-				{:else if profiles.length === 0}
-					<span class="tabs__status">{t.t('No profiles yet')}</span>
 				{:else}
+					{#if profiles.length === 0}
+						<span class="tabs__status">{t.t('No profiles yet')}</span>
+					{/if}
 					{#each profiles as profile (profile.id)}
 						<button
 							class="tab"
@@ -178,8 +221,15 @@
 								<span class="tab__count">{newCounts[profile.id]}</span>
 							{/if}
 						</button>
+						{#if profile.id === selectedProfileId}
+							<button
+								class="tab__edit"
+								aria-label={t.t('Edit profile {name}', { name: profile.name })}
+								onclick={() => openStoredProfile(profile)}>✎</button
+							>
+						{/if}
 					{/each}
-					<button class="tab tab--add" title={t.t('Add profile')}>+</button>
+					<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
 				{/if}
 			</nav>
 			<InboxHeader
@@ -199,6 +249,8 @@
 
 		{#if listingsError}
 			<p class="shell__status">{t.t('Could not load listings: {message}', { message: listingsError })}</p>
+		{:else if profiles !== null && profiles.length === 0}
+			<p class="shell__status">{t.t('Create a profile with + to start watching.')}</p>
 		{:else if listings === null}
 			<p class="shell__status">{t.t('Loading listings...')}</p>
 		{:else}
@@ -206,6 +258,17 @@
 		{/if}
 	</div>
 </div>
+
+{#if editing !== null}
+	<ProfileEditor
+		draft={editing.draft}
+		stored={editing.profileId !== null}
+		searchPlaces={(query, within, kinds) => client.searchPlaces(query, within, kinds)}
+		onsave={saveProfile}
+		ondelete={deleteProfile}
+		oncancel={() => (editing = null)}
+	/>
+{/if}
 
 <style>
 	.shell {
@@ -308,6 +371,16 @@
 	.tab--add {
 		font-weight: 700;
 		padding: var(--space-2);
+	}
+
+	.tab__edit {
+		align-self: center;
+		padding: var(--space-1);
+		border: none;
+		background: none;
+		color: var(--color-bronze);
+		font-size: 0.875rem;
+		cursor: pointer;
 	}
 
 	.tab__count {

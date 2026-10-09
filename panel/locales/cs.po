@@ -432,3 +432,9 @@ msgstr "např. Byty Praha 7"
 
 msgid "Monthly rent"
 msgstr "Nájemné"
+
+msgid "Create a profile with + to start watching."
+msgstr "Sledování začne, až tlačítkem + vytvoříte profil."
+
+msgid "Edit profile {name}"
+msgstr "Upravit profil {name}"
