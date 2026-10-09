@@ -46,8 +46,7 @@ export function isReady(wish: Wish, settings: WishSettings): boolean {
 /* The preferences a profile stores: each wish's setting, and a weight for
 each wish that fits the estate and has its setting. */
 export function preferencesFor(settings: WishSettings, importances: Importances, estateType: EstateType): PreferencesBody {
-	const counting = wishesFor(estateType).filter((wish) => isReady(wish, settings));
-	const weights = weightsFor(importances, counting);
+	const weights = weightsOf(settings, importances, estateType);
 	return {
 		price_per_m2_weight: 0,
 		disposition_weight: weights.layout,
@@ -61,6 +60,12 @@ export function preferencesFor(settings: WishSettings, importances: Importances,
 		price_weight: weights.price,
 		max_good_price: settings.max_good_price
 	};
+}
+
+/* The weights of the wishes that fit the estate and have their setting. */
+export function weightsOf(settings: WishSettings, importances: Importances, estateType: EstateType): Weights {
+	const counting = wishesFor(estateType).filter((wish) => isReady(wish, settings));
+	return weightsFor(importances, counting);
 }
 
 /* Weights adding up to 100, split between the counting wishes by their
