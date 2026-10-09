@@ -36,7 +36,8 @@ const NEAR = 5;
 const SAMPLES = 100;
 // Below this step along the way the listing is on neither preferred list.
 const OFF_THE_LISTS = 0.2;
-// Stand-ins for a setting not yet chosen, so a wish still has a scale.
+// Stand-ins for a preferred value not yet chosen, so a preference still has a
+// scale.
 const FALLBACK_IDEAL_FLAT_M2 = 60;
 const FALLBACK_IDEAL_HOUSE_M2 = 120;
 const FALLBACK_IDEAL_LAND_M2 = 800;
@@ -67,7 +68,7 @@ export function exampleListings(profile: ExampleProfile): ExampleListing[] {
 
 type Example = Omit<ExampleListing, 'target' | 'score' | 'parts' | 'nearTarget'>;
 
-/* A listing that fits the search and gets better on every wish as along
+/* A listing that fits the search and gets better on every preference as along
 runs from 0 to 1. */
 function exampleAt(profile: ExampleProfile, along: number): Example {
 	const { criteria, preferences } = profile;

@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/svelte';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderWithTranslator } from '$lib/test-support/render';
 import SplitBarHarness from '$lib/test-support/SplitBarHarness.svelte';
-import type { Weights } from './wishes';
+import type { Weights } from './preferences';
 
 const WEIGHTS: Weights = { price: 50, size: 30, land: 0, layout: 20, place: 0 };
 

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import '$lib/styles/preferences.css';
 	import type { Snippet } from 'svelte';
-	import type { Wish } from './wishes';
+	import type { Preference } from './preferences';
 
-	/* One preference: switched on or off, its share of the score while on, the
-	setting it scores against and the rule it scores by. Until the setting is
+	/* One preference: switched on or off, its share of the score while on, its
+	preferred value and the rule it scores by. Until the preferred value is
 	chosen it cannot be switched on. */
 	let {
-		wish,
+		preference,
 		title,
 		on,
 		weight,
@@ -16,7 +16,7 @@
 		ontoggle,
 		children
 	}: {
-		wish: Wish;
+		preference: Preference;
 		title: string;
 		on: boolean;
 		weight: number;
@@ -27,7 +27,7 @@
 	} = $props();
 </script>
 
-<div class="preference-card preference-{wish}" class:preference-card--off={!on}>
+<div class="preference-card preference-{preference}" class:preference-card--off={!on}>
 	<div class="preference-card__head">
 		<button
 			type="button"

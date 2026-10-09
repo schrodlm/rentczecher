@@ -2,7 +2,7 @@
 	import '$lib/styles/preferences.css';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { moveDivider } from './split';
-	import type { Weights, Wish } from './wishes';
+	import type { Weights, Preference } from './preferences';
 
 	/* The counting preferences side by side, each as wide as its weight, with
 	a divider between neighbours to drag or nudge with the arrow keys. */
@@ -10,7 +10,7 @@
 		weights = $bindable(),
 		counting,
 		label
-	}: { weights: Weights; counting: readonly Wish[]; label: (wish: Wish) => string } = $props();
+	}: { weights: Weights; counting: readonly Preference[]; label: (preference: Preference) => string } = $props();
 
 	const t = getTranslatorContext();
 
@@ -18,7 +18,7 @@
 
 	// Measured from where the drag began, so rounding to whole points never
 	// piles up while the pointer moves.
-	function drag(left: Wish, right: Wish, event: PointerEvent): void {
+	function drag(left: Preference, right: Preference, event: PointerEvent): void {
 		if (bar === undefined) return;
 		const handle = event.currentTarget as HTMLElement;
 		handle.setPointerCapture(event.pointerId);
@@ -39,7 +39,7 @@
 		handle.addEventListener('pointercancel', stop);
 	}
 
-	function nudge(left: Wish, right: Wish, event: KeyboardEvent): void {
+	function nudge(left: Preference, right: Preference, event: KeyboardEvent): void {
 		const step = event.shiftKey ? 5 : 1;
 		if (event.key === 'ArrowLeft') weights = moveDivider(weights, left, right, -step);
 		else if (event.key === 'ArrowRight') weights = moveDivider(weights, left, right, step);
@@ -49,10 +49,10 @@
 </script>
 
 <div class="split-bar" bind:this={bar}>
-	{#each counting as wish, index (wish)}
-		<div class="split-bar__segment preference-{wish}" style:flex-grow={weights[wish]}>
-			<span class="split-bar__name">{label(wish)}</span>
-			<span class="split-bar__share">{weights[wish]} %</span>
+	{#each counting as preference, index (preference)}
+		<div class="split-bar__segment preference-{preference}" style:flex-grow={weights[preference]}>
+			<span class="split-bar__name">{label(preference)}</span>
+			<span class="split-bar__share">{weights[preference]} %</span>
 		</div>
 		{#if index < counting.length - 1}
 			{@const right = counting[index + 1]}
@@ -60,12 +60,12 @@
 				type="button"
 				class="split-bar__divider"
 				role="slider"
-				aria-label={t.t('Between {left} and {right}', { left: label(wish), right: label(right) })}
+				aria-label={t.t('Between {left} and {right}', { left: label(preference), right: label(right) })}
 				aria-valuemin={0}
 				aria-valuemax={100}
-				aria-valuenow={weights[wish]}
-				onpointerdown={(event) => drag(wish, right, event)}
-				onkeydown={(event) => nudge(wish, right, event)}
+				aria-valuenow={weights[preference]}
+				onpointerdown={(event) => drag(preference, right, event)}
+				onkeydown={(event) => nudge(preference, right, event)}
 			></button>
 		{/if}
 	{/each}

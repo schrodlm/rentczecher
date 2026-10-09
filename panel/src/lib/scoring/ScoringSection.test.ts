@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import type { NamedPlace } from '$lib/api/client';
 import { renderWithTranslator } from '$lib/test-support/render';
 import ScoringSectionHarness from '$lib/test-support/ScoringSectionHarness.svelte';
-import type { Weights } from './wishes';
+import type { Weights } from './preferences';
 
 const PRAHA: NamedPlace = { kind: 'obec', code: 554782, name: 'Praha', obec: null, okres: null };
 const PRAHA_7: NamedPlace = { kind: 'mestska_cast', code: 500186, name: 'Praha 7', obec: 'Praha', okres: null };
@@ -19,7 +19,7 @@ const FLAT_TO_RENT = {
 	dispositions: []
 } as const;
 
-const SETTINGS = {
+const PREFERRED_VALUES = {
 	preferred_price: 22000,
 	preferred_size_m2: 70,
 	preferred_land_m2: null,
@@ -34,7 +34,7 @@ async function renderSection(weights: Partial<Weights>, searchPlace: NamedPlace 
 	const rendered = await renderWithTranslator(ScoringSectionHarness, {
 		criteria: { ...FLAT_TO_RENT, dispositions: [] },
 		searchPlace,
-		settings: structuredClone(SETTINGS),
+		preferredValues: structuredClone(PREFERRED_VALUES),
 		weights: { ...OFF, ...weights },
 		searchPlaces
 	});

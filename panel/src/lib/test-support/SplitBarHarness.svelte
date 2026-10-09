@@ -1,15 +1,15 @@
 <script lang="ts">
 	import SplitBar from '$lib/scoring/SplitBar.svelte';
-	import type { Weights, Wish } from '$lib/scoring/wishes';
+	import type { Weights, Preference } from '$lib/scoring/preferences';
 
 	/* Binds a SplitBar the way the scoring section does and shows its weights,
 	so a test reads what the bar wrote back. */
-	let { weights, counting }: { weights: Weights; counting: Wish[] } = $props();
+	let { weights, counting }: { weights: Weights; counting: Preference[] } = $props();
 
 	// svelte-ignore state_referenced_locally
 	let bound = $state(weights);
 
-	const NAMES: Record<Wish, string> = {
+	const NAMES: Record<Preference, string> = {
 		price: 'Cena',
 		size: 'Velikost',
 		land: 'Pozemek',
@@ -18,5 +18,5 @@
 	};
 </script>
 
-<SplitBar bind:weights={bound} {counting} label={(wish) => NAMES[wish]} />
+<SplitBar bind:weights={bound} {counting} label={(preference) => NAMES[preference]} />
 <output data-testid="weights">{JSON.stringify(bound)}</output>
