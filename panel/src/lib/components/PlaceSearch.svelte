@@ -55,7 +55,9 @@
 		} else if (event.key === 'Enter') {
 			event.preventDefault();
 			pick(results[highlighted]);
-		} else if (event.key === 'Escape') {
+		} else if (event.key === 'Escape' && open) {
+			// Only closes the list, so a dialog around the search stays open.
+			event.preventDefault();
 			open = false;
 		}
 	}

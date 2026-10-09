@@ -318,3 +318,117 @@ msgstr "do {high}"
 
 msgid "{low} to {high}"
 msgstr "{low} až {high}"
+
+msgid "Accepted layouts"
+msgstr "Přijímané dispozice"
+
+msgid "Any layout. Pick some to show only those."
+msgstr "Jakákoli dispozice. Vyberte některé, aby se ukazovaly jen ty."
+
+msgid "Buy"
+msgstr "Koupě"
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Close"
+msgstr "Zavřít"
+
+msgid "Cottage"
+msgstr "Chata"
+
+msgid "Could not delete the profile: {reason}"
+msgstr "Profil se nepodařilo smazat: {reason}"
+
+msgid "Could not save the profile: {reason}"
+msgstr "Profil se nepodařilo uložit: {reason}"
+
+msgid "Create profile"
+msgstr "Vytvořit profil"
+
+msgid "Delete profile"
+msgstr "Smazat profil"
+
+msgid "Delete “{name}”? This cannot be undone."
+msgstr "Smazat „{name}“? Nejde to vrátit."
+
+msgid "Delete"
+msgstr "Smazat"
+
+msgid "Edit profile"
+msgstr "Upravit profil"
+
+msgid "Flat"
+msgstr "Byt"
+
+msgid "House"
+msgstr "Dům"
+
+msgid "Keep it"
+msgstr "Ponechat"
+
+msgid "Land at least"
+msgstr "Pozemek aspoň"
+
+msgid "Limits"
+msgstr "Omezení"
+
+msgid "Name the profile."
+msgstr "Pojmenujte profil."
+
+msgid "Name"
+msgstr "Název"
+
+msgid "New profile"
+msgstr "Nový profil"
+
+msgid "Only the picked layouts."
+msgstr "Jen vybrané dispozice."
+
+msgid "Paused"
+msgstr "Pozastaveno"
+
+msgid "Pick where to search."
+msgstr "Vyberte, kde hledat."
+
+msgid "Portals"
+msgstr "Portály"
+
+msgid "Rent or buy"
+msgstr "Pronájem, nebo koupě"
+
+msgid "Rent"
+msgstr "Pronájem"
+
+msgid "Save changes"
+msgstr "Uložit změny"
+
+msgid "The lowest price is above the highest."
+msgstr "Nejnižší cena je vyšší než nejvyšší."
+
+msgid "The smallest size is above the largest."
+msgstr "Nejmenší velikost je větší než největší."
+
+msgid "Type of property"
+msgstr "Typ nemovitosti"
+
+msgid "Watching"
+msgstr "Sleduje se"
+
+msgid "What are you looking for?"
+msgstr "Co hledáte?"
+
+msgid "What matters most?"
+msgstr "Na čem nejvíc záleží?"
+
+msgid "Where?"
+msgstr "Kde?"
+
+msgid "any"
+msgstr "jakýkoli"
+
+msgid "e.g. Praha 7 flats"
+msgstr "např. Byty Praha 7"
+
+msgid "Monthly rent"
+msgstr "Nájemné"
