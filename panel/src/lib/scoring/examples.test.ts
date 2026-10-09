@@ -52,21 +52,21 @@ describe('exampleListings', () => {
 		expect(cards.map((card) => card.nearTarget)).toEqual([true, false, true]);
 	});
 
-	test('makes the best listing the first choice on every wish', () => {
+	test('puts the best listing on both preferred lists', () => {
 		const [best] = exampleListings(FLAT_TO_RENT);
 		expect(best).toMatchObject({
 			score: 100,
 			layout: '2+kk',
-			layoutRank: 0,
+			layoutPreferred: true,
 			place: PRAHA_7,
-			placeRank: 0
+			placePreferred: true
 		});
 		expect(best.price).toBeLessThanOrEqual(22000);
 	});
 
 	test('keeps the worst listing off the preferred lists', () => {
 		const worst = exampleListings(FLAT_TO_RENT).at(-1)!;
-		expect(worst).toMatchObject({ layoutRank: null, placeRank: null, place: PRAHA });
+		expect(worst).toMatchObject({ layoutPreferred: false, placePreferred: false, place: PRAHA });
 		expect(['2+kk', '2+1']).not.toContain(worst.layout);
 	});
 
