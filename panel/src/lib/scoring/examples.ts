@@ -72,9 +72,9 @@ runs from 0 to 1. */
 function exampleAt(profile: ExampleProfile, along: number): Example {
 	const { criteria, preferences } = profile;
 	const idealSize =
-		preferences.ideal_size_m2 ?? (criteria.estate_type === 'flat' ? FALLBACK_IDEAL_FLAT_M2 : FALLBACK_IDEAL_HOUSE_M2);
-	const idealLand = preferences.ideal_land_m2 ?? FALLBACK_IDEAL_LAND_M2;
-	const goodPrice = preferences.max_good_price ?? (criteria.offer_type === 'rent' ? FALLBACK_GOOD_RENT : FALLBACK_GOOD_PRICE);
+		preferences.preferred_size_m2 ?? (criteria.estate_type === 'flat' ? FALLBACK_IDEAL_FLAT_M2 : FALLBACK_IDEAL_HOUSE_M2);
+	const idealLand = preferences.preferred_land_m2 ?? FALLBACK_IDEAL_LAND_M2;
+	const goodPrice = preferences.preferred_price ?? (criteria.offer_type === 'rent' ? FALLBACK_GOOD_RENT : FALLBACK_GOOD_PRICE);
 	const priceStep = criteria.offer_type === 'rent' ? 500 : 50_000;
 
 	const size =

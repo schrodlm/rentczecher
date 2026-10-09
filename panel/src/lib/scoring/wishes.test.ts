@@ -19,9 +19,9 @@ type PreferencesBody = components['schemas']['PreferencesBody'];
 const HOLESOVICE: NamedPlace = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null };
 
 const NO_SETTINGS: WishSettings = {
-	max_good_price: null,
-	ideal_size_m2: null,
-	ideal_land_m2: null,
+	preferred_price: null,
+	preferred_size_m2: null,
+	preferred_land_m2: null,
 	preferred_dispositions: [],
 	preferred_places: []
 };
@@ -31,13 +31,13 @@ const UNSET: PreferencesBody = {
 	disposition_weight: 0,
 	preferred_dispositions: [],
 	size_weight: 0,
-	ideal_size_m2: null,
+	preferred_size_m2: null,
 	place_weight: 0,
 	preferred_places: [],
 	land_weight: 0,
-	ideal_land_m2: null,
+	preferred_land_m2: null,
 	price_weight: 0,
-	max_good_price: null
+	preferred_price: null
 };
 
 function importances(set: Partial<Importances>): Importances {
@@ -65,9 +65,9 @@ describe('isReady', () => {
 	});
 
 	const settings: [Wish, Partial<WishSettings>][] = [
-		['price', { max_good_price: 22000 }],
-		['size', { ideal_size_m2: 70 }],
-		['land', { ideal_land_m2: 800 }],
+		['price', { preferred_price: 22000 }],
+		['size', { preferred_size_m2: 70 }],
+		['land', { preferred_land_m2: 800 }],
 		['layout', { preferred_dispositions: ['2+kk'] }],
 		['place', { preferred_places: [HOLESOVICE] }]
 	];
@@ -127,9 +127,9 @@ describe('importancesFrom', () => {
 
 describe('preferencesFor', () => {
 	const SETTINGS: WishSettings = {
-		max_good_price: 22000,
-		ideal_size_m2: 70,
-		ideal_land_m2: 800,
+		preferred_price: 22000,
+		preferred_size_m2: 70,
+		preferred_land_m2: 800,
 		preferred_dispositions: ['2+kk'],
 		preferred_places: [HOLESOVICE]
 	};
@@ -137,9 +137,9 @@ describe('preferencesFor', () => {
 	test('keeps every setting, a place by its kind and code, and weighs the wishes by importance', () => {
 		expect(preferencesFor(SETTINGS, importances({ price: 4, size: 1 }), 'house')).toEqual({
 			...UNSET,
-			max_good_price: 22000,
-			ideal_size_m2: 70,
-			ideal_land_m2: 800,
+			preferred_price: 22000,
+			preferred_size_m2: 70,
+			preferred_land_m2: 800,
 			preferred_dispositions: ['2+kk'],
 			preferred_places: [{ kind: 'cast_obce', code: 490067 }],
 			price_weight: 83,
@@ -153,7 +153,7 @@ describe('preferencesFor', () => {
 	});
 
 	test('weighs no wish without its setting', () => {
-		const settings = { ...SETTINGS, max_good_price: null };
+		const settings = { ...SETTINGS, preferred_price: null };
 		const preferences = preferencesFor(settings, importances({ price: 4, size: 1 }), 'flat');
 		expect([preferences.price_weight, preferences.size_weight]).toEqual([0, 100]);
 	});
