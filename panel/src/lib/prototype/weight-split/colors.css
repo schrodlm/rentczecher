@@ -1,0 +1,25 @@
+/* PROTOTYPE, throwaway. One colour per preference, from the palette tokens. */
+.pref-price {
+	--pref: var(--color-olive);
+	--pref-text: var(--color-ground);
+}
+
+.pref-size {
+	--pref: var(--color-amber);
+	--pref-text: var(--color-on-amber);
+}
+
+.pref-layout {
+	--pref: var(--color-bronze);
+	--pref-text: var(--color-ground);
+}
+
+.pref-place {
+	--pref: color-mix(in srgb, var(--color-olive) 50%, var(--color-card));
+	--pref-text: var(--color-ink);
+}
+
+.pref-land {
+	--pref: color-mix(in srgb, var(--color-amber) 38%, var(--color-card));
+	--pref-text: var(--color-ink);
+}
