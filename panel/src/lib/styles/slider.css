@@ -1,0 +1,99 @@
+/* The look shared by the editor's sliders: a track with an olive fill,
+round handles, and the typed numbers beside it. */
+
+.slider {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.slider__track {
+	position: relative;
+	height: 1.5rem;
+}
+
+.slider__track::before,
+.slider__fill {
+	position: absolute;
+	top: 50%;
+	height: 4px;
+	margin-top: -2px;
+	border-radius: 2px;
+}
+
+.slider__track::before {
+	content: '';
+	left: 0;
+	right: 0;
+	background: var(--color-line);
+}
+
+.slider__fill {
+	background: var(--color-olive);
+}
+
+/* Two range inputs share the track. Only their thumbs take the pointer,
+so either handle can be grabbed. */
+.slider__handle {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	margin: 0;
+	background: none;
+	pointer-events: none;
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+.slider__handle::-webkit-slider-runnable-track {
+	background: none;
+}
+
+.slider__handle::-moz-range-track {
+	background: none;
+}
+
+.slider__handle::-webkit-slider-thumb {
+	pointer-events: auto;
+	-webkit-appearance: none;
+	width: 1.1rem;
+	height: 1.1rem;
+	border-radius: 50%;
+	background: var(--color-card);
+	border: 2px solid var(--color-olive);
+	cursor: grab;
+}
+
+.slider__handle::-moz-range-thumb {
+	pointer-events: auto;
+	width: 1rem;
+	height: 1rem;
+	border-radius: 50%;
+	background: var(--color-card);
+	border: 2px solid var(--color-olive);
+	cursor: grab;
+}
+
+.slider__numbers {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-size: 0.8125rem;
+	color: var(--color-bronze);
+}
+
+.slider__number {
+	width: 6.5rem;
+	padding: var(--space-1) var(--space-2);
+	border: 1px solid var(--color-line);
+	border-radius: var(--radius-md);
+	background: var(--color-card);
+	color: var(--color-ink);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.slider__unit {
+	min-width: 1.75rem;
+}
