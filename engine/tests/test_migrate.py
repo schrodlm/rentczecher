@@ -377,6 +377,36 @@ class TestAcceptedDispositionsMigration:
         assert conn.execute("SELECT count(*) FROM accepted_dispositions").fetchone()[0] == 0
 
 
+
+class TestPreferredSettingsMigration:
+    """Each preference's setting keeps its value under its preferred name, and
+    still needs to be positive once its preference is weighted."""
+
+    NOW = "2026-10-09T00:00:00+00:00"
+
+    def _migrated_from_13(self, tmp_path):
+        conn = _db_at_version(tmp_path, 13)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        conn.execute(
+            "INSERT INTO profile_preferences (profile_id, price_per_m2_weight, disposition_weight, "
+            "size_weight, ideal_size_m2, place_weight, land_weight, ideal_land_m2, price_weight, max_good_price) "
+            "VALUES ('p', 0, 0, 20, 70, 0, 30, 800, 50, 22000)")
+        conn.commit()
+        assert migrate.apply_pending(conn) == [14]
+        return conn
+
+    def test_a_stored_setting_keeps_its_value(self, tmp_path):
+        conn = self._migrated_from_13(tmp_path)
+        stmt = "SELECT preferred_size_m2, preferred_land_m2, preferred_price FROM profile_preferences"
+        assert tuple(conn.execute(stmt).fetchone()) == (70, 800, 22000)
+
+    @pytest.mark.parametrize("setting", ["preferred_size_m2", "preferred_land_m2", "preferred_price"])
+    def test_a_weighted_setting_still_needs_to_be_positive(self, tmp_path, setting):
+        conn = self._migrated_from_13(tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(f"UPDATE profile_preferences SET {setting} = 0")
+
+
 class TestConcurrentWriters:
     """busy_timeout, not luck, lets a second writer wait out a held write lock."""
 
