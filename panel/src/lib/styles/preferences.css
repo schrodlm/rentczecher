@@ -1,0 +1,28 @@
+/* Each preference's colour and the text on it, shared by the split bar, the
+preference cards and the example listings. Five preferences outnumber the
+palette's three hues, so place and land take the tints. */
+
+.preference-price {
+	--preference: var(--color-olive);
+	--preference-text: var(--color-ground);
+}
+
+.preference-size {
+	--preference: var(--color-amber);
+	--preference-text: var(--color-on-amber);
+}
+
+.preference-layout {
+	--preference: var(--color-bronze);
+	--preference-text: var(--color-ground);
+}
+
+.preference-place {
+	--preference: var(--color-olive-tint);
+	--preference-text: var(--color-ink);
+}
+
+.preference-land {
+	--preference: var(--color-amber-tint);
+	--preference-text: var(--color-ink);
+}

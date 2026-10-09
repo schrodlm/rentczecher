@@ -1,7 +1,8 @@
 /* The five-color palette is the whole
-identity. Every UI color is one of these or a derived neutral, nothing
-else enters. Light values are the defaults, dark values apply under
-prefers-color-scheme: dark, matching this repo's own theme convention. */
+identity. Every UI color is one of these, a derived neutral, or a tint of
+one named here, nothing else enters. Light values are the defaults, dark
+values apply under prefers-color-scheme: dark, matching this repo's own
+theme convention. */
 
 :root {
 	--color-ink: #343330;
@@ -17,6 +18,11 @@ prefers-color-scheme: dark, matching this repo's own theme convention. */
 	white on #DC851F fails contrast, and so does --color-ink's dark-mode
 	cream once --color-amber brightens to match. */
 	--color-on-amber: #343330;
+
+	/* Lighter shades of two hues, for when a view needs more colours than the
+	palette has. Light enough to carry ink text. */
+	--color-olive-tint: color-mix(in srgb, var(--color-olive) 50%, var(--color-card));
+	--color-amber-tint: color-mix(in srgb, var(--color-amber) 38%, var(--color-card));
 
 	font-family: system-ui, sans-serif;
 
