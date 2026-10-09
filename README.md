@@ -85,9 +85,9 @@ Each profile is a self-contained search with three parts:
 - **Portals** are the sites it scans. The location comes entirely from the
   search place.
 - **Preferences** only score and order what is shown. Each has a weight, and
-  all but price per m² have a setting: an ideal size or land area, a good
-  price, and ranked preferred dispositions and places. A weight is never
-  negative, and a setting may be empty only while its weight is 0.
+  all but price per m² have a preferred value: a preferred price, size or
+  land area, and preferred dispositions and places. A weight is never
+  negative, and a preferred value may be empty only while its weight is 0.
 
 The criteria are fixed once a profile is created, since listings already
 tracked were found under them. Everything else can change: the name, the
