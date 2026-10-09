@@ -16,11 +16,11 @@ profile:
     disposition_weight: 25
     preferred_dispositions: [3+kk, 2+kk]
     size_weight: 20
-    ideal_size_m2: 70
+    preferred_size_m2: 70
     place_weight: 20
     preferred_places: [cast_obce Bubeneč, cast_obce Troja]
     price_weight: 35
-    max_good_price: 22000
+    preferred_price: 22000
 scans:
   - at: -1h
     listings:

@@ -129,7 +129,7 @@ profile:
     place_weight: 20
     preferred_places: [mestska_cast Praha 7]
     price_weight: 50
-    max_good_price: 22000
+    preferred_price: 22000
 scans:
   - at: -1h
     listings:
@@ -162,7 +162,7 @@ def test_a_profile_keeps_the_preferences_it_states_and_the_rest_off(tmp_path):
     assert profile.preferences == preferences(
         disposition_weight=30, preferred_dispositions=layouts("3+kk", "2+kk"),
         place_weight=20, preferred_places=(PlaceRef("mestska_cast", 500186),),
-        price_weight=50, max_good_price=22000,
+        price_weight=50, preferred_price=22000,
     )
 
 

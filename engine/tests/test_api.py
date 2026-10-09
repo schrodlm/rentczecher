@@ -224,8 +224,8 @@ def _new_profile_body(**overrides) -> dict:
 def _preferences_body(**overrides) -> dict:
     body = {
         "price_per_m2_weight": 0, "disposition_weight": 0, "preferred_dispositions": [],
-        "size_weight": 0, "ideal_size_m2": None, "place_weight": 0, "preferred_places": [],
-        "land_weight": 0, "ideal_land_m2": None, "price_weight": 0, "max_good_price": None,
+        "size_weight": 0, "preferred_size_m2": None, "place_weight": 0, "preferred_places": [],
+        "land_weight": 0, "preferred_land_m2": None, "price_weight": 0, "preferred_price": None,
     }
     return body | overrides
 
@@ -309,7 +309,7 @@ class TestUpdateProfile:
         _update_body(preferences=_preferences_body(
             place_weight=10, preferred_places=[{"kind": "cast_obce", "code": 999_999_999}])),
         _update_body(preferences=_preferences_body(size_weight=10)),
-        _update_body(preferences=_preferences_body(ideal_size_m2=2**70)),
+        _update_body(preferences=_preferences_body(preferred_size_m2=2**70)),
     ], ids=["criteria", "unknown preferred place", "weight without its setting", "size too large to store"])
     def test_an_invalid_update_is_422_and_changes_nothing(self, tmp_path, praha7, body):
         client = _client(tmp_path)

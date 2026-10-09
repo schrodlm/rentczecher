@@ -55,13 +55,13 @@ class Preferences:
     disposition_weight: float
     preferred_dispositions: tuple[Disposition, ...]
     size_weight: float
-    ideal_size_m2: int | None
+    preferred_size_m2: int | None
     place_weight: float
     preferred_places: tuple[PlaceRef, ...]
     land_weight: float
-    ideal_land_m2: int | None
+    preferred_land_m2: int | None
     price_weight: float
-    max_good_price: int | None
+    preferred_price: int | None
 
     def __post_init__(self) -> None:
         weights = {
@@ -81,14 +81,14 @@ class Preferences:
             raise ValueError("preferred_places must not repeat")
         if self.disposition_weight and not self.preferred_dispositions:
             raise ValueError("disposition_weight needs preferred_dispositions")
-        if self.size_weight and (self.ideal_size_m2 is None or self.ideal_size_m2 <= 0):
-            raise ValueError("size_weight needs a positive ideal_size_m2")
+        if self.size_weight and (self.preferred_size_m2 is None or self.preferred_size_m2 <= 0):
+            raise ValueError("size_weight needs a positive preferred_size_m2")
         if self.place_weight and not self.preferred_places:
             raise ValueError("place_weight needs preferred_places")
-        if self.land_weight and (self.ideal_land_m2 is None or self.ideal_land_m2 <= 0):
-            raise ValueError("land_weight needs a positive ideal_land_m2")
-        if self.price_weight and (self.max_good_price is None or self.max_good_price <= 0):
-            raise ValueError("price_weight needs a positive max_good_price")
+        if self.land_weight and (self.preferred_land_m2 is None or self.preferred_land_m2 <= 0):
+            raise ValueError("land_weight needs a positive preferred_land_m2")
+        if self.price_weight and (self.preferred_price is None or self.preferred_price <= 0):
+            raise ValueError("price_weight needs a positive preferred_price")
 
 
 @dataclass(frozen=True, slots=True)

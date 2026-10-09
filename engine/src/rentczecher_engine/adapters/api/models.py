@@ -89,13 +89,13 @@ class PreferencesBody(BaseModel):
     disposition_weight: float
     preferred_dispositions: list[DispositionCode]
     size_weight: float
-    ideal_size_m2: int | None
+    preferred_size_m2: int | None
     place_weight: float
     preferred_places: list[PlaceRefModel]
     land_weight: float
-    ideal_land_m2: int | None
+    preferred_land_m2: int | None
     price_weight: float
-    max_good_price: int | None
+    preferred_price: int | None
 
     def to_preferences(self) -> Preferences:
         return Preferences(
@@ -103,13 +103,13 @@ class PreferencesBody(BaseModel):
             disposition_weight=self.disposition_weight,
             preferred_dispositions=tuple(_disposition(code) for code in self.preferred_dispositions),
             size_weight=self.size_weight,
-            ideal_size_m2=self.ideal_size_m2,
+            preferred_size_m2=self.preferred_size_m2,
             place_weight=self.place_weight,
             preferred_places=tuple(place.to_place_ref() for place in self.preferred_places),
             land_weight=self.land_weight,
-            ideal_land_m2=self.ideal_land_m2,
+            preferred_land_m2=self.preferred_land_m2,
             price_weight=self.price_weight,
-            max_good_price=self.max_good_price,
+            preferred_price=self.preferred_price,
         )
 
 
@@ -164,13 +164,13 @@ class PreferencesModel(BaseModel):
     disposition_weight: float
     preferred_dispositions: list[DispositionCode]
     size_weight: float
-    ideal_size_m2: int | None
+    preferred_size_m2: int | None
     place_weight: float
     preferred_places: list[NamedPlaceModel]
     land_weight: float
-    ideal_land_m2: int | None
+    preferred_land_m2: int | None
     price_weight: float
-    max_good_price: int | None
+    preferred_price: int | None
 
     @classmethod
     def from_preferences(cls, preferences: Preferences,
@@ -180,14 +180,14 @@ class PreferencesModel(BaseModel):
             disposition_weight=preferences.disposition_weight,
             preferred_dispositions=[disposition.code for disposition in preferences.preferred_dispositions],
             size_weight=preferences.size_weight,
-            ideal_size_m2=preferences.ideal_size_m2,
+            preferred_size_m2=preferences.preferred_size_m2,
             place_weight=preferences.place_weight,
             preferred_places=[NamedPlaceModel.from_place(place, named_places)
                               for place in preferences.preferred_places],
             land_weight=preferences.land_weight,
-            ideal_land_m2=preferences.ideal_land_m2,
+            preferred_land_m2=preferences.preferred_land_m2,
             price_weight=preferences.price_weight,
-            max_good_price=preferences.max_good_price,
+            preferred_price=preferences.preferred_price,
         )
 
 
