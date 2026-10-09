@@ -172,3 +172,6 @@ msgstr "atypická"
 
 msgid "Pick at least one portal."
 msgstr "Vyberte aspoň jeden portál."
+
+msgid "Remove {name}"
+msgstr "Odebrat {name}"
