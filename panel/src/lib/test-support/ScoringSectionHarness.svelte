@@ -18,7 +18,7 @@
 	}: {
 		criteria: Omit<CriteriaBody, 'place'>;
 		searchPlace: NamedPlace | null;
-		settings: Omit<WishSettings, 'preferred_places'> & { preferred_places: NamedPlace[] };
+		settings: WishSettings;
 		importances: Importances;
 		searchPlaces: (query: string, within: PlaceRef, kinds: PlaceRef['kind'][]) => Promise<NamedPlace[]>;
 	} = $props();

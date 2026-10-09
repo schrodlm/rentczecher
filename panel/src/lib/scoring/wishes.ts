@@ -1,13 +1,18 @@
+import type { NamedPlace } from '$lib/api/client';
 import type { components } from '$lib/api/types.gen';
+import type { Layout } from '$lib/layouts';
 
 type EstateType = components['schemas']['CriteriaBody']['estate_type'];
 type PreferencesBody = components['schemas']['PreferencesBody'];
 
 /* What each wish scores against, without how much it matters. */
-export type WishSettings = Pick<
-	PreferencesBody,
-	'max_good_price' | 'ideal_size_m2' | 'ideal_land_m2' | 'preferred_dispositions' | 'preferred_places'
->;
+export type WishSettings = {
+	max_good_price: number | null;
+	ideal_size_m2: number | null;
+	ideal_land_m2: number | null;
+	preferred_dispositions: Layout[];
+	preferred_places: NamedPlace[];
+};
 
 /* A wish the editor offers. Price per m² is left out until its fixed scale
 fits more than Praha rents. */

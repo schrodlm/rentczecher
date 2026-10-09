@@ -25,7 +25,6 @@
 
 	type CriteriaBody = components['schemas']['CriteriaBody'];
 	type PlaceRef = components['schemas']['PlaceRefModel'];
-	type NamedWishSettings = Omit<WishSettings, 'preferred_places'> & { preferred_places: NamedPlace[] };
 
 	/* The wishes that order a profile's listings, each with its importance and
 	setting, how the score splits between them, and three example listings
@@ -39,7 +38,7 @@
 	}: {
 		criteria: Omit<CriteriaBody, 'place'>;
 		searchPlace: NamedPlace | null;
-		settings: NamedWishSettings;
+		settings: WishSettings;
 		importances: Importances;
 		searchPlaces: (query: string, within: PlaceRef, kinds: PlaceRef['kind'][]) => Promise<NamedPlace[]>;
 	} = $props();
