@@ -17,13 +17,13 @@
 	import {
 		countingFor,
 		isReady,
-		preferencesFor,
+		preferencesBody,
 		storedWeights,
-		wishesFor,
+		preferencesFor,
 		type Weights,
-		type Wish,
-		type WishSettings
-	} from './wishes';
+		type Preference,
+		type PreferredValues
+	} from './preferences';
 
 	type CriteriaBody = components['schemas']['CriteriaBody'];
 	type PlaceRef = components['schemas']['PlaceRefModel'];
@@ -35,29 +35,36 @@
 	let {
 		criteria,
 		searchPlace,
-		settings = $bindable(),
+		preferredValues = $bindable(),
 		weights = $bindable(),
 		searchPlaces
 	}: {
 		criteria: Omit<CriteriaBody, 'place'>;
 		searchPlace: NamedPlace | null;
-		settings: WishSettings;
+		preferredValues: PreferredValues;
 		weights: Weights;
 		searchPlaces: (query: string, within: PlaceRef, kinds: PlaceRef['kind'][]) => Promise<NamedPlace[]>;
 	} = $props();
 
 	const t = getTranslatorContext();
 
-	const wishes = $derived(wishesFor(criteria.estate_type));
-	const counting = $derived(countingFor(settings, weights, criteria.estate_type));
-	const shown = $derived(storedWeights(settings, weights, criteria.estate_type));
-	const preferences = $derived(preferencesFor(settings, weights, criteria.estate_type));
+	const preferences = $derived(preferencesFor(criteria.estate_type));
+	const counting = $derived(countingFor(preferredValues, weights, criteria.estate_type));
+	const shown = $derived(storedWeights(preferredValues, weights, criteria.estate_type));
+	const body = $derived(preferencesBody(preferredValues, weights, criteria.estate_type));
 	const examples = $derived(
-		exampleListings({ criteria, searchPlace, preferences, preferredPlaces: settings.preferred_places })
+		exampleListings({
+			criteria,
+			searchPlace,
+			preferences: body,
+			preferredPlaces: preferredValues.preferred_places
+		})
 	);
 
-	function toggle(wish: Wish): void {
-		weights = counting.includes(wish) ? switchOff(shown, wish, counting) : switchOn(shown, wish, counting);
+	function toggle(preference: Preference): void {
+		weights = counting.includes(preference)
+			? switchOff(shown, preference, counting)
+			: switchOn(shown, preference, counting);
 	}
 
 	async function searchInside(query: string): Promise<NamedPlace[]> {
@@ -67,52 +74,52 @@
 		return searchPlaces(query, searchPlace, kinds);
 	}
 
-	function title(wish: Wish): string {
-		if (wish === 'price') return t.t('Preferred price');
-		if (wish === 'size') return t.t('Preferred size');
-		if (wish === 'land') return t.t('Preferred land');
-		if (wish === 'layout') return t.t('Preferred layouts');
+	function title(preference: Preference): string {
+		if (preference === 'price') return t.t('Preferred price');
+		if (preference === 'size') return t.t('Preferred size');
+		if (preference === 'land') return t.t('Preferred land');
+		if (preference === 'layout') return t.t('Preferred layouts');
 		return t.t('Preferred places');
 	}
 
-	function shortName(wish: Wish): string {
-		if (wish === 'price') return t.t('Price');
-		if (wish === 'size') return t.t('Size');
-		if (wish === 'land') return t.t('Land');
-		if (wish === 'layout') return t.t('Layout');
+	function shortName(preference: Preference): string {
+		if (preference === 'price') return t.t('Price');
+		if (preference === 'size') return t.t('Size');
+		if (preference === 'land') return t.t('Land');
+		if (preference === 'layout') return t.t('Layout');
 		return t.t('Place');
 	}
 
-	function rule(wish: Wish): string {
-		if (wish === 'price') {
-			const preferred = settings.preferred_price;
+	function rule(preference: Preference): string {
+		if (preference === 'price') {
+			const preferred = preferredValues.preferred_price;
 			if (preferred === null) return t.t('Set your preferred price first.');
 			return t.t('Full points up to {preferred}, none at {twice} or more.', {
 				preferred: formatPrice(preferred),
 				twice: formatPrice(2 * preferred)
 			});
 		}
-		if (wish === 'size') {
-			const preferred = settings.preferred_size_m2;
+		if (preference === 'size') {
+			const preferred = preferredValues.preferred_size_m2;
 			if (preferred === null) return t.t('Set your preferred size first.');
 			return t.t('Full points at {preferred} or more, half at {half}.', {
 				preferred: formatArea(preferred),
 				half: formatArea(Math.round(preferred / 2))
 			});
 		}
-		if (wish === 'land') {
-			const preferred = settings.preferred_land_m2;
+		if (preference === 'land') {
+			const preferred = preferredValues.preferred_land_m2;
 			if (preferred === null) return t.t('Set your preferred land first.');
 			return t.t('Full points at {preferred} of land or more. Listings without land data get none.', {
 				preferred: formatArea(preferred)
 			});
 		}
-		if (wish === 'layout') {
-			if (settings.preferred_dispositions.length === 0) return t.t('Pick the layouts you like.');
+		if (preference === 'layout') {
+			if (preferredValues.preferred_dispositions.length === 0) return t.t('Pick the layouts you like.');
 			return t.t('Any of these layouts gets full points. Other layouts get 10.');
 		}
 		if (searchPlace === null) return t.t('Choose where to search first.');
-		if (settings.preferred_places.length === 0) return t.t('Pick places inside your search area.');
+		if (preferredValues.preferred_places.length === 0) return t.t('Pick places inside your search area.');
 		return t.t('A listing in any of these places gets full points. Elsewhere gets 20.');
 	}
 
@@ -146,7 +153,7 @@
 		return t.t('Closest to half: {score}', { score: card.score });
 	}
 
-	function partWish(part: ScorePart): Wish {
+	function partPreference(part: ScorePart): Preference {
 		if (part.preference === 'pricePerM2') return 'price';
 		if (part.preference === 'disposition') return 'layout';
 		return part.preference;
@@ -160,7 +167,7 @@
 </script>
 
 <div class="scoring-section">
-	<div class="scoring-section__wishes">
+	<div class="scoring-section__preferences">
 		<p class="scoring-section__hint">
 			{t.t('Scoring only orders the listings you see, best first, and never hides any. Drag the dividers: the wider a preference, the more it decides.')}
 		</p>
@@ -172,45 +179,45 @@
 		{/if}
 
 		<div class="scoring-section__cards">
-			{#each wishes as wish (wish)}
+			{#each preferences as preference (preference)}
 				<PreferenceCard
-					{wish}
-					title={title(wish)}
-					on={counting.includes(wish)}
-					weight={shown[wish]}
-					ready={isReady(wish, settings)}
-					rule={rule(wish)}
-					ontoggle={() => toggle(wish)}
+					{preference}
+					title={title(preference)}
+					on={counting.includes(preference)}
+					weight={shown[preference]}
+					ready={isReady(preference, preferredValues)}
+					rule={rule(preference)}
+					ontoggle={() => toggle(preference)}
 				>
-					{#if wish === 'price'}
+					{#if preference === 'price'}
 						<ValueSlider
 							scale={priceScale(criteria.offer_type)}
-							bind:value={settings.preferred_price}
+							bind:value={preferredValues.preferred_price}
 							name={t.t('Preferred price')}
 							unit="Kč"
 							placeholder={t.t('preferred price')}
 						/>
-					{:else if wish === 'size'}
+					{:else if preference === 'size'}
 						<ValueSlider
 							scale={SIZE_SCALE}
-							bind:value={settings.preferred_size_m2}
+							bind:value={preferredValues.preferred_size_m2}
 							name={t.t('Preferred size')}
 							unit="m²"
 							placeholder={t.t('preferred size')}
 						/>
-					{:else if wish === 'land'}
+					{:else if preference === 'land'}
 						<ValueSlider
 							scale={LAND_SCALE}
-							bind:value={settings.preferred_land_m2}
+							bind:value={preferredValues.preferred_land_m2}
 							name={t.t('Preferred land')}
 							unit="m²"
 							placeholder={t.t('preferred land')}
 						/>
-					{:else if wish === 'layout'}
-						<LayoutChips bind:selected={settings.preferred_dispositions} name={t.t('Preferred layouts')} />
+					{:else if preference === 'layout'}
+						<LayoutChips bind:selected={preferredValues.preferred_dispositions} name={t.t('Preferred layouts')} />
 					{:else}
 						<PreferredPlaces
-							bind:places={settings.preferred_places}
+							bind:places={preferredValues.preferred_places}
 							search={searchInside}
 							placeholder={t.t('Add a part of your search area')}
 						/>
@@ -256,7 +263,7 @@
 					{/if}
 					<ul class="example-card__parts">
 						{#each card.parts as part (part.preference)}
-							<li class="example-card__part preference-{partWish(part)}">
+							<li class="example-card__part preference-{partPreference(part)}">
 								<span class="example-card__fact">{fact(card, part)}</span>
 								<span class="example-card__bar">
 									<i style:width="{(100 * part.points) / part.weight}%"></i>
@@ -281,7 +288,7 @@
 		align-items: start;
 	}
 
-	.scoring-section__wishes {
+	.scoring-section__preferences {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);

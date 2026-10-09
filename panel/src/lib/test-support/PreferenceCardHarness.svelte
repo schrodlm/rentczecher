@@ -5,6 +5,6 @@
 	let { on, ready, ontoggle }: { on: boolean; ready: boolean; ontoggle: () => void } = $props();
 </script>
 
-<PreferenceCard wish="price" title="Preferovaná cena" {on} weight={45} {ready} rule="Plné body do 22 000 Kč." {ontoggle}>
+<PreferenceCard preference="price" title="Preferovaná cena" {on} weight={45} {ready} rule="Plné body do 22 000 Kč." {ontoggle}>
 	<span>nastavení</span>
 </PreferenceCard>

@@ -4,20 +4,20 @@ import type { components } from '$lib/api/types.gen';
 import {
 	countingFor,
 	isReady,
-	preferencesFor,
+	preferencesBody,
 	storedWeights,
-	WISHES,
-	wishesFor,
+	PREFERENCES,
+	preferencesFor,
 	type Weights,
-	type Wish,
-	type WishSettings
-} from './wishes';
+	type Preference,
+	type PreferredValues
+} from './preferences';
 
 type PreferencesBody = components['schemas']['PreferencesBody'];
 
 const HOLESOVICE: NamedPlace = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null };
 
-const NO_SETTINGS: WishSettings = {
+const NO_VALUES: PreferredValues = {
 	preferred_price: null,
 	preferred_size_m2: null,
 	preferred_land_m2: null,
@@ -25,7 +25,7 @@ const NO_SETTINGS: WishSettings = {
 	preferred_places: []
 };
 
-const SETTINGS: WishSettings = {
+const VALUES: PreferredValues = {
 	preferred_price: 22000,
 	preferred_size_m2: 70,
 	preferred_land_m2: 800,
@@ -51,58 +51,58 @@ function weights(set: Partial<Weights>): Weights {
 	return { price: 0, size: 0, land: 0, layout: 0, place: 0, ...set };
 }
 
-describe('wishesFor', () => {
+describe('preferencesFor', () => {
 	test.each([
 		['flat', ['price', 'size', 'layout', 'place']],
 		['house', ['price', 'size', 'land', 'layout', 'place']],
 		['cottage', ['price', 'size', 'land', 'layout', 'place']],
 		['land', ['price', 'land', 'place']]
-	] as const)('offers a %s the wishes that fit it', (estateType, wishes) => {
-		expect(wishesFor(estateType)).toEqual(wishes);
+	] as const)('offers a %s the preferences that fit it', (estateType, preferences) => {
+		expect(preferencesFor(estateType)).toEqual(preferences);
 	});
 });
 
 describe('isReady', () => {
-	test('holds no wish ready without its setting', () => {
-		expect(WISHES.filter((wish) => isReady(wish, NO_SETTINGS))).toEqual([]);
+	test('holds no preference ready without its preferred value', () => {
+		expect(PREFERENCES.filter((preference) => isReady(preference, NO_VALUES))).toEqual([]);
 	});
 
-	const settings: [Wish, Partial<WishSettings>][] = [
+	const values: [Preference, Partial<PreferredValues>][] = [
 		['price', { preferred_price: 22000 }],
 		['size', { preferred_size_m2: 70 }],
 		['land', { preferred_land_m2: 800 }],
 		['layout', { preferred_dispositions: ['2+kk'] }],
 		['place', { preferred_places: [HOLESOVICE] }]
 	];
-	test.each(settings)('holds %s ready once it has its setting', (wish, setting) => {
-		expect(isReady(wish, { ...NO_SETTINGS, ...setting })).toBe(true);
+	test.each(values)('holds %s ready once it has its preferred value', (preference, value) => {
+		expect(isReady(preference, { ...NO_VALUES, ...value })).toBe(true);
 	});
 });
 
 describe('countingFor', () => {
-	test('counts the wishes that fit the estate, have their setting and are on', () => {
-		const set = { ...SETTINGS, preferred_size_m2: null };
+	test('counts the preferences that fit the estate, have their preferred value and are on', () => {
+		const set = { ...VALUES, preferred_size_m2: null };
 		const on = weights({ price: 40, size: 20, land: 20, layout: 20 });
 		expect(countingFor(set, on, 'flat')).toEqual(['price', 'layout']);
 	});
 });
 
 describe('storedWeights', () => {
-	test('grows the counting wishes to fill the share of one whose setting was cleared', () => {
-		const set = { ...SETTINGS, preferred_price: null };
+	test('grows the counting preferences to fill the share of one whose preferred value was cleared', () => {
+		const set = { ...VALUES, preferred_price: null };
 		expect(storedWeights(set, weights({ price: 50, size: 30, layout: 20 }), 'flat')).toEqual(
 			weights({ size: 60, layout: 40 })
 		);
 	});
 
-	test('stores no weight for a wish that does not fit the estate', () => {
-		expect(storedWeights(SETTINGS, weights({ price: 50, land: 50 }), 'flat')).toEqual(weights({ price: 100 }));
+	test('stores no weight for a preference that does not fit the estate', () => {
+		expect(storedWeights(VALUES, weights({ price: 50, land: 50 }), 'flat')).toEqual(weights({ price: 100 }));
 	});
 });
 
-describe('preferencesFor', () => {
-	test('keeps every setting, a place by its kind and code, and the stored weights', () => {
-		expect(preferencesFor(SETTINGS, weights({ price: 60, size: 40 }), 'house')).toEqual({
+describe('preferencesBody', () => {
+	test('keeps every preferred value, a place by its kind and code, and the stored weights', () => {
+		expect(preferencesBody(VALUES, weights({ price: 60, size: 40 }), 'house')).toEqual({
 			...UNSET,
 			preferred_price: 22000,
 			preferred_size_m2: 70,
@@ -114,8 +114,8 @@ describe('preferencesFor', () => {
 		});
 	});
 
-	test('weighs nothing while no wish is on', () => {
-		const preferences = preferencesFor(SETTINGS, weights({}), 'flat');
+	test('weighs nothing while no preference is on', () => {
+		const preferences = preferencesBody(VALUES, weights({}), 'flat');
 		expect([preferences.price_weight, preferences.size_weight, preferences.place_weight]).toEqual([0, 0, 0]);
 	});
 });

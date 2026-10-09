@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { moveDivider, settled, switchOff, switchOn } from './split';
-import type { Weights } from './wishes';
+import type { Weights } from './preferences';
 
 function weights(set: Partial<Weights>): Weights {
 	return { price: 0, size: 0, land: 0, layout: 0, place: 0, ...set };
