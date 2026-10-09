@@ -154,3 +154,15 @@ msgstr "Hledejte místo podle názvu: obec, část obce, ulice..."
 
 msgid "Searching in"
 msgstr "Vybrané místo"
+
+msgid "no limit"
+msgstr "bez omezení"
+
+msgid "to"
+msgstr "až"
+
+msgid "{name} from"
+msgstr "{name} od"
+
+msgid "{name} to"
+msgstr "{name} do"
