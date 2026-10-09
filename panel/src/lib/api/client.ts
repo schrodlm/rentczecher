@@ -13,6 +13,19 @@ type ListingFilter = NonNullable<
 	paths['/v1/profiles/{profile_id}/listings']['get']['parameters']['query']
 >['filter'];
 
+/* A request the sidecar refused. The reason is the sidecar's own message,
+when it gave one, meant for a developer rather than the user. */
+export class ApiError extends Error {
+	readonly status: number;
+	readonly reason: string | null;
+
+	constructor(response: Response, reason: string | null) {
+		super(`${response.url} failed: ${response.status} ${response.statusText}`);
+		this.status = response.status;
+		this.reason = reason;
+	}
+}
+
 /* Talks to the sidecar's loopback API through openapi-fetch, so every
 path, parameter, and body below is compile-checked against the generated
 contract. The base URL and token are constructor inputs, so tests can point
@@ -31,36 +44,36 @@ export class SidecarClient {
 	}
 
 	async listProfiles(): Promise<ProfileModel[]> {
-		const { data, response } = await this.api.GET('/v1/profiles');
-		return this.require(data, response);
+		const { data, response, error } = await this.api.GET('/v1/profiles');
+		return this.require(data, response, error);
 	}
 
 	async createProfile(body: NewProfileBody): Promise<ProfileModel> {
-		const { data, response } = await this.api.POST('/v1/profiles', { body });
-		return this.require(data, response);
+		const { data, response, error } = await this.api.POST('/v1/profiles', { body });
+		return this.require(data, response, error);
 	}
 
 	async updateProfile(profileId: string, body: ProfileUpdateBody): Promise<ProfileModel> {
-		const { data, response } = await this.api.PUT('/v1/profiles/{profile_id}', {
+		const { data, response, error } = await this.api.PUT('/v1/profiles/{profile_id}', {
 			params: { path: { profile_id: profileId } },
 			body
 		});
-		return this.require(data, response);
+		return this.require(data, response, error);
 	}
 
 	async deleteProfile(profileId: string): Promise<void> {
-		const { response } = await this.api.DELETE('/v1/profiles/{profile_id}', {
+		const { response, error } = await this.api.DELETE('/v1/profiles/{profile_id}', {
 			params: { path: { profile_id: profileId } }
 		});
 		if (!response.ok) {
-			throw this.httpError(response);
+			throw this.httpError(response, error);
 		}
 	}
 
 	/* Places whose official name starts with the query, broadest kind first,
 	optionally only those at least partly inside one place and of some kinds. */
 	async searchPlaces(query: string, within?: PlaceRef, kinds?: PlaceRef['kind'][]): Promise<NamedPlace[]> {
-		const { data, response } = await this.api.GET('/v1/places', {
+		const { data, response, error } = await this.api.GET('/v1/places', {
 			params: {
 				query: {
 					q: query,
@@ -69,49 +82,50 @@ export class SidecarClient {
 				}
 			}
 		});
-		return this.require(data, response);
+		return this.require(data, response, error);
 	}
 
 	async listListings(profileId: string, filter: ListingFilter = 'new'): Promise<ListingModel[]> {
-		const { data, response } = await this.api.GET('/v1/profiles/{profile_id}/listings', {
+		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/listings', {
 			params: { path: { profile_id: profileId }, query: { filter } }
 		});
-		return this.require(data, response);
+		return this.require(data, response, error);
 	}
 
 	async markViewed(profileId: string, listingId: string): Promise<void> {
-		const { response } = await this.api.PATCH(
+		const { response, error } = await this.api.PATCH(
 			'/v1/profiles/{profile_id}/listings/{listing_id}/viewed',
 			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
 		);
 		if (!response.ok) {
-			throw this.httpError(response);
+			throw this.httpError(response, error);
 		}
 	}
 
 	async health(): Promise<PortalHealthModel[]> {
-		const { data, response } = await this.api.GET('/v1/health');
-		return this.require(data, response);
+		const { data, response, error } = await this.api.GET('/v1/health');
+		return this.require(data, response, error);
 	}
 
 	async triggerRun(profileId: string): Promise<RunTriggeredModel> {
-		const { data, response } = await this.api.POST('/v1/runs', {
+		const { data, response, error } = await this.api.POST('/v1/runs', {
 			body: { profile_id: profileId }
 		});
-		return this.require(data, response);
+		return this.require(data, response, error);
 	}
 
 	/* openapi-fetch reports failure as a value, this facade keeps the
 	throw-based contract its callers are built against. */
-	private require<T>(data: T | undefined, response: Response): T {
+	private require<T>(data: T | undefined, response: Response, error: unknown): T {
 		if (data === undefined) {
-			throw this.httpError(response);
+			throw this.httpError(response, error);
 		}
 		return data;
 	}
 
-	private httpError(response: Response): Error {
-		return new Error(`${response.url} failed: ${response.status} ${response.statusText}`);
+	private httpError(response: Response, error: unknown): ApiError {
+		const detail = typeof error === 'object' && error !== null && 'detail' in error ? error.detail : null;
+		return new ApiError(response, typeof detail === 'string' ? detail : null);
 	}
 
 	/* EventSource cannot set an Authorization header, so the token rides
