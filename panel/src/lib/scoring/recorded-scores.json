@@ -276,7 +276,7 @@
 			"score": 100
 		},
 		{
-			"name": "an unlisted layout scores 10",
+			"name": "an unlisted layout scores nothing",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -299,7 +299,7 @@
 				"price_weight": 0,
 				"preferred_price": null
 			},
-			"score": 10
+			"score": 0
 		},
 		{
 			"name": "a listing without a layout gets no layout points",
@@ -659,7 +659,7 @@
 			"score": 100
 		},
 		{
-			"name": "in no preferred place scores 20",
+			"name": "in no preferred place scores nothing",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -714,10 +714,10 @@
 				"price_weight": 0,
 				"preferred_price": null
 			},
-			"score": 20
+			"score": 0
 		},
 		{
-			"name": "a listing without a location scores 20",
+			"name": "a listing without a location scores nothing",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -743,7 +743,7 @@
 				"price_weight": 0,
 				"preferred_price": null
 			},
-			"score": 20
+			"score": 0
 		},
 		{
 			"name": "half the ideal land scores half",

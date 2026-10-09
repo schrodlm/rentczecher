@@ -38,7 +38,7 @@ describe('exampleListings', () => {
 		expect(cards.map((card) => [card.target, card.score])).toEqual([
 			[100, 100],
 			[50, 67],
-			[10, 15]
+			[10, 10]
 		]);
 	});
 
