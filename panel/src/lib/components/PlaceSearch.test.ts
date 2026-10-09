@@ -88,6 +88,17 @@ describe('PlaceSearch', () => {
 		expect(queryAllByRole('option')).toEqual([]);
 	});
 
+	test('keeps an Escape that closed the list from closing anything around it', async () => {
+		const { input } = await renderSearch();
+		await type(input, 'holeš');
+		const closingTheList = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true, bubbles: true });
+		input.dispatchEvent(closingTheList);
+		expect(closingTheList.defaultPrevented).toBe(true);
+		const withNoList = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true, bubbles: true });
+		input.dispatchEvent(withNoList);
+		expect(withNoList.defaultPrevented).toBe(false);
+	});
+
 	test('ignores an answer to a query the user has typed past', async () => {
 		let answerFirst: (places: NamedPlace[]) => void = () => {};
 		const search = vi
