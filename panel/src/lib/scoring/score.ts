@@ -38,8 +38,7 @@ export function scoreParts(listing: ScoredListing, preferences: ScoringPreferenc
 
 	if (preferences.disposition_weight && listing.disposition !== null) {
 		const preferredDispositions: readonly string[] = preferences.preferred_dispositions;
-		const rank = preferredDispositions.indexOf(listing.disposition);
-		const score = rank === -1 ? 10 : Math.max(20, 100 - rank * 20);
+		const score = preferredDispositions.includes(listing.disposition) ? 100 : 10;
 		parts.push(part('disposition', score, preferences.disposition_weight));
 	}
 
@@ -50,11 +49,9 @@ export function scoreParts(listing: ScoredListing, preferences: ScoringPreferenc
 
 	if (preferences.place_weight) {
 		const location = listing.resolved_location;
-		let score = 20;
-		if (location !== null) {
-			const rank = preferences.preferred_places.findIndex((place) => liesIn(location, place));
-			if (rank !== -1) score = Math.max(20, 100 - rank * 20);
-		}
+		const inPreferredPlace =
+			location !== null && preferences.preferred_places.some((place) => liesIn(location, place));
+		const score = inPreferredPlace ? 100 : 20;
 		parts.push(part('place', score, preferences.place_weight));
 	}
 
