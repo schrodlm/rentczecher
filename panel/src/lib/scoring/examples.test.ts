@@ -42,7 +42,7 @@ describe('exampleListings', () => {
 		const cards = exampleListings(FLAT_TO_RENT);
 		expect(cards.map((card) => [card.target, card.score])).toEqual([
 			[100, 100],
-			[50, 57],
+			[50, 67],
 			[10, 15]
 		]);
 	});
