@@ -79,7 +79,7 @@
 
 	function rule(wish: Wish): string {
 		if (wish === 'price') {
-			const good = settings.max_good_price;
+			const good = settings.preferred_price;
 			if (good === null) return t.t('Set your good price first.');
 			return t.t('Full points up to {good}, none at {twice} or more.', {
 				good: formatPrice(good),
@@ -87,7 +87,7 @@
 			});
 		}
 		if (wish === 'size') {
-			const ideal = settings.ideal_size_m2;
+			const ideal = settings.preferred_size_m2;
 			if (ideal === null) return t.t('Set your ideal size first.');
 			return t.t('Full points at {ideal} or more, half at {half}.', {
 				ideal: formatArea(ideal),
@@ -95,7 +95,7 @@
 			});
 		}
 		if (wish === 'land') {
-			const ideal = settings.ideal_land_m2;
+			const ideal = settings.preferred_land_m2;
 			if (ideal === null) return t.t('Set your ideal land first.');
 			return t.t('Full points at {ideal} of land or more. Listings without land data get none.', {
 				ideal: formatArea(ideal)
@@ -179,7 +179,7 @@
 				{#if wish === 'price'}
 					<ValueSlider
 						scale={priceScale(criteria.offer_type)}
-						bind:value={settings.max_good_price}
+						bind:value={settings.preferred_price}
 						name={t.t('Good price')}
 						unit="Kč"
 						placeholder={t.t('good price')}
@@ -187,7 +187,7 @@
 				{:else if wish === 'size'}
 					<ValueSlider
 						scale={SIZE_SCALE}
-						bind:value={settings.ideal_size_m2}
+						bind:value={settings.preferred_size_m2}
 						name={t.t('Ideal size')}
 						unit="m²"
 						placeholder={t.t('ideal size')}
@@ -195,7 +195,7 @@
 				{:else if wish === 'land'}
 					<ValueSlider
 						scale={LAND_SCALE}
-						bind:value={settings.ideal_land_m2}
+						bind:value={settings.preferred_land_m2}
 						name={t.t('Ideal land')}
 						unit="m²"
 						placeholder={t.t('ideal land')}

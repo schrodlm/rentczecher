@@ -9,13 +9,13 @@ const PREFERENCES: NewProfileBody['preferences'] = {
 	disposition_weight: 0,
 	preferred_dispositions: [],
 	size_weight: 0,
-	ideal_size_m2: null,
+	preferred_size_m2: null,
 	place_weight: 0,
 	preferred_places: [],
 	land_weight: 0,
-	ideal_land_m2: null,
+	preferred_land_m2: null,
 	price_weight: 0,
-	max_good_price: null
+	preferred_price: null
 };
 
 const NEW_PROFILE: NewProfileBody = {

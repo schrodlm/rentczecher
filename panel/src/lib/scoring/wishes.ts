@@ -7,9 +7,9 @@ type PreferencesBody = components['schemas']['PreferencesBody'];
 
 /* What each wish scores against, without how much it matters. */
 export type WishSettings = {
-	max_good_price: number | null;
-	ideal_size_m2: number | null;
-	ideal_land_m2: number | null;
+	preferred_price: number | null;
+	preferred_size_m2: number | null;
+	preferred_land_m2: number | null;
 	preferred_dispositions: Layout[];
 	preferred_places: NamedPlace[];
 };
@@ -41,9 +41,9 @@ export function wishesFor(estateType: EstateType): Wish[] {
 /* Whether a wish has the setting it scores against, without which it cannot
 count. */
 export function isReady(wish: Wish, settings: WishSettings): boolean {
-	if (wish === 'price') return settings.max_good_price !== null;
-	if (wish === 'size') return settings.ideal_size_m2 !== null;
-	if (wish === 'land') return settings.ideal_land_m2 !== null;
+	if (wish === 'price') return settings.preferred_price !== null;
+	if (wish === 'size') return settings.preferred_size_m2 !== null;
+	if (wish === 'land') return settings.preferred_land_m2 !== null;
 	if (wish === 'layout') return settings.preferred_dispositions.length > 0;
 	return settings.preferred_places.length > 0;
 }
@@ -57,13 +57,13 @@ export function preferencesFor(settings: WishSettings, importances: Importances,
 		disposition_weight: weights.layout,
 		preferred_dispositions: [...settings.preferred_dispositions],
 		size_weight: weights.size,
-		ideal_size_m2: settings.ideal_size_m2,
+		preferred_size_m2: settings.preferred_size_m2,
 		place_weight: weights.place,
 		preferred_places: settings.preferred_places.map((place) => ({ kind: place.kind, code: place.code })),
 		land_weight: weights.land,
-		ideal_land_m2: settings.ideal_land_m2,
+		preferred_land_m2: settings.preferred_land_m2,
 		price_weight: weights.price,
-		max_good_price: settings.max_good_price
+		preferred_price: settings.preferred_price
 	};
 }
 

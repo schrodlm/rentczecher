@@ -43,13 +43,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -67,13 +67,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -91,13 +91,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -115,13 +115,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 50
 		},
@@ -139,13 +139,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -163,13 +163,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -187,13 +187,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -211,13 +211,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -238,13 +238,13 @@
 					"3+kk"
 				],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -265,13 +265,13 @@
 					"3+kk"
 				],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -291,13 +291,13 @@
 					"2+kk"
 				],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 10
 		},
@@ -317,13 +317,13 @@
 					"2+kk"
 				],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -341,13 +341,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 100,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 50
 		},
@@ -365,13 +365,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 100,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -389,13 +389,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 100,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -413,13 +413,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 100,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -465,7 +465,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -478,9 +478,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -526,7 +526,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -539,9 +539,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -587,7 +587,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -604,9 +604,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -643,7 +643,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -652,9 +652,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -697,7 +697,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -710,9 +710,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 20
 		},
@@ -730,7 +730,7 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 100,
 				"preferred_places": [
 					{
@@ -739,9 +739,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 20
 		},
@@ -759,13 +759,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 100,
-				"ideal_land_m2": 800,
+				"preferred_land_m2": 800,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 50
 		},
@@ -783,13 +783,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 100,
-				"ideal_land_m2": 800,
+				"preferred_land_m2": 800,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 100
 		},
@@ -807,13 +807,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 100,
-				"ideal_land_m2": 800,
+				"preferred_land_m2": 800,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 0
 		},
@@ -831,13 +831,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 100
 		},
@@ -855,13 +855,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 100
 		},
@@ -879,13 +879,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 50
 		},
@@ -903,13 +903,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 0
 		},
@@ -927,13 +927,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 0
 		},
@@ -951,13 +951,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 0,
-				"ideal_size_m2": null,
+				"preferred_size_m2": null,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 100,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 0
 		},
@@ -975,13 +975,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 40,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 60,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 80
 		},
@@ -999,13 +999,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 80,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 80,
-				"max_good_price": 20000
+				"preferred_price": 20000
 			},
 			"score": 160
 		},
@@ -1023,13 +1023,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 50,
-				"ideal_size_m2": 100,
+				"preferred_size_m2": 100,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 2
 		},
@@ -1047,13 +1047,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 50,
-				"ideal_size_m2": 100,
+				"preferred_size_m2": 100,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 4
 		},
@@ -1071,13 +1071,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 50,
-				"ideal_size_m2": 100,
+				"preferred_size_m2": 100,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 12
 		},
@@ -1095,13 +1095,13 @@
 				"disposition_weight": 0,
 				"preferred_dispositions": [],
 				"size_weight": 5,
-				"ideal_size_m2": 100,
+				"preferred_size_m2": 100,
 				"place_weight": 0,
 				"preferred_places": [],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 0,
-				"max_good_price": null
+				"preferred_price": null
 			},
 			"score": 3
 		},
@@ -1150,7 +1150,7 @@
 					"3+kk"
 				],
 				"size_weight": 20,
-				"ideal_size_m2": 70,
+				"preferred_size_m2": 70,
 				"place_weight": 20,
 				"preferred_places": [
 					{
@@ -1163,9 +1163,9 @@
 					}
 				],
 				"land_weight": 0,
-				"ideal_land_m2": null,
+				"preferred_land_m2": null,
 				"price_weight": 25,
-				"max_good_price": 22000
+				"preferred_price": 22000
 			},
 			"score": 91
 		}

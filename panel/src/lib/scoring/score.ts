@@ -42,8 +42,8 @@ export function scoreParts(listing: ScoredListing, preferences: ScoringPreferenc
 		parts.push(part('disposition', score, preferences.disposition_weight));
 	}
 
-	if (preferences.size_weight && listing.size_m2 && preferences.ideal_size_m2) {
-		const score = Math.min(100, (listing.size_m2 / preferences.ideal_size_m2) * 100);
+	if (preferences.size_weight && listing.size_m2 && preferences.preferred_size_m2) {
+		const score = Math.min(100, (listing.size_m2 / preferences.preferred_size_m2) * 100);
 		parts.push(part('size', score, preferences.size_weight));
 	}
 
@@ -55,14 +55,14 @@ export function scoreParts(listing: ScoredListing, preferences: ScoringPreferenc
 		parts.push(part('place', score, preferences.place_weight));
 	}
 
-	if (preferences.land_weight && listing.land_m2 && preferences.ideal_land_m2) {
-		const score = Math.min(100, (listing.land_m2 / preferences.ideal_land_m2) * 100);
+	if (preferences.land_weight && listing.land_m2 && preferences.preferred_land_m2) {
+		const score = Math.min(100, (listing.land_m2 / preferences.preferred_land_m2) * 100);
 		parts.push(part('land', score, preferences.land_weight));
 	}
 
-	if (preferences.price_weight && listing.price && preferences.max_good_price) {
+	if (preferences.price_weight && listing.price && preferences.preferred_price) {
 		// Full points up to the good price, none from twice it.
-		const ratio = listing.price / preferences.max_good_price;
+		const ratio = listing.price / preferences.preferred_price;
 		const score = Math.max(0, Math.min(100, (2 - ratio) * 100));
 		parts.push(part('price', score, preferences.price_weight));
 	}

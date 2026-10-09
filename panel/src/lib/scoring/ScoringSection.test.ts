@@ -20,9 +20,9 @@ const FLAT_TO_RENT = {
 } as const;
 
 const SETTINGS = {
-	max_good_price: 22000,
-	ideal_size_m2: 70,
-	ideal_land_m2: null,
+	preferred_price: 22000,
+	preferred_size_m2: 70,
+	preferred_land_m2: null,
 	preferred_dispositions: [],
 	preferred_places: [PRAHA_7]
 };
