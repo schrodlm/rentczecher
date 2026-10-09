@@ -47,8 +47,14 @@ describe('ListingCard', () => {
 				sibling_sources: [{ source: 'bezrealitky', url: 'https://bezrealitky.cz/detail/2' }]
 			})
 		});
-		expect(getByText('sreality')).toBeInTheDocument();
-		expect(getByText('bezrealitky')).toBeInTheDocument();
+		expect(getByText('Sreality')).toBeInTheDocument();
+		expect(getByText('Bezrealitky')).toBeInTheDocument();
+	});
+
+	test('shows the portal\'s logo where a photo would be', async () => {
+		const { container } = await renderWithTranslator(ListingCard, { score: null, listing: listing('sreality:1') });
+		expect(container.querySelector('.card__photo img')).not.toBeNull();
+		expect(container.querySelector('.card__photo-fallback')).toBeNull();
 	});
 
 	describe('disposition', () => {
