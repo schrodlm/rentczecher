@@ -3,47 +3,28 @@
 	import type { Snippet } from 'svelte';
 	import type { Preference } from './preferences';
 
-	/* One preference: switched on or off, its share of the score while on, its
-	preferred value and the rule it scores by. Until the preferred value is
-	chosen it cannot be switched on. */
+	/* One preference: its share of the score while it counts, its preferred
+	value and the rule it scores by. It counts once its preferred value is set. */
 	let {
 		preference,
 		title,
-		on,
-		weight,
-		ready,
+		share,
 		rule,
-		ontoggle,
 		children
 	}: {
 		preference: Preference;
 		title: string;
-		on: boolean;
-		weight: number;
-		ready: boolean;
+		share: number | null;
 		rule: string;
-		ontoggle: () => void;
 		children: Snippet;
 	} = $props();
 </script>
 
-<div class="preference-card preference-{preference}" class:preference-card--off={!on}>
+<div class="preference-card preference-{preference}" class:preference-card--off={share === null}>
 	<div class="preference-card__head">
-		<button
-			type="button"
-			class="preference-card__switch"
-			class:preference-card__switch--on={on}
-			role="switch"
-			aria-checked={on}
-			aria-label={title}
-			disabled={!on && !ready}
-			onclick={ontoggle}
-		>
-			<i class="preference-card__knob"></i>
-		</button>
 		<strong class="preference-card__title">{title}</strong>
-		{#if on}
-			<span class="preference-card__share">{weight} %</span>
+		{#if share !== null}
+			<span class="preference-card__share">{share} %</span>
 		{/if}
 	</div>
 	{@render children()}
@@ -88,40 +69,6 @@
 		color: var(--preference-text);
 		font-size: 0.75rem;
 		font-weight: 700;
-	}
-
-	.preference-card__switch {
-		position: relative;
-		flex: none;
-		width: 2.25rem;
-		height: 1.25rem;
-		padding: 0;
-		border: none;
-		border-radius: var(--radius-full);
-		background: var(--color-line);
-		cursor: pointer;
-	}
-
-	.preference-card__switch--on {
-		background: var(--color-olive);
-	}
-
-	.preference-card__switch:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-
-	.preference-card__knob {
-		position: absolute;
-		inset: 2px auto 2px 2px;
-		aspect-ratio: 1;
-		border-radius: 50%;
-		background: var(--color-card);
-		transition: transform 120ms ease-out;
-	}
-
-	.preference-card__switch--on .preference-card__knob {
-		transform: translateX(1rem);
 	}
 
 	.preference-card__rule {

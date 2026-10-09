@@ -12,11 +12,9 @@
 	import { exampleListings, type ExampleListing } from './examples';
 	import PreferenceCard from './PreferenceCard.svelte';
 	import type { ScorePart } from './score';
-	import { switchOff, switchOn } from './split';
 	import SplitBar from './SplitBar.svelte';
 	import {
 		countingFor,
-		isReady,
 		storedWeights,
 		preferencesFor,
 		type Weights,
@@ -48,15 +46,9 @@
 	const t = getTranslatorContext();
 
 	const preferences = $derived(preferencesFor(criteria.estate_type));
-	const counting = $derived(countingFor(preferredValues, weights, criteria.estate_type));
+	const counting = $derived(countingFor(preferredValues, criteria.estate_type));
 	const shown = $derived(storedWeights(preferredValues, weights, criteria.estate_type));
 	const examples = $derived(exampleListings({ criteria, searchPlace, preferredValues, weights }));
-
-	function toggle(preference: Preference): void {
-		weights = counting.includes(preference)
-			? switchOff(shown, preference, counting)
-			: switchOn(shown, preference, counting);
-	}
 
 	async function searchInside(query: string): Promise<NamedPlace[]> {
 		if (searchPlace === null) return [];
@@ -166,7 +158,7 @@
 		{#if counting.length > 0}
 			<SplitBar bind:weights={() => shown, (moved) => (weights = moved)} {counting} label={shortName} />
 		{:else}
-			<p class="scoring-section__empty">{t.t('Switch on a preference to start scoring.')}</p>
+			<p class="scoring-section__empty">{t.t('Set a preferred value to start scoring.')}</p>
 		{/if}
 
 		<div class="scoring-section__cards">
@@ -174,11 +166,8 @@
 				<PreferenceCard
 					{preference}
 					title={title(preference)}
-					on={counting.includes(preference)}
-					weight={shown[preference]}
-					ready={isReady(preference, preferredValues)}
+					share={counting.includes(preference) ? shown[preference] : null}
 					rule={rule(preference)}
-					ontoggle={() => toggle(preference)}
 				>
 					{#if preference === 'price'}
 						<ValueSlider
