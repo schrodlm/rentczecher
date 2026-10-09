@@ -69,10 +69,10 @@ place, from a kraj down to a street.
 _Avoid_: location, area, region
 
 **Preference**:
-One weighted wish that raises a listing's score: a preferred disposition, an
-ideal size or land, a good price, or a preferred place. Preferences order the
-listings that meet the criteria and never hide one.
-_Avoid_: scoring setting, weight
+One weighted preferred value that raises a listing's score: a preferred
+price, size, land area, disposition or place. Preferences order the listings
+that meet the criteria and never hide one.
+_Avoid_: wish, scoring setting, weight
 
 **Score**:
 How well a listing meets its profile's preferences, worked out by each client
