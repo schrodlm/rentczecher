@@ -87,6 +87,13 @@ describe('ScoringSection', () => {
 		expect(bar(container)).toEqual(['Cena 100 %']);
 	});
 
+	test('names the points each preference is worth in its rule', async () => {
+		const values = { preferred_price: 22000, preferred_places: [PRAHA_7] };
+		const { getByText } = await renderSection(values, { price: 80, place: 20 });
+		expect(getByText('Všech 80 bodů do 22 000 Kč, od 44 000 Kč žádné.')).toBeInTheDocument();
+		expect(getByText('Všech 20 bodů v kterémkoli z těchto míst, jinde žádné.')).toBeInTheDocument();
+	});
+
 	test('waits for a first preferred value before showing the bar', async () => {
 		const { getByText, container } = await renderSection({});
 		expect(getByText('Nastavte preferovanou hodnotu, aby se inzeráty začaly hodnotit.')).toBeInTheDocument();
