@@ -292,3 +292,6 @@ msgstr "ideální velikost"
 
 msgid "{area} of land"
 msgstr "{area} pozemku"
+
+msgid "Between {left} and {right}"
+msgstr "Předěl: {left} a {right}"
