@@ -1,21 +1,30 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
 	import ListingCard from './ListingCard.svelte';
 	import type { ListingModel } from '$lib/api/client';
 
+	/* The new and viewed listings of a profile, each scored by its preferences,
+	or unscored while no preference counts. */
 	let {
 		newListings,
 		viewedListings,
+		preferences,
 		onviewed,
 		onmarkallviewed
 	}: {
 		newListings: ListingModel[];
 		viewedListings: ListingModel[];
+		preferences: ScoringPreferences | null;
 		onviewed: (listingId: string) => void;
 		onmarkallviewed: () => void;
 	} = $props();
 
 	const t = getTranslatorContext();
+
+	function scoreOf(listing: ListingModel): number | null {
+		return preferences === null ? null : scoreListing(listing, preferences);
+	}
 </script>
 
 <div class="feed">
@@ -33,7 +42,7 @@
 		{:else}
 			<div class="feed__cards">
 				{#each newListings as listing (listing.id)}
-					<ListingCard {listing} onclick={() => onviewed(listing.id)} />
+					<ListingCard {listing} score={scoreOf(listing)} onclick={() => onviewed(listing.id)} />
 				{/each}
 			</div>
 		{/if}
@@ -44,7 +53,7 @@
 			<h2 class="feed__heading">{t.t('Viewed')}</h2>
 			<div class="feed__cards">
 				{#each viewedListings as listing (listing.id)}
-					<ListingCard {listing} viewed />
+					<ListingCard {listing} score={scoreOf(listing)} viewed />
 				{/each}
 			</div>
 		</section>
