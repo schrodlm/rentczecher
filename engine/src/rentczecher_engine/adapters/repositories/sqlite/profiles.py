@@ -82,8 +82,8 @@ class SqliteProfileRepository:
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
                    c.min_size_m2, c.max_size_m2, c.min_land_m2,
-                   r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
-                   r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
+                   r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.preferred_size_m2,
+                   r.place_weight, r.land_weight, r.preferred_land_m2, r.price_weight, r.preferred_price
             FROM profiles p
             JOIN profile_criteria c ON c.profile_id = p.id
             JOIN profile_preferences r ON r.profile_id = p.id
@@ -98,8 +98,8 @@ class SqliteProfileRepository:
             SELECT p.id, p.name, p.paused_at,
                    c.offer_type, c.estate_type, c.place_kind, c.place_code, c.min_price, c.max_price,
                    c.min_size_m2, c.max_size_m2, c.min_land_m2,
-                   r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.ideal_size_m2,
-                   r.place_weight, r.land_weight, r.ideal_land_m2, r.price_weight, r.max_good_price
+                   r.price_per_m2_weight, r.disposition_weight, r.size_weight, r.preferred_size_m2,
+                   r.place_weight, r.land_weight, r.preferred_land_m2, r.price_weight, r.preferred_price
             FROM profiles p
             JOIN profile_criteria c ON c.profile_id = p.id
             JOIN profile_preferences r ON r.profile_id = p.id
@@ -159,8 +159,8 @@ class SqliteProfileRepository:
     def _insert_preferences(self, profile_id: str, preferences: Preferences) -> None:
         stmt = """
             INSERT INTO profile_preferences
-                (profile_id, price_per_m2_weight, disposition_weight, size_weight, ideal_size_m2,
-                 place_weight, land_weight, ideal_land_m2, price_weight, max_good_price)
+                (profile_id, price_per_m2_weight, disposition_weight, size_weight, preferred_size_m2,
+                 place_weight, land_weight, preferred_land_m2, price_weight, preferred_price)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self._conn.execute(stmt, (
@@ -168,12 +168,12 @@ class SqliteProfileRepository:
             preferences.price_per_m2_weight,
             preferences.disposition_weight,
             preferences.size_weight,
-            preferences.ideal_size_m2,
+            preferences.preferred_size_m2,
             preferences.place_weight,
             preferences.land_weight,
-            preferences.ideal_land_m2,
+            preferences.preferred_land_m2,
             preferences.price_weight,
-            preferences.max_good_price,
+            preferences.preferred_price,
         ))
         stmt = "INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES (?, ?, ?)"
         for rank, disposition in enumerate(preferences.preferred_dispositions, start=1):
@@ -215,13 +215,13 @@ class SqliteProfileRepository:
             disposition_weight=row["disposition_weight"],
             preferred_dispositions=preferred_dispositions,
             size_weight=row["size_weight"],
-            ideal_size_m2=row["ideal_size_m2"],
+            preferred_size_m2=row["preferred_size_m2"],
             place_weight=row["place_weight"],
             preferred_places=preferred_places,
             land_weight=row["land_weight"],
-            ideal_land_m2=row["ideal_land_m2"],
+            preferred_land_m2=row["preferred_land_m2"],
             price_weight=row["price_weight"],
-            max_good_price=row["max_good_price"],
+            preferred_price=row["preferred_price"],
         )
 
     def _portals(self, profile_id: str) -> tuple[Portal, ...]:

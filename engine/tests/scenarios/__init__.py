@@ -41,8 +41,8 @@ DEFAULT_LISTING = {
 _SEARCH_KEYS = {"offer_type", "estate_type", "place", "min_price", "max_price",
                 "min_size_m2", "max_size_m2", "min_land_m2", "dispositions"}
 _PREFERENCE_KEYS = {"price_per_m2_weight", "disposition_weight", "preferred_dispositions",
-                    "size_weight", "ideal_size_m2", "place_weight", "preferred_places",
-                    "land_weight", "ideal_land_m2", "price_weight", "max_good_price"}
+                    "size_weight", "preferred_size_m2", "place_weight", "preferred_places",
+                    "land_weight", "preferred_land_m2", "price_weight", "preferred_price"}
 
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
@@ -207,13 +207,13 @@ class Scenario:
             disposition_weight=stated.get("disposition_weight", 0),
             preferred_dispositions=layouts(*stated.get("preferred_dispositions", [])),
             size_weight=stated.get("size_weight", 0),
-            ideal_size_m2=stated.get("ideal_size_m2"),
+            preferred_size_m2=stated.get("preferred_size_m2"),
             place_weight=stated.get("place_weight", 0),
             preferred_places=tuple(self._place(gazetteer, written) for written in stated.get("preferred_places", [])),
             land_weight=stated.get("land_weight", 0),
-            ideal_land_m2=stated.get("ideal_land_m2"),
+            preferred_land_m2=stated.get("preferred_land_m2"),
             price_weight=stated.get("price_weight", 0),
-            max_good_price=stated.get("max_good_price"),
+            preferred_price=stated.get("preferred_price"),
         )
 
     def _place(self, gazetteer: Gazetteer, written: str) -> PlaceRef:

@@ -58,8 +58,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 13
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 14
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -193,15 +193,15 @@ class TestProfilesMigration:
 
     VALID_PREFERENCES = {
         "profile_id": "p", "price_per_m2_weight": 10, "disposition_weight": 10, "size_weight": 10,
-        "ideal_size_m2": 55, "place_weight": 10, "land_weight": 10, "ideal_land_m2": 900,
-        "price_weight": 10, "max_good_price": 4000000,
+        "preferred_size_m2": 55, "place_weight": 10, "land_weight": 10, "preferred_land_m2": 900,
+        "price_weight": 10, "preferred_price": 4000000,
     }
     INSERT_PREFERENCES = """
         INSERT INTO profile_preferences
-            (profile_id, price_per_m2_weight, disposition_weight, size_weight, ideal_size_m2,
-             place_weight, land_weight, ideal_land_m2, price_weight, max_good_price)
-        VALUES (:profile_id, :price_per_m2_weight, :disposition_weight, :size_weight, :ideal_size_m2,
-                :place_weight, :land_weight, :ideal_land_m2, :price_weight, :max_good_price)
+            (profile_id, price_per_m2_weight, disposition_weight, size_weight, preferred_size_m2,
+             place_weight, land_weight, preferred_land_m2, price_weight, preferred_price)
+        VALUES (:profile_id, :price_per_m2_weight, :disposition_weight, :size_weight, :preferred_size_m2,
+                :place_weight, :land_weight, :preferred_land_m2, :price_weight, :preferred_price)
     """
 
     def _migrated_with_profile(self, tmp_path):
@@ -228,7 +228,7 @@ class TestProfilesMigration:
         conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
                      "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
         conn.commit()
-        assert migrate.apply_pending(conn) == [11, 12, 13]
+        assert migrate.apply_pending(conn) == [11, 12, 13, 14]
         assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
@@ -259,7 +259,7 @@ class TestProfilesMigration:
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute(self.INSERT_CRITERIA, {**self.VALID_CRITERIA, low: 3, high: 2})
 
-    @pytest.mark.parametrize("setting", ["ideal_size_m2", "ideal_land_m2", "max_good_price"])
+    @pytest.mark.parametrize("setting", ["preferred_size_m2", "preferred_land_m2", "preferred_price"])
     @pytest.mark.parametrize("setting_value", [None, 0])
     def test_a_weighted_preference_needs_a_positive_setting(self, tmp_path, setting, setting_value):
         conn = self._migrated_with_profile(tmp_path)
@@ -332,7 +332,7 @@ class TestAcceptedDispositionsMigration:
             "min_rooms, max_rooms, kitchen) VALUES ('p', 'rent', 'flat', 'obvod', 78, ?, ?, ?)",
             (min_rooms, max_rooms, kitchen))
         conn.commit()
-        assert migrate.apply_pending(conn) == [13]
+        assert migrate.apply_pending(conn) == [13, 14]
         stmt = "SELECT disposition FROM accepted_dispositions WHERE profile_id = 'p' ORDER BY disposition"
         return [row[0] for row in conn.execute(stmt)]
 

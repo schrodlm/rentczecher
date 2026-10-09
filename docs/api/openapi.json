@@ -748,42 +748,9 @@
             "title": "Disposition Weight",
             "type": "number"
           },
-          "ideal_land_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ideal Land M2"
-          },
-          "ideal_size_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ideal Size M2"
-          },
           "land_weight": {
             "title": "Land Weight",
             "type": "number"
-          },
-          "max_good_price": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Good Price"
           },
           "place_weight": {
             "title": "Place Weight",
@@ -817,12 +784,45 @@
             "title": "Preferred Dispositions",
             "type": "array"
           },
+          "preferred_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Land M2"
+          },
           "preferred_places": {
             "items": {
               "$ref": "#/components/schemas/PlaceRefModel"
             },
             "title": "Preferred Places",
             "type": "array"
+          },
+          "preferred_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Price"
+          },
+          "preferred_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Size M2"
           },
           "price_per_m2_weight": {
             "title": "Price Per M2 Weight",
@@ -842,13 +842,13 @@
           "disposition_weight",
           "preferred_dispositions",
           "size_weight",
-          "ideal_size_m2",
+          "preferred_size_m2",
           "place_weight",
           "preferred_places",
           "land_weight",
-          "ideal_land_m2",
+          "preferred_land_m2",
           "price_weight",
-          "max_good_price"
+          "preferred_price"
         ],
         "title": "PreferencesBody",
         "type": "object"
@@ -859,42 +859,9 @@
             "title": "Disposition Weight",
             "type": "number"
           },
-          "ideal_land_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ideal Land M2"
-          },
-          "ideal_size_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ideal Size M2"
-          },
           "land_weight": {
             "title": "Land Weight",
             "type": "number"
-          },
-          "max_good_price": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Good Price"
           },
           "place_weight": {
             "title": "Place Weight",
@@ -928,12 +895,45 @@
             "title": "Preferred Dispositions",
             "type": "array"
           },
+          "preferred_land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Land M2"
+          },
           "preferred_places": {
             "items": {
               "$ref": "#/components/schemas/NamedPlaceModel"
             },
             "title": "Preferred Places",
             "type": "array"
+          },
+          "preferred_price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Price"
+          },
+          "preferred_size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Size M2"
           },
           "price_per_m2_weight": {
             "title": "Price Per M2 Weight",
@@ -953,13 +953,13 @@
           "disposition_weight",
           "preferred_dispositions",
           "size_weight",
-          "ideal_size_m2",
+          "preferred_size_m2",
           "place_weight",
           "preferred_places",
           "land_weight",
-          "ideal_land_m2",
+          "preferred_land_m2",
           "price_weight",
-          "max_good_price"
+          "preferred_price"
         ],
         "title": "PreferencesModel",
         "type": "object"

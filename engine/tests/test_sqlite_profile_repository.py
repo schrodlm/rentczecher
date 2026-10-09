@@ -19,9 +19,9 @@ FULL_CRITERIA = criteria(
 )
 FULL_PREFERENCES = preferences(
     price_per_m2_weight=10, disposition_weight=20, preferred_dispositions=layouts("4+1", "3+kk", "atypicky"),
-    size_weight=30, ideal_size_m2=120, place_weight=40,
+    size_weight=30, preferred_size_m2=120, place_weight=40,
     preferred_places=(PlaceRef("okres", 3401), PlaceRef("obec", 553786)),
-    land_weight=50, ideal_land_m2=900, price_weight=60, max_good_price=4000000,
+    land_weight=50, preferred_land_m2=900, price_weight=60, preferred_price=4000000,
 )
 
 
