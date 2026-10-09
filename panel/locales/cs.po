@@ -169,3 +169,6 @@ msgstr "{name} do"
 
 msgid "atypical"
 msgstr "atypická"
+
+msgid "Pick at least one portal."
+msgstr "Vyberte aspoň jeden portál."
