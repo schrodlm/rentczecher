@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import type { NamedPlace } from '$lib/api/client';
 import type { components } from '$lib/api/types.gen';
 import {
 	importancesFrom,
@@ -14,6 +15,16 @@ import {
 } from './wishes';
 
 type PreferencesBody = components['schemas']['PreferencesBody'];
+
+const HOLESOVICE: NamedPlace = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null };
+
+const NO_SETTINGS: WishSettings = {
+	max_good_price: null,
+	ideal_size_m2: null,
+	ideal_land_m2: null,
+	preferred_dispositions: [],
+	preferred_places: []
+};
 
 const UNSET: PreferencesBody = {
 	price_per_m2_weight: 0,
@@ -50,18 +61,18 @@ describe('wishesFor', () => {
 
 describe('isReady', () => {
 	test('holds no wish ready without its setting', () => {
-		expect(WISHES.filter((wish) => isReady(wish, UNSET))).toEqual([]);
+		expect(WISHES.filter((wish) => isReady(wish, NO_SETTINGS))).toEqual([]);
 	});
 
-	const settings: [Wish, Partial<PreferencesBody>][] = [
+	const settings: [Wish, Partial<WishSettings>][] = [
 		['price', { max_good_price: 22000 }],
 		['size', { ideal_size_m2: 70 }],
 		['land', { ideal_land_m2: 800 }],
 		['layout', { preferred_dispositions: ['2+kk'] }],
-		['place', { preferred_places: [{ kind: 'cast_obce', code: 490067 }] }]
+		['place', { preferred_places: [HOLESOVICE] }]
 	];
 	test.each(settings)('holds %s ready once it has its setting', (wish, setting) => {
-		expect(isReady(wish, { ...UNSET, ...setting })).toBe(true);
+		expect(isReady(wish, { ...NO_SETTINGS, ...setting })).toBe(true);
 	});
 });
 
@@ -120,10 +131,10 @@ describe('preferencesFor', () => {
 		ideal_size_m2: 70,
 		ideal_land_m2: 800,
 		preferred_dispositions: ['2+kk'],
-		preferred_places: [{ kind: 'cast_obce', code: 490067 }]
+		preferred_places: [HOLESOVICE]
 	};
 
-	test('keeps every setting and weighs the wishes by importance', () => {
+	test('keeps every setting, a place by its kind and code, and weighs the wishes by importance', () => {
 		expect(preferencesFor(SETTINGS, importances({ price: 4, size: 1 }), 'house')).toEqual({
 			...UNSET,
 			max_good_price: 22000,
@@ -145,11 +156,5 @@ describe('preferencesFor', () => {
 		const settings = { ...SETTINGS, max_good_price: null };
 		const preferences = preferencesFor(settings, importances({ price: 4, size: 1 }), 'flat');
 		expect([preferences.price_weight, preferences.size_weight]).toEqual([0, 100]);
-	});
-
-	test('stores a place by its kind and code alone', () => {
-		const named = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null } as const;
-		const preferences = preferencesFor({ ...SETTINGS, preferred_places: [named] }, importances({}), 'flat');
-		expect(preferences.preferred_places).toEqual([{ kind: 'cast_obce', code: 490067 }]);
 	});
 });
