@@ -83,4 +83,31 @@ describe('ListingFeed', () => {
 			'Skóre 50 ze 100'
 		]);
 	});
+
+	test('sorts by score and offers no score while unscored', async () => {
+		const preferences = {
+			price_per_m2_weight: 0,
+			disposition_weight: 0,
+			preferred_dispositions: [],
+			size_weight: 0,
+			preferred_size_m2: null,
+			place_weight: 0,
+			preferred_places: [],
+			land_weight: 0,
+			preferred_land_m2: null,
+			price_weight: 100,
+			preferred_price: 20000
+		};
+		const cheap = listing('sreality:1', { price: 20000, first_seen_at: '2026-10-01T00:00:00Z' });
+		const dear = listing('sreality:2', { price: 30000, first_seen_at: '2026-10-02T00:00:00Z' });
+		const props = { newListings: [dear, cheap], viewedListings: [], onviewed: () => {}, onmarkallviewed: () => {} };
+		const scored = await renderWithTranslator(ListingFeed, { ...props, preferences });
+		expect(scored.getAllByRole('img', { name: /Skóre/ }).map((ring) => ring.getAttribute('aria-label'))).toEqual([
+			'Skóre 100 ze 100',
+			'Skóre 50 ze 100'
+		]);
+		scored.unmount();
+		const unscored = await renderWithTranslator(ListingFeed, { ...props, preferences: null });
+		expect(unscored.getByRole('button', { name: 'Řadit podle: Datum' })).toBeInTheDocument();
+	});
 });
