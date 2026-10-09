@@ -1,9 +1,9 @@
-import { fireEvent, within } from '@testing-library/svelte';
+import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import type { NamedPlace } from '$lib/api/client';
 import { renderWithTranslator } from '$lib/test-support/render';
 import ScoringSectionHarness from '$lib/test-support/ScoringSectionHarness.svelte';
-import type { Importances } from './wishes';
+import type { Weights } from './wishes';
 
 const PRAHA: NamedPlace = { kind: 'obec', code: 554782, name: 'Praha', obec: null, okres: null };
 const PRAHA_7: NamedPlace = { kind: 'mestska_cast', code: 500186, name: 'Praha 7', obec: 'Praha', okres: null };
@@ -27,66 +27,79 @@ const SETTINGS = {
 	preferred_places: [PRAHA_7]
 };
 
-const OFF: Importances = { price: 0, size: 0, land: 0, layout: 0, place: 0 };
+const OFF: Weights = { price: 0, size: 0, land: 0, layout: 0, place: 0 };
 
-async function renderSection(importances: Partial<Importances>, searchPlace: NamedPlace | null = PRAHA) {
+async function renderSection(weights: Partial<Weights>, searchPlace: NamedPlace | null = PRAHA) {
 	const searchPlaces = vi.fn(async () => []);
 	const rendered = await renderWithTranslator(ScoringSectionHarness, {
 		criteria: { ...FLAT_TO_RENT, dispositions: [] },
 		searchPlace,
 		settings: structuredClone(SETTINGS),
-		importances: { ...OFF, ...importances },
+		weights: { ...OFF, ...weights },
 		searchPlaces
 	});
-	return { searchPlaces, ...rendered };
+	const bound = (): Weights => JSON.parse(rendered.getByTestId('weights').textContent ?? '');
+	return { searchPlaces, bound, ...rendered };
 }
 
-function legend(container: HTMLElement): string[] {
-	return [...container.querySelectorAll('.scoring-section__legend li')].map((item) =>
-		(item.textContent ?? '').replace(/\s+/g, ' ').trim()
+function bar(container: HTMLElement): string[] {
+	return [...container.querySelectorAll('.split-bar__segment')].map((segment) =>
+		(segment.textContent ?? '').replace(/\s+/g, ' ').trim()
 	);
 }
 
 describe('ScoringSection', () => {
-	test('offers the wishes that fit the estate', async () => {
+	test('offers the preferences that fit the estate', async () => {
 		const { getAllByRole } = await renderSection({});
-		expect(getAllByRole('radiogroup').map((group) => group.getAttribute('aria-label'))).toEqual([
-			'Jak moc záleží na: Dobrá cena',
-			'Jak moc záleží na: Správná velikost',
-			'Jak moc záleží na: Dispozice, která se vám líbí',
-			'Jak moc záleží na: Místo, které se vám líbí'
+		expect(getAllByRole('switch').map((toggle) => toggle.getAttribute('aria-label'))).toEqual([
+			'Preferovaná cena',
+			'Preferovaná velikost',
+			'Preferované dispozice',
+			'Preferovaná místa'
 		]);
 	});
 
-	test('splits the score between the wishes that count', async () => {
-		const { container } = await renderSection({ price: 4, size: 1 });
-		expect(legend(container)).toEqual(['Dobrá cena 83 %', 'Správná velikost 17 %']);
+	test('shows the counting preferences on the split bar', async () => {
+		const { container } = await renderSection({ price: 60, size: 40 });
+		expect(bar(container)).toEqual(['Cena 60 %', 'Velikost 40 %']);
 	});
 
-	test('reweighs the split when an importance changes', async () => {
-		const { container, getByRole, getByTestId } = await renderSection({ price: 4, size: 1 });
-		const size = getByRole('radiogroup', { name: 'Jak moc záleží na: Správná velikost' });
-		await fireEvent.click(within(size).getByRole('radio', { name: 'Nejvíc' }));
-		expect(JSON.parse(getByTestId('importances').textContent ?? '')).toMatchObject({ price: 4, size: 4 });
-		expect(legend(container)).toEqual(['Dobrá cena 50 %', 'Správná velikost 50 %']);
+	test('gives a switched on preference an equal share', async () => {
+		const { container, getByRole, bound } = await renderSection({ price: 100 });
+		await fireEvent.click(getByRole('switch', { name: 'Preferovaná velikost' }));
+		expect(bound()).toMatchObject({ price: 50, size: 50 });
+		expect(bar(container)).toEqual(['Cena 50 %', 'Velikost 50 %']);
 	});
 
-	test('keeps a wish without its setting off and out of the split', async () => {
-		const { container, getByRole } = await renderSection({ price: 4, layout: 3 });
-		const layout = getByRole('radiogroup', { name: 'Jak moc záleží na: Dispozice, která se vám líbí' });
-		expect(within(layout).getByRole('radio', { name: 'Vypnuto' })).toBeChecked();
-		expect(legend(container)).toEqual(['Dobrá cena 100 %']);
+	test('hands back the share of a switched off preference', async () => {
+		const { container, getByRole } = await renderSection({ price: 60, size: 40 });
+		await fireEvent.click(getByRole('switch', { name: 'Preferovaná velikost' }));
+		expect(bar(container)).toEqual(['Cena 100 %']);
 	});
 
-	test('scores example listings while a wish counts', async () => {
-		const { container } = await renderSection({ price: 4 });
+	test('keeps a preference without its preferred value off and out of the bar', async () => {
+		const { container, getByRole } = await renderSection({ price: 70, layout: 30 });
+		const layout = getByRole('switch', { name: 'Preferované dispozice' });
+		expect(layout).not.toBeChecked();
+		expect(layout).toBeDisabled();
+		expect(bar(container)).toEqual(['Cena 100 %']);
+	});
+
+	test('waits for a first preference before showing the bar', async () => {
+		const { getByText, container } = await renderSection({});
+		expect(getByText('Zapněte preferenci, aby se inzeráty začaly hodnotit.')).toBeInTheDocument();
+		expect(container.querySelectorAll('.split-bar')).toHaveLength(0);
+	});
+
+	test('scores example listings while a preference counts', async () => {
+		const { container } = await renderSection({ price: 100 });
 		const scores = [...container.querySelectorAll('.example-card__score')].map((score) => score.textContent);
 		expect(scores[0]).toBe('100');
 	});
 
-	test('scores nothing until a wish counts', async () => {
+	test('scores nothing until a preference counts', async () => {
 		const { getByText, container } = await renderSection({});
-		expect(getByText('Dokud se nepočítá žádné přání, má každý inzerát 0 bodů.')).toBeInTheDocument();
+		expect(getByText('Dokud se nepočítá žádná preference, má každý inzerát 0 bodů.')).toBeInTheDocument();
 		expect(container.querySelectorAll('.example-card')).toHaveLength(0);
 	});
 
