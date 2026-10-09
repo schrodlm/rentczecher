@@ -3,6 +3,12 @@ import type { components } from '$lib/api/types.gen';
 type EstateType = components['schemas']['CriteriaBody']['estate_type'];
 type PreferencesBody = components['schemas']['PreferencesBody'];
 
+/* What each wish scores against, without how much it matters. */
+export type WishSettings = Pick<
+	PreferencesBody,
+	'max_good_price' | 'ideal_size_m2' | 'ideal_land_m2' | 'preferred_dispositions' | 'preferred_places'
+>;
+
 /* A wish the editor offers. Price per m² is left out until its fixed scale
 fits more than Praha rents. */
 export type Wish = 'price' | 'size' | 'land' | 'layout' | 'place';
@@ -29,12 +35,32 @@ export function wishesFor(estateType: EstateType): Wish[] {
 
 /* Whether a wish has the setting it scores against, without which it cannot
 count. */
-export function isReady(wish: Wish, preferences: PreferencesBody): boolean {
-	if (wish === 'price') return preferences.max_good_price !== null;
-	if (wish === 'size') return preferences.ideal_size_m2 !== null;
-	if (wish === 'land') return preferences.ideal_land_m2 !== null;
-	if (wish === 'layout') return preferences.preferred_dispositions.length > 0;
-	return preferences.preferred_places.length > 0;
+export function isReady(wish: Wish, settings: WishSettings): boolean {
+	if (wish === 'price') return settings.max_good_price !== null;
+	if (wish === 'size') return settings.ideal_size_m2 !== null;
+	if (wish === 'land') return settings.ideal_land_m2 !== null;
+	if (wish === 'layout') return settings.preferred_dispositions.length > 0;
+	return settings.preferred_places.length > 0;
+}
+
+/* The preferences a profile stores: each wish's setting, and a weight for
+each wish that fits the estate and has its setting. */
+export function preferencesFor(settings: WishSettings, importances: Importances, estateType: EstateType): PreferencesBody {
+	const counting = wishesFor(estateType).filter((wish) => isReady(wish, settings));
+	const weights = weightsFor(importances, counting);
+	return {
+		price_per_m2_weight: 0,
+		disposition_weight: weights.layout,
+		preferred_dispositions: [...settings.preferred_dispositions],
+		size_weight: weights.size,
+		ideal_size_m2: settings.ideal_size_m2,
+		place_weight: weights.place,
+		preferred_places: settings.preferred_places.map((place) => ({ kind: place.kind, code: place.code })),
+		land_weight: weights.land,
+		ideal_land_m2: settings.ideal_land_m2,
+		price_weight: weights.price,
+		max_good_price: settings.max_good_price
+	};
 }
 
 /* Weights adding up to 100, split between the counting wishes by their
