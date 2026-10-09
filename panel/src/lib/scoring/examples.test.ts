@@ -18,19 +18,14 @@ const FLAT_TO_RENT: ExampleProfile = {
 		dispositions: []
 	},
 	searchPlace: PRAHA,
-	preferences: {
-		price_per_m2_weight: 0,
-		disposition_weight: 25,
-		preferred_dispositions: ['2+kk', '2+1'],
-		size_weight: 25,
+	preferredValues: {
+		preferred_price: 22000,
 		preferred_size_m2: 70,
-		place_weight: 25,
-		land_weight: 0,
 		preferred_land_m2: null,
-		price_weight: 25,
-		preferred_price: 22000
+		preferred_dispositions: ['2+kk', '2+1'],
+		preferred_places: [PRAHA_7, PRAHA_8]
 	},
-	preferredPlaces: [PRAHA_7, PRAHA_8]
+	weights: { price: 25, size: 25, land: 0, layout: 25, place: 25 }
 };
 
 function profile(criteria: Partial<ExampleProfile['criteria']>): ExampleProfile {
@@ -105,7 +100,7 @@ describe('exampleListings', () => {
 		const land = exampleListings({
 			...FLAT_TO_RENT,
 			criteria: { ...FLAT_TO_RENT.criteria, estate_type: 'land', offer_type: 'sale' },
-			preferences: { ...FLAT_TO_RENT.preferences, preferred_land_m2: 800 }
+			preferredValues: { ...FLAT_TO_RENT.preferredValues, preferred_land_m2: 800 }
 		});
 		for (const card of land) expect(card).toMatchObject({ size: null, layout: null });
 		for (const card of exampleListings(FLAT_TO_RENT)) expect(card.land).toBeNull();
