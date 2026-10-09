@@ -1,14 +1,22 @@
 <script lang="ts">
 	import { sourceInitial } from '$lib/format';
+	import { shownPortal } from '$lib/portals';
 
+	/* The portal a listing came from: its logo and name, or its first letter
+	for a source the panel does not know. */
 	let { source }: { source: string } = $props();
 
-	const letter = $derived(sourceInitial(source));
+	const portal = $derived(shownPortal(source));
 </script>
 
 <span class="chip">
-	<span class="chip__letter">{letter}</span>
-	{source}
+	{#if portal}
+		<img class="chip__logo" src={portal.logo} alt="" />
+		{portal.name}
+	{:else}
+		<span class="chip__letter">{sourceInitial(source)}</span>
+		{source}
+	{/if}
 </span>
 
 <style>
@@ -21,6 +29,12 @@
 		border: 1px solid var(--color-line);
 		font-size: 0.75rem;
 		color: var(--color-ink);
+	}
+
+	.chip__logo {
+		width: 1.125rem;
+		height: 1.125rem;
+		object-fit: contain;
 	}
 
 	.chip__letter {

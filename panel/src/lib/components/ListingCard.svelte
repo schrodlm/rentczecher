@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { daysSince, formatPrice, formatPricePerM2, sourceInitial } from '$lib/format';
+	import { shownPortal } from '$lib/portals';
 	import ScoreRing from './ScoreRing.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import type { ListingModel } from '$lib/api/client';
@@ -27,6 +28,8 @@
 			: (listing.disposition ?? listing.disposition_raw_text)
 	);
 
+	const portal = $derived(shownPortal(listing.source));
+
 	const freshness = $derived.by(() => {
 		const days = daysSince(listing.first_seen_at);
 		return days < 1 ? t.t('new') : t.tn('{count} day watched', '{count} days watched', days);
@@ -41,9 +44,13 @@
 	rel="noopener noreferrer"
 	{onclick}
 >
-	<!-- the API carries no photo field, the letter fallback is the photo slot -->
+	<!-- the API carries no photo field, so the portal stands in for one -->
 	<div class="card__photo">
-		<span class="card__photo-fallback">{sourceInitial(listing.source)}</span>
+		{#if portal}
+			<img class="card__photo-logo" src={portal.logo} alt="" />
+		{:else}
+			<span class="card__photo-fallback">{sourceInitial(listing.source)}</span>
+		{/if}
 	</div>
 
 	<div class="card__body">
@@ -111,6 +118,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+	}
+
+	.card__photo-logo {
+		width: 2.25rem;
+		height: 2.25rem;
+		object-fit: contain;
 	}
 
 	.card__photo-fallback {
