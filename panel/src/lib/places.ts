@@ -17,3 +17,19 @@ function kindName(kind: NamedPlace['kind'], t: Translator): string {
 	if (kind === 'cast_obce') return t.t('part of a municipality');
 	return t.t('street');
 }
+
+const KINDS_BROADEST_FIRST: readonly NamedPlace['kind'][] = [
+	'kraj',
+	'okres',
+	'obec',
+	'obvod',
+	'mestska_cast',
+	'cast_obce',
+	'ulice'
+];
+
+/* The kinds of place finer than this kind. Kinds do not nest, a část obce
+can cross městské části, so a finer place may lie only partly inside. */
+export function kindsInside(kind: NamedPlace['kind']): NamedPlace['kind'][] {
+	return KINDS_BROADEST_FIRST.slice(KINDS_BROADEST_FIRST.indexOf(kind) + 1);
+}
