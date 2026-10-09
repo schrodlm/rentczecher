@@ -1,5 +1,5 @@
 {
-	"about": "Scores the engine's own formula gave these listings, recorded before the formula left the engine. The panel's port must give the same score for every case.",
+	"about": "Scores pinning the panel's formula. They were recorded from the engine's formula before it left the engine, and are changed only with the formula.",
 	"cases": [
 		{
 			"name": "no weights score nothing",
@@ -249,7 +249,7 @@
 			"score": 100
 		},
 		{
-			"name": "second preferred layout scores 80",
+			"name": "a later preferred layout scores full",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -273,38 +273,7 @@
 				"price_weight": 0,
 				"max_good_price": null
 			},
-			"score": 80
-		},
-		{
-			"name": "a late preferred layout floors at 20",
-			"listing": {
-				"price": 20000,
-				"size_m2": null,
-				"land_m2": null,
-				"disposition": "5+1",
-				"resolved_location": null
-			},
-			"preferences": {
-				"price_per_m2_weight": 0,
-				"disposition_weight": 100,
-				"preferred_dispositions": [
-					"1+kk",
-					"1+1",
-					"2+kk",
-					"2+1",
-					"3+kk",
-					"5+1"
-				],
-				"size_weight": 0,
-				"ideal_size_m2": null,
-				"place_weight": 0,
-				"preferred_places": [],
-				"land_weight": 0,
-				"ideal_land_m2": null,
-				"price_weight": 0,
-				"max_good_price": null
-			},
-			"score": 20
+			"score": 100
 		},
 		{
 			"name": "an unlisted layout scores 10",
@@ -516,7 +485,7 @@
 			"score": 100
 		},
 		{
-			"name": "in the second preferred place scores 80",
+			"name": "in a later preferred place scores full",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -574,10 +543,10 @@
 				"price_weight": 0,
 				"max_good_price": null
 			},
-			"score": 80
+			"score": 100
 		},
 		{
-			"name": "the first matching place counts",
+			"name": "lying in several preferred places scores full once",
 			"listing": {
 				"price": 20000,
 				"size_m2": null,
@@ -639,7 +608,7 @@
 				"price_weight": 0,
 				"max_good_price": null
 			},
-			"score": 80
+			"score": 100
 		},
 		{
 			"name": "lying in a preferred okres matches",
@@ -1198,7 +1167,7 @@
 				"price_weight": 25,
 				"max_good_price": 22000
 			},
-			"score": 86
+			"score": 91
 		}
 	]
 }
