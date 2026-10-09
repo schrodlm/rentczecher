@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { SidecarClient, type NewProfileBody, type ProfileUpdateBody } from './client';
+import { ApiError, SidecarClient, type NewProfileBody, type ProfileUpdateBody } from './client';
 
 const BASE_URL = 'http://127.0.0.1:8765';
 const TOKEN = 'secret';
@@ -76,6 +76,21 @@ describe('createProfile', () => {
 	test('throws when the engine refuses the profile', async () => {
 		answerWith(422, { detail: 'min_price must not exceed max_price' });
 		await expect(new SidecarClient(BASE_URL, TOKEN).createProfile(NEW_PROFILE)).rejects.toThrow('422');
+	});
+
+	test('keeps the reason the engine gave for refusing', async () => {
+		answerWith(422, { detail: 'min_price must not exceed max_price' });
+		await expect(new SidecarClient(BASE_URL, TOKEN).createProfile(NEW_PROFILE)).rejects.toMatchObject({
+			status: 422,
+			reason: 'min_price must not exceed max_price'
+		});
+	});
+
+	test('keeps no reason when the engine gave none in words', async () => {
+		answerWith(422, { detail: [{ loc: ['body', 'name'], msg: 'Field required', type: 'missing' }] });
+		const refusal = new SidecarClient(BASE_URL, TOKEN).createProfile(NEW_PROFILE);
+		await expect(refusal).rejects.toBeInstanceOf(ApiError);
+		await expect(refusal).rejects.toMatchObject({ status: 422, reason: null });
 	});
 });
 
