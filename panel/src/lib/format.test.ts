@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { daysSince, formatPrice, formatPricePerM2 } from './format';
+import { daysSince, formatArea, formatPrice, formatPricePerM2 } from './format';
 
 describe('formatPrice', () => {
 	test('groups thousands with a non-breaking space and appends Kč', () => {
@@ -8,6 +8,12 @@ describe('formatPrice', () => {
 
 	test('leaves a sub-thousand price ungrouped', () => {
 		expect(formatPrice(500)).toBe('500 Kč');
+	});
+});
+
+describe('formatArea', () => {
+	test('groups thousands with a non-breaking space and appends m²', () => {
+		expect(formatArea(1200)).toBe('1\u00a0200\u00a0m²');
 	});
 });
 
