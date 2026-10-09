@@ -38,11 +38,11 @@ const SAMPLES = 100;
 const OFF_THE_LISTS = 0.2;
 // Stand-ins for a preferred value not yet chosen, so a preference still has a
 // scale.
-const FALLBACK_IDEAL_FLAT_M2 = 60;
-const FALLBACK_IDEAL_HOUSE_M2 = 120;
-const FALLBACK_IDEAL_LAND_M2 = 800;
-const FALLBACK_GOOD_RENT = 20000;
-const FALLBACK_GOOD_PRICE = 5_000_000;
+const FALLBACK_PREFERRED_FLAT_M2 = 60;
+const FALLBACK_PREFERRED_HOUSE_M2 = 120;
+const FALLBACK_PREFERRED_LAND_M2 = 800;
+const FALLBACK_PREFERRED_RENT = 20000;
+const FALLBACK_PREFERRED_SALE_PRICE = 5_000_000;
 
 /* Three listings the search would show, scoring as near 100, 50 and 10 as
 the profile allows. When its limits keep every listing alike, two targets
@@ -69,22 +69,23 @@ type Example = Omit<ExampleListing, 'target' | 'score' | 'parts' | 'nearTarget'>
 runs from 0 to 1. */
 function exampleAt(profile: ExampleProfile, along: number): Example {
 	const { criteria, preferredValues } = profile;
-	const idealSize =
-		preferredValues.preferred_size_m2 ?? (criteria.estate_type === 'flat' ? FALLBACK_IDEAL_FLAT_M2 : FALLBACK_IDEAL_HOUSE_M2);
-	const idealLand = preferredValues.preferred_land_m2 ?? FALLBACK_IDEAL_LAND_M2;
-	const goodPrice = preferredValues.preferred_price ?? (criteria.offer_type === 'rent' ? FALLBACK_GOOD_RENT : FALLBACK_GOOD_PRICE);
+	const fallbackSize = criteria.estate_type === 'flat' ? FALLBACK_PREFERRED_FLAT_M2 : FALLBACK_PREFERRED_HOUSE_M2;
+	const preferredSize = preferredValues.preferred_size_m2 ?? fallbackSize;
+	const preferredLand = preferredValues.preferred_land_m2 ?? FALLBACK_PREFERRED_LAND_M2;
+	const fallbackPrice = criteria.offer_type === 'rent' ? FALLBACK_PREFERRED_RENT : FALLBACK_PREFERRED_SALE_PRICE;
+	const preferredPrice = preferredValues.preferred_price ?? fallbackPrice;
 	const priceStep = criteria.offer_type === 'rent' ? 500 : 50_000;
 
 	const size =
 		criteria.estate_type === 'land'
 			? null
-			: within(roundTo(between(0.3 * idealSize, idealSize, along), 1), criteria.min_size_m2, criteria.max_size_m2);
+			: within(roundTo(between(0.3 * preferredSize, preferredSize, along), 1), criteria.min_size_m2, criteria.max_size_m2);
 	const land =
 		criteria.estate_type === 'flat'
 			? null
-			: within(roundTo(between(0.2 * idealLand, idealLand, along), 10), criteria.min_land_m2, null);
+			: within(roundTo(between(0.2 * preferredLand, preferredLand, along), 10), criteria.min_land_m2, null);
 	const price = within(
-		roundTo(between(2 * goodPrice, 0.8 * goodPrice, along), priceStep),
+		roundTo(between(2 * preferredPrice, 0.8 * preferredPrice, along), priceStep),
 		criteria.min_price,
 		criteria.max_price
 	);
