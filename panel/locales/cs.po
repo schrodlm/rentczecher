@@ -279,3 +279,42 @@ msgstr "preferovaná cena"
 
 msgid "preferred size"
 msgstr "preferovaná velikost"
+
+msgid "Buy a cottage"
+msgstr "Koupě chaty"
+
+msgid "Buy a flat"
+msgstr "Koupě bytu"
+
+msgid "Buy a house"
+msgstr "Koupě domu"
+
+msgid "Buy land"
+msgstr "Koupě pozemku"
+
+msgid "Rent a cottage"
+msgstr "Pronájem chaty"
+
+msgid "Rent a flat"
+msgstr "Pronájem bytu"
+
+msgid "Rent a house"
+msgstr "Pronájem domu"
+
+msgid "Rent land"
+msgstr "Pronájem pozemku"
+
+msgid "The search is fixed once a profile exists, because the listings it found answer it. For a different search, create a new profile."
+msgstr "Hledání je po vytvoření profilu pevné, protože nalezené inzeráty na něj odpovídají. Pro jiné hledání vytvořte nový profil."
+
+msgid "from {low}"
+msgstr "od {low}"
+
+msgid "land from {area}"
+msgstr "pozemek od {area}"
+
+msgid "up to {high}"
+msgstr "do {high}"
+
+msgid "{low} to {high}"
+msgstr "{low} až {high}"
