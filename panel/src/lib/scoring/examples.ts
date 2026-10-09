@@ -22,10 +22,9 @@ export type ExampleListing = {
 	size: number | null;
 	land: number | null;
 	layout: Layout | null;
-	// Its place in the preferred lists, null when it is not on them.
-	layoutRank: number | null;
+	layoutPreferred: boolean;
 	place: NamedPlace | null;
-	placeRank: number | null;
+	placePreferred: boolean;
 	score: number;
 	parts: ScorePart[];
 	// False when no listing the search allows scores near the target.
@@ -93,19 +92,18 @@ function exampleAt(profile: ExampleProfile, along: number): Example {
 	);
 
 	const layouts = preferences.preferred_dispositions;
-	const layoutRank = along < OFF_THE_LISTS || layouts.length === 0 ? null : rankAt(layouts.length, along);
+	const layoutPreferred = along >= OFF_THE_LISTS && layouts.length > 0 && criteria.estate_type !== 'land';
 	const places = profile.preferredPlaces;
-	const placeRank = along < OFF_THE_LISTS || places.length === 0 ? null : rankAt(places.length, along);
+	const placePreferred = along >= OFF_THE_LISTS && places.length > 0;
 
 	return {
 		price,
 		size,
 		land,
-		layout:
-			criteria.estate_type === 'land' ? null : layoutRank === null ? layoutOffTheList(profile) : layouts[layoutRank],
-		layoutRank,
-		place: placeRank === null ? profile.searchPlace : places[placeRank],
-		placeRank
+		layout: criteria.estate_type === 'land' ? null : layoutPreferred ? layouts[0] : layoutOffTheList(profile),
+		layoutPreferred,
+		place: placePreferred ? places[0] : profile.searchPlace,
+		placePreferred
 	};
 }
 
@@ -122,7 +120,7 @@ function scoredListing(example: Example) {
 		size_m2: example.size,
 		land_m2: example.land,
 		disposition: example.layout,
-		resolved_location: example.placeRank === null || example.place === null ? null : locationIn(example.place)
+		resolved_location: example.placePreferred && example.place !== null ? locationIn(example.place) : null
 	};
 }
 
@@ -141,11 +139,6 @@ function locationIn(place: NamedPlace): LocationModel {
 		cislo_popisne: null,
 		cislo_orientacni: null
 	};
-}
-
-/* The best ranks come last along the way, the first choice at its end. */
-function rankAt(count: number, along: number): number {
-	return Math.round((1 - along) * (count - 1));
 }
 
 function between(from: number, to: number, along: number): number {
