@@ -17,7 +17,6 @@
 	import {
 		countingFor,
 		isReady,
-		preferencesBody,
 		storedWeights,
 		preferencesFor,
 		type Weights,
@@ -51,15 +50,7 @@
 	const preferences = $derived(preferencesFor(criteria.estate_type));
 	const counting = $derived(countingFor(preferredValues, weights, criteria.estate_type));
 	const shown = $derived(storedWeights(preferredValues, weights, criteria.estate_type));
-	const body = $derived(preferencesBody(preferredValues, weights, criteria.estate_type));
-	const examples = $derived(
-		exampleListings({
-			criteria,
-			searchPlace,
-			preferences: body,
-			preferredPlaces: preferredValues.preferred_places
-		})
-	);
+	const examples = $derived(exampleListings({ criteria, searchPlace, preferredValues, weights }));
 
 	function toggle(preference: Preference): void {
 		weights = counting.includes(preference)

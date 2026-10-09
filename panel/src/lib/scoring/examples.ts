@@ -1,18 +1,18 @@
 import type { NamedPlace } from '$lib/api/client';
 import type { components } from '$lib/api/types.gen';
 import { LAYOUTS, type Layout } from '$lib/layouts';
-import { scoreListing, scoreParts, type ScorePart, type ScoringPreferences } from './score';
+import { preferencesBody, type PreferredValues, type Weights } from './preferences';
+import { scoreListing, scoreParts, type ScorePart } from './score';
 
 type CriteriaBody = components['schemas']['CriteriaBody'];
-type PreferencesBody = components['schemas']['PreferencesBody'];
 type LocationModel = components['schemas']['LocationModel'];
 
 /* The search an example has to fit, and what it is scored against. */
 export type ExampleProfile = {
 	criteria: Omit<CriteriaBody, 'place'>;
 	searchPlace: NamedPlace | null;
-	preferences: Omit<PreferencesBody, 'preferred_places'>;
-	preferredPlaces: NamedPlace[];
+	preferredValues: PreferredValues;
+	weights: Weights;
 };
 
 /* A made-up listing the search would show, and how it scores. */
@@ -48,10 +48,7 @@ const FALLBACK_GOOD_PRICE = 5_000_000;
 the profile allows. When its limits keep every listing alike, two targets
 fall on one listing and only the lower one is kept. */
 export function exampleListings(profile: ExampleProfile): ExampleListing[] {
-	const preferences: ScoringPreferences = {
-		...profile.preferences,
-		preferred_places: profile.preferredPlaces.map((place) => ({ kind: place.kind, code: place.code }))
-	};
+	const preferences = preferencesBody(profile.preferredValues, profile.weights, profile.criteria.estate_type);
 	const samples = Array.from({ length: SAMPLES + 1 }, (_unused, step) => {
 		const example = exampleAt(profile, step / SAMPLES);
 		const listing = scoredListing(example);
@@ -71,11 +68,11 @@ type Example = Omit<ExampleListing, 'target' | 'score' | 'parts' | 'nearTarget'>
 /* A listing that fits the search and gets better on every preference as along
 runs from 0 to 1. */
 function exampleAt(profile: ExampleProfile, along: number): Example {
-	const { criteria, preferences } = profile;
+	const { criteria, preferredValues } = profile;
 	const idealSize =
-		preferences.preferred_size_m2 ?? (criteria.estate_type === 'flat' ? FALLBACK_IDEAL_FLAT_M2 : FALLBACK_IDEAL_HOUSE_M2);
-	const idealLand = preferences.preferred_land_m2 ?? FALLBACK_IDEAL_LAND_M2;
-	const goodPrice = preferences.preferred_price ?? (criteria.offer_type === 'rent' ? FALLBACK_GOOD_RENT : FALLBACK_GOOD_PRICE);
+		preferredValues.preferred_size_m2 ?? (criteria.estate_type === 'flat' ? FALLBACK_IDEAL_FLAT_M2 : FALLBACK_IDEAL_HOUSE_M2);
+	const idealLand = preferredValues.preferred_land_m2 ?? FALLBACK_IDEAL_LAND_M2;
+	const goodPrice = preferredValues.preferred_price ?? (criteria.offer_type === 'rent' ? FALLBACK_GOOD_RENT : FALLBACK_GOOD_PRICE);
 	const priceStep = criteria.offer_type === 'rent' ? 500 : 50_000;
 
 	const size =
@@ -92,9 +89,9 @@ function exampleAt(profile: ExampleProfile, along: number): Example {
 		criteria.max_price
 	);
 
-	const layouts = preferences.preferred_dispositions;
+	const layouts = preferredValues.preferred_dispositions;
 	const layoutPreferred = along >= OFF_THE_LISTS && layouts.length > 0 && criteria.estate_type !== 'land';
-	const places = profile.preferredPlaces;
+	const places = preferredValues.preferred_places;
 	const placePreferred = along >= OFF_THE_LISTS && places.length > 0;
 
 	return {
@@ -110,7 +107,7 @@ function exampleAt(profile: ExampleProfile, along: number): Example {
 
 /* A layout the search accepts that is not among the preferred ones. */
 function layoutOffTheList(profile: ExampleProfile): Layout {
-	const preferred: readonly Layout[] = profile.preferences.preferred_dispositions;
+	const preferred: readonly Layout[] = profile.preferredValues.preferred_dispositions;
 	const accepted = profile.criteria.dispositions.length > 0 ? profile.criteria.dispositions : LAYOUTS;
 	return accepted.find((layout) => !preferred.includes(layout)) ?? accepted[0];
 }
