@@ -456,3 +456,21 @@ msgstr[2] "Všech {count} bodů v kterémkoli z těchto míst, jinde žádné."
 
 msgid "Score {score} of 100"
 msgstr "Skóre {score} ze 100"
+
+msgid "Ascending"
+msgstr "Vzestupně"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Descending"
+msgstr "Sestupně"
+
+msgid "Price per m²"
+msgstr "Cena za m²"
+
+msgid "Score"
+msgstr "Skóre"
+
+msgid "Sort by: {field}"
+msgstr "Řadit podle: {field}"
