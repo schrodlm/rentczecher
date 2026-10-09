@@ -80,42 +80,46 @@ describe('isReady', () => {
 });
 
 describe('countingFor', () => {
-	test('counts the preferences that fit the estate, have their preferred value and are on', () => {
+	test('counts the preferences that fit the estate and have their preferred value', () => {
 		const set = { ...VALUES, preferred_size_m2: null };
-		const on = weights({ price: 40, size: 20, land: 20, layout: 20 });
-		expect(countingFor(set, on, 'flat')).toEqual(['price', 'layout']);
+		expect(countingFor(set, 'flat')).toEqual(['price', 'layout', 'place']);
 	});
 });
 
 describe('storedWeights', () => {
 	test('grows the counting preferences to fill the share of one whose preferred value was cleared', () => {
-		const set = { ...VALUES, preferred_price: null };
+		const set = { ...VALUES, preferred_price: null, preferred_places: [] };
 		expect(storedWeights(set, weights({ price: 50, size: 30, layout: 20 }), 'flat')).toEqual(
 			weights({ size: 60, layout: 40 })
 		);
 	});
 
 	test('stores no weight for a preference that does not fit the estate', () => {
-		expect(storedWeights(VALUES, weights({ price: 50, land: 50 }), 'flat')).toEqual(weights({ price: 100 }));
+		const set = { ...NO_VALUES, preferred_price: 22000, preferred_land_m2: 800 };
+		expect(storedWeights(set, weights({ price: 50, land: 50 }), 'flat')).toEqual(weights({ price: 100 }));
 	});
 });
 
 describe('preferencesBody', () => {
 	test('keeps every preferred value, a place by its kind and code, and the stored weights', () => {
-		expect(preferencesBody(VALUES, weights({ price: 60, size: 40 }), 'house')).toEqual({
+		const set = weights({ price: 30, size: 20, land: 20, layout: 15, place: 15 });
+		expect(preferencesBody(VALUES, set, 'house')).toEqual({
 			...UNSET,
 			preferred_price: 22000,
 			preferred_size_m2: 70,
 			preferred_land_m2: 800,
 			preferred_dispositions: ['2+kk'],
 			preferred_places: [{ kind: 'cast_obce', code: 490067 }],
-			price_weight: 60,
-			size_weight: 40
+			price_weight: 30,
+			size_weight: 20,
+			land_weight: 20,
+			disposition_weight: 15,
+			place_weight: 15
 		});
 	});
 
-	test('weighs nothing while no preference is on', () => {
-		const preferences = preferencesBody(VALUES, weights({}), 'flat');
+	test('weighs nothing while no preferred value is set', () => {
+		const preferences = preferencesBody(NO_VALUES, weights({}), 'flat');
 		expect([preferences.price_weight, preferences.size_weight, preferences.place_weight]).toEqual([0, 0, 0]);
 	});
 });
