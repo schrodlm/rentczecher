@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '$lib/styles/slider.css';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { parseTypedNumber, type Scale } from './scale';
+	import { parseTypedNumber, writeTypedNumber, type Scale } from './scale';
 
 	/* A range with a handle at each end and its two numbers typed beside it.
 	A handle at the end of the scale, or an empty box, is no bound on that
@@ -25,11 +25,6 @@
 
 	const lowIndex = $derived(low === null ? 0 : scale.nearestIndex(low));
 	const highIndex = $derived(high === null ? scale.lastIndex : scale.nearestIndex(high));
-
-	// Thousands spaced the Czech way, which parseTypedNumber reads back.
-	function written(bound: number | null): string {
-		return bound === null ? '' : bound.toLocaleString('cs-CZ');
-	}
 
 	function slideLow(index: number): void {
 		const kept = Math.min(index, highIndex);
@@ -74,7 +69,7 @@
 			inputmode="numeric"
 			placeholder="0"
 			aria-label={t.t('{name} from', { name })}
-			value={written(low)}
+			value={writeTypedNumber(low)}
 			onchange={(event) => (low = parseTypedNumber(event.currentTarget.value))}
 		/>
 		<span>{t.t('to')}</span>
@@ -83,7 +78,7 @@
 			inputmode="numeric"
 			placeholder={t.t('no limit')}
 			aria-label={t.t('{name} to', { name })}
-			value={written(high)}
+			value={writeTypedNumber(high)}
 			onchange={(event) => (high = parseTypedNumber(event.currentTarget.value))}
 		/>
 		<span class="slider__unit">{unit}</span>
