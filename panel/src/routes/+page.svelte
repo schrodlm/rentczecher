@@ -33,6 +33,21 @@
 	// for a new one.
 	let editing = $state<{ draft: ProfileDraft; profileId: string | null } | null>(null);
 
+	// While no preference weighs anything every listing scores 0, which says
+	// nothing, so listings go unscored.
+	const scoring = $derived.by(() => {
+		const preferences = profiles?.find((profile) => profile.id === selectedProfileId)?.preferences;
+		if (preferences === undefined) return null;
+		const weighed =
+			preferences.price_per_m2_weight +
+			preferences.disposition_weight +
+			preferences.size_weight +
+			preferences.place_weight +
+			preferences.land_weight +
+			preferences.price_weight;
+		return weighed > 0 ? preferences : null;
+	});
+
 	const newListings = $derived(
 		[...(listings ?? [])]
 			.filter((l) => l.viewed_at === null)
@@ -254,7 +269,13 @@
 		{:else if listings === null}
 			<p class="shell__status">{t.t('Loading listings...')}</p>
 		{:else}
-			<ListingFeed {newListings} {viewedListings} onviewed={handleViewed} onmarkallviewed={handleMarkAllViewed} />
+			<ListingFeed
+				{newListings}
+				{viewedListings}
+				preferences={scoring}
+				onviewed={handleViewed}
+				onmarkallviewed={handleMarkAllViewed}
+			/>
 		{/if}
 	</div>
 </div>

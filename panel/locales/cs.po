@@ -453,3 +453,6 @@ msgid_plural "All {count} points within any of these places, none elsewhere."
 msgstr[0] "{count} bod v kterémkoli z těchto míst, jinde žádný."
 msgstr[1] "Všechny {count} body v kterémkoli z těchto míst, jinde žádné."
 msgstr[2] "Všech {count} bodů v kterémkoli z těchto míst, jinde žádné."
+
+msgid "Score {score} of 100"
+msgstr "Skóre {score} ze 100"

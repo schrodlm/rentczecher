@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { daysSince, formatPrice, formatPricePerM2, sourceInitial } from '$lib/format';
+	import ScoreRing from './ScoreRing.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import type { ListingModel } from '$lib/api/client';
 
 	let {
 		listing,
+		score,
 		viewed = false,
 		onclick
-	}: { listing: ListingModel; viewed?: boolean; onclick?: () => void } = $props();
+	}: { listing: ListingModel; score: number | null; viewed?: boolean; onclick?: () => void } = $props();
 
 	const t = getTranslatorContext();
 
@@ -76,6 +78,10 @@
 			{/each}
 		</div>
 	</div>
+
+	{#if score !== null}
+		<ScoreRing {score} />
+	{/if}
 </a>
 
 <style>
