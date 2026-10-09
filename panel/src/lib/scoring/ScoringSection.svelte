@@ -74,36 +74,52 @@
 	}
 
 	function rule(preference: Preference): string {
+		const points = shown[preference];
 		if (preference === 'price') {
 			const preferred = preferredValues.preferred_price;
 			if (preferred === null) return t.t('Set your preferred price first.');
-			return t.t('Full points up to {preferred}, none at {twice} or more.', {
-				preferred: formatPrice(preferred),
-				twice: formatPrice(2 * preferred)
-			});
+			return t.tn(
+				'All {count} point up to {preferred}, none from {twice}.',
+				'All {count} points up to {preferred}, none from {twice}.',
+				points,
+				{ preferred: formatPrice(preferred), twice: formatPrice(2 * preferred) }
+			);
 		}
 		if (preference === 'size') {
 			const preferred = preferredValues.preferred_size_m2;
 			if (preferred === null) return t.t('Set your preferred size first.');
-			return t.t('Full points at {preferred} or more, half at {half}.', {
-				preferred: formatArea(preferred),
-				half: formatArea(Math.round(preferred / 2))
-			});
+			return t.tn(
+				'All {count} point at {preferred} or more, half at {half}.',
+				'All {count} points at {preferred} or more, half at {half}.',
+				points,
+				{ preferred: formatArea(preferred), half: formatArea(Math.round(preferred / 2)) }
+			);
 		}
 		if (preference === 'land') {
 			const preferred = preferredValues.preferred_land_m2;
 			if (preferred === null) return t.t('Set your preferred land first.');
-			return t.t('Full points at {preferred} of land or more. Listings without land data get none.', {
-				preferred: formatArea(preferred)
-			});
+			return t.tn(
+				'All {count} point at {preferred} of land or more, none without land data.',
+				'All {count} points at {preferred} of land or more, none without land data.',
+				points,
+				{ preferred: formatArea(preferred) }
+			);
 		}
 		if (preference === 'layout') {
 			if (preferredValues.preferred_dispositions.length === 0) return t.t('Pick the layouts you like.');
-			return t.t('Any of these layouts gets full points. Other layouts get 10.');
+			return t.tn(
+				'All {count} point for any of these layouts, none for others.',
+				'All {count} points for any of these layouts, none for others.',
+				points
+			);
 		}
 		if (searchPlace === null) return t.t('Choose where to search first.');
 		if (preferredValues.preferred_places.length === 0) return t.t('Pick places inside your search area.');
-		return t.t('A listing in any of these places gets full points. Elsewhere gets 20.');
+		return t.tn(
+			'All {count} point within any of these places, none elsewhere.',
+			'All {count} points within any of these places, none elsewhere.',
+			points
+		);
 	}
 
 	function layoutFact(card: ExampleListing): string {

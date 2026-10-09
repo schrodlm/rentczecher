@@ -178,14 +178,8 @@ msgstr "Odebrat {name}"
 msgid "+{points} of {weight}"
 msgstr "+{points} z {weight}"
 
-msgid "A listing in any of these places gets full points. Elsewhere gets 20."
-msgstr "Inzerát v kterémkoli z těchto míst dostane plný počet bodů. Jinde dostane 20."
-
 msgid "Add a part of your search area"
 msgstr "Přidat část oblasti hledání"
-
-msgid "Any of these layouts gets full points. Other layouts get 10."
-msgstr "Kterákoli z těchto dispozic dostane plný počet bodů. Ostatní dostanou 10."
 
 msgid "Choose where to search first."
 msgstr "Nejdřív vyberte, kde hledat."
@@ -216,15 +210,6 @@ msgstr "Předěl: {left} a {right}"
 
 msgid "Every listing scores 0 until a preference counts."
 msgstr "Dokud se nepočítá žádná preference, má každý inzerát 0 bodů."
-
-msgid "Full points at {preferred} of land or more. Listings without land data get none."
-msgstr "Plný počet bodů od {preferred} pozemku. Inzeráty bez údaje o pozemku nedostanou nic."
-
-msgid "Full points at {preferred} or more, half at {half}."
-msgstr "Plný počet bodů od {preferred}, polovina při {half}."
-
-msgid "Full points up to {preferred}, none at {twice} or more."
-msgstr "Plný počet bodů do {preferred}, od {twice} žádné."
 
 msgid "Land"
 msgstr "Pozemek"
@@ -438,3 +423,33 @@ msgstr "Upravit profil {name}"
 
 msgid "Set a preferred value to start scoring."
 msgstr "Nastavte preferovanou hodnotu, aby se inzeráty začaly hodnotit."
+
+msgid "All {count} point at {preferred} of land or more, none without land data."
+msgid_plural "All {count} points at {preferred} of land or more, none without land data."
+msgstr[0] "{count} bod od {preferred} pozemku, bez údaje o pozemku žádný."
+msgstr[1] "Všechny {count} body od {preferred} pozemku, bez údaje o pozemku žádné."
+msgstr[2] "Všech {count} bodů od {preferred} pozemku, bez údaje o pozemku žádné."
+
+msgid "All {count} point at {preferred} or more, half at {half}."
+msgid_plural "All {count} points at {preferred} or more, half at {half}."
+msgstr[0] "{count} bod od {preferred}, polovina při {half}."
+msgstr[1] "Všechny {count} body od {preferred}, polovina při {half}."
+msgstr[2] "Všech {count} bodů od {preferred}, polovina při {half}."
+
+msgid "All {count} point for any of these layouts, none for others."
+msgid_plural "All {count} points for any of these layouts, none for others."
+msgstr[0] "{count} bod za kteroukoli z těchto dispozic, za ostatní žádný."
+msgstr[1] "Všechny {count} body za kteroukoli z těchto dispozic, za ostatní žádné."
+msgstr[2] "Všech {count} bodů za kteroukoli z těchto dispozic, za ostatní žádné."
+
+msgid "All {count} point up to {preferred}, none from {twice}."
+msgid_plural "All {count} points up to {preferred}, none from {twice}."
+msgstr[0] "{count} bod do {preferred}, od {twice} žádný."
+msgstr[1] "Všechny {count} body do {preferred}, od {twice} žádné."
+msgstr[2] "Všech {count} bodů do {preferred}, od {twice} žádné."
+
+msgid "All {count} point within any of these places, none elsewhere."
+msgid_plural "All {count} points within any of these places, none elsewhere."
+msgstr[0] "{count} bod v kterémkoli z těchto míst, jinde žádný."
+msgstr[1] "Všechny {count} body v kterémkoli z těchto míst, jinde žádné."
+msgstr[2] "Všech {count} bodů v kterémkoli z těchto míst, jinde žádné."
