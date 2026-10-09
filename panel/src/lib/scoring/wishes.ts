@@ -1,6 +1,7 @@
 import type { NamedPlace } from '$lib/api/client';
 import type { components } from '$lib/api/types.gen';
 import type { Layout } from '$lib/layouts';
+import { settled } from './split';
 
 type EstateType = components['schemas']['CriteriaBody']['estate_type'];
 type PreferencesBody = components['schemas']['PreferencesBody'];
@@ -19,16 +20,7 @@ fits more than Praha rents. */
 export type Wish = 'price' | 'size' | 'land' | 'layout' | 'place';
 export const WISHES: readonly Wish[] = ['price', 'size', 'land', 'layout', 'place'];
 
-/* How much a wish matters, from off to top. */
-export type Importance = 0 | 1 | 2 | 3 | 4;
-export const IMPORTANCES: readonly Importance[] = [0, 1, 2, 3, 4];
-export type Importances = Record<Wish, Importance>;
 export type Weights = Record<Wish, number>;
-
-// Each step's share of the score against the others, so top counts five
-// times low.
-const SHARE: Record<Importance, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 5 };
-const NO_WEIGHTS: Weights = { price: 0, size: 0, land: 0, layout: 0, place: 0 };
 
 /* The wishes that fit a type of estate: land has no size or layout, and a
 flat has no land. */
@@ -48,96 +40,33 @@ export function isReady(wish: Wish, settings: WishSettings): boolean {
 	return settings.preferred_places.length > 0;
 }
 
-/* The preferences a profile stores: each wish's setting, and a weight for
-each wish that fits the estate and has its setting. */
-export function preferencesFor(settings: WishSettings, importances: Importances, estateType: EstateType): PreferencesBody {
-	const weights = weightsOf(settings, importances, estateType);
+/* The wishes that count towards the score: those that fit the estate, have
+their setting and are switched on. */
+export function countingFor(settings: WishSettings, weights: Weights, estateType: EstateType): Wish[] {
+	return wishesFor(estateType).filter((wish) => isReady(wish, settings) && weights[wish] > 0);
+}
+
+/* The weights a profile stores: the counting wishes' weights grown to add
+up to 100, every other wish at 0. */
+export function storedWeights(settings: WishSettings, weights: Weights, estateType: EstateType): Weights {
+	return settled(weights, countingFor(settings, weights, estateType));
+}
+
+/* The preferences a profile stores: each wish's setting and its stored
+weight. */
+export function preferencesFor(settings: WishSettings, weights: Weights, estateType: EstateType): PreferencesBody {
+	const stored = storedWeights(settings, weights, estateType);
 	return {
 		price_per_m2_weight: 0,
-		disposition_weight: weights.layout,
+		disposition_weight: stored.layout,
 		preferred_dispositions: [...settings.preferred_dispositions],
-		size_weight: weights.size,
+		size_weight: stored.size,
 		preferred_size_m2: settings.preferred_size_m2,
-		place_weight: weights.place,
+		place_weight: stored.place,
 		preferred_places: settings.preferred_places.map((place) => ({ kind: place.kind, code: place.code })),
-		land_weight: weights.land,
+		land_weight: stored.land,
 		preferred_land_m2: settings.preferred_land_m2,
-		price_weight: weights.price,
+		price_weight: stored.price,
 		preferred_price: settings.preferred_price
 	};
-}
-
-/* The weights of the wishes that fit the estate and have their setting. */
-export function weightsOf(settings: WishSettings, importances: Importances, estateType: EstateType): Weights {
-	const counting = wishesFor(estateType).filter((wish) => isReady(wish, settings));
-	return weightsFor(importances, counting);
-}
-
-/* Weights adding up to 100, split between the counting wishes by their
-importance. Rounding leftovers go to the largest remainders, ties to the
-earlier wish, so the same importances always give the same weights. */
-export function weightsFor(importances: Importances, counting: readonly Wish[]): Weights {
-	const shares = WISHES.map((wish) => (counting.includes(wish) ? SHARE[importances[wish]] : 0));
-	const total = shares.reduce((sum, share) => sum + share, 0);
-	if (total === 0) return { ...NO_WEIGHTS };
-	const exact = shares.map((share) => (100 * share) / total);
-	const whole = exact.map(Math.floor);
-	let left = 100 - whole.reduce((sum, weight) => sum + weight, 0);
-	const byRemainder = WISHES.map((_wish, index) => index).sort(
-		(a, b) => exact[b] - whole[b] - (exact[a] - whole[a])
-	);
-	for (const index of byRemainder) {
-		if (left === 0) break;
-		if (shares[index] === 0) continue;
-		whole[index] += 1;
-		left -= 1;
-	}
-	return {
-		price: whole[0],
-		size: whole[1],
-		land: whole[2],
-		layout: whole[3],
-		place: whole[4]
-	};
-}
-
-/* The importances whose weights come closest to stored ones. A profile
-keeps only its weights, which hold how wishes compare, not how much: top
-and top weigh the same as low and low. So among equal fits the highest
-importances are read back. */
-export function importancesFrom(weights: Weights): Importances {
-	const weighted = WISHES.filter((wish) => weights[wish] > 0);
-	let closest: Importances = { price: 0, size: 0, land: 0, layout: 0, place: 0 };
-	let closestDistance = Infinity;
-	let closestTotal = 0;
-	for (const candidate of everyImportance(weighted)) {
-		const candidateWeights = weightsFor(candidate, weighted);
-		const distance = WISHES.reduce((sum, wish) => sum + Math.abs(candidateWeights[wish] - weights[wish]), 0);
-		const total = WISHES.reduce((sum, wish) => sum + candidate[wish], 0);
-		if (distance < closestDistance || (distance === closestDistance && total > closestTotal)) {
-			closest = candidate;
-			closestDistance = distance;
-			closestTotal = total;
-		}
-	}
-	return closest;
-}
-
-/* Every way of giving the weighted wishes an importance above off, the rest
-off. */
-function* everyImportance(weighted: Wish[]): Generator<Importances> {
-	const levels = IMPORTANCES.filter((importance) => importance > 0);
-	const choice = weighted.map(() => 0);
-	while (true) {
-		const importances: Importances = { price: 0, size: 0, land: 0, layout: 0, place: 0 };
-		weighted.forEach((wish, index) => (importances[wish] = levels[choice[index]]));
-		yield importances;
-		let position = weighted.length - 1;
-		while (position >= 0 && choice[position] === levels.length - 1) {
-			choice[position] = 0;
-			position -= 1;
-		}
-		if (position < 0) return;
-		choice[position] += 1;
-	}
 }

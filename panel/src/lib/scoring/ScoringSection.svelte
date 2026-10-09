@@ -10,15 +10,17 @@
 	import { layoutName } from '$lib/layouts';
 	import { kindsInside } from '$lib/places';
 	import { exampleListings, type ExampleListing } from './examples';
+	import PreferenceCard from './PreferenceCard.svelte';
 	import type { ScorePart } from './score';
-	import WishCard from './WishCard.svelte';
+	import { switchOff, switchOn } from './split';
+	import SplitBar from './SplitBar.svelte';
 	import {
+		countingFor,
 		isReady,
 		preferencesFor,
-		weightsOf,
+		storedWeights,
 		wishesFor,
-		type Importance,
-		type Importances,
+		type Weights,
 		type Wish,
 		type WishSettings
 	} from './wishes';
@@ -26,40 +28,36 @@
 	type CriteriaBody = components['schemas']['CriteriaBody'];
 	type PlaceRef = components['schemas']['PlaceRefModel'];
 
-	/* The wishes that order a profile's listings, each with its importance and
-	setting, how the score splits between them, and three example listings
-	scored as the wishes change. */
+	/* The preferences that order a profile's listings: a split bar to weigh
+	the counting ones against each other, a card per preference to switch it
+	on and set what it scores against, and three example listings scored as
+	they change. */
 	let {
 		criteria,
 		searchPlace,
 		settings = $bindable(),
-		importances = $bindable(),
+		weights = $bindable(),
 		searchPlaces
 	}: {
 		criteria: Omit<CriteriaBody, 'place'>;
 		searchPlace: NamedPlace | null;
 		settings: WishSettings;
-		importances: Importances;
+		weights: Weights;
 		searchPlaces: (query: string, within: PlaceRef, kinds: PlaceRef['kind'][]) => Promise<NamedPlace[]>;
 	} = $props();
 
 	const t = getTranslatorContext();
 
 	const wishes = $derived(wishesFor(criteria.estate_type));
-	const preferences = $derived(preferencesFor(settings, importances, criteria.estate_type));
-	const weights = $derived(weightsOf(settings, importances, criteria.estate_type));
-	const counting = $derived(wishes.filter((wish) => weights[wish] > 0));
+	const counting = $derived(countingFor(settings, weights, criteria.estate_type));
+	const shown = $derived(storedWeights(settings, weights, criteria.estate_type));
+	const preferences = $derived(preferencesFor(settings, weights, criteria.estate_type));
 	const examples = $derived(
 		exampleListings({ criteria, searchPlace, preferences, preferredPlaces: settings.preferred_places })
 	);
 
-	// A wish without its setting shows as off whatever importance it was given.
-	function importanceOf(wish: Wish): Importance {
-		return isReady(wish, settings) ? importances[wish] : 0;
-	}
-
-	function setImportance(wish: Wish, level: Importance): void {
-		importances = { ...importances, [wish]: level };
+	function toggle(wish: Wish): void {
+		weights = counting.includes(wish) ? switchOff(shown, wish, counting) : switchOn(shown, wish, counting);
 	}
 
 	async function searchInside(query: string): Promise<NamedPlace[]> {
@@ -70,35 +68,43 @@
 	}
 
 	function title(wish: Wish): string {
-		if (wish === 'price') return t.t('A good price');
-		if (wish === 'size') return t.t('The right size');
-		if (wish === 'land') return t.t('Enough land');
-		if (wish === 'layout') return t.t('A layout you like');
-		return t.t('A spot you like');
+		if (wish === 'price') return t.t('Preferred price');
+		if (wish === 'size') return t.t('Preferred size');
+		if (wish === 'land') return t.t('Preferred land');
+		if (wish === 'layout') return t.t('Preferred layouts');
+		return t.t('Preferred places');
+	}
+
+	function shortName(wish: Wish): string {
+		if (wish === 'price') return t.t('Price');
+		if (wish === 'size') return t.t('Size');
+		if (wish === 'land') return t.t('Land');
+		if (wish === 'layout') return t.t('Layout');
+		return t.t('Place');
 	}
 
 	function rule(wish: Wish): string {
 		if (wish === 'price') {
-			const good = settings.preferred_price;
-			if (good === null) return t.t('Set your good price first.');
-			return t.t('Full points up to {good}, none at {twice} or more.', {
-				good: formatPrice(good),
-				twice: formatPrice(2 * good)
+			const preferred = settings.preferred_price;
+			if (preferred === null) return t.t('Set your preferred price first.');
+			return t.t('Full points up to {preferred}, none at {twice} or more.', {
+				preferred: formatPrice(preferred),
+				twice: formatPrice(2 * preferred)
 			});
 		}
 		if (wish === 'size') {
-			const ideal = settings.preferred_size_m2;
-			if (ideal === null) return t.t('Set your ideal size first.');
-			return t.t('Full points at {ideal} or more, half at {half}.', {
-				ideal: formatArea(ideal),
-				half: formatArea(Math.round(ideal / 2))
+			const preferred = settings.preferred_size_m2;
+			if (preferred === null) return t.t('Set your preferred size first.');
+			return t.t('Full points at {preferred} or more, half at {half}.', {
+				preferred: formatArea(preferred),
+				half: formatArea(Math.round(preferred / 2))
 			});
 		}
 		if (wish === 'land') {
-			const ideal = settings.preferred_land_m2;
-			if (ideal === null) return t.t('Set your ideal land first.');
-			return t.t('Full points at {ideal} of land or more. Listings without land data get none.', {
-				ideal: formatArea(ideal)
+			const preferred = settings.preferred_land_m2;
+			if (preferred === null) return t.t('Set your preferred land first.');
+			return t.t('Full points at {preferred} of land or more. Listings without land data get none.', {
+				preferred: formatArea(preferred)
 			});
 		}
 		if (wish === 'layout') {
@@ -140,6 +146,12 @@
 		return t.t('Closest to half: {score}', { score: card.score });
 	}
 
+	function partWish(part: ScorePart): Wish {
+		if (part.preference === 'pricePerM2') return 'price';
+		if (part.preference === 'disposition') return 'layout';
+		return part.preference;
+	}
+
 	function tone(score: number): string {
 		if (score >= 70) return 'good';
 		if (score >= 35) return 'mid';
@@ -150,73 +162,68 @@
 <div class="scoring-section">
 	<div class="scoring-section__wishes">
 		<p class="scoring-section__hint">
-			{t.t('Scoring only orders the listings you see, best first. It never hides any. Tell it what matters and how much.')}
+			{t.t('Scoring only orders the listings you see, best first, and never hides any. Drag the dividers: the wider a preference, the more it decides.')}
 		</p>
 
 		{#if counting.length > 0}
-			<div class="scoring-section__split" aria-label={t.t('How the score splits')}>
-				{#each counting as wish (wish)}
-					<span class="scoring-section__share scoring-section__share--{wish}" style:flex-grow={weights[wish]}></span>
-				{/each}
-			</div>
-			<ul class="scoring-section__legend">
-				{#each counting as wish (wish)}
-					<li>
-						<i class="scoring-section__swatch scoring-section__share--{wish}"></i>{title(wish)}
-						{weights[wish]} %
-					</li>
-				{/each}
-			</ul>
+			<SplitBar bind:weights={() => shown, (moved) => (weights = moved)} {counting} label={shortName} />
+		{:else}
+			<p class="scoring-section__empty">{t.t('Switch on a preference to start scoring.')}</p>
 		{/if}
 
-		{#each wishes as wish (wish)}
-			<WishCard
-				title={title(wish)}
-				bind:importance={() => importanceOf(wish), (level) => setImportance(wish, level)}
-				ready={isReady(wish, settings)}
-				rule={rule(wish)}
-			>
-				{#if wish === 'price'}
-					<ValueSlider
-						scale={priceScale(criteria.offer_type)}
-						bind:value={settings.preferred_price}
-						name={t.t('Good price')}
-						unit="Kč"
-						placeholder={t.t('good price')}
-					/>
-				{:else if wish === 'size'}
-					<ValueSlider
-						scale={SIZE_SCALE}
-						bind:value={settings.preferred_size_m2}
-						name={t.t('Ideal size')}
-						unit="m²"
-						placeholder={t.t('ideal size')}
-					/>
-				{:else if wish === 'land'}
-					<ValueSlider
-						scale={LAND_SCALE}
-						bind:value={settings.preferred_land_m2}
-						name={t.t('Ideal land')}
-						unit="m²"
-						placeholder={t.t('ideal land')}
-					/>
-				{:else if wish === 'layout'}
-					<LayoutChips bind:selected={settings.preferred_dispositions} name={t.t('Layouts you like')} />
-				{:else}
-					<PreferredPlaces
-						bind:places={settings.preferred_places}
-						search={searchInside}
-						placeholder={t.t('Add a part of your search area')}
-					/>
-				{/if}
-			</WishCard>
-		{/each}
+		<div class="scoring-section__cards">
+			{#each wishes as wish (wish)}
+				<PreferenceCard
+					{wish}
+					title={title(wish)}
+					on={counting.includes(wish)}
+					weight={shown[wish]}
+					ready={isReady(wish, settings)}
+					rule={rule(wish)}
+					ontoggle={() => toggle(wish)}
+				>
+					{#if wish === 'price'}
+						<ValueSlider
+							scale={priceScale(criteria.offer_type)}
+							bind:value={settings.preferred_price}
+							name={t.t('Preferred price')}
+							unit="Kč"
+							placeholder={t.t('preferred price')}
+						/>
+					{:else if wish === 'size'}
+						<ValueSlider
+							scale={SIZE_SCALE}
+							bind:value={settings.preferred_size_m2}
+							name={t.t('Preferred size')}
+							unit="m²"
+							placeholder={t.t('preferred size')}
+						/>
+					{:else if wish === 'land'}
+						<ValueSlider
+							scale={LAND_SCALE}
+							bind:value={settings.preferred_land_m2}
+							name={t.t('Preferred land')}
+							unit="m²"
+							placeholder={t.t('preferred land')}
+						/>
+					{:else if wish === 'layout'}
+						<LayoutChips bind:selected={settings.preferred_dispositions} name={t.t('Preferred layouts')} />
+					{:else}
+						<PreferredPlaces
+							bind:places={settings.preferred_places}
+							search={searchInside}
+							placeholder={t.t('Add a part of your search area')}
+						/>
+					{/if}
+				</PreferenceCard>
+			{/each}
+		</div>
 	</div>
 
 	<aside class="scoring-section__examples">
 		<h4 class="scoring-section__heading">{t.t('How listings would score')}</h4>
 		{#if counting.length === 0}
-			<p class="scoring-section__hint">{t.t('Every listing scores 0 until a wish counts.')}</p>
+			<p class="scoring-section__hint">{t.t('Every listing scores 0 until a preference counts.')}</p>
 		{:else}
 			{#each examples as card (card.target)}
 				<div class="example-card example-card--{tone(card.score)}">
@@ -249,7 +256,7 @@
 					{/if}
 					<ul class="example-card__parts">
 						{#each card.parts as part (part.preference)}
-							<li class="example-card__part">
+							<li class="example-card__part preference-{partWish(part)}">
 								<span class="example-card__fact">{fact(card, part)}</span>
 								<span class="example-card__bar">
 									<i style:width="{(100 * part.points) / part.weight}%"></i>
@@ -286,50 +293,24 @@
 		font-size: 0.875rem;
 	}
 
-	.scoring-section__split {
+	/* As tall as the split bar it stands in for, so nothing moves when the
+	first preference is switched on. */
+	.scoring-section__empty {
 		display: flex;
-		gap: 2px;
-		height: 0.75rem;
-		border-radius: var(--radius-md);
-		overflow: hidden;
-	}
-
-	.scoring-section__share--price {
-		background: var(--color-olive);
-	}
-
-	.scoring-section__share--size {
-		background: var(--color-amber);
-	}
-
-	.scoring-section__share--land {
-		background: var(--color-bronze);
-	}
-
-	.scoring-section__share--layout {
-		background: color-mix(in srgb, var(--color-olive) 50%, var(--color-card));
-	}
-
-	.scoring-section__share--place {
-		background: color-mix(in srgb, var(--color-amber) 50%, var(--color-card));
-	}
-
-	.scoring-section__legend {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1) var(--space-3);
+		align-items: center;
+		justify-content: center;
+		height: 3.25rem;
 		margin: 0;
-		padding: 0;
-		list-style: none;
-		font-size: 0.75rem;
+		border: 1px dashed var(--color-line);
+		border-radius: var(--radius-md);
+		color: var(--color-bronze);
+		font-size: 0.8125rem;
 	}
 
-	.scoring-section__swatch {
-		display: inline-block;
-		width: 0.6rem;
-		height: 0.6rem;
-		margin-right: var(--space-1);
-		border-radius: 2px;
+	.scoring-section__cards {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-3);
 	}
 
 	.scoring-section__examples {
@@ -441,7 +422,7 @@
 	.example-card__bar i {
 		display: block;
 		height: 100%;
-		background: currentColor;
+		background: var(--preference);
 	}
 
 	.example-card__points {
