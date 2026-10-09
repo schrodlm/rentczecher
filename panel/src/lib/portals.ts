@@ -14,3 +14,9 @@ export const PORTALS: readonly PortalShown[] = [
 	{ portal: 'bezrealitky', name: 'Bezrealitky', site: 'bezrealitky.cz', logo: bezrealitkyLogo },
 	{ portal: 'remax', name: 'RE/MAX', site: 'remax-czech.cz', logo: remaxLogo }
 ];
+
+/* How the panel shows a listing's source, or undefined for a source it
+does not know. */
+export function shownPortal(source: string): PortalShown | undefined {
+	return PORTALS.find((shown) => shown.portal === source);
+}
