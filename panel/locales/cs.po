@@ -79,7 +79,6 @@ msgstr[2] "sledováno {count} dní"
 msgid "price drop from {old_price}"
 msgstr "sleva z {old_price}"
 
-
 msgid "working"
 msgstr "v pořádku"
 
@@ -176,38 +175,11 @@ msgstr "Vyberte aspoň jeden portál."
 msgid "Remove {name}"
 msgstr "Odebrat {name}"
 
-msgid "High"
-msgstr "Hodně"
-
-msgid "How much {wish} matters"
-msgstr "Jak moc záleží na: {wish}"
-
-msgid "Low"
-msgstr "Málo"
-
-msgid "Medium"
-msgstr "Středně"
-
-msgid "Off"
-msgstr "Vypnuto"
-
-msgid "Top"
-msgstr "Nejvíc"
-
 msgid "+{points} of {weight}"
 msgstr "+{points} z {weight}"
 
-msgid "A good price"
-msgstr "Dobrá cena"
-
-msgid "A layout you like"
-msgstr "Dispozice, která se vám líbí"
-
 msgid "A listing in any of these places gets full points. Elsewhere gets 20."
 msgstr "Inzerát v kterémkoli z těchto míst dostane plný počet bodů. Jinde dostane 20."
-
-msgid "A spot you like"
-msgstr "Místo, které se vám líbí"
 
 msgid "Add a part of your search area"
 msgstr "Přidat část oblasti hledání"
@@ -221,41 +193,11 @@ msgstr "Nejdřív vyberte, kde hledat."
 msgid "Closest to half: {score}"
 msgstr "Nejblíž polovině: {score}"
 
-msgid "Enough land"
-msgstr "Dost pozemku"
-
-msgid "Every listing scores 0 until a wish counts."
-msgstr "Dokud se nepočítá žádné přání, má každý inzerát 0 bodů."
-
-msgid "Full points at {ideal} of land or more. Listings without land data get none."
-msgstr "Plný počet bodů od {ideal} pozemku. Inzeráty bez údaje o pozemku nedostanou nic."
-
-msgid "Full points at {ideal} or more, half at {half}."
-msgstr "Plný počet bodů od {ideal}, polovina při {half}."
-
-msgid "Full points up to {good}, none at {twice} or more."
-msgstr "Plný počet bodů do {good}, od {twice} žádné."
-
-msgid "Good price"
-msgstr "Dobrá cena"
-
 msgid "Highest possible here: {score}"
 msgstr "Nejvýš, co jde: {score}"
 
 msgid "How listings would score"
 msgstr "Jak by inzeráty bodovaly"
-
-msgid "How the score splits"
-msgstr "Jak se skóre dělí"
-
-msgid "Ideal land"
-msgstr "Ideální pozemek"
-
-msgid "Ideal size"
-msgstr "Ideální velikost"
-
-msgid "Layouts you like"
-msgstr "Oblíbené dispozice"
 
 msgid "Lowest possible here: {score}"
 msgstr "Nejníž, co jde: {score}"
@@ -266,32 +208,74 @@ msgstr "Vyberte místa uvnitř oblasti hledání."
 msgid "Pick the layouts you like."
 msgstr "Vyberte dispozice, které se vám líbí."
 
-msgid "Scoring only orders the listings you see, best first. It never hides any. Tell it what matters and how much."
-msgstr "Skóre jen řadí inzeráty, nejlepší první. Žádný neskryje. Řekněte mu, na čem záleží a jak moc."
-
-msgid "Set your good price first."
-msgstr "Nejdřív nastavte dobrou cenu."
-
-msgid "Set your ideal land first."
-msgstr "Nejdřív nastavte ideální pozemek."
-
-msgid "Set your ideal size first."
-msgstr "Nejdřív nastavte ideální velikost."
-
-msgid "The right size"
-msgstr "Správná velikost"
-
-msgid "good price"
-msgstr "dobrá cena"
-
-msgid "ideal land"
-msgstr "ideální pozemek"
-
-msgid "ideal size"
-msgstr "ideální velikost"
-
 msgid "{area} of land"
 msgstr "{area} pozemku"
 
 msgid "Between {left} and {right}"
 msgstr "Předěl: {left} a {right}"
+
+msgid "Every listing scores 0 until a preference counts."
+msgstr "Dokud se nepočítá žádná preference, má každý inzerát 0 bodů."
+
+msgid "Full points at {preferred} of land or more. Listings without land data get none."
+msgstr "Plný počet bodů od {preferred} pozemku. Inzeráty bez údaje o pozemku nedostanou nic."
+
+msgid "Full points at {preferred} or more, half at {half}."
+msgstr "Plný počet bodů od {preferred}, polovina při {half}."
+
+msgid "Full points up to {preferred}, none at {twice} or more."
+msgstr "Plný počet bodů do {preferred}, od {twice} žádné."
+
+msgid "Land"
+msgstr "Pozemek"
+
+msgid "Layout"
+msgstr "Dispozice"
+
+msgid "Place"
+msgstr "Místo"
+
+msgid "Preferred land"
+msgstr "Preferovaný pozemek"
+
+msgid "Preferred layouts"
+msgstr "Preferované dispozice"
+
+msgid "Preferred places"
+msgstr "Preferovaná místa"
+
+msgid "Preferred price"
+msgstr "Preferovaná cena"
+
+msgid "Preferred size"
+msgstr "Preferovaná velikost"
+
+msgid "Price"
+msgstr "Cena"
+
+msgid "Scoring only orders the listings you see, best first, and never hides any. Drag the dividers: the wider a preference, the more it decides."
+msgstr "Skóre jen řadí inzeráty, nejlepší první, a žádný neskryje. Táhněte předěly: čím širší preference, tím víc rozhoduje."
+
+msgid "Set your preferred land first."
+msgstr "Nejdřív nastavte preferovaný pozemek."
+
+msgid "Set your preferred price first."
+msgstr "Nejdřív nastavte preferovanou cenu."
+
+msgid "Set your preferred size first."
+msgstr "Nejdřív nastavte preferovanou velikost."
+
+msgid "Size"
+msgstr "Velikost"
+
+msgid "Switch on a preference to start scoring."
+msgstr "Zapněte preferenci, aby se inzeráty začaly hodnotit."
+
+msgid "preferred land"
+msgstr "preferovaný pozemek"
+
+msgid "preferred price"
+msgstr "preferovaná cena"
+
+msgid "preferred size"
+msgstr "preferovaná velikost"
