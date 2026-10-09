@@ -61,7 +61,7 @@ export function scoreParts(listing: ScoredListing, preferences: ScoringPreferenc
 	}
 
 	if (preferences.price_weight && listing.price && preferences.preferred_price) {
-		// Full points up to the good price, none from twice it.
+		// Full points up to the preferred price, none from twice it.
 		const ratio = listing.price / preferences.preferred_price;
 		const score = Math.max(0, Math.min(100, (2 - ratio) * 100));
 		parts.push(part('price', score, preferences.price_weight));
