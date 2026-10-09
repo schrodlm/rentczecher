@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { moveDivider, settled, switchOff, switchOn } from './split';
+import { moveDivider, settled } from './split';
 import type { Weights } from './preferences';
 
 function weights(set: Partial<Weights>): Weights {
@@ -29,34 +29,25 @@ describe('moveDivider', () => {
 	});
 });
 
-describe('switchOn', () => {
-	test('gives the preference an equal share, taken from the others in proportion', () => {
-		const on = switchOn(weights({ price: 60, size: 40 }), 'layout', ['price', 'size']);
-		expect(on).toEqual(weights({ price: 40, size: 27, layout: 33 }));
+describe('settled', () => {
+	test('gives a preference that starts counting an equal share, taken from the others in proportion', () => {
+		const shared = settled(weights({ price: 60, size: 40 }), ['price', 'size', 'layout']);
+		expect(shared).toEqual(weights({ price: 40, size: 27, layout: 33 }));
 	});
 
 	test('never squeezes a preference below five points', () => {
-		const on = switchOn(weights({ price: 90, size: 5, land: 5 }), 'layout', ['price', 'size', 'land']);
-		expect(on).toEqual(weights({ price: 65, size: 5, land: 5, layout: 25 }));
+		const shared = settled(weights({ price: 90, size: 5, land: 5 }), ['price', 'size', 'land', 'layout']);
+		expect(shared).toEqual(weights({ price: 65, size: 5, land: 5, layout: 25 }));
 	});
 
-	test('gives the first preference everything', () => {
-		expect(switchOn(weights({}), 'price', [])).toEqual(weights({ price: 100 }));
-	});
-});
-
-describe('switchOff', () => {
-	test('hands the share back to the others in proportion', () => {
-		const off = switchOff(weights({ price: 50, size: 30, layout: 20 }), 'price', ['price', 'size', 'layout']);
-		expect(off).toEqual(weights({ size: 60, layout: 40 }));
+	test('gives the first counting preference everything', () => {
+		expect(settled(weights({}), ['price'])).toEqual(weights({ price: 100 }));
 	});
 
-	test('leaves nothing weighted when the last one goes', () => {
-		expect(switchOff(weights({ price: 100 }), 'price', ['price'])).toEqual(weights({}));
+	test('leaves nothing weighted when nothing counts', () => {
+		expect(settled(weights({ price: 100 }), [])).toEqual(weights({}));
 	});
-});
 
-describe('settled', () => {
 	test('drops a preference that stopped counting and grows the rest to fill its share', () => {
 		expect(settled(weights({ price: 50, size: 30, layout: 20 }), ['size', 'layout'])).toEqual(
 			weights({ size: 60, layout: 40 })
