@@ -1,6 +1,17 @@
 import { describe, expect, test } from 'vitest';
 import type { components } from '$lib/api/types.gen';
-import { importancesFrom, isReady, weightsFor, WISHES, wishesFor, type Importances, type Weights, type Wish } from './wishes';
+import {
+	importancesFrom,
+	isReady,
+	preferencesFor,
+	weightsFor,
+	WISHES,
+	wishesFor,
+	type Importances,
+	type Weights,
+	type Wish,
+	type WishSettings
+} from './wishes';
 
 type PreferencesBody = components['schemas']['PreferencesBody'];
 
@@ -100,5 +111,45 @@ describe('importancesFrom', () => {
 
 	test('reads the nearest importances for weights the editor did not save', () => {
 		expect(importancesFrom(weights({ price: 60, size: 40 }))).toEqual(importances({ price: 3, size: 2 }));
+	});
+});
+
+describe('preferencesFor', () => {
+	const SETTINGS: WishSettings = {
+		max_good_price: 22000,
+		ideal_size_m2: 70,
+		ideal_land_m2: 800,
+		preferred_dispositions: ['2+kk'],
+		preferred_places: [{ kind: 'cast_obce', code: 490067 }]
+	};
+
+	test('keeps every setting and weighs the wishes by importance', () => {
+		expect(preferencesFor(SETTINGS, importances({ price: 4, size: 1 }), 'house')).toEqual({
+			...UNSET,
+			max_good_price: 22000,
+			ideal_size_m2: 70,
+			ideal_land_m2: 800,
+			preferred_dispositions: ['2+kk'],
+			preferred_places: [{ kind: 'cast_obce', code: 490067 }],
+			price_weight: 83,
+			size_weight: 17
+		});
+	});
+
+	test('weighs no wish that does not fit the estate', () => {
+		const preferences = preferencesFor(SETTINGS, importances({ price: 1, land: 1 }), 'flat');
+		expect([preferences.price_weight, preferences.land_weight]).toEqual([100, 0]);
+	});
+
+	test('weighs no wish without its setting', () => {
+		const settings = { ...SETTINGS, max_good_price: null };
+		const preferences = preferencesFor(settings, importances({ price: 4, size: 1 }), 'flat');
+		expect([preferences.price_weight, preferences.size_weight]).toEqual([0, 100]);
+	});
+
+	test('stores a place by its kind and code alone', () => {
+		const named = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null } as const;
+		const preferences = preferencesFor({ ...SETTINGS, preferred_places: [named] }, importances({}), 'flat');
+		expect(preferences.preferred_places).toEqual([{ kind: 'cast_obce', code: 490067 }]);
 	});
 });
