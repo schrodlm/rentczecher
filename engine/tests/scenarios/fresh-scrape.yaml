@@ -1,8 +1,17 @@
 # One scan found six flats across all three portals, and the user already
-# opened two of them: new and viewed side by side.
+# opened two of them: new and viewed side by side, scored by a few preferences.
 profile:
   name: Praha 7 flats
   search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
+  preferences:
+    price_weight: 35
+    preferred_price: 22000
+    size_weight: 25
+    preferred_size_m2: 60
+    disposition_weight: 20
+    preferred_dispositions: [2+1, 3+kk]
+    place_weight: 20
+    preferred_places: [cast_obce Bubeneč]
 scans:
   - at: -2h
     listings:
