@@ -175,3 +175,21 @@ msgstr "Vyberte aspoň jeden portál."
 
 msgid "Remove {name}"
 msgstr "Odebrat {name}"
+
+msgid "High"
+msgstr "Hodně"
+
+msgid "How much {wish} matters"
+msgstr "Jak moc záleží na: {wish}"
+
+msgid "Low"
+msgstr "Málo"
+
+msgid "Medium"
+msgstr "Středně"
+
+msgid "Off"
+msgstr "Vypnuto"
+
+msgid "Top"
+msgstr "Nejvíc"
