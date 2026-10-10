@@ -1,4 +1,5 @@
 import type { ListingModel } from '$lib/api/client';
+import { pricePerM2 } from '$lib/listing-detail';
 
 /* What a profile's listings can be ordered by. */
 export type SortField = 'score' | 'date' | 'price' | 'pricePerM2' | 'size';
@@ -42,9 +43,4 @@ export function sortListings(
 		if (valueA === valueB) return newestFirst(a, b);
 		return order.descending ? valueB - valueA : valueA - valueB;
 	});
-}
-
-function pricePerM2(listing: ListingModel): number | null {
-	if (listing.price === null || listing.size_m2 === null || listing.size_m2 <= 0) return null;
-	return listing.price / listing.size_m2;
 }
