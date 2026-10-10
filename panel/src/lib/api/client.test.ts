@@ -128,6 +128,33 @@ describe('deleteProfile', () => {
 	});
 });
 
+describe('markFavourite', () => {
+	test('puts the listing among the profile\'s favourites', async () => {
+		answerWith(204);
+		await new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'sreality:1');
+
+		const [request] = requests;
+		expect(request.method).toBe('PUT');
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/favourite`);
+	});
+
+	test('throws for an unknown profile', async () => {
+		answerWith(404, { detail: "unknown profile 'p1'" });
+		await expect(new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'sreality:1')).rejects.toThrow('404');
+	});
+});
+
+describe('clearFavourite', () => {
+	test('takes the listing out of the profile\'s favourites', async () => {
+		answerWith(204);
+		await new SidecarClient(BASE_URL, TOKEN).clearFavourite('p1', 'sreality:1');
+
+		const [request] = requests;
+		expect(request.method).toBe('DELETE');
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/favourite`);
+	});
+});
+
 describe('searchPlaces', () => {
 	const HOLESOVICE = { kind: 'cast_obce', code: 490067, name: 'Holešovice', obec: 'Praha', okres: null };
 
