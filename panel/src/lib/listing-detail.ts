@@ -28,6 +28,16 @@ export function standingOf(
 	return { own, others, lowest: Math.min(...all), highest: Math.max(...all), middle: median(others) };
 }
 
+/* Whether every other listing's value lies strictly above the listing's. */
+export function isLowest(standing: Standing): boolean {
+	return standing.others.every((value) => value > standing.own);
+}
+
+/* Whether every other listing's value lies strictly below the listing's. */
+export function isHighest(standing: Standing): boolean {
+	return standing.others.every((value) => value < standing.own);
+}
+
 /* How many of the other listings lie below the listing's value, in percent. */
 export function percentBelow(standing: Standing): number {
 	return Math.round((standing.others.filter((value) => value < standing.own).length / standing.others.length) * 100);
