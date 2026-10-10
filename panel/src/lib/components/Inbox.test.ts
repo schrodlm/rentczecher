@@ -62,13 +62,12 @@ describe('Inbox', () => {
 		expect(container.querySelector('.listing-detail__price')).toHaveTextContent('25 000 Kč');
 	});
 
-	test('keeps a picked listing in its section until another is picked', async () => {
-		const { getAllByRole, prices } = await renderInbox();
+	test('keeps viewed listings in their section until the listings load again', async () => {
+		const { getAllByRole, getByRole, prices } = await renderInbox();
 		await fireEvent.click(getAllByRole('option')[1]);
 		expect(prices('Nové')).toEqual(['20 000 Kč', '25 000 Kč']);
-		await fireEvent.click(getAllByRole('option')[0]);
-		expect(prices('Nové')).toEqual(['20 000 Kč']);
-		expect(prices('Už zobrazené')).toEqual(['25 000 Kč', '30 000 Kč']);
+		await fireEvent.click(getByRole('button', { name: 'Označit vše jako zobrazené' }));
+		expect(prices('Už zobrazené')).toEqual(['20 000 Kč', '25 000 Kč', '30 000 Kč']);
 	});
 
 	test('moves and views with the arrow keys', async () => {
@@ -86,9 +85,10 @@ describe('Inbox', () => {
 		expect(onfavourite).toHaveBeenCalledWith('a', true);
 	});
 
-	test('keeps a listing starred from its details in its section while picked', async () => {
-		const { getByRole, prices } = await renderInbox();
+	test('keeps a starred listing in its section after another is picked', async () => {
+		const { getAllByRole, getByRole, prices } = await renderInbox();
 		await fireEvent.click(getByRole('button', { name: /Přidat do oblíbených/ }));
+		await fireEvent.click(getAllByRole('option')[1]);
 		expect(prices('Nové')).toEqual(['20 000 Kč', '25 000 Kč']);
 	});
 
