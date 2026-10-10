@@ -35,8 +35,9 @@
 	);
 </script>
 
-<!-- The listbox around the rows takes the keyboard, so a row only needs the click. -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- The listbox around the rows takes the focus and the keyboard, so a click on
+a row focuses the list and a screen reader follows the selection from there. -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->
 <div
 	class="listing-row"
 	class:listing-row--selected={selected}
@@ -45,7 +46,6 @@
 	class:listing-row--viewed={listing.viewed_at !== null && !favourite}
 	{id}
 	role="option"
-	tabindex="-1"
 	aria-selected={selected}
 	onclick={onselect}
 >
