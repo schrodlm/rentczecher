@@ -163,7 +163,7 @@
 	<div class="listing-detail__panels">
 		{#if score !== null && parts.length > 0}
 			<section class="listing-detail__panel listing-detail__score">
-				<ScoreRing {score} />
+				<div class="listing-detail__ring"><ScoreRing {score} /></div>
 			</section>
 
 			<section class="listing-detail__panel">
@@ -322,13 +322,8 @@
 		place-items: center;
 	}
 
-	.listing-detail__score :global(.score-ring) {
+	.listing-detail__ring {
 		width: 11rem;
-		height: 11rem;
-	}
-
-	.listing-detail__score :global(.score-ring__number) {
-		font-size: 3.25rem;
 	}
 
 	.listing-detail__panels {
