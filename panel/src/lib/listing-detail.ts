@@ -80,10 +80,10 @@ export type ListingEvent =
 /* What happened to a listing, newest first. The undated price drop goes
 just after its finding, the one thing it surely came after. */
 export function historyOf(listing: ListingModel): ListingEvent[] {
-	const dated: ListingEvent[] = [];
+	const dated: { kind: 'viewed' | 'favourite'; at: string }[] = [];
 	if (listing.favourited_at !== null) dated.push({ kind: 'favourite', at: listing.favourited_at });
 	if (listing.viewed_at !== null) dated.push({ kind: 'viewed', at: listing.viewed_at });
-	dated.sort((a, b) => (b.at ?? '').localeCompare(a.at ?? ''));
+	dated.sort((a, b) => b.at.localeCompare(a.at));
 	const events: ListingEvent[] = [...dated];
 	if (listing.price_drop_from !== null && listing.price !== null) {
 		events.push({ kind: 'priceDrop', at: null, from: listing.price_drop_from, to: listing.price });
