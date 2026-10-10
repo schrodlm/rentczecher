@@ -1,0 +1,79 @@
+import type { ListingModel } from '$lib/api/client';
+
+/* Where one fact of a listing, such as its price, sits among the same fact
+of its profile's other listings. The lowest and highest take the listing in,
+so it always lies between them, while the middle is the others' alone. */
+export type Standing = {
+	own: number;
+	others: number[];
+	lowest: number;
+	highest: number;
+	middle: number;
+};
+
+/* Null when the listing lacks the fact, or no other listing has it. */
+export function standingOf(
+	listing: ListingModel,
+	listings: readonly ListingModel[],
+	factOf: (listing: ListingModel) => number | null
+): Standing | null {
+	const own = factOf(listing);
+	if (own === null) return null;
+	const others = listings
+		.filter((other) => other.id !== listing.id)
+		.map(factOf)
+		.filter((value) => value !== null);
+	if (others.length === 0) return null;
+	const all = [own, ...others];
+	return { own, others, lowest: Math.min(...all), highest: Math.max(...all), middle: median(others) };
+}
+
+/* How many of the other listings lie below the listing's value, in percent. */
+export function percentBelow(standing: Standing): number {
+	return Math.round((standing.others.filter((value) => value < standing.own).length / standing.others.length) * 100);
+}
+
+/* How many of the other listings lie above the listing's value, in percent. */
+export function percentAbove(standing: Standing): number {
+	return Math.round((standing.others.filter((value) => value > standing.own).length / standing.others.length) * 100);
+}
+
+/* How far the listing's value lies from the middle of the others, in
+percent: below the middle when negative. */
+export function percentFromMiddle(standing: Standing): number {
+	return Math.round(((standing.own - standing.middle) / standing.middle) * 100);
+}
+
+/* Something that happened to a listing. A price drop carries no date,
+since the listing keeps only the price it last dropped from. */
+export type ListingEvent =
+	| { kind: 'found'; at: string }
+	| { kind: 'priceDrop'; at: null; from: number; to: number }
+	| { kind: 'viewed'; at: string }
+	| { kind: 'favourite'; at: string };
+
+/* What happened to a listing, newest first. The undated price drop goes
+just after its finding, the one thing it surely came after. */
+export function historyOf(listing: ListingModel): ListingEvent[] {
+	const dated: ListingEvent[] = [];
+	if (listing.favourited_at !== null) dated.push({ kind: 'favourite', at: listing.favourited_at });
+	if (listing.viewed_at !== null) dated.push({ kind: 'viewed', at: listing.viewed_at });
+	dated.sort((a, b) => (b.at ?? '').localeCompare(a.at ?? ''));
+	const events: ListingEvent[] = [...dated];
+	if (listing.price_drop_from !== null && listing.price !== null) {
+		events.push({ kind: 'priceDrop', at: null, from: listing.price_drop_from, to: listing.price });
+	}
+	events.push({ kind: 'found', at: listing.first_seen_at });
+	return events;
+}
+
+export function pricePerM2(listing: ListingModel): number | null {
+	if (listing.price === null || listing.size_m2 === null || listing.size_m2 <= 0) return null;
+	return listing.price / listing.size_m2;
+}
+
+function median(values: number[]): number {
+	const sorted = [...values].sort((a, b) => a - b);
+	const half = Math.floor(sorted.length / 2);
+	return sorted.length % 2 === 1 ? sorted[half] : (sorted[half - 1] + sorted[half]) / 2;
+}
