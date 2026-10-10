@@ -5,6 +5,8 @@
 	import { layoutName } from '$lib/layouts';
 	import {
 		historyOf,
+		isHighest,
+		isLowest,
 		percentAbove,
 		percentBelow,
 		percentFromMiddle,
@@ -54,17 +56,15 @@
 	const perM2Standing = $derived(standingOf(listing, listings, pricePerM2));
 
 	function priceSaying(standing: Standing): string {
-		const cheaperThan = percentAbove(standing);
-		if (cheaperThan === 100) return t.t('The cheapest in the profile');
-		if (cheaperThan === 0) return t.t('The dearest in the profile');
-		return t.t("Cheaper than {percent} % of the profile's listings", { percent: cheaperThan });
+		if (isLowest(standing)) return t.t('The cheapest in the profile');
+		if (isHighest(standing)) return t.t('The dearest in the profile');
+		return t.t("Cheaper than {percent} % of the profile's listings", { percent: percentAbove(standing) });
 	}
 
 	function sizeSaying(standing: Standing): string {
-		const largerThan = percentBelow(standing);
-		if (largerThan === 100) return t.t('The largest in the profile');
-		if (largerThan === 0) return t.t('The smallest in the profile');
-		return t.t("Larger than {percent} % of the profile's listings", { percent: largerThan });
+		if (isHighest(standing)) return t.t('The largest in the profile');
+		if (isLowest(standing)) return t.t('The smallest in the profile');
+		return t.t("Larger than {percent} % of the profile's listings", { percent: percentBelow(standing) });
 	}
 
 	function perM2Saying(standing: Standing): string {
