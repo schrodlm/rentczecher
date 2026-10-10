@@ -474,3 +474,12 @@ msgstr "Skóre"
 
 msgid "Sort by: {field}"
 msgstr "Řadit podle: {field}"
+
+msgid "Add to favourites"
+msgstr "Přidat do oblíbených"
+
+msgid "Favourites"
+msgstr "Oblíbené"
+
+msgid "Remove from favourites"
+msgstr "Odebrat z oblíbených"

@@ -6,19 +6,23 @@
 	import SortMenu from './SortMenu.svelte';
 	import type { ListingModel } from '$lib/api/client';
 
-	/* The new and viewed listings of a profile, each scored by its preferences,
-	or unscored while no preference counts. */
+	/* A profile's new, favourite and viewed listings, each scored by its
+	preferences, or unscored while no preference counts. */
 	let {
 		newListings,
+		favouriteListings,
 		viewedListings,
 		preferences,
 		onviewed,
+		onfavourite,
 		onmarkallviewed
 	}: {
 		newListings: ListingModel[];
+		favouriteListings: ListingModel[];
 		viewedListings: ListingModel[];
 		preferences: ScoringPreferences | null;
 		onviewed: (listingId: string) => void;
+		onfavourite: (listingId: string, favourite: boolean) => void;
 		onmarkallviewed: () => void;
 	} = $props();
 
@@ -31,6 +35,9 @@
 	const fields = $derived(preferences === null ? SORT_FIELDS.filter((field) => field !== 'score') : SORT_FIELDS);
 	const shownOrder = $derived(fields.includes(order.field) ? order : naturalOrder('date'));
 	const sortedNew = $derived(sortListings(newListings, shownOrder, scoreOf, (listing) => listing.first_seen_at));
+	const sortedFavourites = $derived(
+		sortListings(favouriteListings, shownOrder, scoreOf, (listing) => listing.favourited_at ?? listing.first_seen_at)
+	);
 	const sortedViewed = $derived(
 		sortListings(viewedListings, shownOrder, scoreOf, (listing) => listing.viewed_at ?? listing.first_seen_at)
 	);
@@ -58,18 +65,43 @@
 		{:else}
 			<div class="feed__cards">
 				{#each sortedNew as listing (listing.id)}
-					<ListingCard {listing} score={scoreOf(listing)} onclick={() => onviewed(listing.id)} />
+					<ListingCard
+						{listing}
+						score={scoreOf(listing)}
+						onclick={() => onviewed(listing.id)}
+						onfavourite={(favourite) => onfavourite(listing.id, favourite)}
+					/>
 				{/each}
 			</div>
 		{/if}
 	</section>
+
+	{#if sortedFavourites.length > 0}
+		<section class="feed__section">
+			<h2 class="feed__heading">{t.t('Favourites')}</h2>
+			<div class="feed__cards">
+				{#each sortedFavourites as listing (listing.id)}
+					<ListingCard
+						{listing}
+						score={scoreOf(listing)}
+						onfavourite={(favourite) => onfavourite(listing.id, favourite)}
+					/>
+				{/each}
+			</div>
+		</section>
+	{/if}
 
 	{#if viewedListings.length > 0}
 		<section class="feed__section feed__section--viewed">
 			<h2 class="feed__heading">{t.t('Viewed')}</h2>
 			<div class="feed__cards">
 				{#each sortedViewed as listing (listing.id)}
-					<ListingCard {listing} score={scoreOf(listing)} viewed />
+					<ListingCard
+						{listing}
+						score={scoreOf(listing)}
+						viewed
+						onfavourite={(favourite) => onfavourite(listing.id, favourite)}
+					/>
 				{/each}
 			</div>
 		</section>

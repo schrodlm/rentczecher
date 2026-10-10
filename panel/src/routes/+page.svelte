@@ -48,16 +48,11 @@
 		return weighed > 0 ? preferences : null;
 	});
 
-	const newListings = $derived(
-		[...(listings ?? [])]
-			.filter((l) => l.viewed_at === null)
-			.sort((a, b) => b.first_seen_at.localeCompare(a.first_seen_at))
-	);
-	const viewedListings = $derived(
-		[...(listings ?? [])]
-			.filter((l) => l.viewed_at !== null)
-			.sort((a, b) => (b.viewed_at ?? '').localeCompare(a.viewed_at ?? ''))
-	);
+	// Each listing shows in exactly one section. A favourite is viewed too, but
+	// shows only among the favourites.
+	const newListings = $derived((listings ?? []).filter((l) => l.viewed_at === null && l.favourited_at === null));
+	const favouriteListings = $derived((listings ?? []).filter((l) => l.favourited_at !== null));
+	const viewedListings = $derived((listings ?? []).filter((l) => l.viewed_at !== null && l.favourited_at === null));
 
 	async function loadListings(profileId: string): Promise<void> {
 		listingsError = null;
@@ -101,6 +96,22 @@
 		if (marked && marked.viewed_at === null) {
 			marked.viewed_at = new Date().toISOString();
 		}
+	}
+
+	async function handleFavourite(listingId: string, favourite: boolean): Promise<void> {
+		if (selectedProfileId === null) return;
+		try {
+			if (favourite) await client.markFavourite(selectedProfileId, listingId);
+			else await client.clearFavourite(selectedProfileId, listingId);
+		} catch {
+			// A failed favourite is not retried, the star stays as it was.
+			return;
+		}
+		const marked = listings?.find((l) => l.id === listingId);
+		if (marked === undefined) return;
+		const now = new Date().toISOString();
+		marked.favourited_at = favourite ? now : null;
+		marked.viewed_at = marked.viewed_at ?? now;
 	}
 
 	async function handleMarkAllViewed(): Promise<void> {
@@ -271,9 +282,11 @@
 		{:else}
 			<ListingFeed
 				{newListings}
+				{favouriteListings}
 				{viewedListings}
 				preferences={scoring}
 				onviewed={handleViewed}
+				onfavourite={handleFavourite}
 				onmarkallviewed={handleMarkAllViewed}
 			/>
 		{/if}
