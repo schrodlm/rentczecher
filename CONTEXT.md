@@ -95,7 +95,8 @@ person knows it exists.
 _Avoid_: seen, found
 
 **Viewed**:
-The user clicked the listing open from the GUI, or marked all viewed.
+The user clicked the listing open from the GUI, marked it a favourite, or
+marked all viewed. Viewing is never undone.
 _Avoid_: seen, read
 
 **New**:
@@ -125,8 +126,9 @@ never merged.
 _Avoid_: fuzzy match, low-confidence match
 
 **Favourite**:
-A listing the user marked to keep. A favourite and its price history are
-never pruned.
+A listing the user marked to keep, per profile. Marking it views it. A
+favourite and its price history are never pruned, and the GUI shows
+favourites apart from the new and viewed listings.
 _Avoid_: starred, saved, bookmarked
 
 **rentczecher**:
