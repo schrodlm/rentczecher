@@ -10,7 +10,11 @@ export function formatPrice(price: number): string {
 
 export function formatPricePerM2(price: number, sizeM2: number): string | null {
 	if (sizeM2 <= 0) return null;
-	return `${formatPrice(Math.round(price / sizeM2))}/m²`;
+	return formatPerM2(price / sizeM2);
+}
+
+export function formatPerM2(pricePerM2: number): string {
+	return `${formatPrice(Math.round(pricePerM2))}/m²`;
 }
 
 export function daysSince(isoTimestamp: string, now: Date = new Date()): number {

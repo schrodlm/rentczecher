@@ -489,3 +489,78 @@ msgstr "Mapa, kde inzerát leží"
 
 msgid "Favourite"
 msgstr "Oblíbený"
+
+msgid "Added to favourites"
+msgstr "Přidáno do oblíbených"
+
+msgid "Compared within the profile"
+msgstr "Srovnání v profilu"
+
+msgid "First found"
+msgstr "Poprvé nalezeno"
+
+msgid "History"
+msgstr "Historie"
+
+msgid "In favourites"
+msgstr "V oblíbených"
+
+msgid "In one of the preferred places"
+msgstr "V jednom z preferovaných míst"
+
+msgid "Open on {portal}"
+msgstr "Otevřít na {portal}"
+
+msgid "Outside the preferred places"
+msgstr "Mimo preferovaná místa"
+
+msgid "Price dropped from {from} to {to}"
+msgstr "Zlevněno z {from} na {to}"
+
+msgid "Price per m² right in the middle of the profile"
+msgstr "Cena za m² přesně uprostřed profilu"
+
+msgid "Price per m² {percent} % above the middle of the profile"
+msgstr "Cena za m² {percent} % nad středem profilu"
+
+msgid "Price per m² {percent} % below the middle of the profile"
+msgstr "Cena za m² {percent} % pod středem profilu"
+
+msgid "Where"
+msgstr "Poloha"
+
+msgid "Why {count} point"
+msgid_plural "Why {count} points"
+msgstr[0] "Proč {count} bod"
+msgstr[1] "Proč {count} body"
+msgstr[2] "Proč {count} bodů"
+
+msgid "also on {portal}"
+msgstr "také na {portal}"
+
+msgid "{value} · preferred up to {preferred}"
+msgstr "{value} · preferováno do {preferred}"
+
+msgid "{value} · preferred {preferred}"
+msgstr "{value} · preferováno {preferred}"
+
+msgid "The cheapest in the profile"
+msgstr "Nejlevnější v profilu"
+
+msgid "The dearest in the profile"
+msgstr "Nejdražší v profilu"
+
+msgid "The largest in the profile"
+msgstr "Největší v profilu"
+
+msgid "The smallest in the profile"
+msgstr "Nejmenší v profilu"
+
+msgid "You viewed it"
+msgstr "Zobrazeno"
+
+msgid "Cheaper than {percent} % of the profile's listings"
+msgstr "Levnější než {percent} % inzerátů profilu"
+
+msgid "Larger than {percent} % of the profile's listings"
+msgstr "Větší než {percent} % inzerátů profilu"
