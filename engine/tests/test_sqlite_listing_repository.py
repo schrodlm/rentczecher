@@ -180,6 +180,57 @@ class TestMarkViewed:
         assert row["viewed_at"] is None
 
 
+class TestFavourite:
+    def _row(self, conn):
+        return conn.execute(
+            "SELECT favourited_at, viewed_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+
+    def test_marking_keeps_the_listing_and_views_it(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_favourite(PROFILE, "sreality:1")
+        row = self._row(conn)
+        assert (row["favourited_at"], row["viewed_at"]) == (BASE.isoformat(), BASE.isoformat())
+
+    def test_marking_again_keeps_the_first_times(self, tmp_path):
+        repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2)))
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, "sreality:1")
+        row = self._row(conn)
+        assert row["viewed_at"] == (BASE + timedelta(hours=1)).isoformat()
+        assert row["favourited_at"] == (BASE + timedelta(hours=2)).isoformat()
+
+    def test_clearing_leaves_the_listing_viewed(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.clear_favourite(PROFILE, "sreality:1")
+        row = self._row(conn)
+        assert row["favourited_at"] is None
+        assert row["viewed_at"] is not None
+
+    def test_scoped_to_the_profile(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
+        repo.mark_favourite(PROFILE, "sreality:1")
+        other = conn.execute(
+            "SELECT favourited_at FROM listing_tracking "
+            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (OTHER_PROFILE,)).fetchone()
+        assert other["favourited_at"] is None
+
+    def test_does_not_commit(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        conn.commit()
+        repo.mark_favourite(PROFILE, "sreality:1")
+        conn.rollback()
+        assert self._row(conn)["favourited_at"] is None
+
+
 class TestPendingDisappeared:
     """A listing disappears when it is absent from a run, was first seen
     within the window, and reaches three misses counting that run."""

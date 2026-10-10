@@ -447,6 +447,31 @@ class TestMarkViewed:
         assert listings[0]["viewed_at"] is not None
 
 
+class TestFavourite:
+    def test_unknown_profile_is_404(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.put("/v1/profiles/nope/listings/sreality:1/favourite", headers=_auth())
+        assert response.status_code == 404
+
+    def test_marks_and_clears_a_favourite(self, tmp_path, praha7):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps, praha7.id)
+        client = _client(tmp_path)
+        path = f"/v1/profiles/{praha7.id}/listings/sreality:1/favourite"
+
+        def listing() -> dict:
+            listings = client.get(
+                f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"}).json()
+            return listings[0]
+
+        assert client.put(path, headers=_auth()).status_code == 204
+        assert listing()["favourited_at"] is not None
+        assert listing()["viewed_at"] is not None
+        assert client.delete(path, headers=_auth()).status_code == 204
+        assert listing()["favourited_at"] is None
+        assert listing()["viewed_at"] is not None
+
+
 class TestTriggerRun:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
