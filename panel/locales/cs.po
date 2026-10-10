@@ -486,3 +486,6 @@ msgstr "Odebrat z oblíbených"
 
 msgid "Map of where the listing lies"
 msgstr "Mapa, kde inzerát leží"
+
+msgid "Favourite"
+msgstr "Oblíbený"
