@@ -2,7 +2,8 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 
 	/* A listing's score out of 100 as a ring filled that far, its colour
-	running from bronze through amber to olive as the score rises. */
+	running from bronze through amber to olive as the score rises. It fills
+	the width it is given, its number growing with it. */
 	let { score }: { score: number } = $props();
 
 	const t = getTranslatorContext();
@@ -34,9 +35,9 @@
 <style>
 	.score-ring {
 		position: relative;
-		flex-shrink: 0;
-		width: 3rem;
-		height: 3rem;
+		width: 100%;
+		aspect-ratio: 1;
+		container-type: inline-size;
 	}
 
 	.score-ring__svg {
@@ -66,7 +67,7 @@
 		display: grid;
 		place-items: center;
 		color: var(--color-ink);
-		font-size: 0.875rem;
+		font-size: 30cqi;
 		font-weight: 800;
 		font-variant-numeric: tabular-nums;
 	}
