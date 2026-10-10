@@ -44,6 +44,24 @@ async function renderInbox() {
 	return { onview, onfavourite, section, prices, listbox: rendered.getByRole('listbox'), ...rendered };
 }
 
+async function renderWithFavourites() {
+	const onfavourite = vi.fn();
+	const rendered = await renderWithTranslator(InboxHarness, {
+		listings: [
+			listing('x', { price: 21000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-05T00:00:00Z' }),
+			listing('y', { price: 20000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-03T00:00:00Z' })
+		],
+		preferences: null,
+		onview: vi.fn(),
+		onfavourite
+	});
+	const prices = (name: string) =>
+		within(rendered.getByRole('group', { name }))
+			.getAllByRole('option')
+			.map((row) => row.querySelector('.listing-row__price')?.textContent?.replace(/\s/g, ' '));
+	return { onfavourite, prices, ...rendered };
+}
+
 beforeEach(() => {
 	Element.prototype.scrollIntoView = vi.fn();
 });
@@ -68,6 +86,13 @@ describe('Inbox', () => {
 		expect(prices('Nové')).toEqual(['20 000 Kč', '25 000 Kč']);
 		await fireEvent.click(getByRole('button', { name: 'Označit vše jako zobrazené' }));
 		expect(prices('Už zobrazené')).toEqual(['20 000 Kč', '25 000 Kč', '30 000 Kč']);
+	});
+
+	test('keeps a favourite in its place within its section when it is unstarred', async () => {
+		const { prices, onfavourite } = await renderWithFavourites();
+		await fireEvent.keyDown(document.body, { key: 'f' });
+		expect(onfavourite).toHaveBeenCalledWith('x', false);
+		expect(prices('Oblíbené')).toEqual(['21 000 Kč', '20 000 Kč']);
 	});
 
 	test('moves and views with the arrow keys', async () => {
