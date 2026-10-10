@@ -62,8 +62,8 @@
 		return { new: inSection('new'), favourite: inSection('favourite'), viewed: inSection('viewed') };
 	});
 	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
-	const selected = $derived(ordered.find((listing) => listing.id === selectedId) ?? null);
-	const selectedIndex = $derived(selected === null ? -1 : ordered.indexOf(selected));
+	const selectedIndex = $derived(ordered.findIndex((listing) => listing.id === selectedId));
+	const selected = $derived(ordered[selectedIndex] ?? null);
 	const selectedRowId = $derived(selected === null ? null : rowId(selected));
 	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
 
@@ -166,7 +166,7 @@
 			role="listbox"
 			tabindex="0"
 			aria-label={t.t('Listings')}
-			aria-activedescendant={selected === null ? undefined : rowId(selected)}
+			aria-activedescendant={selectedRowId ?? undefined}
 		>
 			{@render section(t.t('New'), sections.new)}
 			{#if sections.new.length === 0}
