@@ -95,5 +95,13 @@ class ListingRepository(ABC):
         """Record the listing as viewed by the profile, once."""
 
     @abstractmethod
+    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Keep the listing as the profile's favourite, which also views it."""
+
+    @abstractmethod
+    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Stop keeping the listing as a favourite. It stays viewed."""
+
+    @abstractmethod
     def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
         """The profile's tracked listings as the GUI's inbox renders them."""

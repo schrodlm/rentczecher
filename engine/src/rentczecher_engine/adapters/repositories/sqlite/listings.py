@@ -86,6 +86,27 @@ class SqliteListingRepository(ListingRepository):
         """
         self._conn.execute(stmt, (self._now().isoformat(), profile_id, listing_id))
 
+    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Records the listing as the profile's favourite and views it, without
+        committing. A favourite keeps its first favourited_at, and a viewed
+        listing its first viewed_at.
+        """
+        now = self._now().isoformat()
+        stmt = """
+            UPDATE listing_tracking
+            SET favourited_at = coalesce(favourited_at, ?), viewed_at = coalesce(viewed_at, ?)
+            WHERE profile_id = ? AND listing_id = ?
+        """
+        self._conn.execute(stmt, (now, now, profile_id, listing_id))
+
+    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Stops keeping the listing as a favourite, without committing."""
+        stmt = """
+            UPDATE listing_tracking SET favourited_at = NULL
+            WHERE profile_id = ? AND listing_id = ?
+        """
+        self._conn.execute(stmt, (profile_id, listing_id))
+
     def record_price_observation(self, observation: PriceObservation) -> None:
         stmt = """
             INSERT INTO price_observations (
