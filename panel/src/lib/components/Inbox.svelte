@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { ListingModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
@@ -31,9 +32,7 @@
 	const listId = $props.id();
 
 	let order = $state<ListingOrder>(naturalOrder('score'));
-	// The listing picked and the section it was in then. It stays there while
-	// picked, so viewing or starring it never moves the row from under you.
-	let held = $state<{ id: string; section: Section } | null>(null);
+	let selectedId = $state<string | null>(null);
 	let detailOpen = $state(false);
 	let detail = $state<HTMLElement>();
 	let rows = $state<HTMLElement>();
@@ -42,8 +41,14 @@
 	// preference counts again, when the chosen order comes back.
 	const fields = $derived(preferences === null ? SORT_FIELDS.filter((field) => field !== 'score') : SORT_FIELDS);
 	const shownOrder = $derived(fields.includes(order.field) ? order : naturalOrder('date'));
+	// Each listing keeps the section it loaded in until the listings load
+	// again, so viewing or starring never moves a row from under you.
+	const loadedSections = $derived.by(() => {
+		const loaded = listings;
+		return untrack(() => new Map(loaded.map((listing) => [listing.id, sectionOf(listing)])));
+	});
 	const sections = $derived.by(() => {
-		const inSection = (section: Section) => listings.filter((listing) => shownSection(listing) === section);
+		const inSection = (section: Section) => listings.filter((listing) => loadedSections.get(listing.id) === section);
 		return {
 			new: sortListings(inSection('new'), shownOrder, scoreOf, (listing) => listing.first_seen_at),
 			favourite: sortListings(inSection('favourite'), shownOrder, scoreOf, (listing) => listing.favourited_at ?? ''),
@@ -51,16 +56,15 @@
 		};
 	});
 	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
-	const selected = $derived(ordered.find((listing) => listing.id === held?.id) ?? null);
+	const selected = $derived(ordered.find((listing) => listing.id === selectedId) ?? null);
 	const selectedRowId = $derived(selected === null ? null : rowId(selected));
 	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
 
-	// A profile opens on its first listing, held but not viewed, and a picked
-	// listing that leaves the profile gives way to the first again.
+	// A profile opens on its first listing, selected but not viewed, and a
+	// selected listing that leaves the profile gives way to the first again.
 	$effect(() => {
-		if (held !== null && listings.some((listing) => listing.id === held?.id)) return;
-		const first = ordered[0];
-		held = first === undefined ? null : { id: first.id, section: sectionOf(first) };
+		if (listings.some((listing) => listing.id === selectedId)) return;
+		selectedId = ordered[0]?.id ?? null;
 	});
 
 	// The arrows can move the selection off the visible rows, so it is
@@ -68,10 +72,6 @@
 	$effect(() => {
 		if (selectedRowId !== null) document.getElementById(selectedRowId)?.scrollIntoView({ block: 'nearest' });
 	});
-
-	function shownSection(listing: ListingModel): Section {
-		return listing.id === held?.id ? held.section : sectionOf(listing);
-	}
 
 	function sectionOf(listing: ListingModel): Section {
 		if (listing.favourited_at !== null) return 'favourite';
@@ -89,7 +89,7 @@
 	// A narrow window shows the details over the list, so only a click opens
 	// them there: moving with the arrows keeps the list, and its focus, in view.
 	function select(listing: ListingModel, openDetail: boolean): void {
-		if (listing.id !== held?.id) held = { id: listing.id, section: sectionOf(listing) };
+		selectedId = listing.id;
 		if (openDetail) detailOpen = true;
 		if (listing.viewed_at === null) onview(listing.id);
 	}
