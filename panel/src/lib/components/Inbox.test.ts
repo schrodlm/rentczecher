@@ -98,6 +98,23 @@ describe('Inbox', () => {
 		dialog.remove();
 	});
 
+	test('steps to the next and previous listing from the sides of the details', async () => {
+		const { getByRole, onview } = await renderInbox();
+		await fireEvent.click(getByRole('button', { name: 'Další inzerát' }));
+		expect(onview).toHaveBeenCalledWith('b');
+		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
+		await fireEvent.click(getByRole('button', { name: 'Předchozí inzerát' }));
+		expect(getByRole('option', { selected: true })).toHaveTextContent('20 000 Kč');
+	});
+
+	test('offers no step past either end of the list', async () => {
+		const { getAllByRole, queryByRole } = await renderInbox();
+		expect(queryByRole('button', { name: 'Předchozí inzerát' })).toBeNull();
+		await fireEvent.click(getAllByRole('option')[2]);
+		expect(queryByRole('button', { name: 'Další inzerát' })).toBeNull();
+		expect(queryByRole('button', { name: 'Předchozí inzerát' })).not.toBeNull();
+	});
+
 	test('stars the picked listing with F, but leaves Ctrl+F to the browser', async () => {
 		const { listbox, onfavourite } = await renderInbox();
 		await fireEvent.keyDown(listbox, { key: 'f', ctrlKey: true });
