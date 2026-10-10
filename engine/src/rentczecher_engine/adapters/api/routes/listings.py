@@ -37,3 +37,21 @@ def mark_viewed(
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         store.mark_viewed(profile.id, listing_id)
+
+
+@router.put("/v1/profiles/{profile_id}/listings/{listing_id}/favourite", status_code=204)
+def mark_favourite(
+    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+) -> None:
+    deps = request.app.state.api_deps
+    with deps.open_run_store() as store:
+        store.mark_favourite(profile.id, listing_id)
+
+
+@router.delete("/v1/profiles/{profile_id}/listings/{listing_id}/favourite", status_code=204)
+def clear_favourite(
+    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+) -> None:
+    deps = request.app.state.api_deps
+    with deps.open_run_store() as store:
+        store.clear_favourite(profile.id, listing_id)

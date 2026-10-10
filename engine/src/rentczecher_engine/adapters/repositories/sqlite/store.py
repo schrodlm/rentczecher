@@ -48,6 +48,26 @@ class SqliteRunStore:
         else:
             self._conn.commit()
 
+    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Records the favourite as its own unit of work."""
+        try:
+            self._listings.mark_favourite(profile_id, listing_id)
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
+
+    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
+        """Clears the favourite as its own unit of work."""
+        try:
+            self._listings.clear_favourite(profile_id, listing_id)
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
+
     def prune(self, profile_id: str) -> None:
         """Forgets the profile's stale tracking rows, its own unit of work."""
         try:
