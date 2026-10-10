@@ -102,6 +102,27 @@ export class SidecarClient {
 		}
 	}
 
+	/* Keeps the listing as the profile's favourite, which also views it. */
+	async markFavourite(profileId: string, listingId: string): Promise<void> {
+		const { response, error } = await this.api.PUT(
+			'/v1/profiles/{profile_id}/listings/{listing_id}/favourite',
+			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+		);
+		if (!response.ok) {
+			throw this.httpError(response, error);
+		}
+	}
+
+	async clearFavourite(profileId: string, listingId: string): Promise<void> {
+		const { response, error } = await this.api.DELETE(
+			'/v1/profiles/{profile_id}/listings/{listing_id}/favourite',
+			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+		);
+		if (!response.ok) {
+			throw this.httpError(response, error);
+		}
+	}
+
 	async health(): Promise<PortalHealthModel[]> {
 		const { data, response, error } = await this.api.GET('/v1/health');
 		return this.require(data, response, error);
