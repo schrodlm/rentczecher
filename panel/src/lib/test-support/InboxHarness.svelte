@@ -17,25 +17,27 @@
 		onfavourite: (listingId: string, favourite: boolean) => void;
 	} = $props();
 
+	const NOW = '2026-10-11T10:00:00Z';
+
 	// svelte-ignore state_referenced_locally
 	let held = $state(listings);
 
 	function view(listingId: string): void {
 		onview(listingId);
 		const listing = held.find((each) => each.id === listingId);
-		if (listing !== undefined) listing.viewed_at = '2026-10-11T10:00:00Z';
+		if (listing !== undefined) listing.viewed_at = NOW;
 	}
 
 	function favourite(listingId: string, on: boolean): void {
 		onfavourite(listingId, on);
 		const listing = held.find((each) => each.id === listingId);
 		if (listing === undefined) return;
-		listing.favourited_at = on ? '2026-10-11T10:00:00Z' : null;
-		listing.viewed_at = listing.viewed_at ?? '2026-10-11T10:00:00Z';
+		listing.favourited_at = on ? NOW : null;
+		listing.viewed_at = listing.viewed_at ?? NOW;
 	}
 
 	function markAllViewedAndReload(): void {
-		held = held.map((listing) => ({ ...listing, viewed_at: listing.viewed_at ?? '2026-10-11T10:00:00Z' }));
+		held = held.map((listing) => ({ ...listing, viewed_at: listing.viewed_at ?? NOW }));
 	}
 </script>
 
