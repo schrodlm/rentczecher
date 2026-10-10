@@ -77,6 +77,27 @@ describe('Inbox', () => {
 		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
 	});
 
+	test('moves with the arrow keys while the focus is outside the list', async () => {
+		const { getByRole } = await renderInbox();
+		await fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
+	});
+
+	test('leaves the keys to a text field and to a modal dialog', async () => {
+		const { onview, onfavourite } = await renderInbox();
+		const field = document.body.appendChild(document.createElement('input'));
+		const dialog = document.body.appendChild(document.createElement('div'));
+		dialog.setAttribute('aria-modal', 'true');
+		const button = dialog.appendChild(document.createElement('button'));
+		await fireEvent.keyDown(field, { key: 'ArrowDown' });
+		await fireEvent.keyDown(field, { key: 'f' });
+		await fireEvent.keyDown(button, { key: 'ArrowDown' });
+		expect(onview).not.toHaveBeenCalled();
+		expect(onfavourite).not.toHaveBeenCalled();
+		field.remove();
+		dialog.remove();
+	});
+
 	test('stars the picked listing with F, but leaves Ctrl+F to the browser', async () => {
 		const { listbox, onfavourite } = await renderInbox();
 		await fireEvent.keyDown(listbox, { key: 'f', ctrlKey: true });
@@ -97,6 +118,14 @@ describe('Inbox', () => {
 		const { listbox } = await renderInbox();
 		await fireEvent.keyDown(listbox, { key: 'Enter' });
 		expect(open).toHaveBeenCalledOnce();
+		open.mockRestore();
+	});
+
+	test('leaves Enter on a button to the button', async () => {
+		const open = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+		const { getByRole } = await renderInbox();
+		await fireEvent.keyDown(getByRole('button', { name: /Přidat do oblíbených/ }), { key: 'Enter' });
+		expect(open).not.toHaveBeenCalled();
 		open.mockRestore();
 	});
 
