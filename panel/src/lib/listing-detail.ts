@@ -1,4 +1,19 @@
 import type { ListingModel } from '$lib/api/client';
+import { formatArea } from '$lib/format';
+import type { Translator } from '$lib/i18n/translator';
+
+/* The listing's layout as shown, or null when the portal gave none. */
+export function layoutOf(listing: ListingModel, t: Translator): string | null {
+	if (listing.disposition === 'atypicky') return t.t('atypical layout');
+	return listing.disposition ?? listing.disposition_raw_text;
+}
+
+/* The listing's layout, size and place in one line, leaving out what it lacks. */
+export function factsOf(listing: ListingModel, t: Translator): string {
+	return [layoutOf(listing, t), listing.size_m2 === null ? null : formatArea(listing.size_m2), listing.location_raw_text]
+		.filter((fact) => fact !== null)
+		.join(' · ');
+}
 
 /* Where one fact of a listing, such as its price, sits among the same fact
 of its profile's other listings. The lowest and highest take the listing in,

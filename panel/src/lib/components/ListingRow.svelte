@@ -2,6 +2,7 @@
 	import type { ListingModel } from '$lib/api/client';
 	import { formatPrice, sourceInitial } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { factsOf } from '$lib/listing-detail';
 	import { shownPortal } from '$lib/portals';
 
 	/* One listing in the inbox's list: enough to tell it apart and judge it at
@@ -24,14 +25,7 @@
 
 	const portal = $derived(shownPortal(listing.source));
 	const favourite = $derived(listing.favourited_at !== null);
-	const layout = $derived(
-		listing.disposition === 'atypicky' ? t.t('atypical layout') : (listing.disposition ?? listing.disposition_raw_text)
-	);
-	const facts = $derived(
-		[layout, listing.size_m2 === null ? null : `${listing.size_m2} m²`, listing.location_raw_text]
-			.filter((fact) => fact !== null)
-			.join(' · ')
-	);
+	const facts = $derived(factsOf(listing, t));
 </script>
 
 <!-- The listbox around the rows takes the focus and the keyboard, so a click on
