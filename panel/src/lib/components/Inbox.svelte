@@ -57,6 +57,7 @@
 	});
 	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
 	const selected = $derived(ordered.find((listing) => listing.id === selectedId) ?? null);
+	const selectedIndex = $derived(selected === null ? -1 : ordered.indexOf(selected));
 	const selectedRowId = $derived(selected === null ? null : rowId(selected));
 	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
 
@@ -94,6 +95,11 @@
 		if (listing.viewed_at === null) onview(listing.id);
 	}
 
+	function step(by: 1 | -1): void {
+		const next = ordered[selectedIndex + by];
+		if (next !== undefined) select(next, false);
+	}
+
 	function backToList(): void {
 		detailOpen = false;
 		rows?.focus();
@@ -105,10 +111,8 @@
 		// link stays that control's own.
 		const target = event.target instanceof Element ? event.target : null;
 		if (target?.closest('input, textarea, select, [contenteditable], [aria-modal="true"]')) return;
-		const index = ordered.indexOf(selected);
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-			const next = ordered[index + (event.key === 'ArrowDown' ? 1 : -1)];
-			if (next !== undefined) select(next, false);
+			step(event.key === 'ArrowDown' ? 1 : -1);
 		} else if (event.key === 'Enter' && !target?.closest('button, a')) {
 			// Through the detail's own link, so the listing opens just as a click on
 			// it does in the app's window.
@@ -169,17 +173,39 @@
 		</div>
 	</div>
 
-	<div class="inbox__detail" bind:this={detail}>
-		<button type="button" class="inbox__back" onclick={backToList}>← {t.t('Back to the list')}</button>
-		{#if selected}
-			<ListingDetail
-				listing={selected}
-				{listings}
-				{preferences}
-				onfavourite={(favourite) => onfavourite(selected.id, favourite)}
-			/>
-		{:else}
-			<p class="inbox__empty">{t.t('No listings yet. A scan finds them.')}</p>
+	<div class="inbox__pane">
+		<div class="inbox__detail" bind:this={detail}>
+			<button type="button" class="inbox__back" onclick={backToList}>← {t.t('Back to the list')}</button>
+			{#if selected}
+				<ListingDetail
+					listing={selected}
+					{listings}
+					{preferences}
+					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
+				/>
+			{:else}
+				<p class="inbox__empty">{t.t('No listings yet. A scan finds them.')}</p>
+			{/if}
+		</div>
+		{#if selectedIndex > 0}
+			<button
+				type="button"
+				class="inbox__step inbox__step--previous"
+				aria-label={t.t('Previous listing')}
+				onclick={() => step(-1)}
+			>
+				‹
+			</button>
+		{/if}
+		{#if selectedIndex < ordered.length - 1}
+			<button
+				type="button"
+				class="inbox__step inbox__step--next"
+				aria-label={t.t('Next listing')}
+				onclick={() => step(1)}
+			>
+				›
+			</button>
 		{/if}
 	</div>
 </div>
@@ -251,9 +277,18 @@
 		font-size: 0.875rem;
 	}
 
+	/* Holds the steps still at the middle of the column while the details
+	scroll under them. */
+	.inbox__pane {
+		position: relative;
+		display: flex;
+		min-height: 0;
+	}
+
 	.inbox__detail {
+		flex: 1;
 		overflow-y: auto;
-		padding: var(--space-6);
+		padding: var(--space-6) 4.75rem;
 	}
 
 	.inbox__back {
@@ -268,6 +303,38 @@
 		cursor: pointer;
 	}
 
+	.inbox__step {
+		position: absolute;
+		top: 50%;
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		padding: 0 0 0.25rem;
+		border: 1px solid var(--color-line);
+		border-radius: 50%;
+		background: var(--color-card);
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--color-ink) 14%, transparent);
+		color: var(--color-ink);
+		font-size: 2rem;
+		line-height: 1;
+		cursor: pointer;
+		transform: translateY(-50%);
+	}
+
+	.inbox__step:hover {
+		border-color: var(--color-amber);
+		color: var(--color-amber);
+	}
+
+	.inbox__step--previous {
+		left: var(--space-4);
+	}
+
+	.inbox__step--next {
+		right: var(--space-6);
+	}
+
 	/* Too narrow for both columns, so one shows at a time and selecting a row
 	brings its details over the list. */
 	@media (max-width: 60rem) {
@@ -275,17 +342,35 @@
 			grid-template-columns: 1fr;
 		}
 
-		.inbox__detail,
+		.inbox__pane,
 		.inbox--detail-open .inbox__list {
 			display: none;
 		}
 
-		.inbox--detail-open .inbox__detail {
-			display: block;
+		.inbox--detail-open .inbox__pane {
+			display: flex;
 		}
 
 		.inbox__back {
 			display: inline-flex;
+		}
+
+		.inbox__detail {
+			padding: var(--space-4) 3.5rem;
+		}
+
+		.inbox__step {
+			width: 2.5rem;
+			height: 2.5rem;
+			font-size: 1.625rem;
+		}
+
+		.inbox__step--previous {
+			left: var(--space-2);
+		}
+
+		.inbox__step--next {
+			right: var(--space-4);
 		}
 	}
 </style>

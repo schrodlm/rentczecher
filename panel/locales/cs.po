@@ -558,3 +558,9 @@ msgstr "Levnější než {percent} % inzerátů profilu"
 
 msgid "Larger than {percent} % of the profile's listings"
 msgstr "Větší než {percent} % inzerátů profilu"
+
+msgid "Next listing"
+msgstr "Další inzerát"
+
+msgid "Previous listing"
+msgstr "Předchozí inzerát"
