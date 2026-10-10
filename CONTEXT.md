@@ -95,8 +95,8 @@ person knows it exists.
 _Avoid_: seen, found
 
 **Viewed**:
-The user clicked the listing open from the GUI, marked it a favourite, or
-marked all viewed. Viewing is never undone.
+The user selected the listing in the GUI, opened it, marked it a favourite,
+or marked all viewed. Viewing is never undone.
 _Avoid_: seen, read
 
 **New**:
