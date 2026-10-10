@@ -114,10 +114,11 @@
 
 	function onkeydown(event: KeyboardEvent): void {
 		if (selected === null || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
-		// Typing and the profile editor keep their keys, and Enter on a button or
-		// link stays that control's own.
+		// Typing and an open modal dialog keep their keys, even once its focus has
+		// fallen to the page, and Enter on a button or link stays that control's own.
+		if (document.querySelector('[aria-modal="true"]') !== null) return;
 		const target = event.target instanceof Element ? event.target : null;
-		if (target?.closest('input, textarea, select, [contenteditable], [aria-modal="true"]')) return;
+		if (target?.closest('input, textarea, select, [contenteditable]')) return;
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			step(event.key === 'ArrowDown' ? 1 : -1);
 		} else if (event.key === 'Enter' && !target?.closest('button, a')) {
