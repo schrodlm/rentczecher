@@ -67,18 +67,6 @@ msgstr "Nové"
 msgid "Viewed"
 msgstr "Už zobrazené"
 
-msgid "new"
-msgstr "nové"
-
-msgid "{count} day watched"
-msgid_plural "{count} days watched"
-msgstr[0] "sledováno {count} den"
-msgstr[1] "sledováno {count} dny"
-msgstr[2] "sledováno {count} dní"
-
-msgid "price drop from {old_price}"
-msgstr "sleva z {old_price}"
-
 msgid "working"
 msgstr "v pořádku"
 
@@ -480,9 +468,6 @@ msgstr "Přidat do oblíbených"
 
 msgid "Favourites"
 msgstr "Oblíbené"
-
-msgid "Remove from favourites"
-msgstr "Odebrat z oblíbených"
 
 msgid "Map of where the listing lies"
 msgstr "Mapa, kde inzerát leží"

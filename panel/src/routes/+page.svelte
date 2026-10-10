@@ -9,7 +9,7 @@
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
 	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
-	import ListingFeed from '$lib/components/ListingFeed.svelte';
+	import Inbox from '$lib/components/Inbox.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 
@@ -48,11 +48,7 @@
 		return weighed > 0 ? preferences : null;
 	});
 
-	// Each listing shows in exactly one section. A favourite is viewed too, but
-	// shows only among the favourites.
-	const newListings = $derived((listings ?? []).filter((l) => l.viewed_at === null && l.favourited_at === null));
-	const favouriteListings = $derived((listings ?? []).filter((l) => l.favourited_at !== null));
-	const viewedListings = $derived((listings ?? []).filter((l) => l.viewed_at !== null && l.favourited_at === null));
+	const newListings = $derived((listings ?? []).filter((l) => l.viewed_at === null));
 
 	async function loadListings(profileId: string): Promise<void> {
 		listingsError = null;
@@ -280,15 +276,16 @@
 		{:else if listings === null}
 			<p class="shell__status">{t.t('Loading listings...')}</p>
 		{:else}
-			<ListingFeed
-				{newListings}
-				{favouriteListings}
-				{viewedListings}
-				preferences={scoring}
-				onviewed={handleViewed}
-				onfavourite={handleFavourite}
-				onmarkallviewed={handleMarkAllViewed}
-			/>
+			<!-- Each profile opens fresh: its first listing picked, its own order. -->
+			{#key selectedProfileId}
+				<Inbox
+					{listings}
+					preferences={scoring}
+					onview={handleViewed}
+					onfavourite={handleFavourite}
+					onmarkallviewed={handleMarkAllViewed}
+				/>
+			{/key}
 		{/if}
 	</div>
 </div>
@@ -305,10 +302,12 @@
 {/if}
 
 <style>
+	/* As tall as the window, so the inbox's list and details scroll each on
+	their own. */
 	.shell {
 		display: grid;
 		grid-template-columns: 11rem 1fr;
-		min-height: 100vh;
+		height: 100vh;
 	}
 
 	.sidebar {
@@ -361,6 +360,7 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		min-height: 0;
 	}
 
 	.topbar {

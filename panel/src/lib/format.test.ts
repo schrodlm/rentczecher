@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { daysSince, formatArea, formatPrice, formatPricePerM2 } from './format';
+import { formatArea, formatPrice, formatPricePerM2 } from './format';
 
 describe('formatPrice', () => {
 	test('groups thousands with a non-breaking space and appends Kč', () => {
@@ -25,17 +25,5 @@ describe('formatPricePerM2', () => {
 	test('returns null for a zero or negative size', () => {
 		expect(formatPricePerM2(21000, 0)).toBeNull();
 		expect(formatPricePerM2(21000, -5)).toBeNull();
-	});
-});
-
-describe('daysSince', () => {
-	test('is zero for a timestamp from today', () => {
-		const now = new Date('2026-09-19T12:00:00Z');
-		expect(daysSince('2026-09-19T08:00:00Z', now)).toBe(0);
-	});
-
-	test('counts whole days elapsed', () => {
-		const now = new Date('2026-09-19T12:00:00Z');
-		expect(daysSince('2026-09-15T12:00:00Z', now)).toBe(4);
 	});
 });
