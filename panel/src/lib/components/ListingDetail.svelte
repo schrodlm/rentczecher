@@ -162,13 +162,14 @@
 				{/each}
 			</div>
 		</div>
-		{#if score !== null}
-			<div class="listing-detail__score"><ScoreRing {score} /></div>
-		{/if}
 	</header>
 
 	<div class="listing-detail__panels">
 		{#if score !== null && parts.length > 0}
+			<section class="listing-detail__panel listing-detail__score">
+				<ScoreRing {score} />
+			</section>
+
 			<section class="listing-detail__panel">
 				<h3>{t.tn('Why {count} point', 'Why {count} points', score)}</h3>
 				<ul class="listing-detail__parts">
@@ -245,7 +246,7 @@
 
 	.listing-detail__head {
 		display: grid;
-		grid-template-columns: 4.5rem 1fr auto;
+		grid-template-columns: 4.5rem 1fr;
 		align-items: start;
 		gap: var(--space-4);
 	}
@@ -320,9 +321,18 @@
 		font-weight: 700;
 	}
 
+	.listing-detail__score {
+		display: grid;
+		place-items: center;
+	}
+
 	.listing-detail__score :global(.score-ring) {
-		width: 4.5rem;
-		height: 4.5rem;
+		width: 11rem;
+		height: 11rem;
+	}
+
+	.listing-detail__score :global(.score-ring__number) {
+		font-size: 3.25rem;
 	}
 
 	.listing-detail__panels {
