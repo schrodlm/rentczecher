@@ -11,9 +11,9 @@
 	type Section = 'new' | 'favourite' | 'viewed';
 
 	/* A profile's listings as a list beside the selected one's details. The
-	list holds the keyboard: the arrows move and view, Enter opens the
-	listing on its portal, F stars it. A narrow window shows one column at a
-	time, the details over the list. */
+	keys work wherever the focus is outside a text field or a dialog: the
+	arrows move and view, Enter opens the listing on its portal, F stars it.
+	A narrow window shows one column at a time, the details over the list. */
 	let {
 		listings,
 		preferences,
@@ -100,16 +100,20 @@
 	}
 
 	function onkeydown(event: KeyboardEvent): void {
-		if (selected === null) return;
+		if (selected === null || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+		// Typing and the profile editor keep their keys, and Enter on a button or
+		// link stays that control's own.
+		const target = event.target instanceof Element ? event.target : null;
+		if (target?.closest('input, textarea, select, [contenteditable], [aria-modal="true"]')) return;
 		const index = ordered.indexOf(selected);
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			const next = ordered[index + (event.key === 'ArrowDown' ? 1 : -1)];
 			if (next !== undefined) select(next, false);
-		} else if (event.key === 'Enter') {
+		} else if (event.key === 'Enter' && !target?.closest('button, a')) {
 			// Through the detail's own link, so the listing opens just as a click on
 			// it does in the app's window.
 			detail?.querySelector<HTMLAnchorElement>('a[href]')?.click();
-		} else if ((event.key === 'f' || event.key === 'F') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+		} else if (event.key === 'f' || event.key === 'F') {
 			onfavourite(selected.id, selected.favourited_at === null);
 		} else {
 			return;
@@ -117,6 +121,8 @@
 		event.preventDefault();
 	}
 </script>
+
+<svelte:window {onkeydown} />
 
 {#snippet section(title: string, rows: ListingModel[])}
 	<div class="inbox__section" role="group" aria-label={title}>
@@ -149,7 +155,6 @@
 			tabindex="0"
 			aria-label={t.t('Listings')}
 			aria-activedescendant={selected === null ? undefined : rowId(selected)}
-			{onkeydown}
 		>
 			{@render section(t.t('New'), sections.new)}
 			{#if sections.new.length === 0}
