@@ -3,8 +3,8 @@
 	import Inbox from '$lib/components/Inbox.svelte';
 	import type { ScoringPreferences } from '$lib/scoring/score';
 
-	/* Holds listings the way the inbox page does and applies viewing and
-	starring to them, so a test sees the rows move between sections. */
+	/* Holds listings the way the inbox page does: viewing and starring change
+	them in place, while marking all viewed loads them afresh. */
 	let {
 		listings,
 		preferences,
@@ -33,6 +33,10 @@
 		listing.favourited_at = on ? '2026-10-11T10:00:00Z' : null;
 		listing.viewed_at = listing.viewed_at ?? '2026-10-11T10:00:00Z';
 	}
+
+	function markAllViewedAndReload(): void {
+		held = held.map((listing) => ({ ...listing, viewed_at: listing.viewed_at ?? '2026-10-11T10:00:00Z' }));
+	}
 </script>
 
-<Inbox listings={held} {preferences} onview={view} onfavourite={favourite} onmarkallviewed={() => {}} />
+<Inbox listings={held} {preferences} onview={view} onfavourite={favourite} onmarkallviewed={markAllViewedAndReload} />
