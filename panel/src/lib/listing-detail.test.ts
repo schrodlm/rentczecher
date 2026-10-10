@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
+import { Translator } from '$lib/i18n/translator';
 import { listing } from '$lib/test-support/listing';
-import { historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './listing-detail';
+import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './listing-detail';
 
 const CHEAP = listing('a', { price: 18000, size_m2: 40 });
 const MIDDLE = listing('b', { price: 22000, size_m2: 55 });
@@ -55,6 +56,23 @@ describe('extremes', () => {
 		const standing = standingOf(tied[0], tied, (each) => each.price)!;
 		expect(isLowest(standing)).toBe(false);
 		expect(isHighest(standing)).toBe(false);
+	});
+});
+
+describe('factsOf', () => {
+	let t: Translator;
+	beforeAll(async () => {
+		t = await Translator.load('cs');
+	});
+
+	test('joins the layout, the formatted size and the place', () => {
+		const flat = listing('a', { disposition: '2+kk', size_m2: 1200, location_raw_text: 'Praha 7' });
+		expect(factsOf(flat, t).replace(/\s/g, ' ')).toBe('2+kk · 1 200 m² · Praha 7');
+	});
+
+	test('names an atypical layout and leaves out what the listing lacks', () => {
+		const flat = listing('a', { disposition: 'atypicky', size_m2: null, location_raw_text: null });
+		expect(factsOf(flat, t)).toBe('atypická dispozice');
 	});
 });
 
