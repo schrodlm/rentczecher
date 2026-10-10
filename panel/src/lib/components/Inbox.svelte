@@ -10,6 +10,10 @@
 
 	type Section = 'new' | 'favourite' | 'viewed';
 
+	/* Where a listing sits in the list: its section, and the date the section
+	orders it by. */
+	type Placement = { section: Section; date: string };
+
 	/* A profile's listings as a list beside the selected one's details. The
 	keys work wherever the focus is outside a text field or a dialog: the
 	arrows move and view, Enter opens the listing on its portal, F stars it.
@@ -41,19 +45,21 @@
 	// preference counts again, when the chosen order comes back.
 	const fields = $derived(preferences === null ? SORT_FIELDS.filter((field) => field !== 'score') : SORT_FIELDS);
 	const shownOrder = $derived(fields.includes(order.field) ? order : naturalOrder('date'));
-	// Each listing keeps the section it loaded in until the listings load
-	// again, so viewing or starring never moves a row from under you.
-	const loadedSections = $derived.by(() => {
+	// Each listing keeps the place it loaded in until the listings load again,
+	// so viewing or starring never moves a row from under you.
+	const placements = $derived.by(() => {
 		const loaded = listings;
-		return untrack(() => new Map(loaded.map((listing) => [listing.id, sectionOf(listing)])));
+		return untrack(() => new Map(loaded.map((listing) => [listing.id, placementOf(listing)])));
 	});
 	const sections = $derived.by(() => {
-		const inSection = (section: Section) => listings.filter((listing) => loadedSections.get(listing.id) === section);
-		return {
-			new: sortListings(inSection('new'), shownOrder, scoreOf, (listing) => listing.first_seen_at),
-			favourite: sortListings(inSection('favourite'), shownOrder, scoreOf, (listing) => listing.favourited_at ?? ''),
-			viewed: sortListings(inSection('viewed'), shownOrder, scoreOf, (listing) => listing.viewed_at ?? '')
-		};
+		const inSection = (section: Section) =>
+			sortListings(
+				listings.filter((listing) => placements.get(listing.id)?.section === section),
+				shownOrder,
+				scoreOf,
+				(listing) => placements.get(listing.id)?.date ?? ''
+			);
+		return { new: inSection('new'), favourite: inSection('favourite'), viewed: inSection('viewed') };
 	});
 	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
 	const selected = $derived(ordered.find((listing) => listing.id === selectedId) ?? null);
@@ -74,9 +80,10 @@
 		if (selectedRowId !== null) document.getElementById(selectedRowId)?.scrollIntoView({ block: 'nearest' });
 	});
 
-	function sectionOf(listing: ListingModel): Section {
-		if (listing.favourited_at !== null) return 'favourite';
-		return listing.viewed_at === null ? 'new' : 'viewed';
+	function placementOf(listing: ListingModel): Placement {
+		if (listing.favourited_at !== null) return { section: 'favourite', date: listing.favourited_at };
+		if (listing.viewed_at !== null) return { section: 'viewed', date: listing.viewed_at };
+		return { section: 'new', date: listing.first_seen_at };
 	}
 
 	function scoreOf(listing: ListingModel): number | null {
