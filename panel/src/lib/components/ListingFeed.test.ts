@@ -8,6 +8,8 @@ describe('ListingFeed', () => {
 	test('shows the empty message when nothing is new', async () => {
 		const { getByText, queryByText } = await renderWithTranslator(ListingFeed, {
 			preferences: null,
+			favouriteListings: [],
+			onfavourite: () => {},
 			newListings: [],
 			viewedListings: [],
 			onviewed: () => {},
@@ -21,6 +23,8 @@ describe('ListingFeed', () => {
 		const onviewed = vi.fn();
 		const { getByRole } = await renderWithTranslator(ListingFeed, {
 			preferences: null,
+			favouriteListings: [],
+			onfavourite: () => {},
 			newListings: [listing('sreality:1')],
 			viewedListings: [],
 			onviewed,
@@ -34,6 +38,8 @@ describe('ListingFeed', () => {
 		const onmarkallviewed = vi.fn();
 		const { getByText } = await renderWithTranslator(ListingFeed, {
 			preferences: null,
+			favouriteListings: [],
+			onfavourite: () => {},
 			newListings: [listing('sreality:1')],
 			viewedListings: [],
 			onviewed: () => {},
@@ -46,6 +52,8 @@ describe('ListingFeed', () => {
 	test('splits listings into the new and viewed sections', async () => {
 		const { getByText } = await renderWithTranslator(ListingFeed, {
 			preferences: null,
+			favouriteListings: [],
+			onfavourite: () => {},
 			newListings: [listing('sreality:1', { price: 21000 })],
 			viewedListings: [listing('sreality:2', { price: 15000, viewed_at: '2026-09-24T10:00:00Z' })],
 			onviewed: () => {},
@@ -75,6 +83,8 @@ describe('ListingFeed', () => {
 			newListings: [listing('sreality:1', { price: 21000 })],
 			viewedListings: [listing('sreality:2', { price: 31500, viewed_at: new Date().toISOString() })],
 			preferences,
+			favouriteListings: [],
+			onfavourite: () => {},
 			onviewed: () => {},
 			onmarkallviewed: () => {}
 		});
@@ -100,7 +110,14 @@ describe('ListingFeed', () => {
 		};
 		const cheap = listing('sreality:1', { price: 20000, first_seen_at: '2026-10-01T00:00:00Z' });
 		const dear = listing('sreality:2', { price: 30000, first_seen_at: '2026-10-02T00:00:00Z' });
-		const props = { newListings: [dear, cheap], viewedListings: [], onviewed: () => {}, onmarkallviewed: () => {} };
+		const props = {
+			newListings: [dear, cheap],
+			favouriteListings: [],
+			viewedListings: [],
+			onviewed: () => {},
+			onfavourite: () => {},
+			onmarkallviewed: () => {}
+		};
 		const scored = await renderWithTranslator(ListingFeed, { ...props, preferences });
 		expect(scored.getAllByRole('img', { name: /Skóre/ }).map((ring) => ring.getAttribute('aria-label'))).toEqual([
 			'Skóre 100 ze 100',
@@ -109,5 +126,37 @@ describe('ListingFeed', () => {
 		scored.unmount();
 		const unscored = await renderWithTranslator(ListingFeed, { ...props, preferences: null });
 		expect(unscored.getByRole('button', { name: 'Řadit podle: Datum' })).toBeInTheDocument();
+	});
+
+	test('shows favourites in their own section, only when there are some', async () => {
+		const props = {
+			newListings: [listing('sreality:1')],
+			viewedListings: [],
+			preferences: null,
+			onviewed: () => {},
+			onfavourite: () => {},
+			onmarkallviewed: () => {}
+		};
+		const none = await renderWithTranslator(ListingFeed, { ...props, favouriteListings: [] });
+		expect(none.queryByText('Oblíbené')).toBeNull();
+		none.unmount();
+		const starred = listing('sreality:2', { favourited_at: '2026-10-09T08:00:00Z', viewed_at: '2026-10-09T08:00:00Z' });
+		const some = await renderWithTranslator(ListingFeed, { ...props, favouriteListings: [starred] });
+		expect(some.getByText('Oblíbené')).toBeInTheDocument();
+	});
+
+	test('reports a star as a favourite of that listing', async () => {
+		const onfavourite = vi.fn();
+		const { getByRole } = await renderWithTranslator(ListingFeed, {
+			newListings: [listing('sreality:1')],
+			favouriteListings: [],
+			viewedListings: [],
+			preferences: null,
+			onviewed: () => {},
+			onfavourite,
+			onmarkallviewed: () => {}
+		});
+		await fireEvent.click(getByRole('button', { name: 'Přidat do oblíbených' }));
+		expect(onfavourite).toHaveBeenCalledWith('sreality:1', true);
 	});
 });
