@@ -136,10 +136,10 @@
 
 <svelte:window {onkeydown} />
 
-{#snippet section(title: string, rows: ListingModel[])}
+{#snippet section(title: string, sectionListings: ListingModel[])}
 	<div class="inbox__section" role="group" aria-label={title}>
 		<h2 class="inbox__heading">{title}</h2>
-		{#each rows as listing (listing.id)}
+		{#each sectionListings as listing (listing.id)}
 			<ListingRow
 				{listing}
 				id={rowId(listing)}
