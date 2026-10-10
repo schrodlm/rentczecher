@@ -31,6 +31,11 @@ describe('ListingRow', () => {
 		expect(onselect).toHaveBeenCalledOnce();
 	});
 
+	test('leaves the focus to the list around it', async () => {
+		const { getByRole } = await renderRow();
+		expect(getByRole('option')).not.toHaveAttribute('tabindex');
+	});
+
 	test('says whether it is the selected one', async () => {
 		const { getByRole } = await renderRow({}, 78, true);
 		expect(getByRole('option')).toHaveAttribute('aria-selected', 'true');
