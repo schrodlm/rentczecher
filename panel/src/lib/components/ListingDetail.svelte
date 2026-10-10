@@ -4,9 +4,11 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import {
+		factsOf,
 		historyOf,
 		isHighest,
 		isLowest,
+		layoutOf,
 		percentAbove,
 		percentBelow,
 		percentFromMiddle,
@@ -43,14 +45,8 @@
 	const score = $derived(preferences === null ? null : scoreListing(listing, preferences));
 	const parts = $derived(preferences === null ? [] : scoreParts(listing, preferences));
 	const history = $derived(historyOf(listing));
-	const layout = $derived(
-		listing.disposition === 'atypicky' ? t.t('atypical layout') : (listing.disposition ?? listing.disposition_raw_text)
-	);
-	const facts = $derived(
-		[layout, listing.size_m2 === null ? null : formatArea(listing.size_m2), listing.location_raw_text]
-			.filter((fact) => fact !== null)
-			.join(' · ')
-	);
+	const layout = $derived(layoutOf(listing, t));
+	const facts = $derived(factsOf(listing, t));
 	const priceStanding = $derived(standingOf(listing, listings, (each) => each.price));
 	const sizeStanding = $derived(standingOf(listing, listings, (each) => each.size_m2));
 	const perM2Standing = $derived(standingOf(listing, listings, pricePerM2));
