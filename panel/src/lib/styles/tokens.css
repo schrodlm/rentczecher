@@ -1,6 +1,6 @@
 /* The five-color palette is the whole
-identity. Every UI color is one of these, a derived neutral, or a tint of
-one named here, nothing else enters. Light values are the defaults, dark
+identity. Every UI color is one of these, a derived neutral, a tint of one
+named here, or the gold that marks favourites, nothing else enters. Light values are the defaults, dark
 values apply under prefers-color-scheme: dark, matching this repo's own
 theme convention. */
 
@@ -23,6 +23,9 @@ theme convention. */
 	palette has. Light enough to carry ink text. */
 	--color-olive-tint: color-mix(in srgb, var(--color-olive) 50%, var(--color-card));
 	--color-amber-tint: color-mix(in srgb, var(--color-amber) 38%, var(--color-card));
+
+	/* Marks a favourite listing, apart from the amber of a new one. */
+	--color-gold: #ccb80a;
 
 	font-family: system-ui, sans-serif;
 
@@ -49,5 +52,6 @@ theme convention. */
 		--color-bronze: #c79a5b;
 		--color-amber: #ffa737;
 		--color-amber-bright: #ffa737;
+		--color-gold: #e0cc3d;
 	}
 }
