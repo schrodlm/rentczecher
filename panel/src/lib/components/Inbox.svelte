@@ -1,0 +1,286 @@
+<script lang="ts">
+	import type { ListingModel } from '$lib/api/client';
+	import { getTranslatorContext } from '$lib/i18n/context';
+	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
+	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
+	import ListingDetail from './ListingDetail.svelte';
+	import ListingRow from './ListingRow.svelte';
+	import SortMenu from './SortMenu.svelte';
+
+	type Section = 'new' | 'favourite' | 'viewed';
+
+	/* A profile's listings as a list beside the selected one's details. The
+	list holds the keyboard: the arrows move and view, Enter opens the
+	listing on its portal, F stars it. A narrow window shows one column at a
+	time, the details over the list. */
+	let {
+		listings,
+		preferences,
+		onview,
+		onfavourite,
+		onmarkallviewed
+	}: {
+		listings: readonly ListingModel[];
+		preferences: ScoringPreferences | null;
+		onview: (listingId: string) => void;
+		onfavourite: (listingId: string, favourite: boolean) => void;
+		onmarkallviewed: () => void;
+	} = $props();
+
+	const t = getTranslatorContext();
+	const listId = $props.id();
+
+	let order = $state<ListingOrder>(naturalOrder('score'));
+	// The listing picked and the section it was in then. It stays there while
+	// picked, so viewing or starring it never moves the row from under you.
+	let held = $state<{ id: string; section: Section } | null>(null);
+	let detailOpen = $state(false);
+	let detail = $state<HTMLElement>();
+	let rows = $state<HTMLElement>();
+
+	// Unscored listings cannot go by score, so they go newest first until a
+	// preference counts again, when the chosen order comes back.
+	const fields = $derived(preferences === null ? SORT_FIELDS.filter((field) => field !== 'score') : SORT_FIELDS);
+	const shownOrder = $derived(fields.includes(order.field) ? order : naturalOrder('date'));
+	const sections = $derived.by(() => {
+		const inSection = (section: Section) => listings.filter((listing) => shownSection(listing) === section);
+		return {
+			new: sortListings(inSection('new'), shownOrder, scoreOf, (listing) => listing.first_seen_at),
+			favourite: sortListings(inSection('favourite'), shownOrder, scoreOf, (listing) => listing.favourited_at ?? ''),
+			viewed: sortListings(inSection('viewed'), shownOrder, scoreOf, (listing) => listing.viewed_at ?? '')
+		};
+	});
+	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
+	const selected = $derived(ordered.find((listing) => listing.id === held?.id) ?? null);
+	const selectedRowId = $derived(selected === null ? null : rowId(selected));
+	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
+
+	// A profile opens on its first listing, held but not viewed, and a picked
+	// listing that leaves the profile gives way to the first again.
+	$effect(() => {
+		if (held !== null && listings.some((listing) => listing.id === held?.id)) return;
+		const first = ordered[0];
+		held = first === undefined ? null : { id: first.id, section: sectionOf(first) };
+	});
+
+	// The arrows can move the selection off the visible rows, so it is
+	// brought back into view.
+	$effect(() => {
+		if (selectedRowId !== null) document.getElementById(selectedRowId)?.scrollIntoView({ block: 'nearest' });
+	});
+
+	function shownSection(listing: ListingModel): Section {
+		return listing.id === held?.id ? held.section : sectionOf(listing);
+	}
+
+	function sectionOf(listing: ListingModel): Section {
+		if (listing.favourited_at !== null) return 'favourite';
+		return listing.viewed_at === null ? 'new' : 'viewed';
+	}
+
+	function scoreOf(listing: ListingModel): number | null {
+		return preferences === null ? null : scoreListing(listing, preferences);
+	}
+
+	function rowId(listing: ListingModel): string {
+		return `${listId}-${listing.id}`;
+	}
+
+	// A narrow window shows the details over the list, so only a click opens
+	// them there: moving with the arrows keeps the list, and its focus, in view.
+	function select(listing: ListingModel, openDetail: boolean): void {
+		if (listing.id !== held?.id) held = { id: listing.id, section: sectionOf(listing) };
+		if (openDetail) detailOpen = true;
+		if (listing.viewed_at === null) onview(listing.id);
+	}
+
+	function backToList(): void {
+		detailOpen = false;
+		rows?.focus();
+	}
+
+	function onkeydown(event: KeyboardEvent): void {
+		if (selected === null) return;
+		const index = ordered.indexOf(selected);
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			const next = ordered[index + (event.key === 'ArrowDown' ? 1 : -1)];
+			if (next !== undefined) select(next, false);
+		} else if (event.key === 'Enter') {
+			// Through the detail's own link, so the listing opens just as a click on
+			// it does in the app's window.
+			detail?.querySelector<HTMLAnchorElement>('a[href]')?.click();
+		} else if ((event.key === 'f' || event.key === 'F') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+			onfavourite(selected.id, selected.favourited_at === null);
+		} else {
+			return;
+		}
+		event.preventDefault();
+	}
+</script>
+
+{#snippet section(title: string, rows: ListingModel[])}
+	<div class="inbox__section" role="group" aria-label={title}>
+		<h2 class="inbox__heading">{title}</h2>
+		{#each rows as listing (listing.id)}
+			<ListingRow
+				{listing}
+				id={rowId(listing)}
+				score={scoreOf(listing)}
+				selected={selected?.id === listing.id}
+				onselect={() => select(listing, true)}
+			/>
+		{/each}
+	</div>
+{/snippet}
+
+<div class="inbox" class:inbox--detail-open={detailOpen}>
+	<div class="inbox__list">
+		<div class="inbox__tools">
+			{#if unviewed}
+				<button type="button" class="inbox__mark-all" onclick={onmarkallviewed}>{t.t('Mark all viewed')}</button>
+			{/if}
+			<SortMenu bind:order={() => shownOrder, (chosen) => (order = chosen)} {fields} />
+		</div>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div
+			bind:this={rows}
+			class="inbox__rows"
+			role="listbox"
+			tabindex="0"
+			aria-label={t.t('Listings')}
+			aria-activedescendant={selected === null ? undefined : rowId(selected)}
+			{onkeydown}
+		>
+			{@render section(t.t('New'), sections.new)}
+			{#if sections.new.length === 0}
+				<p class="inbox__empty">{t.t('No new listings')}</p>
+			{/if}
+			{#if sections.favourite.length > 0}
+				{@render section(t.t('Favourites'), sections.favourite)}
+			{/if}
+			{#if sections.viewed.length > 0}
+				{@render section(t.t('Viewed'), sections.viewed)}
+			{/if}
+		</div>
+	</div>
+
+	<div class="inbox__detail" bind:this={detail}>
+		<button type="button" class="inbox__back" onclick={backToList}>← {t.t('Back to the list')}</button>
+		{#if selected}
+			<ListingDetail
+				listing={selected}
+				{listings}
+				{preferences}
+				onfavourite={(favourite) => onfavourite(selected.id, favourite)}
+			/>
+		{:else}
+			<p class="inbox__empty">{t.t('No listings yet. A scan finds them.')}</p>
+		{/if}
+	</div>
+</div>
+
+<style>
+	.inbox {
+		display: grid;
+		grid-template-columns: minmax(20rem, 26rem) 1fr;
+		flex: 1;
+		min-height: 0;
+	}
+
+	.inbox__list {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		border-right: 1px solid var(--color-line);
+	}
+
+	.inbox__tools {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-3) 0;
+	}
+
+	.inbox__mark-all {
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--color-bronze);
+		font-size: 0.8125rem;
+		cursor: pointer;
+	}
+
+	.inbox__mark-all:hover {
+		text-decoration: underline;
+	}
+
+	.inbox__rows {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0 var(--space-3) var(--space-3);
+	}
+
+	.inbox__rows:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-amber) 60%, transparent);
+		outline-offset: -2px;
+	}
+
+	.inbox__section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.inbox__heading {
+		margin: var(--space-4) var(--space-2) var(--space-1);
+		color: var(--color-bronze);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.inbox__empty {
+		margin: var(--space-2);
+		color: var(--color-bronze);
+		font-size: 0.875rem;
+	}
+
+	.inbox__detail {
+		overflow-y: auto;
+		padding: var(--space-6);
+	}
+
+	.inbox__back {
+		display: none;
+		margin-bottom: var(--space-4);
+		padding: var(--space-1) var(--space-3);
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-full);
+		background: var(--color-card);
+		color: var(--color-ink);
+		font-size: 0.875rem;
+		cursor: pointer;
+	}
+
+	/* Too narrow for both columns, so one shows at a time and selecting a row
+	brings its details over the list. */
+	@media (max-width: 60rem) {
+		.inbox {
+			grid-template-columns: 1fr;
+		}
+
+		.inbox__detail,
+		.inbox--detail-open .inbox__list {
+			display: none;
+		}
+
+		.inbox--detail-open .inbox__detail {
+			display: block;
+		}
+
+		.inbox__back {
+			display: inline-flex;
+		}
+	}
+</style>
