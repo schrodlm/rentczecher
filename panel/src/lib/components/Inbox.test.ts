@@ -108,7 +108,7 @@ describe('Inbox', () => {
 		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
 	});
 
-	test('leaves the keys to a text field and to a modal dialog', async () => {
+	test('leaves the keys to a text field and to an open modal dialog, wherever the focus is', async () => {
 		const { onview, onfavourite } = await renderInbox();
 		const field = document.body.appendChild(document.createElement('input'));
 		const dialog = document.body.appendChild(document.createElement('div'));
@@ -117,6 +117,7 @@ describe('Inbox', () => {
 		await fireEvent.keyDown(field, { key: 'ArrowDown' });
 		await fireEvent.keyDown(field, { key: 'f' });
 		await fireEvent.keyDown(button, { key: 'ArrowDown' });
+		await fireEvent.keyDown(document.body, { key: 'ArrowDown' });
 		expect(onview).not.toHaveBeenCalled();
 		expect(onfavourite).not.toHaveBeenCalled();
 		field.remove();
