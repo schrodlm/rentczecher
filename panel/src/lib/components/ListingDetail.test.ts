@@ -55,12 +55,9 @@ describe('ListingDetail', () => {
 		expect(getByText('18 900 Kč · preferováno do 22 000 Kč')).toBeInTheDocument();
 	});
 
-	test('shows the score in a panel of its own, apart from the header', async () => {
-		const { getByRole, container } = await renderDetail();
-		const ring = getByRole('img', { name: /87/ });
-		expect(ring.closest('section')).not.toBeNull();
-		expect(ring.closest('section')).not.toHaveTextContent('Proč');
-		expect(container.querySelector('header')).not.toContainElement(ring);
+	test('shows the score as a ring', async () => {
+		const { getByRole } = await renderDetail();
+		expect(getByRole('img', { name: 'Skóre 87 ze 100' })).toBeInTheDocument();
 	});
 
 	test('leaves the score out while unscored', async () => {
