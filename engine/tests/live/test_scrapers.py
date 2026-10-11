@@ -15,6 +15,9 @@ SEARCHES: dict[str, Criteria] = {
     "praha7-byty": criteria(max_price=25000, dispositions=layouts("2+kk", "3+kk")),
     "domazlice-domy": criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401),
                                max_price=5000000, min_land_m2=500),
+    # Wide enough to always hold rentals, where a capped Praha 7 search may
+    # find every cheap flat already rented.
+    "praha-byty": criteria(place=PlaceRef("kraj", 19)),
 }
 
 
@@ -167,11 +170,13 @@ class TestBezrealitkyLive:
 # ─── RE/MAX ─────────────────────────────────────────────────
 
 class TestRemaxLive:
-    def test_praha7_returns_listings(self, client):
+    def test_praha_returns_only_rentals_priced_by_the_month(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
-        s = _scraper(RemaxScraper, "praha7-byty", client)
-        listings = s.scrape()
-        assert len(listings) > 0, "RE/MAX should return Praha 7 rentals"
+        listings = _scraper(RemaxScraper, "praha-byty", client).scrape()
+        assert len(listings) > 0, "RE/MAX should return Praha rentals"
+        for l in listings:
+            assert l.title.startswith("Pronájem"), f"Not a rental: {l.title}"
+            assert 1000 < l.price < 500000, f"Not a monthly rent: {l.price} for {l.title}"
 
     def test_praha7_prices_valid(self, client):
         from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
