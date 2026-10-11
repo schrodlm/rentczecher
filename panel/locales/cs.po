@@ -568,5 +568,8 @@ msgstr "Předchozí inzerát"
 msgid "Price over time"
 msgstr "Vývoj ceny"
 
+msgid "Price rose from {from} to {to}"
+msgstr "Zdraženo z {from} na {to}"
+
 msgid "The price has not changed since {date}"
 msgstr "Cena se nezměnila od {date}"
