@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import InboxCard
-from rentczecher_engine.domain.price import PriceObservation
+from rentczecher_engine.domain.price import PostingPrices, PriceObservation
 from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
 
@@ -66,6 +66,11 @@ class ListingRepository(ABC):
     @abstractmethod
     def price_history(self, listing_id: str) -> list[PriceObservation]:
         ...
+
+    @abstractmethod
+    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
+        """The prices of every portal posting of the listing's property, the
+        listing's own first, or None when the profile does not track it."""
 
     @abstractmethod
     def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:

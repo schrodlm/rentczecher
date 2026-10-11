@@ -23,6 +23,16 @@ class PriceChange:
     last_seen_at: str
 
 
+@dataclass(frozen=True, slots=True)
+class PostingPrices:
+    """The prices one portal posting of a property held, oldest first."""
+
+    listing_id: str
+    source: str
+    url: str
+    changes: tuple[PriceChange, ...]
+
+
 def price_changes(observations: list[PriceObservation]) -> list[PriceChange]:
     """Collapses observations, oldest first, into the prices they held. A
     repeat scan at the same price extends that price, whatever its charges."""

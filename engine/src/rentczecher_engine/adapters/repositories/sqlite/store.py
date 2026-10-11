@@ -8,6 +8,7 @@ from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListi
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.price import PostingPrices
 from rentczecher_engine.domain.property import PropertyLocation
 from rentczecher_engine.services.assemble import assemble_location, assemble_property
 from rentczecher_engine.services.dedup import DedupOutcome, match_score_to_json
@@ -37,6 +38,9 @@ class SqliteRunStore:
 
     def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
         return self._listings.inbox_listings(profile_id, only_new)
+
+    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
+        return self._listings.price_histories(profile_id, listing_id)
 
     def mark_viewed(self, profile_id: str, listing_id: str) -> None:
         """Records the view as its own unit of work."""

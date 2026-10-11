@@ -7,7 +7,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.listing import InboxCard, SiblingSource
-from rentczecher_engine.domain.price import PriceObservation
+from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
 from rentczecher_engine.domain.property import PropertyLocation
 
 
@@ -125,6 +125,30 @@ class SqliteListingRepository(ListingRepository):
         """
         rows = self._conn.execute(stmt, (listing_id,))
         return [self._to_observation(row) for row in rows]
+
+    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
+        stmt = """
+            SELECT listings.property_id AS property_id
+            FROM listing_tracking
+            JOIN listings ON listings.id = listing_tracking.listing_id
+            WHERE listing_tracking.profile_id = ? AND listing_tracking.listing_id = ?
+        """
+        tracked = self._conn.execute(stmt, (profile_id, listing_id)).fetchone()
+        if tracked is None:
+            return None
+        stmt = "SELECT id, source, url FROM listings WHERE property_id = ? ORDER BY source, id"
+        postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (tracked["property_id"],))]
+        own = [posting for posting in postings if posting.listing_id == listing_id]
+        others = [posting for posting in postings if posting.listing_id != listing_id]
+        return own + others
+
+    def _to_posting_prices(self, row: sqlite3.Row) -> PostingPrices:
+        return PostingPrices(
+            listing_id=row["id"],
+            source=row["source"],
+            url=row["url"],
+            changes=tuple(price_changes(self.price_history(row["id"]))),
+        )
 
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         """The most recent observed price per listing the profile tracks.
