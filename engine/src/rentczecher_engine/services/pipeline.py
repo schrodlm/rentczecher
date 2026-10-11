@@ -111,7 +111,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
     filtered = apply_filters(scraped, profile.criteria)
-    located = locate_listings(filtered, deps.gazetteer)
+    located = locate_listings(filtered, deps.gazetteer, profile.criteria.place)
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)

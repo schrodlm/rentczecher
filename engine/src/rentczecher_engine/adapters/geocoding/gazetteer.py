@@ -180,14 +180,22 @@ class Gazetteer:
        while parts named 'Holešovice' in Praha and in Chroustovice are a
        real tie.
 
-    4. The named district itself: the give-up-gracefully answer. When
+    4. Search place scope: the place the profile searched narrows the
+       map. A flat a portal returned for a search of Praha 7 almost surely
+       lies there, so of two 'Veletržní' the one inside Praha 7 wins. It
+       runs only after the passes above found no single answer, so it
+       never changes what they decide, and with no candidate inside the
+       search place it adds nothing, since a portal may return a flat just
+       past the border.
+
+    5. The named district itself: the give-up-gracefully answer. When
        'Nádražní' repeats inside okres Klatovy no single street can be
        picked, but the okres is still certain, and a coarse true answer
        beats a precise wrong one. The result's most specific unit says
        how coarse. Callers gate on its kind.
 
     A stated district (ParsedPlace.district) changes exactly one thing:
-    that name may scope (pass 2) and be the answer (pass 4) but never
+    that name may scope (pass 2) and be the answer (pass 5) but never
     resolve as the same-named town - the caller has said which of the two
     readings it means, and every district capital shares its okres's name.
     Everything else is pooled: no name is ever routed to a specific pass
@@ -205,9 +213,10 @@ class Gazetteer:
     def close(self) -> None:
         self._conn.close()
 
-    def resolve(self, place: ParsedPlace) -> Location | None:
+    def resolve(self, place: ParsedPlace, within: PlaceRef | None = None) -> Location | None:
         """The location the parsed names point to, or None when they are
-        unknown or ambiguous."""
+        unknown or ambiguous. within is the place the listing was searched
+        in, when there was one."""
         candidates = candidate_names(place.names)
         stated = frozenset(candidate_names([place.district]) if place.district else ())
         lookup = candidates + [name for name in stated if name not in candidates]
@@ -224,6 +233,7 @@ class Gazetteer:
         match = (self._vouched_by_municipality(place_rows, vouchers)
                  or self._unique_in_named_district(place_rows, district_names)
                  or self._unique_name(place_rows)
+                 or self._unique_inside_search_place(place_rows, within)
                  or self._named_district(rows))
         if match is None:
             return None
@@ -652,6 +662,17 @@ class Gazetteer:
                 in_kind = [r for r in rows if r["kind"] == kind]
                 if len(in_kind) == 1:
                     return in_kind[0]
+        return None
+
+    def _unique_inside_search_place(self, place_rows, within: PlaceRef | None) -> sqlite3.Row | None:
+        """Is the name unique inside the place searched?"""
+        if within is None:
+            return None
+        for kind in _KINDS_MOST_SPECIFIC_FIRST:
+            inside = [r for r in place_rows if r["kind"] == kind
+                      and self._lies_partly_in(PlaceRef(kind=r["kind"], code=r["code"]), self._location_of(r), within)]
+            if len(inside) == 1:
+                return inside[0]
         return None
 
     def _named_district(self, rows) -> sqlite3.Row | None:

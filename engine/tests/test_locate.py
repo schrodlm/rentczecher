@@ -23,23 +23,23 @@ def _listing(parsed_place=ParsedPlace(names=("Veletržní", "Praha 7")), **kw):
 
 class TestLocate:
     def test_text_resolution_supplies_the_location(self, gazetteer):
-        location = locate(_listing(), gazetteer)
+        location = locate(_listing(), gazetteer, searched_in=None)
         assert location.most_specific()[0] == "ulice"
         assert location.obec.name == "Praha"
 
     def test_ambiguous_text_stays_unlocated_even_with_gps(self, gazetteer):
         """A GPS point never stands in for a place the text does not name."""
         location = locate(_listing(lat=50.1, lon=14.43,
-                                   parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
+                                   parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer, searched_in=None)
         assert location is None
 
     def test_ambiguous_text_without_gps_has_no_location(self, gazetteer):
-        location = locate(_listing(parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer)
+        location = locate(_listing(parsed_place=ParsedPlace(names=("Nová Ves",))), gazetteer, searched_in=None)
         assert location is None
 
     def test_stated_district_scopes_the_lookup(self, gazetteer):
         location = locate(_listing(parsed_place=ParsedPlace(
-            names=("Škarmanská 369 / 369",), district="Domažlice")), gazetteer)
+            names=("Škarmanská 369 / 369",), district="Domažlice")), gazetteer, searched_in=None)
         assert location.most_specific()[0] == "ulice"
         assert location.obec.name == "Kdyně"
 
@@ -49,7 +49,7 @@ class TestLocateListings:
         locatable = _listing()
         unlocatable = _listing(parsed_place=ParsedPlace(names=("Nová Ves",)))
 
-        located = locate_listings([locatable, unlocatable], gazetteer)
+        located = locate_listings([locatable, unlocatable], gazetteer, searched_in=None)
 
         assert located[0].resolved_location is not None
         assert located[0].resolved_location.obec.name == "Praha"

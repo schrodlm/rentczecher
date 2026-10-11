@@ -37,7 +37,7 @@ def _make_listing(**kwargs) -> Listing:
 
 def _locate_and_dedup_outcome(listings, gazetteer=None):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
-    return cross_source_dedup(locate_listings(listings, gazetteer), gazetteer)
+    return cross_source_dedup(locate_listings(listings, gazetteer, searched_in=None), gazetteer)
 
 
 def _locate_and_dedup(listings, gazetteer=None):
@@ -46,7 +46,7 @@ def _locate_and_dedup(listings, gazetteer=None):
 
 def _score_pair(a, b, gazetteer=None):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
-    located_a, located_b = locate_listings([a, b], gazetteer)
+    located_a, located_b = locate_listings([a, b], gazetteer, searched_in=None)
     return score_match(located_a, located_b, None)
 
 
