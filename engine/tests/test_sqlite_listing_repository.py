@@ -473,6 +473,40 @@ class TestTrackedProperties:
         assert [s.source for s in card.sibling_sources] == ["sreality"]
         assert card.sibling_sources[0].url == "u"
 
+    def test_shows_a_flat_once_by_its_cheapest_listing(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=19000))
+        (card,) = repo.tracked_properties(PROFILE)
+        assert (card.id, card.price) == ("bezrealitky:1", 19000)
+        assert [s.source for s in card.sibling_sources] == ["sreality"]
+
+    def test_shows_the_first_found_of_equally_cheap_listings(self, tmp_path):
+        repo, _ = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1)))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.id == "sreality:1"
+        assert card.first_seen_at == BASE.isoformat()
+
+    def test_leaves_out_listings_only_another_profile_found(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="remax:1", price=15000))
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.id == "sreality:1"
+        assert card.sibling_sources == ()
+
+    def test_a_flat_is_viewed_once_any_of_its_listings_is(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
+        repo.mark_viewed(PROFILE, "bezrealitky:1")
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.id == "sreality:1"
+        assert card.viewed_at is not None
+        assert repo.tracked_properties(PROFILE, only_new=True) == []
+
     def test_no_siblings_is_an_empty_tuple(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
