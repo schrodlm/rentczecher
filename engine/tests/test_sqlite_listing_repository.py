@@ -169,8 +169,8 @@ class TestMarkViewed:
         repo.upsert(PROFILE, PROPERTY, _listing())
         repo.mark_viewed(PROFILE, "sreality:1")
         row = conn.execute(
-            "SELECT viewed_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+            "SELECT viewed_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
         assert row["viewed_at"] == BASE.isoformat()
 
     def test_does_not_overwrite_an_earlier_view(self, tmp_path):
@@ -179,8 +179,8 @@ class TestMarkViewed:
         repo.mark_viewed(PROFILE, "sreality:1")
         repo.mark_viewed(PROFILE, "sreality:1")
         row = conn.execute(
-            "SELECT viewed_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+            "SELECT viewed_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
         assert row["viewed_at"] == (BASE + timedelta(hours=1)).isoformat()
 
     def test_scoped_to_the_profile(self, tmp_path):
@@ -189,8 +189,8 @@ class TestMarkViewed:
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
         repo.mark_viewed(PROFILE, "sreality:1")
         other = conn.execute(
-            "SELECT viewed_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (OTHER_PROFILE,)).fetchone()
+            "SELECT viewed_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (OTHER_PROFILE, PROPERTY)).fetchone()
         assert other["viewed_at"] is None
 
     def test_does_not_commit(self, tmp_path):
@@ -200,16 +200,16 @@ class TestMarkViewed:
         repo.mark_viewed(PROFILE, "sreality:1")
         conn.rollback()
         row = conn.execute(
-            "SELECT viewed_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+            "SELECT viewed_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
         assert row["viewed_at"] is None
 
 
 class TestFavourite:
     def _row(self, conn):
         return conn.execute(
-            "SELECT favourited_at, viewed_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (PROFILE,)).fetchone()
+            "SELECT favourited_at, viewed_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
 
     def test_marking_keeps_the_listing_and_views_it(self, tmp_path):
         repo, conn = _repo(tmp_path)
@@ -243,8 +243,8 @@ class TestFavourite:
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
         repo.mark_favourite(PROFILE, "sreality:1")
         other = conn.execute(
-            "SELECT favourited_at FROM listing_tracking "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (OTHER_PROFILE,)).fetchone()
+            "SELECT favourited_at FROM property_tracking "
+            "WHERE profile_id = ? AND property_id = ?", (OTHER_PROFILE, PROPERTY)).fetchone()
         assert other["favourited_at"] is None
 
     def test_does_not_commit(self, tmp_path):
@@ -391,8 +391,8 @@ class TestTrackedProperties:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         conn.execute(
-            "UPDATE listing_tracking SET favourited_at = ? "
-            "WHERE profile_id = ? AND listing_id = 'sreality:1'", (BASE.isoformat(), PROFILE))
+            "UPDATE property_tracking SET favourited_at = ? "
+            "WHERE profile_id = ? AND property_id = ?", (BASE.isoformat(), PROFILE, PROPERTY))
         conn.commit()
         repo.mark_viewed(PROFILE, "sreality:1")
         (card,) = repo.tracked_properties(PROFILE)
@@ -422,6 +422,7 @@ class TestTrackedProperties:
             "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, "
             "last_seen_at, miss_count) VALUES (?, 'sreality:1', ?, ?, 0)",
             (PROFILE, BASE.isoformat(), BASE.isoformat()))
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id) VALUES (?, ?)", (PROFILE, PROPERTY))
         conn.commit()
         (card,) = repo.tracked_properties(PROFILE)
         assert card.price is None
@@ -575,10 +576,8 @@ class TestPrune:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:kept"))
         stale = (BASE - timedelta(days=91)).isoformat()
-        conn.execute(
-            "UPDATE listing_tracking SET last_seen_at = ?, favourited_at = ? "
-            "WHERE listing_id = 'sreality:kept'",
-            (stale, BASE.isoformat()))
+        conn.execute("UPDATE listing_tracking SET last_seen_at = ? WHERE listing_id = 'sreality:kept'", (stale,))
+        repo.mark_favourite(PROFILE, "sreality:kept")
         conn.commit()
         assert repo.prune(PROFILE) == 0
         assert repo.seen_ids(PROFILE) == {"sreality:kept"}
