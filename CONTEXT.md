@@ -8,7 +8,7 @@ what's new for the panel and notification channels to show.
 
 **Listing**:
 One portal's posting, identified as `source:source_id`. The unit scrapers
-produce and the panel shows.
+produce.
 _Avoid_: advert, offer, item
 
 **Property**:
@@ -16,15 +16,19 @@ The inferred real-world housing unit behind one or more listings. The same
 flat posted on two portals is one property with two listings.
 _Avoid_: estate, home
 
-**Tracked listing**:
-A listing as one profile tracks it: when the profile first saw it, whether it
-viewed or starred it, and the listing's current price. What the engine serves
-for the panel and notification channels to present each in their own way.
-_Avoid_: inbox card, card
+**Tracked property**:
+A property as one profile tracks it: the listings of it that profile's scans
+found, when the profile first saw it, whether it viewed or starred it, and
+the lowest current price among those listings. Listings of the property that
+the profile's scans never found are not part of it. What the engine serves for
+the panel and notification channels to present each in their own way, so each
+flat appears once.
+_Avoid_: tracked listing, inbox card, card
 
 **Inbox**:
-The panel's view of one profile's tracked listings, a list beside the selected
-one's details. A view of the panel's, never an engine concept.
+The panel's view of one profile's tracked properties, a list beside the
+selected one's details. A view of the panel's, never an engine concept. On
+screen each is an "inzerát".
 _Avoid_: feed
 
 **Disposition**:
@@ -106,19 +110,21 @@ person knows it exists.
 _Avoid_: seen, found
 
 **Viewed**:
-The user selected the listing in the GUI, opened it, marked it a favourite,
-or marked all viewed. Viewing is never undone.
+The user selected the tracked property in the GUI, opened it, marked it a
+favourite, or marked all viewed. A tracked property is viewed once any of its
+listings is, so a portal newly posting a viewed flat does not make it new
+again. Viewing is never undone.
 _Avoid_: seen, read
 
 **New**:
-Observed but not yet viewed. What the GUI's inbox counts and what the
-watchdog exists to surface.
+A tracked property observed but not yet viewed. What the GUI's inbox counts
+and what the watchdog exists to surface.
 _Avoid_: unseen, unread, fresh
 
 **Notified**:
-A notification channel delivered the listing. A channel is a client of the
-API and keeps that record itself, the engine never tracks it. Notifying does
-not make a listing stop being new, only viewing does.
+A notification channel delivered the tracked property. A channel is a client
+of the API and keeps that record itself, the engine never tracks it.
+Notifying does not make a tracked property stop being new, only viewing does.
 _Avoid_: sent, emailed
 
 **Disappeared**:
@@ -137,9 +143,9 @@ never merged.
 _Avoid_: fuzzy match, low-confidence match
 
 **Favourite**:
-A listing the user marked to keep, per profile. Marking it views it. A
-favourite and its price history are never pruned, and the GUI shows
-favourites apart from the new and viewed listings.
+A tracked property the user marked to keep, per profile. Marking it views it.
+A favourite and its price history are never pruned, and the GUI shows
+favourites apart from the new and viewed ones.
 _Avoid_: starred, saved, bookmarked
 
 **rentczecher**:
