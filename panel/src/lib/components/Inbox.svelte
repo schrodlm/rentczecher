@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { ListingModel } from '$lib/api/client';
+	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
 	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
@@ -23,13 +23,15 @@
 		preferences,
 		onview,
 		onfavourite,
-		onmarkallviewed
+		onmarkallviewed,
+		loadPriceHistory
 	}: {
 		listings: readonly ListingModel[];
 		preferences: ScoringPreferences | null;
 		onview: (listingId: string) => void;
 		onfavourite: (listingId: string, favourite: boolean) => void;
 		onmarkallviewed: () => void;
+		loadPriceHistory: (listingId: string) => Promise<PostingPricesModel[]>;
 	} = $props();
 
 	const t = getTranslatorContext();
@@ -37,6 +39,7 @@
 
 	let order = $state<ListingOrder>(naturalOrder('score'));
 	let selectedId = $state<string | null>(null);
+	let priceHistory = $state<PostingPricesModel[] | null>(null);
 	let detailOpen = $state(false);
 	let detail = $state<HTMLElement>();
 	let rows = $state<HTMLElement>();
@@ -72,6 +75,19 @@
 	$effect(() => {
 		if (listings.some((listing) => listing.id === selectedId)) return;
 		selectedId = ordered[0]?.id ?? null;
+	});
+
+	// The selected listing's prices load beside it. An answer for a listing
+	// no longer selected is dropped, and a failed one leaves the panel out.
+	$effect(() => {
+		const listingId = selected?.id;
+		priceHistory = null;
+		if (listingId === undefined) return;
+		loadPriceHistory(listingId)
+			.then((postings) => {
+				if (selected?.id === listingId) priceHistory = postings;
+			})
+			.catch(() => {});
 	});
 
 	// The arrows can move the selection off the visible rows, so it is
@@ -189,6 +205,7 @@
 					listing={selected}
 					{listings}
 					{preferences}
+					{priceHistory}
 					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
 				/>
 			{:else}
