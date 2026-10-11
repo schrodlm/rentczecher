@@ -212,6 +212,34 @@ class TestFoldInto:
         assert repo.get("prop-loser").merged_into == "prop-winner"
         assert repo.get("prop-winner").merged_into is None
 
+    @staticmethod
+    def _tracking(conn):
+        stmt = "SELECT profile_id, property_id, viewed_at, favourited_at FROM property_tracking ORDER BY 1, 2"
+        return [tuple(row) for row in conn.execute(stmt)]
+
+    def test_copies_a_profiles_tracking_of_the_loser_onto_the_winner(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(id="prop-winner"))
+        repo.create(_property(id="prop-loser"))
+        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-loser', '2026-10-01', NULL)")
+        repo.fold_into("prop-loser", "prop-winner")
+        assert self._tracking(conn) == [
+            ("p", "prop-loser", "2026-10-01", None),
+            ("p", "prop-winner", "2026-10-01", None),
+        ]
+
+    def test_merges_tracking_of_both_keeping_the_first_view_and_star(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(id="prop-winner"))
+        repo.create(_property(id="prop-loser"))
+        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-loser', '2026-10-01', '2026-10-06')")
+        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-winner', '2026-10-03', NULL)")
+        repo.fold_into("prop-loser", "prop-winner")
+        assert self._tracking(conn) == [
+            ("p", "prop-loser", "2026-10-01", "2026-10-06"),
+            ("p", "prop-winner", "2026-10-01", "2026-10-06"),
+        ]
+
 
 class TestLocation:
     def test_a_saved_location_reads_back_whole(self, tmp_path):
