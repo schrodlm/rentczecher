@@ -142,11 +142,16 @@ class SqliteListingRepository(ListingRepository):
         return [self._to_observation(row) for row in rows]
 
     def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
-        stmt = "SELECT property_id FROM property_tracking WHERE profile_id = ? AND property_id = ?"
-        if self._conn.execute(stmt, (profile_id, property_id)).fetchone() is None:
+        stmt = """
+            SELECT listings.id AS id, listings.source AS source, listings.url AS url
+            FROM listings
+            JOIN listing_tracking ON listing_tracking.listing_id = listings.id
+            WHERE listings.property_id = ? AND listing_tracking.profile_id = ?
+            ORDER BY listings.source, listings.id
+        """
+        postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (property_id, profile_id))]
+        if not postings:
             return None
-        stmt = "SELECT id, source, url FROM listings WHERE property_id = ? ORDER BY source, id"
-        postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (property_id,))]
         return sorted(postings, key=_cheapest_first)
 
     def _to_posting_prices(self, row: sqlite3.Row) -> PostingPrices:
