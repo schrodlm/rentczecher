@@ -7,7 +7,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.geo import GeoPoint
-from rentczecher_engine.domain.listing import TrackedListing, SiblingSource
+from rentczecher_engine.domain.listing import TrackedProperty, SiblingSource
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
 from rentczecher_engine.domain.property import PropertyLocation
 
@@ -207,7 +207,7 @@ class SqliteListingRepository(ListingRepository):
             if row["listing_id"] not in current_ids and row["miss_count"] + 1 >= min_misses
         }
 
-    def tracked_listings(self, profile_id: str, only_new: bool = False) -> list[TrackedListing]:
+    def tracked_properties(self, profile_id: str, only_new: bool = False) -> list[TrackedProperty]:
         """Every listing the profile tracks, or with only_new those it never
         viewed."""
         # Latest and previous price observation per listing: highest id wins
@@ -260,7 +260,7 @@ class SqliteListingRepository(ListingRepository):
             stmt += " AND listing_tracking.viewed_at IS NULL"
         rows = self._conn.execute(stmt, params).fetchall()
         listings_by_property = self._listings_by_property({row["property_id"] for row in rows})
-        return [self._to_tracked_listing(row, listings_by_property) for row in rows]
+        return [self._to_tracked_property(row, listings_by_property) for row in rows]
 
     def _listings_by_property(
         self, property_ids: set[str],
@@ -282,9 +282,9 @@ class SqliteListingRepository(ListingRepository):
                 (row["id"], SiblingSource(source=row["source"], url=row["url"])))
         return result
 
-    def _to_tracked_listing(
+    def _to_tracked_property(
         self, row: sqlite3.Row, listings_by_property: dict[str, list[tuple[str, SiblingSource]]],
-    ) -> TrackedListing:
+    ) -> TrackedProperty:
         price_drop_from = None
         if row["price"] is not None and row["previous_price"] is not None \
                 and row["previous_price"] > row["price"]:
@@ -293,7 +293,7 @@ class SqliteListingRepository(ListingRepository):
             sibling for listing_id, sibling in listings_by_property.get(row["property_id"], [])
             if listing_id != row["id"]
         )
-        return TrackedListing(
+        return TrackedProperty(
             id=row["id"],
             source=row["source"],
             url=row["url"],
