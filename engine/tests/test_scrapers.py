@@ -222,6 +222,13 @@ class TestSrealityPagination:
         listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
+    def test_skips_an_estate_whose_price_is_on_request(self, monkeypatch):
+        on_request = {**self._estate(2, price=0), "price_note": "Info u realitního specialisty"}
+        pages = {0: {"results": [self._estate(1), on_request], "pagination": {"total": 2}}}
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
+        assert [l.id for l in listings] == ["sreality:1"]
+
     def test_min_price_alone_drops_cheaper_estates(self, monkeypatch):
         criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_price=15000)
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=9000)],
