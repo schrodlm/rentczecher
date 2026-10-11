@@ -23,28 +23,38 @@ function text(container: HTMLElement): string {
 
 describe('PriceChart', () => {
 	test('names the highest and lowest price a changed listing asked', async () => {
-		const { container } = await renderWithTranslator(PriceChart, { postings: [posting('sreality:1', [25500, 24000])] });
+		const { container } = await renderWithTranslator(PriceChart, {
+			postings: [posting('sreality:1', [25500, 24000])],
+			ownListingId: 'sreality:1'
+		});
 		expect(text(container)).toContain('25 500 Kč');
 		expect(text(container)).toContain('24 000 Kč');
 		expect(text(container)).not.toContain('nezměnila');
 	});
 
 	test('names an unchanged price once and says since when', async () => {
-		const { container } = await renderWithTranslator(PriceChart, { postings: [posting('remax:1', [19500, 19500])] });
+		const { container } = await renderWithTranslator(PriceChart, {
+			postings: [posting('remax:1', [19500, 19500])],
+			ownListingId: 'remax:1'
+		});
 		expect(text(container).match(/19 500 Kč/g)).toHaveLength(1);
 		expect(text(container)).toContain('Cena se nezměnila od 1. 10.');
 	});
 
 	test('keys each portal’s line to its current price when more than one carries the flat', async () => {
 		const { getAllByRole } = await renderWithTranslator(PriceChart, {
-			postings: [posting('bezrealitky:1', [25500, 24000]), posting('sreality:1', [24900])]
+			postings: [posting('bezrealitky:1', [25500, 24000]), posting('sreality:1', [24900])],
+			ownListingId: 'bezrealitky:1'
 		});
 		const keys = getAllByRole('listitem').map((item) => item.textContent?.replace(/\s+/g, ' ').trim());
 		expect(keys).toEqual(['Bezrealitky · 24 000 Kč', 'Sreality · 24 900 Kč']);
 	});
 
 	test('shows no key for a flat on one portal', async () => {
-		const { queryAllByRole } = await renderWithTranslator(PriceChart, { postings: [posting('sreality:1', [25500, 24000])] });
+		const { queryAllByRole } = await renderWithTranslator(PriceChart, {
+			postings: [posting('sreality:1', [25500, 24000])],
+			ownListingId: 'sreality:1'
+		});
 		expect(queryAllByRole('listitem')).toHaveLength(0);
 	});
 });

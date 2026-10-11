@@ -98,14 +98,14 @@ describe('historyOf', () => {
 		]
 	};
 
-	test("lists what happened newest first, each change of the listing's own price dated", () => {
+	test("lists what happened newest first, each change of the listing's own posting's price dated", () => {
 		const events = historyOf(
 			trackedProperty('a', {
 				first_seen_at: '2026-10-01T00:00:00Z',
 				viewed_at: '2026-10-03T00:00:00Z',
 				favourited_at: '2026-10-05T00:00:00Z'
 			}),
-			[OWN_PRICES, OTHER_PRICES]
+			[OTHER_PRICES, OWN_PRICES]
 		);
 		expect(events).toEqual([
 			{ kind: 'priceChange', at: '2026-10-07T00:00:00Z', from: 18000, to: 19000 },
