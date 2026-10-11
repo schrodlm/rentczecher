@@ -472,6 +472,35 @@ class TestFavourite:
         assert listing()["viewed_at"] is not None
 
 
+class TestPriceHistory:
+    def test_unknown_profile_is_404(self, tmp_path):
+        client = _client(tmp_path)
+        response = client.get("/v1/profiles/nope/listings/sreality:1/price-history", headers=_auth())
+        assert response.status_code == 404
+
+    def test_a_listing_the_profile_does_not_track_is_404(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        response = client.get(f"/v1/profiles/{praha7.id}/listings/sreality:1/price-history", headers=_auth())
+        assert response.status_code == 404
+
+    def test_serves_the_listings_own_posting_with_its_prices(self, tmp_path, praha7):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps, praha7.id)
+        client = _client(tmp_path)
+
+        response = client.get(f"/v1/profiles/{praha7.id}/listings/sreality:1/price-history", headers=_auth())
+
+        assert response.status_code == 200
+        (posting,) = response.json()
+        assert posting["listing_id"] == "sreality:1"
+        assert posting["source"] == "sreality"
+        assert posting["url"] == "https://example.com/1"
+        (change,) = posting["changes"]
+        assert change["price"] == 20000
+        assert change["charges"] is None
+        assert change["first_seen_at"] == change["last_seen_at"]
+
+
 class TestTriggerRun:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
