@@ -230,6 +230,20 @@ class TestSrealityPagination:
         listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["sreality:1"]
 
+    def test_prices_a_plot_priced_per_m2_by_its_whole_property_summary(self, monkeypatch):
+        plot = {**self._estate(1), "price_czk": 17200.0, "price_summary_czk": 11369200.0}
+        criteria = Criteria(offer_type="sale", estate_type="land", place=PlaceRef("obvod", 78))
+        pages = {0: {"results": [plot], "pagination": {"total": 1}}}
+        client, _ = _serve_pages(monkeypatch, pages)
+        (listing,) = SrealityScraper(criteria, client).scrape()
+        assert listing.price == 11369200
+
+    def test_skips_an_estate_priced_at_a_token_crown(self, monkeypatch):
+        pages = {0: {"results": [self._estate(1), self._estate(2, price=1)], "pagination": {"total": 2}}}
+        client, _ = _serve_pages(monkeypatch, pages)
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
+        assert [l.id for l in listings] == ["sreality:1"]
+
     def test_min_price_alone_drops_cheaper_estates(self, monkeypatch):
         criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), min_price=15000)
         pages = {0: {"results": [self._estate(1, price=20000), self._estate(2, price=9000)],
