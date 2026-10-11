@@ -573,3 +573,15 @@ msgstr "Zdraženo z {from} na {to}"
 
 msgid "The price has not changed since {date}"
 msgstr "Cena se nezměnila od {date}"
+
+msgid "Clear the filter"
+msgstr "Zrušit filtr"
+
+msgid "Filter"
+msgstr "Filtr"
+
+msgid "Only price drops"
+msgstr "Jen zlevněné"
+
+msgid "Score at least"
+msgstr "Skóre alespoň"
