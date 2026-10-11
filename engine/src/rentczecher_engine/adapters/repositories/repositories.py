@@ -69,8 +69,8 @@ class ListingRepository(ABC):
 
     @abstractmethod
     def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
-        """The prices of every portal posting of the property, cheapest first,
-        or None when the profile does not track it."""
+        """The prices of the property's listings the profile tracks, cheapest
+        first, or None when it tracks none of them."""
 
     @abstractmethod
     def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
