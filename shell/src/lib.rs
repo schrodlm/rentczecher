@@ -50,6 +50,17 @@ fn sidecar_connection(sidecar: tauri::State<'_, Sidecar>) -> SidecarConnection {
     sidecar.connection.clone()
 }
 
+/// Opens a link to another site in the default browser, since the app's
+/// window opens no windows of its own. Only https links, so the panel can
+/// never make the shell open a file or run a program.
+#[tauri::command]
+fn open_in_browser(url: String) -> Result<(), String> {
+    if !url.starts_with("https://") {
+        return Err(format!("not an https link: {url}"));
+    }
+    open::that_detached(&url).map_err(|error| error.to_string())
+}
+
 /// A fresh secret for every launch, 32 bytes from the OS random source as hex.
 fn generate_token() -> String {
     let mut bytes = [0u8; 32];
@@ -248,7 +259,7 @@ pub fn run() {
             tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?.build()?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sidecar_connection])
+        .invoke_handler(tauri::generate_handler![sidecar_connection, open_in_browser])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
