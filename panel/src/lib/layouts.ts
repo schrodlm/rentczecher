@@ -11,9 +11,9 @@ export const LAYOUTS: readonly Layout[] = [
 ];
 
 /* The layouts side by side for each room count, the atypical ones alone. */
-export function layoutsByRooms(): Layout[][] {
+export function layoutsByRooms(layouts: readonly Layout[] = LAYOUTS): Layout[][] {
 	const groups: Layout[][] = [];
-	for (const layout of LAYOUTS) {
+	for (const layout of layouts) {
 		const last = groups.at(-1);
 		if (last && layout !== 'atypicky' && rooms(last[0]) === rooms(layout)) last.push(layout);
 		else groups.push([layout]);
