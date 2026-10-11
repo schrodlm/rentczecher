@@ -35,13 +35,13 @@ def test_every_scenario_replays(name, tmp_path):
 def test_empty_leaves_an_empty_inbox(tmp_path):
     """A scan that found nothing leaves the profile with no cards."""
     store, profile_id = replayed("empty", tmp_path)
-    assert store.inbox_listings(profile_id) == []
+    assert store.tracked_listings(profile_id) == []
 
 
 def test_fresh_scrape_shows_new_and_viewed_listings(tmp_path):
     """The viewed list marks exactly those listings viewed, the rest stay new."""
     store, profile_id = replayed("fresh-scrape", tmp_path)
-    cards = store.inbox_listings(profile_id)
+    cards = store.tracked_listings(profile_id)
     assert len(cards) == 7
     assert {card.id for card in cards if card.viewed_at is not None} == {"sreality:1002", "remax:3001"}
 
@@ -50,7 +50,7 @@ def test_fresh_scrape_moves_prices_on_one_portal_and_on_two(tmp_path):
     """One flat's price changes on both portals carrying it, and two flats
     change on their only one."""
     store, profile_id = replayed("fresh-scrape", tmp_path)
-    by_id = {card.id: card for card in store.inbox_listings(profile_id)}
+    by_id = {card.id: card for card in store.tracked_listings(profile_id)}
     assert [sibling.source for sibling in by_id["bezrealitky:2002"].sibling_sources] == ["sreality"]
     assert by_id["bezrealitky:2002"].price_drop_from == 24500
     assert by_id["sreality:1003"].price_drop_from == 25900
@@ -62,7 +62,7 @@ def test_fresh_scrape_moves_prices_on_one_portal_and_on_two(tmp_path):
 def test_price_drops_carries_the_earlier_price(tmp_path):
     """A listing seen again at a lower price reports the price it dropped from."""
     store, profile_id = replayed("price-drops", tmp_path)
-    by_id = {card.id: card for card in store.inbox_listings(profile_id)}
+    by_id = {card.id: card for card in store.tracked_listings(profile_id)}
     assert by_id["sreality:1101"].price == 22500
     assert by_id["sreality:1101"].price_drop_from == 25000
     assert by_id["bezrealitky:2101"].price_drop_from is None
@@ -72,7 +72,7 @@ def test_price_drops_dates_listings_by_their_first_scan(tmp_path):
     """Relative scan times land on the replay's clock: first seen three days
     before now."""
     store, profile_id = replayed("price-drops", tmp_path)
-    card = next(card for card in store.inbox_listings(profile_id) if card.id == "sreality:1101")
+    card = next(card for card in store.tracked_listings(profile_id) if card.id == "sreality:1101")
     assert datetime.fromisoformat(card.first_seen_at) == NOW - timedelta(days=3)
 
 
@@ -91,7 +91,7 @@ def test_cross_portal_folds_the_same_flat_into_one_property(tmp_path):
     """The two postings of one flat point at each other as siblings, the
     unrelated flat has none."""
     store, profile_id = replayed("cross-portal", tmp_path)
-    siblings = {card.id: {s.source for s in card.sibling_sources} for card in store.inbox_listings(profile_id)}
+    siblings = {card.id: {s.source for s in card.sibling_sources} for card in store.tracked_listings(profile_id)}
     assert siblings == {"sreality:1301": {"bezrealitky"}, "bezrealitky:2301": {"sreality"}, "remax:3301": set()}
 
 
@@ -161,7 +161,7 @@ def test_a_profile_scans_the_portals_it_states(tmp_path):
     """A listing from a portal the profile does not scan is not tracked."""
     profile, store = _stored_profile(tmp_path, STATED_PROFILE)
     assert profile.portals == ("bezrealitky",)
-    assert [card.id for card in store.inbox_listings(profile.id)] == ["bezrealitky:1"]
+    assert [card.id for card in store.tracked_listings(profile.id)] == ["bezrealitky:1"]
 
 
 def test_a_profile_stating_no_portals_scans_every_portal_its_scans_saw(tmp_path):

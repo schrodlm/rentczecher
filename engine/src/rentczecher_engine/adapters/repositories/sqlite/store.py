@@ -7,7 +7,7 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.listing import TrackedListing
 from rentczecher_engine.domain.price import PostingPrices
 from rentczecher_engine.domain.property import PropertyLocation
 from rentczecher_engine.services.assemble import assemble_location, assemble_property
@@ -36,8 +36,8 @@ class SqliteRunStore:
     def pending_disappeared(self, profile_id: str, current_ids: set[str]) -> set[str]:
         return self._listings.pending_disappeared(profile_id, current_ids)
 
-    def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
-        return self._listings.inbox_listings(profile_id, only_new)
+    def tracked_listings(self, profile_id: str, only_new: bool = False) -> list[TrackedListing]:
+        return self._listings.tracked_listings(profile_id, only_new)
 
     def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
         return self._listings.price_histories(profile_id, listing_id)
