@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 
 # A geocell is one tile of a grid over the map, roughly 1.2 x 1.2 km, named
 # by its integer (row, column). Two nearby points are always in the same or
@@ -11,6 +12,14 @@ import math
 # geocell would have to be recomputed.
 CELL_LAT_DEG = 0.0108
 CELL_LON_DEG = 0.0168
+
+
+@dataclass(frozen=True, slots=True)
+class GeoPoint:
+    """A point on the map in WGS 84 degrees."""
+
+    lat: float
+    lon: float
 
 
 def geocell(lat: float, lon: float) -> tuple[int, int]:

@@ -8,6 +8,7 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 from dataclasses import dataclass, fields, replace
 
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
+from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.location import Location, ParsedPlace
 from rentczecher_engine.domain.property import PropertyLocation
 
@@ -166,6 +167,7 @@ class InboxCard:
     title: str | None
     location_raw_text: str | None
     property_location: PropertyLocation | None
+    point: GeoPoint | None
     size_m2: int | None
     land_m2: int | None
     disposition_raw_text: str | None
