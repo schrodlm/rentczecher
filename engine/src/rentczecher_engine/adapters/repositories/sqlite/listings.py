@@ -1,5 +1,5 @@
 import sqlite3
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from rentczecher_engine.adapters.repositories.repositories import ListingRepository
@@ -10,12 +10,6 @@ from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.listing import TrackedProperty, SiblingSource
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
 from rentczecher_engine.domain.property import PropertyLocation
-
-
-def _earliest(moments: Iterable[str | None]) -> str | None:
-    """The earliest of the moments that happened, or None when none did."""
-    happened = [moment for moment in moments if moment is not None]
-    return min(happened) if happened else None
 
 
 class SqliteListingRepository(ListingRepository):
@@ -76,41 +70,48 @@ class SqliteListingRepository(ListingRepository):
                 WHERE profile_id = ? AND listing_id = ?
             """
             self._conn.execute(update, (now, profile_id, listing.id))
+        insert = """
+            INSERT INTO property_tracking (profile_id, property_id) VALUES (?, ?)
+            ON CONFLICT (profile_id, property_id) DO NOTHING
+        """
+        self._conn.execute(insert, (profile_id, property_id))
         self.record_price_observation(PriceObservation(
             listing_id=listing.id, price=listing.price,
             charges=listing.charges, observed_at=now))
 
     def mark_viewed(self, profile_id: str, listing_id: str) -> None:
-        """Records the listing as viewed by the profile, without committing.
-        The caller owns the transaction boundary.
+        """Records the listing's property as viewed by the profile, without
+        committing. The caller owns the transaction boundary.
 
-        Viewed is set once: an already-viewed listing keeps its first
+        Viewed is set once: an already-viewed property keeps its first
         viewed_at, since viewing it again is not a new event.
         """
         stmt = """
-            UPDATE listing_tracking SET viewed_at = ?
-            WHERE profile_id = ? AND listing_id = ? AND viewed_at IS NULL
+            UPDATE property_tracking SET viewed_at = ?
+            WHERE profile_id = ? AND viewed_at IS NULL
+              AND property_id = (SELECT property_id FROM listings WHERE id = ?)
         """
         self._conn.execute(stmt, (self._now().isoformat(), profile_id, listing_id))
 
     def mark_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Records the listing as the profile's favourite and views it, without
-        committing. A favourite keeps its first favourited_at, and a viewed
-        listing its first viewed_at.
+        """Records the listing's property as the profile's favourite and views
+        it, without committing. A favourite keeps its first favourited_at, and
+        a viewed property its first viewed_at.
         """
         now = self._now().isoformat()
         stmt = """
-            UPDATE listing_tracking
+            UPDATE property_tracking
             SET favourited_at = coalesce(favourited_at, ?), viewed_at = coalesce(viewed_at, ?)
-            WHERE profile_id = ? AND listing_id = ?
+            WHERE profile_id = ? AND property_id = (SELECT property_id FROM listings WHERE id = ?)
         """
         self._conn.execute(stmt, (now, now, profile_id, listing_id))
 
     def clear_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Stops keeping the listing as a favourite, without committing."""
+        """Stops keeping the listing's property as a favourite, without
+        committing."""
         stmt = """
-            UPDATE listing_tracking SET favourited_at = NULL
-            WHERE profile_id = ? AND listing_id = ?
+            UPDATE property_tracking SET favourited_at = NULL
+            WHERE profile_id = ? AND property_id = (SELECT property_id FROM listings WHERE id = ?)
         """
         self._conn.execute(stmt, (profile_id, listing_id))
 
@@ -237,12 +238,14 @@ class SqliteListingRepository(ListingRepository):
                    property_locations.cislo_popisne AS cislo_popisne,
                    property_locations.cislo_orientacni AS cislo_orientacni,
                    listing_tracking.first_seen_at AS first_seen_at,
-                   listing_tracking.viewed_at AS viewed_at,
-                   listing_tracking.favourited_at AS favourited_at,
+                   property_tracking.viewed_at AS viewed_at,
+                   property_tracking.favourited_at AS favourited_at,
                    latest_price.price AS price,
                    previous_price.price AS previous_price
-            FROM listing_tracking
-            JOIN listings ON listings.id = listing_tracking.listing_id
+            FROM property_tracking
+            JOIN listings ON listings.property_id = property_tracking.property_id
+            JOIN listing_tracking ON listing_tracking.listing_id = listings.id
+                AND listing_tracking.profile_id = property_tracking.profile_id
             JOIN properties ON properties.id = listings.property_id
             LEFT JOIN property_locations ON property_locations.property_id = properties.id
             LEFT JOIN price_observations AS latest_price
@@ -259,20 +262,19 @@ class SqliteListingRepository(ListingRepository):
                     ORDER BY observed_at DESC, id DESC
                     LIMIT 1
                 )
-            WHERE listing_tracking.profile_id = ?
+            WHERE property_tracking.profile_id = ?
         """
+        if only_new:
+            stmt += " AND property_tracking.viewed_at IS NULL"
         listings_by_property: dict[str, list[sqlite3.Row]] = {}
         for row in self._conn.execute(stmt, (profile_id,)):
             listings_by_property.setdefault(row["property_id"], []).append(row)
-        tracked = [self._to_tracked_property(listings) for listings in listings_by_property.values()]
-        if only_new:
-            return [tracked_property for tracked_property in tracked if tracked_property.viewed_at is None]
-        return tracked
+        return [self._to_tracked_property(listings) for listings in listings_by_property.values()]
 
     def _to_tracked_property(self, listings: list[sqlite3.Row]) -> TrackedProperty:
         """The property as the profile tracks it, shown by its cheapest
-        listing, the first found among equally cheap ones. It was first seen,
-        viewed and starred when the first of its listings was."""
+        listing, the first found among equally cheap ones. It was first seen
+        when the first of its listings was."""
         row = min(listings, key=lambda listing: (
             listing["price"] is None, listing["price"] or 0, listing["first_seen_at"], listing["id"]))
         price_drop_from = None
@@ -297,8 +299,8 @@ class SqliteListingRepository(ListingRepository):
             disposition_raw_text=row["disposition_raw_text"],
             disposition=parse_disposition(row["disposition_code"]),
             first_seen_at=min(listing["first_seen_at"] for listing in listings),
-            viewed_at=_earliest(listing["viewed_at"] for listing in listings),
-            favourited_at=_earliest(listing["favourited_at"] for listing in listings),
+            viewed_at=row["viewed_at"],
+            favourited_at=row["favourited_at"],
             price=row["price"],
             price_drop_from=price_drop_from,
             sibling_sources=siblings,
@@ -333,12 +335,30 @@ class SqliteListingRepository(ListingRepository):
         return self._conn.execute(stmt, (profile_id, cutoff)).fetchall()
 
     def prune(self, profile_id: str, max_age_days: int = 90) -> int:
-        """Forgets the profile's stale tracking rows. Listing facts, price
-        history, and properties survive as global history."""
+        """Forgets the profile's stale tracking of listings, then of the
+        properties none of its listings is tracked under any more. A favourite
+        property and its listings are kept. Listing facts, price history, and
+        properties survive as global history. Returns how many listings were
+        forgotten."""
         cutoff = (self._now() - timedelta(days=max_age_days)).isoformat()
         stmt = """
             DELETE FROM listing_tracking
-            WHERE profile_id = ? AND last_seen_at < ? AND favourited_at IS NULL
+            WHERE profile_id = ? AND last_seen_at < ?
+              AND listing_id NOT IN (
+                  SELECT listings.id FROM listings
+                  JOIN property_tracking ON property_tracking.property_id = listings.property_id
+                  WHERE property_tracking.profile_id = ? AND property_tracking.favourited_at IS NOT NULL
+              )
         """
-        cursor = self._conn.execute(stmt, (profile_id, cutoff))
+        cursor = self._conn.execute(stmt, (profile_id, cutoff, profile_id))
+        stmt = """
+            DELETE FROM property_tracking
+            WHERE profile_id = ? AND favourited_at IS NULL
+              AND property_id NOT IN (
+                  SELECT listings.property_id FROM listing_tracking
+                  JOIN listings ON listings.id = listing_tracking.listing_id
+                  WHERE listing_tracking.profile_id = ?
+              )
+        """
+        self._conn.execute(stmt, (profile_id, profile_id))
         return cursor.rowcount

@@ -99,7 +99,9 @@ class TestMarkViewed:
 
         reopened = connection.connect(tmp_path / "t.db")
         viewed_at = reopened.execute(
-            "SELECT viewed_at FROM listing_tracking WHERE listing_id = 'sreality:1'"
+            "SELECT viewed_at FROM property_tracking "
+            "JOIN listings ON listings.property_id = property_tracking.property_id "
+            "WHERE listings.id = 'sreality:1'"
         ).fetchone()[0]
         assert viewed_at == BASE.isoformat()
 
