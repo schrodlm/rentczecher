@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+	import { opensInBrowser } from '$lib/browser-link';
 	import { formatArea, formatPerM2, formatPrice, formatPricePerM2 } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
@@ -154,11 +155,23 @@
 					<span class="listing-detail__star" aria-hidden="true">{favourite ? '★' : '☆'}</span>
 					{favourite ? t.t('In favourites') : t.t('Add to favourites')}
 				</button>
-				<a class="listing-detail__open" href={listing.url} target="_blank" rel="noopener noreferrer">
+				<a
+					class="listing-detail__open"
+					href={listing.url}
+					target="_blank"
+					rel="noopener noreferrer"
+					use:opensInBrowser
+				>
 					{t.t('Open on {portal}', { portal: portal?.name ?? listing.source })} ↗
 				</a>
 				{#each listing.sibling_sources as sibling (sibling.source)}
-					<a class="listing-detail__other" href={sibling.url} target="_blank" rel="noopener noreferrer">
+					<a
+						class="listing-detail__other"
+						href={sibling.url}
+						target="_blank"
+						rel="noopener noreferrer"
+						use:opensInBrowser
+					>
 						{t.t('also on {portal}', { portal: shownPortal(sibling.source)?.name ?? sibling.source })} ↗
 					</a>
 				{/each}
