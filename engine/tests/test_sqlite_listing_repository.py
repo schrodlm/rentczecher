@@ -144,6 +144,13 @@ class TestPriceHistories:
         assert other.source == "bezrealitky"
         assert [change.price for change in other.changes] == [21000]
 
+    def test_charts_only_the_listings_the_profile_tracks(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="remax:1", price=18000))
+        postings = repo.price_histories(PROFILE, PROPERTY)
+        assert [posting.listing_id for posting in postings] == ["sreality:1"]
+
     def test_is_none_for_a_listing_the_profile_does_not_track(self, tmp_path):
         repo, _ = _repo(tmp_path)
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1"))
