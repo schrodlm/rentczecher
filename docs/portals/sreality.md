@@ -38,6 +38,17 @@ shows up as listings outside the search, never as an error.
 `category_sub_cb` takes repeated parameters. The old pipe syntax (`37|43`)
 answers 422.
 
+## Prices
+
+Each result carries two prices. `price_czk` is per the advert's own unit,
+named in `price_unit_cb`: "za nemovitost", "za měsíc", or "za m²" for many
+plots and commercial spaces. `price_summary_czk` prices the whole property,
+monthly for a rental, and is what the scraper reads. A plot at 17 200 Kč per
+m² carries `price_czk` 17 200 and `price_summary_czk` 11 369 200.
+
+An advert whose price is on request serves 0 in both, or a token 1 Kč, with
+`price_note` such as "Info u realitního specialisty". The scraper skips it.
+
 ## Worth knowing
 
 Search results carry `poi_*_distance` fields (metro, bus, school, shop). They

@@ -35,6 +35,15 @@ portal offers as a search district.
   nonsense one, or none, and the server-side query never contains it. The
   scraper does not send it.
 
+## Prices
+
+The search asks for `currency=CZK`, and the server converts almost every
+advert's `price` and `charges` to crowns, at about 24.7 Kč to the euro in
+October 2026. Now and then an advert still comes back with `currency`
+"EUR" and its euro amount (one in all of Plzeňský kraj on 2026-10-11). The
+scraper skips any advert not in CZK. `originalPrice` is the price before the
+advert's last change, not a crown equivalent.
+
 ## Robots and a better path
 
 The portal's `robots.txt` disallows `/vyhledat*` on the www host, which is
