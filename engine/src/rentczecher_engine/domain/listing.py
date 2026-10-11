@@ -150,10 +150,11 @@ class SiblingSource:
 
 @dataclass(frozen=True, slots=True)
 class TrackedProperty:
-    """One listing as one profile tracks it: the posting, its property's
-    facts, the profile's tracking of it and its current price.
-    price_drop_from is the higher price it last dropped from, and
-    sibling_sources are the property's postings on other portals."""
+    """A property as one profile tracks it, shown by the cheapest of its
+    listings the profile tracks: that listing's id, portal, link and price,
+    the property's facts, and the profile's tracking of the property.
+    price_drop_from is the higher price that listing last dropped from, and
+    sibling_sources are the profile's other listings of the property."""
 
     id: str
     source: str

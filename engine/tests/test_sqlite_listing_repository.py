@@ -468,10 +468,10 @@ class TestTrackedProperties:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1"))
-        cards = {card.id: card for card in repo.tracked_properties(PROFILE)}
-        assert [s.source for s in cards["sreality:1"].sibling_sources] == ["bezrealitky"]
-        assert cards["sreality:1"].sibling_sources[0].url == "u"
-        assert [s.source for s in cards["bezrealitky:1"].sibling_sources] == ["sreality"]
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.id == "bezrealitky:1"
+        assert [s.source for s in card.sibling_sources] == ["sreality"]
+        assert card.sibling_sources[0].url == "u"
 
     def test_no_siblings_is_an_empty_tuple(self, tmp_path):
         repo, conn = _repo(tmp_path)
@@ -481,8 +481,9 @@ class TestTrackedProperties:
 
     def test_only_new_excludes_viewed_listings(self, tmp_path):
         repo, conn = _repo(tmp_path)
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('p2', ?)", (BASE.isoformat(),))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:2"))
+        repo.upsert(PROFILE, "p2", _listing(id="sreality:2"))
         repo.mark_viewed(PROFILE, "sreality:1")
         cards = repo.tracked_properties(PROFILE, only_new=True)
         assert [card.id for card in cards] == ["sreality:2"]

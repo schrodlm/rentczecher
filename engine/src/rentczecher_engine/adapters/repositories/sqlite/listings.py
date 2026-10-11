@@ -1,5 +1,5 @@
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
 
 from rentczecher_engine.adapters.repositories.repositories import ListingRepository
@@ -10,6 +10,12 @@ from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.listing import TrackedProperty, SiblingSource
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
 from rentczecher_engine.domain.property import PropertyLocation
+
+
+def _earliest(moments: Iterable[str | None]) -> str | None:
+    """The earliest of the moments that happened, or None when none did."""
+    happened = [moment for moment in moments if moment is not None]
+    return min(happened) if happened else None
 
 
 class SqliteListingRepository(ListingRepository):
@@ -208,8 +214,8 @@ class SqliteListingRepository(ListingRepository):
         }
 
     def tracked_properties(self, profile_id: str, only_new: bool = False) -> list[TrackedProperty]:
-        """Every listing the profile tracks, or with only_new those it never
-        viewed."""
+        """Every property the profile tracks, or with only_new those it never
+        viewed, each made of the listings of it the profile tracks."""
         # Latest and previous price observation per listing: highest id wins
         # ties on observed_at, since id is monotonic insertion order and
         # observed_at is not guaranteed distinct.
@@ -255,43 +261,28 @@ class SqliteListingRepository(ListingRepository):
                 )
             WHERE listing_tracking.profile_id = ?
         """
-        params: tuple = (profile_id,)
+        listings_by_property: dict[str, list[sqlite3.Row]] = {}
+        for row in self._conn.execute(stmt, (profile_id,)):
+            listings_by_property.setdefault(row["property_id"], []).append(row)
+        tracked = [self._to_tracked_property(listings) for listings in listings_by_property.values()]
         if only_new:
-            stmt += " AND listing_tracking.viewed_at IS NULL"
-        rows = self._conn.execute(stmt, params).fetchall()
-        listings_by_property = self._listings_by_property({row["property_id"] for row in rows})
-        return [self._to_tracked_property(row, listings_by_property) for row in rows]
+            return [tracked_property for tracked_property in tracked if tracked_property.viewed_at is None]
+        return tracked
 
-    def _listings_by_property(
-        self, property_ids: set[str],
-    ) -> dict[str, list[tuple[str, SiblingSource]]]:
-        """Every listing posted under each given property, keyed by
-        property_id and paired with its own id - the take-na badge's raw
-        data before a card excludes its own listing from its own sibling
-        list."""
-        if not property_ids:
-            return {}
-        placeholders = ", ".join("?" for _ in property_ids)
-        stmt = f"""
-            SELECT id, property_id, source, url FROM listings
-            WHERE property_id IN ({placeholders})
-        """
-        result: dict[str, list[tuple[str, SiblingSource]]] = {pid: [] for pid in property_ids}
-        for row in self._conn.execute(stmt, tuple(property_ids)):
-            result[row["property_id"]].append(
-                (row["id"], SiblingSource(source=row["source"], url=row["url"])))
-        return result
-
-    def _to_tracked_property(
-        self, row: sqlite3.Row, listings_by_property: dict[str, list[tuple[str, SiblingSource]]],
-    ) -> TrackedProperty:
+    def _to_tracked_property(self, listings: list[sqlite3.Row]) -> TrackedProperty:
+        """The property as the profile tracks it, shown by its cheapest
+        listing, the first found among equally cheap ones. It was first seen,
+        viewed and starred when the first of its listings was."""
+        row = min(listings, key=lambda listing: (
+            listing["price"] is None, listing["price"] or 0, listing["first_seen_at"], listing["id"]))
         price_drop_from = None
         if row["price"] is not None and row["previous_price"] is not None \
                 and row["previous_price"] > row["price"]:
             price_drop_from = row["previous_price"]
         siblings = tuple(
-            sibling for listing_id, sibling in listings_by_property.get(row["property_id"], [])
-            if listing_id != row["id"]
+            SiblingSource(source=listing["source"], url=listing["url"])
+            for listing in sorted(listings, key=lambda listing: listing["source"])
+            if listing["id"] != row["id"]
         )
         return TrackedProperty(
             id=row["id"],
@@ -305,9 +296,9 @@ class SqliteListingRepository(ListingRepository):
             land_m2=row["land_m2"],
             disposition_raw_text=row["disposition_raw_text"],
             disposition=parse_disposition(row["disposition_code"]),
-            first_seen_at=row["first_seen_at"],
-            viewed_at=row["viewed_at"],
-            favourited_at=row["favourited_at"],
+            first_seen_at=min(listing["first_seen_at"] for listing in listings),
+            viewed_at=_earliest(listing["viewed_at"] for listing in listings),
+            favourited_at=_earliest(listing["favourited_at"] for listing in listings),
             price=row["price"],
             price_drop_from=price_drop_from,
             sibling_sources=siblings,
