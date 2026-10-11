@@ -1,6 +1,7 @@
 from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
+from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.listing import TrackedListing, SiblingSource
 from tests.profiles import profile
 
@@ -24,7 +25,7 @@ class TestListingModel:
             title="Byt 2+kk",
             location_raw_text="Praha 7",
             property_location=None,
-            point=None,
+            point=GeoPoint(lat=50.1029, lon=14.4293),
             size_m2=54,
             land_m2=None,
             disposition_raw_text="2+kk",
@@ -43,7 +44,7 @@ class TestListingModel:
             "title": "Byt 2+kk",
             "location_raw_text": "Praha 7",
             "resolved_location": None,
-            "point": None,
+            "point": {"lat": 50.1029, "lon": 14.4293},
             "size_m2": 54,
             "land_m2": None,
             "disposition_raw_text": "2+kk",
