@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
-import { listing } from '$lib/test-support/tracked-property';
+import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 import PropertyDetail from './PropertyDetail.svelte';
 
@@ -20,7 +20,7 @@ const PREFERENCES: ScoringPreferences = {
 	preferred_price: 22000
 };
 
-const FLAT = listing('bezrealitky:1', {
+const FLAT = trackedProperty('bezrealitky:1', {
 	source: 'bezrealitky',
 	price: 18900,
 	size_m2: 41,
@@ -28,7 +28,7 @@ const FLAT = listing('bezrealitky:1', {
 	first_seen_at: '2026-09-14T08:00:00Z',
 	sibling_sources: [{ source: 'sreality', url: 'https://sreality.cz/detail/9' }]
 });
-const DEARER = listing('sreality:2', { price: 25000, size_m2: 70 });
+const DEARER = trackedProperty('sreality:2', { price: 25000, size_m2: 70 });
 const FLAT_PRICES: PostingPricesModel[] = [
 	{
 		listing_id: 'bezrealitky:1',

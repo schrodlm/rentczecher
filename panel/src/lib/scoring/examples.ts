@@ -2,7 +2,7 @@ import type { NamedPlace } from '$lib/api/client';
 import type { components } from '$lib/api/types.gen';
 import { LAYOUTS, type Layout } from '$lib/layouts';
 import { preferencesBody, type PreferredValues, type Weights } from './preferences';
-import { scoreListing, scoreParts, type ScorePart } from './score';
+import { scoreProperty, scoreParts, type ScorePart } from './score';
 
 type CriteriaBody = components['schemas']['CriteriaBody'];
 type LocationModel = components['schemas']['LocationModel'];
@@ -52,7 +52,7 @@ export function exampleListings(profile: ExampleProfile): ExampleListing[] {
 	const samples = Array.from({ length: SAMPLES + 1 }, (_unused, step) => {
 		const example = exampleAt(profile, step / SAMPLES);
 		const listing = scoredListing(example);
-		return { ...example, score: scoreListing(listing, preferences), parts: scoreParts(listing, preferences) };
+		return { ...example, score: scoreProperty(listing, preferences), parts: scoreParts(listing, preferences) };
 	});
 	const picked = TARGETS.map((target) => {
 		const nearest = samples.reduce((best, sample) =>

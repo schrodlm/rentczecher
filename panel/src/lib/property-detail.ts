@@ -70,7 +70,7 @@ export function percentFromMiddle(standing: Standing): number {
 }
 
 /* Something that happened to a listing. */
-export type ListingEvent =
+export type PropertyEvent =
 	| { kind: 'found'; at: string }
 	| { kind: 'priceChange'; at: string; from: number; to: number }
 	| { kind: 'viewed'; at: string }
@@ -82,8 +82,8 @@ are known. */
 export function historyOf(
 	listing: TrackedPropertyModel,
 	postings: readonly PostingPricesModel[] | null
-): ListingEvent[] {
-	const events: ListingEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
+): PropertyEvent[] {
+	const events: PropertyEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
 	const ownChanges = postings?.[0]?.changes ?? [];
 	for (let index = 1; index < ownChanges.length; index++) {
 		events.push({

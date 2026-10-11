@@ -1,9 +1,9 @@
 <script lang="ts">
 	import SortMenu from '$lib/components/SortMenu.svelte';
-	import { SORT_FIELDS, type ListingOrder } from '$lib/property-order';
+	import { SORT_FIELDS, type PropertyOrder } from '$lib/property-order';
 
 	/* Binds a SortMenu the way the feed does and shows the order it wrote back. */
-	let { order }: { order: ListingOrder } = $props();
+	let { order }: { order: PropertyOrder } = $props();
 
 	// svelte-ignore state_referenced_locally
 	let bound = $state(order);

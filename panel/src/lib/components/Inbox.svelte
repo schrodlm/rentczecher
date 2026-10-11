@@ -2,9 +2,9 @@
 	import { untrack } from 'svelte';
 	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { activeFacets, noFilter, passes, type ListingFilter } from '$lib/property-filter';
-	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/property-order';
-	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
+	import { activeFacets, noFilter, passes, type PropertyFilter } from '$lib/property-filter';
+	import { naturalOrder, SORT_FIELDS, sortProperties, type PropertyOrder } from '$lib/property-order';
+	import { scoreProperty, type ScoringPreferences } from '$lib/scoring/score';
 	import FilterChips from './FilterChips.svelte';
 	import FilterMenu from './FilterMenu.svelte';
 	import PropertyDetail from './PropertyDetail.svelte';
@@ -40,8 +40,8 @@
 	const t = getTranslatorContext();
 	const listId = $props.id();
 
-	let order = $state<ListingOrder>(naturalOrder('score'));
-	let filter = $state<ListingFilter>(noFilter());
+	let order = $state<PropertyOrder>(naturalOrder('score'));
+	let filter = $state<PropertyFilter>(noFilter());
 	let selectedId = $state<string | null>(null);
 	let priceHistory = $state<PostingPricesModel[] | null>(null);
 	let detailOpen = $state(false);
@@ -62,7 +62,7 @@
 	const filtering = $derived(activeFacets(filter).length > 0);
 	const sections = $derived.by(() => {
 		const inSection = (section: Section) =>
-			sortListings(
+			sortProperties(
 				shown.filter((listing) => placements.get(listing.id)?.section === section),
 				shownOrder,
 				scoreOf,
@@ -110,7 +110,7 @@
 	}
 
 	function scoreOf(listing: TrackedPropertyModel): number | null {
-		return preferences === null ? null : scoreListing(listing, preferences);
+		return preferences === null ? null : scoreProperty(listing, preferences);
 	}
 
 	function rowId(listing: TrackedPropertyModel): string {

@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest';
-import { listing } from '$lib/test-support/tracked-property';
-import { naturalOrder, sortListings, type ListingOrder } from './property-order';
+import { trackedProperty } from '$lib/test-support/tracked-property';
+import { naturalOrder, sortProperties, type PropertyOrder } from './property-order';
 
-const OLD = listing('a', { first_seen_at: '2026-10-01T00:00:00Z', price: 25000, size_m2: 50 });
-const MIDDLE = listing('b', { first_seen_at: '2026-10-02T00:00:00Z', price: 18000, size_m2: 70 });
-const RECENT = listing('c', { first_seen_at: '2026-10-03T00:00:00Z', price: null, size_m2: 40 });
+const OLD = trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z', price: 25000, size_m2: 50 });
+const MIDDLE = trackedProperty('b', { first_seen_at: '2026-10-02T00:00:00Z', price: 18000, size_m2: 70 });
+const RECENT = trackedProperty('c', { first_seen_at: '2026-10-03T00:00:00Z', price: null, size_m2: 40 });
 const SCORES: Record<string, number> = { a: 80, b: 40, c: 60 };
 
-function ids(order: ListingOrder): string[] {
-	const sorted = sortListings(
+function ids(order: PropertyOrder): string[] {
+	const sorted = sortProperties(
 		[OLD, MIDDLE, RECENT],
 		order,
 		(each) => SCORES[each.id],
@@ -25,7 +25,7 @@ describe('naturalOrder', () => {
 	});
 });
 
-describe('sortListings', () => {
+describe('sortProperties', () => {
 	test('orders by score, either way', () => {
 		expect(ids({ field: 'score', descending: true })).toEqual(['a', 'c', 'b']);
 		expect(ids({ field: 'score', descending: false })).toEqual(['b', 'c', 'a']);
@@ -50,8 +50,8 @@ describe('sortListings', () => {
 	});
 
 	test('breaks a tie newest first', () => {
-		const twin = listing('d', { first_seen_at: '2026-10-04T00:00:00Z', price: 25000, size_m2: 50 });
-		const sorted = sortListings([OLD, twin], { field: 'price', descending: false }, () => null, (each) => each.first_seen_at);
+		const twin = trackedProperty('d', { first_seen_at: '2026-10-04T00:00:00Z', price: 25000, size_m2: 50 });
+		const sorted = sortProperties([OLD, twin], { field: 'price', descending: false }, () => null, (each) => each.first_seen_at);
 		expect(sorted.map((each) => each.id)).toEqual(['d', 'a']);
 	});
 });

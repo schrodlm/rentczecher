@@ -5,7 +5,7 @@ type LocationModel = components['schemas']['LocationModel'];
 type PreferencesModel = components['schemas']['PreferencesModel'];
 type PlaceRef = components['schemas']['PlaceRefModel'];
 
-export type ScoredListing = Pick<
+export type ScoredProperty = Pick<
 	TrackedPropertyModel,
 	'price' | 'size_m2' | 'land_m2' | 'disposition' | 'resolved_location'
 >;
@@ -23,14 +23,14 @@ export type ScorePart = {
 weight scores 0 to 100 and adds that share of its weight, so weights adding
 up to 100 give a score out of 100. A preference whose listing fact is
 missing adds nothing. */
-export function scoreListing(listing: ScoredListing, preferences: ScoringPreferences): number {
+export function scoreProperty(listing: ScoredProperty, preferences: ScoringPreferences): number {
 	let total = 0;
 	for (const part of scoreParts(listing, preferences)) total += part.points;
 	return roundHalfToEven(total);
 }
 
 /* The points each preference gives a listing, in the order they add up. */
-export function scoreParts(listing: ScoredListing, preferences: ScoringPreferences): ScorePart[] {
+export function scoreParts(listing: ScoredProperty, preferences: ScoringPreferences): ScorePart[] {
 	const parts: ScorePart[] = [];
 
 	if (preferences.price_per_m2_weight && listing.price !== null && listing.size_m2 && listing.size_m2 > 0) {

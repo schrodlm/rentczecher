@@ -6,7 +6,7 @@ import { PORTALS, type Portal } from '$lib/portals';
 /* Which of a profile's listings the inbox shows for now, without changing
 the profile. An empty list of portals or layouts and a missing bound each
 let every listing through. */
-export type ListingFilter = {
+export type PropertyFilter = {
 	portals: Portal[];
 	onlyPriceDrops: boolean;
 	minimumScore: number | null;
@@ -22,7 +22,7 @@ export type ListingFilter = {
 /* One part of the filter, as its chip names and clears it. */
 export type Facet = 'portals' | 'priceDrops' | 'score' | 'layouts' | 'price' | 'size' | 'land';
 
-export function noFilter(): ListingFilter {
+export function noFilter(): PropertyFilter {
 	return {
 		portals: [],
 		onlyPriceDrops: false,
@@ -37,7 +37,7 @@ export function noFilter(): ListingFilter {
 	};
 }
 
-export function activeFacets(filter: ListingFilter): Facet[] {
+export function activeFacets(filter: PropertyFilter): Facet[] {
 	const facets: Facet[] = [];
 	if (filter.portals.length > 0) facets.push('portals');
 	if (filter.onlyPriceDrops) facets.push('priceDrops');
@@ -49,7 +49,7 @@ export function activeFacets(filter: ListingFilter): Facet[] {
 	return facets;
 }
 
-export function withoutFacet(filter: ListingFilter, facet: Facet): ListingFilter {
+export function withoutFacet(filter: PropertyFilter, facet: Facet): PropertyFilter {
 	if (facet === 'portals') return { ...filter, portals: [] };
 	if (facet === 'priceDrops') return { ...filter, onlyPriceDrops: false };
 	if (facet === 'score') return { ...filter, minimumScore: null };
@@ -60,7 +60,7 @@ export function withoutFacet(filter: ListingFilter, facet: Facet): ListingFilter
 }
 
 /* A listing lacking a fact a facet asks about does not pass that facet. */
-export function passes(listing: TrackedPropertyModel, filter: ListingFilter, score: number | null): boolean {
+export function passes(listing: TrackedPropertyModel, filter: PropertyFilter, score: number | null): boolean {
 	if (filter.portals.length > 0 && !filter.portals.some((portal) => portal === listing.source)) return false;
 	if (filter.onlyPriceDrops && listing.price_drop_from === null) return false;
 	if (filter.minimumScore !== null && (score === null || score < filter.minimumScore)) return false;
