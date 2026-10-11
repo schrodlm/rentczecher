@@ -77,14 +77,13 @@ export type PropertyEvent =
 	| { kind: 'favourite'; at: string };
 
 /* What happened to a listing, newest first. Its price changes come from its
-own posting's prices, the first of the postings, and are left out until those
-are known. */
+own posting's prices and are left out until those are known. */
 export function historyOf(
 	listing: TrackedPropertyModel,
 	postings: readonly PostingPricesModel[] | null
 ): PropertyEvent[] {
 	const events: PropertyEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
-	const ownChanges = postings?.[0]?.changes ?? [];
+	const ownChanges = postings?.find((posting) => posting.listing_id === listing.listing_id)?.changes ?? [];
 	for (let index = 1; index < ownChanges.length; index++) {
 		events.push({
 			kind: 'priceChange',
