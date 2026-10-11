@@ -3,6 +3,7 @@ import type { ListingModel } from '$lib/api/client';
 export function listing(id: string, overrides: Partial<ListingModel> = {}): ListingModel {
 	return {
 		id,
+		listing_id: id,
 		source: 'sreality',
 		url: `https://sreality.cz/detail/${id}`,
 		title: 'Byt 2+kk',
