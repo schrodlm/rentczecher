@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
-import type { ListingModel } from '$lib/api/client';
+import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import { listing } from '$lib/test-support/listing';
 import { renderWithTranslator } from '$lib/test-support/render';
@@ -29,13 +29,29 @@ const FLAT = listing('bezrealitky:1', {
 	sibling_sources: [{ source: 'sreality', url: 'https://sreality.cz/detail/9' }]
 });
 const DEARER = listing('sreality:2', { price: 25000, size_m2: 70 });
+const FLAT_PRICES: PostingPricesModel[] = [
+	{
+		listing_id: 'bezrealitky:1',
+		source: 'bezrealitky',
+		url: 'https://bezrealitky.cz/1',
+		changes: [
+			{ price: 20500, charges: null, first_seen_at: '2026-09-14T08:00:00Z', last_seen_at: '2026-09-20T08:00:00Z' },
+			{ price: 18900, charges: null, first_seen_at: '2026-09-25T08:00:00Z', last_seen_at: '2026-10-01T08:00:00Z' }
+		]
+	}
+];
 
-async function renderDetail(shown: ListingModel = FLAT, preferences: ScoringPreferences | null = PREFERENCES) {
+async function renderDetail(
+	shown: ListingModel = FLAT,
+	preferences: ScoringPreferences | null = PREFERENCES,
+	priceHistory: PostingPricesModel[] | null = FLAT_PRICES
+) {
 	const onfavourite = vi.fn();
 	const rendered = await renderWithTranslator(ListingDetail, {
 		listing: shown,
 		listings: [FLAT, DEARER],
 		preferences,
+		priceHistory,
 		onfavourite
 	});
 	return { onfavourite, ...rendered };
@@ -76,6 +92,16 @@ describe('ListingDetail', () => {
 		const { getByText } = await renderDetail();
 		expect(getByText('Zlevněno z 20 500 Kč na 18 900 Kč')).toBeInTheDocument();
 		expect(getByText('Poprvé nalezeno')).toBeInTheDocument();
+	});
+
+	test('shows the price over time once it is known', async () => {
+		const { getByRole } = await renderDetail();
+		expect(getByRole('heading', { name: 'Vývoj ceny' })).toBeInTheDocument();
+	});
+
+	test('leaves the price over time out while it is not known', async () => {
+		const { queryByRole } = await renderDetail(FLAT, PREFERENCES, null);
+		expect(queryByRole('heading', { name: 'Vývoj ceny' })).toBeNull();
 	});
 
 	test('marks a favourite with its button', async () => {
