@@ -1,6 +1,6 @@
 <script lang="ts">
 	import FilterChips from '$lib/components/FilterChips.svelte';
-	import type { ListingFilter } from '$lib/listing-filter';
+	import type { ListingFilter } from '$lib/property-filter';
 
 	/* Binds FilterChips the way the inbox does and shows the filter they wrote
 	back. */

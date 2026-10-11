@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import type { PostingPricesModel } from '$lib/api/client';
 import { Translator } from '$lib/i18n/translator';
-import { listing } from '$lib/test-support/listing';
-import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './listing-detail';
+import { listing } from '$lib/test-support/tracked-property';
+import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './property-detail';
 
 const CHEAP = listing('a', { price: 18000, size_m2: 40 });
 const MIDDLE = listing('b', { price: 22000, size_m2: 55 });

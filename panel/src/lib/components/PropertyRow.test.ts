@@ -1,12 +1,12 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
-import { listing } from '$lib/test-support/listing';
+import { listing } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
-import ListingRow from './ListingRow.svelte';
+import PropertyRow from './PropertyRow.svelte';
 
 async function renderRow(overrides = {}, score: number | null = 78, selected = false) {
 	const onselect = vi.fn();
-	const rendered = await renderWithTranslator(ListingRow, {
+	const rendered = await renderWithTranslator(PropertyRow, {
 		listing: listing('sreality:1', { price: 21500, size_m2: 54, location_raw_text: 'Praha 7', ...overrides }),
 		id: 'row-sreality:1',
 		score,
@@ -16,7 +16,7 @@ async function renderRow(overrides = {}, score: number | null = 78, selected = f
 	return { onselect, ...rendered };
 }
 
-describe('ListingRow', () => {
+describe('PropertyRow', () => {
 	test('shows the price, the facts and the score', async () => {
 		const { getByRole } = await renderRow();
 		const row = getByRole('option');

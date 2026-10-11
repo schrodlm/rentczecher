@@ -2,13 +2,13 @@
 	import { untrack } from 'svelte';
 	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { activeFacets, noFilter, passes, type ListingFilter } from '$lib/listing-filter';
-	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
+	import { activeFacets, noFilter, passes, type ListingFilter } from '$lib/property-filter';
+	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/property-order';
 	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
 	import FilterChips from './FilterChips.svelte';
 	import FilterMenu from './FilterMenu.svelte';
-	import ListingDetail from './ListingDetail.svelte';
-	import ListingRow from './ListingRow.svelte';
+	import PropertyDetail from './PropertyDetail.svelte';
+	import PropertyRow from './PropertyRow.svelte';
 	import SortMenu from './SortMenu.svelte';
 
 	type Section = 'new' | 'favourite' | 'viewed';
@@ -168,7 +168,7 @@
 	<div class="inbox__section" role="group" aria-label={title}>
 		<h2 class="inbox__heading">{title}</h2>
 		{#each sectionListings as listing (listing.id)}
-			<ListingRow
+			<PropertyRow
 				{listing}
 				id={rowId(listing)}
 				score={scoreOf(listing)}
@@ -224,7 +224,7 @@
 		<div class="inbox__detail" bind:this={detail}>
 			<button type="button" class="inbox__back" onclick={backToList}>← {t.t('Back to the list')}</button>
 			{#if selected}
-				<ListingDetail
+				<PropertyDetail
 					listing={selected}
 					{listings}
 					{preferences}

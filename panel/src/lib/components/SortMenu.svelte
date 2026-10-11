@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { naturalOrder, type ListingOrder, type SortField } from '$lib/listing-order';
+	import { naturalOrder, type ListingOrder, type SortField } from '$lib/property-order';
 
 	/* What the listings are ordered by, picked from a menu, and an arrow that
 	turns the order around. */

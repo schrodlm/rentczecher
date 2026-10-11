@@ -2,9 +2,9 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
-import { listing } from '$lib/test-support/listing';
+import { listing } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
-import ListingDetail from './ListingDetail.svelte';
+import PropertyDetail from './PropertyDetail.svelte';
 
 const PREFERENCES: ScoringPreferences = {
 	price_per_m2_weight: 0,
@@ -47,7 +47,7 @@ async function renderDetail(
 	priceHistory: PostingPricesModel[] | null = FLAT_PRICES
 ) {
 	const onfavourite = vi.fn();
-	const rendered = await renderWithTranslator(ListingDetail, {
+	const rendered = await renderWithTranslator(PropertyDetail, {
 		listing: shown,
 		listings: [FLAT, DEARER],
 		preferences,
@@ -57,7 +57,7 @@ async function renderDetail(
 	return { onfavourite, ...rendered };
 }
 
-describe('ListingDetail', () => {
+describe('PropertyDetail', () => {
 	test('links to every portal carrying the listing', async () => {
 		const { getByRole } = await renderDetail();
 		expect(getByRole('link', { name: 'Otevřít na Bezrealitky ↗' })).toBeInTheDocument();
