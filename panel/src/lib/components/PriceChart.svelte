@@ -8,12 +8,12 @@
 	/* A listing's price over time as a step line for each portal posting of
 	its flat, its own in amber, between the lowest and highest price any of
 	them asked. An unchanged price is named once and says since when. */
-	let { postings }: { postings: readonly PostingPricesModel[] } = $props();
+	let { postings, ownListingId }: { postings: readonly PostingPricesModel[]; ownListingId: string } = $props();
 
 	const t = getTranslatorContext();
 	const BOX: PlotBox = { width: 320, height: 110, marginX: 6, marginY: 10 };
 
-	const chart = $derived(priceChartOf(postings, BOX));
+	const chart = $derived(priceChartOf(postings, ownListingId, BOX));
 	const unchanged = $derived(chart !== null && chart.lowest === chart.highest);
 
 	function portalName(source: string): string {

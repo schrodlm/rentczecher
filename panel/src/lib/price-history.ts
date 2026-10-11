@@ -25,9 +25,13 @@ export type PriceChart = {
 	until: string;
 };
 
-/* Null when no posting has a price yet. The first posting is the listing's
-own. A price holds until the next one was first seen. */
-export function priceChartOf(postings: readonly PostingPricesModel[], box: PlotBox): PriceChart | null {
+/* Null when no posting has a price yet. A price holds until the next one was
+first seen. */
+export function priceChartOf(
+	postings: readonly PostingPricesModel[],
+	ownListingId: string,
+	box: PlotBox
+): PriceChart | null {
 	const priced = postings.filter((posting) => posting.changes.length > 0);
 	if (priced.length === 0) return null;
 	const changes = priced.flatMap((posting) => posting.changes);
@@ -58,7 +62,7 @@ export function priceChartOf(postings: readonly PostingPricesModel[], box: PlotB
 		return {
 			listingId: posting.listing_id,
 			source: posting.source,
-			own: posting === postings[0],
+			own: posting.listing_id === ownListingId,
 			path: steps.join(' '),
 			endX: x(last.last_seen_at),
 			endY: y(last.price),

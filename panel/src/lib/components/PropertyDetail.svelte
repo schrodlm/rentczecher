@@ -205,7 +205,7 @@
 		{#if priceHistory}
 			<section class="property-detail__panel">
 				<h3>{t.t('Price over time')}</h3>
-				<PriceChart postings={priceHistory} />
+				<PriceChart postings={priceHistory} ownListingId={listing.listing_id} />
 			</section>
 		{/if}
 
