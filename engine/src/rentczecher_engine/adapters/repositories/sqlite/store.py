@@ -39,33 +39,33 @@ class SqliteRunStore:
     def tracked_properties(self, profile_id: str, only_new: bool = False) -> list[TrackedProperty]:
         return self._listings.tracked_properties(profile_id, only_new)
 
-    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
-        return self._listings.price_histories(profile_id, listing_id)
+    def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
+        return self._listings.price_histories(profile_id, property_id)
 
-    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
+    def mark_viewed(self, profile_id: str, property_id: str) -> None:
         """Records the view as its own unit of work."""
         try:
-            self._listings.mark_viewed(profile_id, listing_id)
+            self._listings.mark_viewed(profile_id, property_id)
         except BaseException:
             self._conn.rollback()
             raise
         else:
             self._conn.commit()
 
-    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
+    def mark_favourite(self, profile_id: str, property_id: str) -> None:
         """Records the favourite as its own unit of work."""
         try:
-            self._listings.mark_favourite(profile_id, listing_id)
+            self._listings.mark_favourite(profile_id, property_id)
         except BaseException:
             self._conn.rollback()
             raise
         else:
             self._conn.commit()
 
-    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
+    def clear_favourite(self, profile_id: str, property_id: str) -> None:
         """Clears the favourite as its own unit of work."""
         try:
-            self._listings.clear_favourite(profile_id, listing_id)
+            self._listings.clear_favourite(profile_id, property_id)
         except BaseException:
             self._conn.rollback()
             raise

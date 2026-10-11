@@ -170,7 +170,9 @@ class Scenario:
                 run_profile(profile, deps)
             clock.current = now
             for listing_id in self.viewed:
-                store.mark_viewed(profile.id, listing_id)
+                (property_id,) = conn.execute(
+                    "SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
+                store.mark_viewed(profile.id, property_id)
         finally:
             conn.close()
         return profile.id

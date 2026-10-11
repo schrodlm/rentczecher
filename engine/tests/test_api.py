@@ -375,25 +375,30 @@ def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location
             {}, current_ids={"sreality:1"})
 
 
+def _tracked_property_id(client, profile_id: str) -> str:
+    """The id of the profile's one tracked property."""
+    (tracked,) = client.get(f"/v1/profiles/{profile_id}/properties", headers=_auth(), params={"filter": "all"}).json()
+    return tracked["id"]
+
+
 class TestListListings:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
-        response = client.get("/v1/profiles/nope/listings", headers=_auth())
+        response = client.get("/v1/profiles/nope/properties", headers=_auth())
         assert response.status_code == 404
 
     def test_filter_new_excludes_viewed_listings(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
         _persist_listing(deps, praha7.id)
-        with deps.open_run_store() as store:
-            store.mark_viewed(praha7.id, "sreality:1")
-
         client = _client(tmp_path)
+        property_id = _tracked_property_id(client, praha7.id)
+        client.patch(f"/v1/profiles/{praha7.id}/properties/{property_id}/viewed", headers=_auth())
 
-        new_only = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "new"})
+        new_only = client.get(f"/v1/profiles/{praha7.id}/properties", headers=_auth(), params={"filter": "new"})
         assert new_only.json() == []
 
-        every = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"})
-        assert [card["id"] for card in every.json()] == ["sreality:1"]
+        every = client.get(f"/v1/profiles/{praha7.id}/properties", headers=_auth(), params={"filter": "all"})
+        assert [card["listing_id"] for card in every.json()] == ["sreality:1"]
         assert every.json()[0]["viewed_at"] is not None
 
     def test_a_listing_carries_its_named_resolved_location(self, tmp_path, praha7):
@@ -404,7 +409,7 @@ class TestListListings:
 
         client = _client(tmp_path)
 
-        (card,) = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth()).json()
+        (card,) = client.get(f"/v1/profiles/{praha7.id}/properties", headers=_auth()).json()
         location = card["resolved_location"]
         assert location["kraj"]["name"] == "Hlavní město Praha"
         assert location["okres"] is None
@@ -422,7 +427,7 @@ class TestListListings:
 
         client = _client(tmp_path)
 
-        (card,) = client.get(f"/v1/profiles/{praha7.id}/listings", headers=_auth()).json()
+        (card,) = client.get(f"/v1/profiles/{praha7.id}/properties", headers=_auth()).json()
         assert card["resolved_location"] is None
         assert card["location_raw_text"] == "l"
 
@@ -430,7 +435,7 @@ class TestListListings:
 class TestMarkViewed:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
-        response = client.patch("/v1/profiles/nope/listings/sreality:1/viewed", headers=_auth())
+        response = client.patch("/v1/profiles/nope/properties/prop-1/viewed", headers=_auth())
         assert response.status_code == 404
 
     def test_marks_the_listing_viewed(self, tmp_path, praha7):
@@ -439,29 +444,30 @@ class TestMarkViewed:
 
         client = _client(tmp_path)
 
-        response = client.patch(f"/v1/profiles/{praha7.id}/listings/sreality:1/viewed", headers=_auth())
+        property_id = _tracked_property_id(client, praha7.id)
+        response = client.patch(f"/v1/profiles/{praha7.id}/properties/{property_id}/viewed", headers=_auth())
         assert response.status_code == 204
 
         listings = client.get(
-            f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"}).json()
+            f"/v1/profiles/{praha7.id}/properties", headers=_auth(), params={"filter": "all"}).json()
         assert listings[0]["viewed_at"] is not None
 
 
 class TestFavourite:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
-        response = client.put("/v1/profiles/nope/listings/sreality:1/favourite", headers=_auth())
+        response = client.put("/v1/profiles/nope/properties/prop-1/favourite", headers=_auth())
         assert response.status_code == 404
 
     def test_marks_and_clears_a_favourite(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
         _persist_listing(deps, praha7.id)
         client = _client(tmp_path)
-        path = f"/v1/profiles/{praha7.id}/listings/sreality:1/favourite"
+        path = f"/v1/profiles/{praha7.id}/properties/{_tracked_property_id(client, praha7.id)}/favourite"
 
         def listing() -> dict:
             listings = client.get(
-                f"/v1/profiles/{praha7.id}/listings", headers=_auth(), params={"filter": "all"}).json()
+                f"/v1/profiles/{praha7.id}/properties", headers=_auth(), params={"filter": "all"}).json()
             return listings[0]
 
         assert client.put(path, headers=_auth()).status_code == 204
@@ -475,12 +481,12 @@ class TestFavourite:
 class TestPriceHistory:
     def test_unknown_profile_is_404(self, tmp_path):
         client = _client(tmp_path)
-        response = client.get("/v1/profiles/nope/listings/sreality:1/price-history", headers=_auth())
+        response = client.get("/v1/profiles/nope/properties/prop-1/price-history", headers=_auth())
         assert response.status_code == 404
 
-    def test_a_listing_the_profile_does_not_track_is_404(self, tmp_path, praha7):
+    def test_a_property_the_profile_does_not_track_is_404(self, tmp_path, praha7):
         client = _client(tmp_path)
-        response = client.get(f"/v1/profiles/{praha7.id}/listings/sreality:1/price-history", headers=_auth())
+        response = client.get(f"/v1/profiles/{praha7.id}/properties/prop-unknown/price-history", headers=_auth())
         assert response.status_code == 404
 
     def test_serves_the_listings_own_posting_with_its_prices(self, tmp_path, praha7):
@@ -488,7 +494,8 @@ class TestPriceHistory:
         _persist_listing(deps, praha7.id)
         client = _client(tmp_path)
 
-        response = client.get(f"/v1/profiles/{praha7.id}/listings/sreality:1/price-history", headers=_auth())
+        property_id = _tracked_property_id(client, praha7.id)
+        response = client.get(f"/v1/profiles/{praha7.id}/properties/{property_id}/price-history", headers=_auth())
 
         assert response.status_code == 200
         (posting,) = response.json()

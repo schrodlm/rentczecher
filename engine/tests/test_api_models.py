@@ -19,7 +19,8 @@ class TestListingModel:
         """from_tracked_property carries every tracked property field into the wire model,
         siblings included."""
         card = TrackedProperty(
-            id="sreality:1",
+            id="prop-1",
+            listing_id="sreality:1",
             source="sreality",
             url="https://example.com/1",
             title="Byt 2+kk",
@@ -38,7 +39,8 @@ class TestListingModel:
             sibling_sources=(SiblingSource(source="bezrealitky", url="https://example.com/b"),),
         )
         assert ListingModel.from_tracked_property(card, None).model_dump() == {
-            "id": "sreality:1",
+            "id": "prop-1",
+            "listing_id": "sreality:1",
             "source": "sreality",
             "url": "https://example.com/1",
             "title": "Byt 2+kk",
@@ -60,7 +62,8 @@ class TestListingModel:
     def test_from_tracked_property_sends_no_disposition_when_the_raw_text_names_none(self):
         """A raw text naming no layout maps to a null disposition."""
         card = TrackedProperty(
-            id="sreality:1",
+            id="prop-1",
+            listing_id="sreality:1",
             source="sreality",
             url="https://example.com/1",
             title="Rodinný dům",

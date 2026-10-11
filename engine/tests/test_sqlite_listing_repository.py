@@ -134,7 +134,7 @@ class TestPriceHistories:
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=21000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
-        postings = repo.price_histories(PROFILE, "sreality:1")
+        postings = repo.price_histories(PROFILE, PROPERTY)
         assert postings is not None
         assert [posting.listing_id for posting in postings] == ["sreality:1", "bezrealitky:1"]
         own, other = postings
@@ -147,8 +147,8 @@ class TestPriceHistories:
     def test_is_none_for_a_listing_the_profile_does_not_track(self, tmp_path):
         repo, _ = _repo(tmp_path)
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1"))
-        assert repo.price_histories(PROFILE, "sreality:1") is None
-        assert repo.price_histories(PROFILE, "sreality:unknown") is None
+        assert repo.price_histories(PROFILE, PROPERTY) is None
+        assert repo.price_histories(PROFILE, "prop-unknown") is None
 
 
 class TestMissCounts:
@@ -167,7 +167,7 @@ class TestMarkViewed:
     def test_sets_viewed_at(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         row = conn.execute(
             "SELECT viewed_at FROM property_tracking "
             "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
@@ -176,8 +176,8 @@ class TestMarkViewed:
     def test_does_not_overwrite_an_earlier_view(self, tmp_path):
         repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2)))
         repo.upsert(PROFILE, PROPERTY, _listing())
-        repo.mark_viewed(PROFILE, "sreality:1")
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
+        repo.mark_viewed(PROFILE, PROPERTY)
         row = conn.execute(
             "SELECT viewed_at FROM property_tracking "
             "WHERE profile_id = ? AND property_id = ?", (PROFILE, PROPERTY)).fetchone()
@@ -187,7 +187,7 @@ class TestMarkViewed:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         other = conn.execute(
             "SELECT viewed_at FROM property_tracking "
             "WHERE profile_id = ? AND property_id = ?", (OTHER_PROFILE, PROPERTY)).fetchone()
@@ -197,7 +197,7 @@ class TestMarkViewed:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
         conn.commit()
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         conn.rollback()
         row = conn.execute(
             "SELECT viewed_at FROM property_tracking "
@@ -214,16 +214,16 @@ class TestFavourite:
     def test_marking_keeps_the_listing_and_views_it(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
-        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
         row = self._row(conn)
         assert (row["favourited_at"], row["viewed_at"]) == (BASE.isoformat(), BASE.isoformat())
 
     def test_marking_again_keeps_the_first_times(self, tmp_path):
         repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2)))
         repo.upsert(PROFILE, PROPERTY, _listing())
-        repo.mark_viewed(PROFILE, "sreality:1")
-        repo.mark_favourite(PROFILE, "sreality:1")
-        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
+        repo.mark_favourite(PROFILE, PROPERTY)
+        repo.mark_favourite(PROFILE, PROPERTY)
         row = self._row(conn)
         assert row["viewed_at"] == (BASE + timedelta(hours=1)).isoformat()
         assert row["favourited_at"] == (BASE + timedelta(hours=2)).isoformat()
@@ -231,8 +231,8 @@ class TestFavourite:
     def test_clearing_leaves_the_listing_viewed(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
-        repo.mark_favourite(PROFILE, "sreality:1")
-        repo.clear_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
+        repo.clear_favourite(PROFILE, PROPERTY)
         row = self._row(conn)
         assert row["favourited_at"] is None
         assert row["viewed_at"] is not None
@@ -241,7 +241,7 @@ class TestFavourite:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
-        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
         other = conn.execute(
             "SELECT favourited_at FROM property_tracking "
             "WHERE profile_id = ? AND property_id = ?", (OTHER_PROFILE, PROPERTY)).fetchone()
@@ -251,7 +251,7 @@ class TestFavourite:
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing())
         conn.commit()
-        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
         conn.rollback()
         assert self._row(conn)["favourited_at"] is None
 
@@ -263,18 +263,18 @@ class TestTrackingAFlat:
     def test_viewing_one_listing_views_the_flat_shown_by_another(self, tmp_path):
         repo, _ = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
-        repo.mark_viewed(PROFILE, "bezrealitky:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.viewed_at == BASE.isoformat()
 
     def test_clearing_a_favourite_clears_the_whole_flat(self, tmp_path):
         repo, _ = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
-        repo.mark_favourite(PROFILE, "bezrealitky:1")
-        repo.clear_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
+        repo.clear_favourite(PROFILE, PROPERTY)
         (card,) = repo.tracked_properties(PROFILE)
         assert card.favourited_at is None
         assert card.viewed_at is not None
@@ -283,14 +283,14 @@ class TestTrackingAFlat:
         repo, _ = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1"))
-        repo.mark_favourite(PROFILE, "sreality:1")
+        repo.mark_favourite(PROFILE, PROPERTY)
         (other,) = repo.tracked_properties(OTHER_PROFILE)
         assert (other.viewed_at, other.favourited_at) == (None, None)
 
     def test_pruning_forgets_a_flat_with_no_tracked_listing_left(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         conn.execute("UPDATE listing_tracking SET last_seen_at = ?", ((BASE - timedelta(days=91)).isoformat(),))
         assert repo.prune(PROFILE) == 1
         assert conn.execute("SELECT count(*) FROM property_tracking WHERE profile_id = ?", (PROFILE,)).fetchone()[0] == 0
@@ -390,7 +390,7 @@ class TestTrackedProperties:
         conn.commit()
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.source == "sreality"
         assert card.url == "u"
         assert card.title == "Byt 2+kk"
@@ -434,7 +434,7 @@ class TestTrackedProperties:
             "UPDATE property_tracking SET favourited_at = ? "
             "WHERE profile_id = ? AND property_id = ?", (BASE.isoformat(), PROFILE, PROPERTY))
         conn.commit()
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         (card,) = repo.tracked_properties(PROFILE)
         assert card.first_seen_at == BASE.isoformat()
         assert card.viewed_at == BASE.isoformat()
@@ -510,7 +510,7 @@ class TestTrackedProperties:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1"))
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "bezrealitky:1"
+        assert card.listing_id == "bezrealitky:1"
         assert [s.source for s in card.sibling_sources] == ["sreality"]
         assert card.sibling_sources[0].url == "u"
 
@@ -519,7 +519,7 @@ class TestTrackedProperties:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=19000))
         (card,) = repo.tracked_properties(PROFILE)
-        assert (card.id, card.price) == ("bezrealitky:1", 19000)
+        assert (card.listing_id, card.price) == ("bezrealitky:1", 19000)
         assert [s.source for s in card.sibling_sources] == ["sreality"]
 
     def test_shows_the_first_found_of_equally_cheap_listings(self, tmp_path):
@@ -527,7 +527,7 @@ class TestTrackedProperties:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.first_seen_at == BASE.isoformat()
 
     def test_leaves_out_listings_only_another_profile_found(self, tmp_path):
@@ -535,16 +535,16 @@ class TestTrackedProperties:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="remax:1", price=15000))
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.sibling_sources == ()
 
     def test_a_flat_is_viewed_once_any_of_its_listings_is(self, tmp_path):
         repo, _ = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
-        repo.mark_viewed(PROFILE, "bezrealitky:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         (card,) = repo.tracked_properties(PROFILE)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.viewed_at is not None
         assert repo.tracked_properties(PROFILE, only_new=True) == []
 
@@ -559,23 +559,23 @@ class TestTrackedProperties:
         conn.execute("INSERT INTO properties (id, created_at) VALUES ('p2', ?)", (BASE.isoformat(),))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(PROFILE, "p2", _listing(id="sreality:2"))
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         cards = repo.tracked_properties(PROFILE, only_new=True)
-        assert [card.id for card in cards] == ["sreality:2"]
+        assert [card.listing_id for card in cards] == ["sreality:2"]
 
     def test_only_new_false_includes_viewed_listings(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        repo.mark_viewed(PROFILE, "sreality:1")
+        repo.mark_viewed(PROFILE, PROPERTY)
         cards = repo.tracked_properties(PROFILE, only_new=False)
-        assert [card.id for card in cards] == ["sreality:1"]
+        assert [card.listing_id for card in cards] == ["sreality:1"]
 
     def test_scoped_to_the_profile(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:mine"))
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:theirs"))
         cards = repo.tracked_properties(PROFILE)
-        assert [card.id for card in cards] == ["sreality:mine"]
+        assert [card.listing_id for card in cards] == ["sreality:mine"]
 
 
 class TestPrune:
@@ -617,7 +617,7 @@ class TestPrune:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:kept"))
         stale = (BASE - timedelta(days=91)).isoformat()
         conn.execute("UPDATE listing_tracking SET last_seen_at = ? WHERE listing_id = 'sreality:kept'", (stale,))
-        repo.mark_favourite(PROFILE, "sreality:kept")
+        repo.mark_favourite(PROFILE, PROPERTY)
         conn.commit()
         assert repo.prune(PROFILE) == 0
         assert repo.seen_ids(PROFILE) == {"sreality:kept"}
