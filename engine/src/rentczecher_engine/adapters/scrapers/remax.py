@@ -14,7 +14,11 @@ SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
 
 # Checkbox ids from the search form's types tree.
 ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
-OFFER_TYPE_ID = {"sale": 1, "rent": 2}
+# The form's offer type radio is named "sale", 1 selling and 2 renting. Its
+# "hledani" radio only switches between the list and the map, and 1 is the
+# list the cards are read from.
+SALE_VALUE = {"sale": 1, "rent": 2}
+LIST_VIEW = 1
 
 
 _HOUSE_NUMBERS = re.compile(r"(\d+[a-zA-Z]?)\s*/\s*(\d+[a-zA-Z]?)$")
@@ -100,7 +104,7 @@ class RemaxScraper(BaseScraper):
         self.place = RemaxPlace.from_params(resolve(criteria.place))
 
     def _build_url(self) -> str:
-        query: list[tuple[str, object]] = [("hledani", OFFER_TYPE_ID[self.criteria.offer_type])]
+        query: list[tuple[str, object]] = [("hledani", LIST_VIEW), ("sale", SALE_VALUE[self.criteria.offer_type])]
         query += [(f"types[{type_id}]", "on")
                   for type_id in ESTATE_TYPE_IDS[self.criteria.estate_type]]
         query += [(f"regions[{self.place.region_id}][{district_id}]", "on")
