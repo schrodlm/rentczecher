@@ -33,7 +33,7 @@
 		preferences: ScoringPreferences | null;
 		onview: (listingId: string) => void;
 		onfavourite: (listingId: string, favourite: boolean) => void;
-		onmarkallviewed: () => void;
+		onmarkallviewed: (listingIds: string[]) => void;
 		loadPriceHistory: (listingId: string) => Promise<PostingPricesModel[]>;
 	} = $props();
 
@@ -130,6 +130,11 @@
 		if (next !== undefined) select(next, false);
 	}
 
+	// Only what the filter shows, since only that was there to be seen.
+	function markShownViewed(): void {
+		onmarkallviewed(sections.new.filter((listing) => listing.viewed_at === null).map((listing) => listing.id));
+	}
+
 	function backToList(): void {
 		detailOpen = false;
 		rows?.focus();
@@ -178,7 +183,7 @@
 	<div class="inbox__list">
 		<div class="inbox__tools">
 			{#if unviewed}
-				<button type="button" class="inbox__mark-all" onclick={onmarkallviewed}>{t.t('Mark all viewed')}</button>
+				<button type="button" class="inbox__mark-all" onclick={markShownViewed}>{t.t('Mark all viewed')}</button>
 			{/if}
 			<FilterMenu bind:filter {listings} scored={preferences !== null} />
 			<SortMenu bind:order={() => shownOrder, (chosen) => (order = chosen)} {fields} />
