@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import map from './czech-map.json';
+import { mapPointOf, TOWNS } from './czech-map';
 
 const regions = [...map.kraje, ...map.okresy, ...map.obvody];
 
@@ -22,6 +23,13 @@ describe('the map of Czechia', () => {
 			expect(y).toBeLessThanOrEqual(y1);
 		}
 	);
+
+	test('projects a GPS point onto the map where the map draws that place', () => {
+		const zlin = TOWNS.find((town) => town.code === 585068)!;
+		const [x, y] = mapPointOf(49.226653, 17.666343);
+		expect(x).toBeCloseTo(zlin.x, 0);
+		expect(y).toBeCloseTo(zlin.y, 0);
+	});
 
 	test('places every town in an okres of its own kraj', () => {
 		const okresy = new Map(map.okresy.map((okres) => [`${okres.kind}:${okres.code}`, okres]));
