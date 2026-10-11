@@ -128,7 +128,7 @@ class TestPriceHistory:
 
 
 class TestPriceHistories:
-    def test_puts_the_listings_own_posting_first_with_its_collapsed_prices(self, tmp_path):
+    def test_lists_the_postings_by_portal_with_their_collapsed_prices(self, tmp_path):
         repo, _ = _repo(tmp_path, now=_clock(*(BASE + timedelta(hours=hour) for hour in range(4))))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=21000))
@@ -136,13 +136,13 @@ class TestPriceHistories:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         postings = repo.price_histories(PROFILE, PROPERTY)
         assert postings is not None
-        assert [posting.listing_id for posting in postings] == ["sreality:1", "bezrealitky:1"]
-        own, other = postings
-        assert [change.price for change in own.changes] == [20000, 19000]
-        assert own.changes[0].first_seen_at == BASE.isoformat()
-        assert own.changes[0].last_seen_at == (BASE + timedelta(hours=2)).isoformat()
-        assert other.source == "bezrealitky"
-        assert [change.price for change in other.changes] == [21000]
+        assert [posting.listing_id for posting in postings] == ["bezrealitky:1", "sreality:1"]
+        bezrealitky, sreality = postings
+        assert bezrealitky.source == "bezrealitky"
+        assert [change.price for change in bezrealitky.changes] == [21000]
+        assert [change.price for change in sreality.changes] == [20000, 19000]
+        assert sreality.changes[0].first_seen_at == BASE.isoformat()
+        assert sreality.changes[0].last_seen_at == (BASE + timedelta(hours=2)).isoformat()
 
     def test_charts_only_the_listings_the_profile_tracks(self, tmp_path):
         repo, _ = _repo(tmp_path)
