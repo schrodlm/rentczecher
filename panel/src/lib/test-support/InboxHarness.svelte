@@ -14,9 +14,9 @@
 	}: {
 		listings: TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
-		onview: (listingId: string) => void;
-		onfavourite: (listingId: string, favourite: boolean) => void;
-		loadPriceHistory?: (listingId: string) => Promise<PostingPricesModel[]>;
+		onview: (propertyId: string) => void;
+		onfavourite: (propertyId: string, favourite: boolean) => void;
+		loadPriceHistory?: (propertyId: string) => Promise<PostingPricesModel[]>;
 	} = $props();
 
 	const NOW = '2026-10-11T10:00:00Z';
@@ -24,23 +24,23 @@
 	// svelte-ignore state_referenced_locally
 	let held = $state(listings);
 
-	function view(listingId: string): void {
-		onview(listingId);
-		const listing = held.find((each) => each.id === listingId);
+	function view(propertyId: string): void {
+		onview(propertyId);
+		const listing = held.find((each) => each.id === propertyId);
 		if (listing !== undefined) listing.viewed_at = NOW;
 	}
 
-	function favourite(listingId: string, on: boolean): void {
-		onfavourite(listingId, on);
-		const listing = held.find((each) => each.id === listingId);
+	function favourite(propertyId: string, on: boolean): void {
+		onfavourite(propertyId, on);
+		const listing = held.find((each) => each.id === propertyId);
 		if (listing === undefined) return;
 		listing.favourited_at = on ? NOW : null;
 		listing.viewed_at = listing.viewed_at ?? NOW;
 	}
 
-	function markAllViewedAndReload(listingIds: string[]): void {
+	function markAllViewedAndReload(propertyIds: string[]): void {
 		held = held.map((listing) =>
-			listingIds.includes(listing.id) ? { ...listing, viewed_at: listing.viewed_at ?? NOW } : listing
+			propertyIds.includes(listing.id) ? { ...listing, viewed_at: listing.viewed_at ?? NOW } : listing
 		);
 	}
 </script>
