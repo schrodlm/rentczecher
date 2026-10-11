@@ -16,9 +16,13 @@ them. */
 export type District = Region & { kraj: number };
 export type Town = { code: number; name: string; okres: number; kraj: number; x: number; y: number; streets: number };
 
+/* The lat/lon box the map was drawn over, in degrees. */
+type Bounds = { west: number; east: number; south: number; north: number };
+
 type CzechMap = {
 	width: number;
 	height: number;
+	bounds: Bounds;
 	kraje: Region[];
 	okresy: District[];
 	obvody: Region[];
@@ -39,6 +43,13 @@ const DISTRICTS = czechMap.okresy;
 const PRAHA_KRAJ = 19;
 const PRAHA_OBEC = 554782;
 const STREDOCESKY_KRAJ = 27;
+
+/* Where a GPS point falls on the map, by the projection the map was drawn
+with. */
+export function mapPointOf(lat: number, lon: number): [x: number, y: number] {
+	const { west, east, south, north } = czechMap.bounds;
+	return [((lon - west) / (east - west)) * MAP_WIDTH, ((north - lat) / (north - south)) * MAP_HEIGHT];
+}
 
 export const PRAHA = DISTRICTS.find((district) => district.kind === 'obec' && district.code === PRAHA_OBEC)!;
 

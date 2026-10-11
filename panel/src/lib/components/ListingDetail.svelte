@@ -231,7 +231,7 @@
 		{#if listing.resolved_location !== null}
 			<section class="listing-detail__panel">
 				<h3>{t.t('Where')} · {listing.location_raw_text ?? listing.resolved_location.kraj.name}</h3>
-				<div class="listing-detail__map"><PlaceMap location={listing.resolved_location} /></div>
+				<div class="listing-detail__map"><PlaceMap location={listing.resolved_location} point={listing.point} /></div>
 			</section>
 		{/if}
 

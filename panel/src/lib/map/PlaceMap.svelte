@@ -2,15 +2,16 @@
 	import type { NamedPlace } from '$lib/api/client';
 	import type { components } from '$lib/api/types.gen';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { regionOf, TOWNS } from './czech-map';
+	import { mapPointOf, regionOf, TOWNS } from './czech-map';
 	import { MapNavigation } from './navigation.svelte';
 
 	type LocationModel = components['schemas']['LocationModel'];
+	type PointModel = components['schemas']['PointModel'];
 
 	/* Where a listing lies, shown on the map without any way to pick: its
 	district drawn around it, the finest area the map holds highlighted, and
-	its town marked when the map shows it. */
-	let { location }: { location: LocationModel } = $props();
+	the listing pinned at its point, or its town marked when it has none. */
+	let { location, point }: { location: LocationModel; point: PointModel | null } = $props();
 
 	const t = getTranslatorContext();
 	const navigation = new MapNavigation();
@@ -29,6 +30,7 @@
 	const town = $derived(location.obec === null ? null : (TOWNS.find((each) => each.code === location.obec?.code) ?? null));
 	const view = $derived(navigation.view);
 	const viewBox = $derived(`${view.x} ${view.y} ${view.width} ${view.height}`);
+	const pin = $derived(point === null ? null : mapPointOf(point.lat, point.lon));
 
 	$effect(() => navigation.show(area));
 </script>
@@ -43,7 +45,9 @@
 	{#if highlighted}
 		<path d={highlighted.path} class="place-map__area" />
 	{/if}
-	{#if town && location.obvod === null}
+	{#if pin}
+		<circle cx={pin[0]} cy={pin[1]} r={view.width / 110} class="place-map__pin" />
+	{:else if town && location.obvod === null}
 		<circle cx={town.x} cy={town.y} r={view.width / 90} class="place-map__town" />
 	{/if}
 </svg>
@@ -66,6 +70,10 @@
 		stroke: var(--color-bronze);
 		stroke-width: 2;
 		vector-effect: non-scaling-stroke;
+	}
+
+	.place-map__pin {
+		fill: var(--color-bronze);
 	}
 
 	.place-map__town {
