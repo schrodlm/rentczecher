@@ -1,5 +1,8 @@
-# One scan found six flats across all three portals, and the user already
-# opened two of them: new and viewed side by side, scored by a few preferences.
+# Two weeks of scans over six flats across all three portals, and the user
+# already opened two of them: new and viewed side by side, scored by a few
+# preferences. The Strojnická flat is also on Sreality, where its price moves
+# apart from Bezrealitky's. Milady Horákové dropped, Jankovcova rose, and the
+# rest never changed.
 profile:
   name: Praha 7 flats
   search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
@@ -13,12 +16,39 @@ profile:
     place_weight: 20
     preferred_places: [cast_obce Bubeneč]
 scans:
+  - at: -14d
+    listings:
+      - {id: "sreality:1001", price: 23500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 54}
+      - {id: "sreality:1002", price: 27900, location_raw_text: "Veletržní, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:2001", price: 18900, location_raw_text: "Letohradská, Praha 7", size_m2: 41, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:2002", price: 25500, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1029, lon: 14.4293}
+      - {id: "remax:3001", price: 29500, location_raw_text: "Komunardů, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
+      - {id: "remax:3002", price: 18500, location_raw_text: "Jankovcova, Praha 7", size_m2: 45}
+  - at: -9d
+    listings:
+      - {id: "sreality:1001", price: 23500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 54}
+      - {id: "sreality:1002", price: 27900, location_raw_text: "Veletržní, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "sreality:1003", price: 25900, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1030, lon: 14.4294}
+      - {id: "bezrealitky:2001", price: 18900, location_raw_text: "Letohradská, Praha 7", size_m2: 41, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:2002", price: 24500, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1029, lon: 14.4293}
+      - {id: "remax:3001", price: 29500, location_raw_text: "Komunardů, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
+      - {id: "remax:3002", price: 18500, location_raw_text: "Jankovcova, Praha 7", size_m2: 45}
+  - at: -4d
+    listings:
+      - {id: "sreality:1001", price: 21500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 54}
+      - {id: "sreality:1002", price: 27900, location_raw_text: "Veletržní, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "sreality:1003", price: 24900, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1030, lon: 14.4294}
+      - {id: "bezrealitky:2001", price: 18900, location_raw_text: "Letohradská, Praha 7", size_m2: 41, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:2002", price: 24500, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1029, lon: 14.4293}
+      - {id: "remax:3001", price: 29500, location_raw_text: "Komunardů, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
+      - {id: "remax:3002", price: 19900, location_raw_text: "Jankovcova, Praha 7", size_m2: 45}
   - at: -2h
     listings:
       - {id: "sreality:1001", price: 21500, location_raw_text: "Milady Horákové, Praha 7", size_m2: 54}
       - {id: "sreality:1002", price: 27900, location_raw_text: "Veletržní, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "sreality:1003", price: 24900, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1030, lon: 14.4294}
       - {id: "bezrealitky:2001", price: 18900, location_raw_text: "Letohradská, Praha 7", size_m2: 41, disposition_raw_text: "1+kk"}
-      - {id: "bezrealitky:2002", price: 24000, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1"}
+      - {id: "bezrealitky:2002", price: 24000, location_raw_text: "Strojnická, Praha 7", size_m2: 62, disposition_raw_text: "2+1", lat: 50.1029, lon: 14.4293}
       - {id: "remax:3001", price: 29500, location_raw_text: "Komunardů, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
       - {id: "remax:3002", price: 19900, location_raw_text: "Jankovcova, Praha 7", size_m2: 45}
 viewed: ["sreality:1002", "remax:3001"]
