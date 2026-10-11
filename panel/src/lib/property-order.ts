@@ -1,5 +1,5 @@
 import type { TrackedPropertyModel } from '$lib/api/client';
-import { pricePerM2 } from '$lib/listing-detail';
+import { pricePerM2 } from '$lib/property-detail';
 
 /* What a profile's listings can be ordered by. */
 export type SortField = 'score' | 'date' | 'price' | 'pricePerM2' | 'size';

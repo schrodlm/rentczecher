@@ -2,7 +2,7 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
 import type { TrackedPropertyModel } from '$lib/api/client';
 import FilterMenuHarness from '$lib/test-support/FilterMenuHarness.svelte';
-import { listing } from '$lib/test-support/listing';
+import { listing } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 
 const LISTINGS: TrackedPropertyModel[] = [

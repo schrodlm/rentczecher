@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Standing } from '$lib/listing-detail';
+	import type { Standing } from '$lib/property-detail';
 
 	/* One fact of a listing on a strip from the profile's lowest to its
 	highest: the other listings as dots, the middle as a tick, the listing

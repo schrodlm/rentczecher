@@ -2,7 +2,7 @@
 	import { formatArea, formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
-	import { activeFacets, withoutFacet, type Facet, type ListingFilter } from '$lib/listing-filter';
+	import { activeFacets, withoutFacet, type Facet, type ListingFilter } from '$lib/property-filter';
 	import { shownPortal } from '$lib/portals';
 
 	/* The filter's active parts as chips that each clear their part, and how

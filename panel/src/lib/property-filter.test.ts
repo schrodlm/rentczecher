@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { listing } from '$lib/test-support/listing';
+import { listing } from '$lib/test-support/tracked-property';
 import {
 	activeFacets,
 	layoutsAmong,
@@ -9,7 +9,7 @@ import {
 	scaleAmong,
 	withoutFacet,
 	type ListingFilter
-} from './listing-filter';
+} from './property-filter';
 
 function filtered(changes: Partial<ListingFilter>): ListingFilter {
 	return { ...noFilter(), ...changes };

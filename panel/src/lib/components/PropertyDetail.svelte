@@ -17,7 +17,7 @@
 		standingOf,
 		type ListingEvent,
 		type Standing
-	} from '$lib/listing-detail';
+	} from '$lib/property-detail';
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreListing, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { listing } from '$lib/test-support/listing';
-import { naturalOrder, sortListings, type ListingOrder } from './listing-order';
+import { listing } from '$lib/test-support/tracked-property';
+import { naturalOrder, sortListings, type ListingOrder } from './property-order';
 
 const OLD = listing('a', { first_seen_at: '2026-10-01T00:00:00Z', price: 25000, size_m2: 50 });
 const MIDDLE = listing('b', { first_seen_at: '2026-10-02T00:00:00Z', price: 18000, size_m2: 70 });

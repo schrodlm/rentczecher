@@ -2,7 +2,7 @@
 	import type { TrackedPropertyModel } from '$lib/api/client';
 	import { formatPrice, sourceInitial } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { factsOf } from '$lib/listing-detail';
+	import { factsOf } from '$lib/property-detail';
 	import { shownPortal } from '$lib/portals';
 
 	/* One listing in the inbox's list: enough to tell it apart and judge it at

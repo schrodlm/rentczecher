@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SortMenu from '$lib/components/SortMenu.svelte';
-	import { SORT_FIELDS, type ListingOrder } from '$lib/listing-order';
+	import { SORT_FIELDS, type ListingOrder } from '$lib/property-order';
 
 	/* Binds a SortMenu the way the feed does and shows the order it wrote back. */
 	let { order }: { order: ListingOrder } = $props();

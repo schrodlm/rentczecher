@@ -12,7 +12,7 @@
 		portalsAmong,
 		scaleAmong,
 		type ListingFilter
-	} from '$lib/listing-filter';
+	} from '$lib/property-filter';
 	import { shownPortal, type Portal } from '$lib/portals';
 
 	/* A funnel button that opens the filter's controls under it, each offering

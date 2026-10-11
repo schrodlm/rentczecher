@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import InboxHarness from '$lib/test-support/InboxHarness.svelte';
-import { listing } from '$lib/test-support/listing';
+import { listing } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 
 const PREFERENCES: ScoringPreferences = {

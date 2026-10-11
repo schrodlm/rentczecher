@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
-import { noFilter, type ListingFilter } from '$lib/listing-filter';
+import { noFilter, type ListingFilter } from '$lib/property-filter';
 import FilterChipsHarness from '$lib/test-support/FilterChipsHarness.svelte';
 import { renderWithTranslator } from '$lib/test-support/render';
 
