@@ -637,6 +637,26 @@ class TestRemaxParsing:
         client, _ = _serve_remax_pages(monkeypatch, {1: "<html><body>žádné výsledky</body></html>"})
         assert RemaxScraper(REMAX_CRITERIA, client).scrape() == []
 
+    def test_reads_a_formatted_price_without_the_district_before_it(self, monkeypatch):
+        card = '''
+        <div class="pl-items__item" data-price="4&#160;750&#160;000&#160;Kč&#10;<small>(za měsíc)</small>"
+             data-title="Prodej rodinného domu" data-display-address="Domažlice - Týnské Předměstí">
+          <a href="/reality/detail/7/prodej-domu">Prodej rodinného domu 120 m²</a>
+          <span>městská část Domažlice 3 4 750 000 Kč</span>
+        </div>'''
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([card])})
+        (listing,) = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert listing.price == 4750000
+
+    def test_skips_a_card_without_a_price_field(self, monkeypatch):
+        card = '''
+        <div class="pl-items__item" data-title="Prodej rodinného domu" data-display-address="Domažlice">
+          <a href="/reality/detail/8/prodej-domu">Prodej rodinného domu 120 m²</a>
+          <span>Domažlice 3 4 750 000 Kč</span>
+        </div>'''
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([card])})
+        assert RemaxScraper(REMAX_CRITERIA, client).scrape() == []
+
     def test_out_of_range_price_is_filtered(self, monkeypatch):
         cards = [_remax_card(1), _remax_card(2, price=99000000)]
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page(cards)})
