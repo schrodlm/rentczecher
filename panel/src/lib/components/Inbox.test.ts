@@ -217,6 +217,31 @@ describe('Inbox', () => {
 		expect(queryByRole('heading', { name: 'Vývoj ceny' })).toBeNull();
 	});
 
+	test('shows only what the filter lets through, and moves the selection onto it', async () => {
+		const { getByRole, getAllByRole, getByText } = await renderWithTranslator(InboxHarness, {
+			listings: [listing('a', { price: 20000 }), listing('b', { price: 25000, price_drop_from: 27000 })],
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn()
+		});
+		await fireEvent.click(getByRole('button', { name: /Filtr/ }));
+		await fireEvent.click(getByRole('checkbox', { name: 'Jen zlevněné' }));
+		expect(getAllByRole('option')).toHaveLength(1);
+		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
+		expect(getByText('Zobrazeno 1 z 2')).toBeInTheDocument();
+	});
+
+	test('says when nothing matches the filter, and clears it', async () => {
+		const { getByRole, getAllByRole, getByText, queryAllByRole } = await renderInbox();
+		await fireEvent.click(getByRole('button', { name: /Filtr/ }));
+		await fireEvent.click(getByRole('checkbox', { name: 'Jen zlevněné' }));
+		await fireEvent.click(document.body);
+		expect(queryAllByRole('option')).toHaveLength(0);
+		expect(getByText('Filtru nic neodpovídá')).toBeInTheDocument();
+		await fireEvent.click(getAllByRole('button', { name: 'Zrušit filtr' })[0]);
+		expect(getAllByRole('option')).toHaveLength(3);
+	});
+
 	test('says when a profile has no listings yet', async () => {
 		const { getByText } = await renderWithTranslator(InboxHarness, {
 			listings: [],
