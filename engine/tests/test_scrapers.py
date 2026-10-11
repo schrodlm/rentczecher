@@ -379,6 +379,12 @@ class TestBezrealitkyParsing:
         listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
         assert [l.id for l in listings] == ["bezrealitky:1"]
 
+    def test_skips_an_advert_priced_in_another_currency(self, monkeypatch):
+        adverts = [_bez_advert(1), _bez_advert(2, price=1210, currency="EUR")]
+        client, _ = _serve_bez_pages(monkeypatch, {1: _bez_page(adverts, total_count=2)})
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
+        assert [l.id for l in listings] == ["bezrealitky:1"]
+
     def test_unset_max_price_keeps_expensive_adverts(self, monkeypatch):
         criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
         adverts = [_bez_advert(1, price=99999999)]
