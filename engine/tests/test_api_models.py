@@ -1,7 +1,7 @@
 from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
-from rentczecher_engine.domain.listing import InboxCard, SiblingSource
+from rentczecher_engine.domain.listing import TrackedListing, SiblingSource
 from tests.profiles import profile
 
 
@@ -14,10 +14,10 @@ class TestProfileModel:
 
 
 class TestListingModel:
-    def test_from_card_maps_every_field_by_name(self):
-        """from_card carries every inbox card field into the wire model,
+    def test_from_tracked_listing_maps_every_field_by_name(self):
+        """from_tracked_listing carries every inbox card field into the wire model,
         siblings included."""
-        card = InboxCard(
+        card = TrackedListing(
             id="sreality:1",
             source="sreality",
             url="https://example.com/1",
@@ -36,7 +36,7 @@ class TestListingModel:
             price_drop_from=27000,
             sibling_sources=(SiblingSource(source="bezrealitky", url="https://example.com/b"),),
         )
-        assert ListingModel.from_card(card, None).model_dump() == {
+        assert ListingModel.from_tracked_listing(card, None).model_dump() == {
             "id": "sreality:1",
             "source": "sreality",
             "url": "https://example.com/1",
@@ -55,9 +55,9 @@ class TestListingModel:
             "sibling_sources": [{"source": "bezrealitky", "url": "https://example.com/b"}],
         }
 
-    def test_from_card_sends_no_disposition_when_the_raw_text_names_none(self):
+    def test_from_tracked_listing_sends_no_disposition_when_the_raw_text_names_none(self):
         """A raw text naming no layout maps to a null disposition."""
-        card = InboxCard(
+        card = TrackedListing(
             id="sreality:1",
             source="sreality",
             url="https://example.com/1",
@@ -76,7 +76,7 @@ class TestListingModel:
             price_drop_from=None,
             sibling_sources=(),
         )
-        assert ListingModel.from_card(card, None).disposition is None
+        assert ListingModel.from_tracked_listing(card, None).disposition is None
 
 
 class TestPortalHealthModel:

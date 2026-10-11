@@ -149,7 +149,7 @@ class SiblingSource:
 
 
 @dataclass(frozen=True, slots=True)
-class InboxCard:
+class TrackedListing:
     """One listing as the GUI's inbox renders it: listing and property facts,
     this profile's tracking state, the latest observed price, a price-drop
     baseline when the previous observation was higher, and sibling postings

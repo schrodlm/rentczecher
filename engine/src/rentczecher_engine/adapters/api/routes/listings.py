@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from rentczecher_engine.adapters.api.deps import resolve_profile
 from rentczecher_engine.adapters.api.models import ListingModel, PostingPricesModel
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.listing import TrackedListing
 from rentczecher_engine.domain.location import Location
 from rentczecher_engine.domain.profile import Profile
 
@@ -19,12 +19,12 @@ def list_listings(
 ) -> list[ListingModel]:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        cards = store.inbox_listings(profile.id, only_new=filter == "new")
+        cards = store.tracked_listings(profile.id, only_new=filter == "new")
     with deps.open_gazetteer() as gazetteer:
-        return [ListingModel.from_card(card, _resolved_location(card, gazetteer)) for card in cards]
+        return [ListingModel.from_tracked_listing(card, _resolved_location(card, gazetteer)) for card in cards]
 
 
-def _resolved_location(card: InboxCard, gazetteer: Gazetteer) -> Location | None:
+def _resolved_location(card: TrackedListing, gazetteer: Gazetteer) -> Location | None:
     if card.property_location is None:
         return None
     return gazetteer.named(card.property_location)

@@ -4,7 +4,7 @@ lives behind them."""
 from abc import ABC, abstractmethod
 
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import InboxCard
+from rentczecher_engine.domain.listing import TrackedListing
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation
 from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
 
@@ -108,5 +108,5 @@ class ListingRepository(ABC):
         """Stop keeping the listing as a favourite. It stays viewed."""
 
     @abstractmethod
-    def inbox_listings(self, profile_id: str, only_new: bool = False) -> list[InboxCard]:
+    def tracked_listings(self, profile_id: str, only_new: bool = False) -> list[TrackedListing]:
         """The profile's tracked listings as the GUI's inbox renders them."""
