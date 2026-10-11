@@ -301,6 +301,7 @@ def _bez_advert(advert_id, price=20000, **overrides):
         "id": str(advert_id),
         "uri": f"byt-{advert_id}",
         "price": price,
+        "currency": "CZK",
         "reserved": False,
         "address": "Veletržní, Praha 7",
         "disposition": "DISP_2_KK",
