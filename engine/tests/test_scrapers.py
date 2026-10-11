@@ -179,6 +179,7 @@ class TestSrealityPagination:
             "hash_id": hash_id,
             "advert_name": f"Pronájem bytu 2+kk 50 m² #{hash_id}",
             "price_czk": float(price),
+            "price_summary_czk": float(price),
             "category_sub_cb": {"name": "2+kk", "value": 4},
             "category_main_cb": {"name": "Byty", "value": 1},
             "category_type_cb": {"name": "Pronájem", "value": 2},

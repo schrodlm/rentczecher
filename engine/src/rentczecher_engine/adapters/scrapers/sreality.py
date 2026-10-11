@@ -142,10 +142,13 @@ class SrealityScraper(BaseScraper):
         if hash_id is None:
             return None
 
-        price = int(estate.get("price_czk") or estate.get("price") or 0)
-        # An advert with its price "on request" serves 0, with a note such as
-        # "Info u realitního specialisty" where the price would be.
-        if price == 0:
+        # price_czk is per the advert's own unit, per m² for many plots, while
+        # the summary prices the whole property, monthly for a rental. An
+        # advert with its price "on request" serves 0, or a token 1 Kč, with
+        # a note such as "Info u realitního specialisty" where the price
+        # would be.
+        price = int(estate.get("price_summary_czk") or 0)
+        if price <= 1:
             return None
         if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
