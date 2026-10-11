@@ -19,15 +19,18 @@ def list_tracked_properties(
 ) -> list[TrackedPropertyModel]:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        cards = store.tracked_properties(profile.id, only_new=filter == "new")
+        tracked_properties = store.tracked_properties(profile.id, only_new=filter == "new")
     with deps.open_gazetteer() as gazetteer:
-        return [TrackedPropertyModel.from_tracked_property(card, _resolved_location(card, gazetteer)) for card in cards]
+        return [
+            TrackedPropertyModel.from_tracked_property(tracked, _resolved_location(tracked, gazetteer))
+            for tracked in tracked_properties
+        ]
 
 
-def _resolved_location(card: TrackedProperty, gazetteer: Gazetteer) -> Location | None:
-    if card.property_location is None:
+def _resolved_location(tracked: TrackedProperty, gazetteer: Gazetteer) -> Location | None:
+    if tracked.property_location is None:
         return None
-    return gazetteer.named(card.property_location)
+    return gazetteer.named(tracked.property_location)
 
 
 @router.get(
