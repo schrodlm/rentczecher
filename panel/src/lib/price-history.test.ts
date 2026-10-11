@@ -22,6 +22,7 @@ describe('priceChartOf', () => {
 					[18000, '2026-10-03T00:00:00Z', '2026-10-05T00:00:00Z']
 				])
 			],
+			'sreality:1',
 			BOX
 		)!;
 		expect(chart.lowest).toBe(18000);
@@ -32,28 +33,29 @@ describe('priceChartOf', () => {
 		expect(chart.lines[0]).toMatchObject({ own: true, endX: 100, endY: 50, current: 18000 });
 	});
 
-	test('puts every posting on one scale, the first as the listing’s own', () => {
+	test('puts every posting on one scale, marking the listing’s own wherever it comes', () => {
 		const chart = priceChartOf(
 			[
 				posting('bezrealitky:1', [[24000, '2026-10-01T00:00:00Z', '2026-10-05T00:00:00Z']]),
 				posting('sreality:1', [[26000, '2026-10-03T00:00:00Z', '2026-10-05T00:00:00Z']])
 			],
+			'sreality:1',
 			BOX
 		)!;
-		const [own, other] = chart.lines;
-		expect(own).toMatchObject({ listingId: 'bezrealitky:1', own: true, endY: 50 });
-		expect(other).toMatchObject({ listingId: 'sreality:1', source: 'sreality', own: false, endY: 0 });
-		expect(other.path).toBe('M50,0 L100,0');
+		const [other, own] = chart.lines;
+		expect(other).toMatchObject({ listingId: 'bezrealitky:1', own: false, endY: 50 });
+		expect(own).toMatchObject({ listingId: 'sreality:1', source: 'sreality', own: true, endY: 0 });
+		expect(own.path).toBe('M50,0 L100,0');
 	});
 
 	test('draws an unchanged price level through the middle', () => {
-		const chart = priceChartOf([posting('remax:1', [[19500, '2026-10-01T00:00:00Z', '2026-10-05T00:00:00Z']])], BOX)!;
+		const chart = priceChartOf([posting('remax:1', [[19500, '2026-10-01T00:00:00Z', '2026-10-05T00:00:00Z']])], 'remax:1', BOX)!;
 		expect(chart.lowest).toBe(chart.highest);
 		expect(chart.lines[0].path).toBe('M0,25 L100,25');
 	});
 
 	test('charts nothing until some posting has a price', () => {
-		expect(priceChartOf([], BOX)).toBeNull();
-		expect(priceChartOf([posting('sreality:1', [])], BOX)).toBeNull();
+		expect(priceChartOf([], 'sreality:1', BOX)).toBeNull();
+		expect(priceChartOf([posting('sreality:1', [])], 'sreality:1', BOX)).toBeNull();
 	});
 });
