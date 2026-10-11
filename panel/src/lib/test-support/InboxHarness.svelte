@@ -38,8 +38,10 @@
 		listing.viewed_at = listing.viewed_at ?? NOW;
 	}
 
-	function markAllViewedAndReload(): void {
-		held = held.map((listing) => ({ ...listing, viewed_at: listing.viewed_at ?? NOW }));
+	function markAllViewedAndReload(listingIds: string[]): void {
+		held = held.map((listing) =>
+			listingIds.includes(listing.id) ? { ...listing, viewed_at: listing.viewed_at ?? NOW } : listing
+		);
 	}
 </script>
 

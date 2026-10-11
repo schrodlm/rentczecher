@@ -231,6 +231,28 @@ describe('Inbox', () => {
 		expect(getByText('Zobrazeno 1 z 2')).toBeInTheDocument();
 	});
 
+	test('marks only the new listings the filter shows as viewed', async () => {
+		const { getByRole, prices } = await renderWithTranslator(InboxHarness, {
+			listings: [listing('a', { price: 20000 }), listing('b', { price: 25000, price_drop_from: 27000 })],
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn()
+		}).then((rendered) => ({
+			...rendered,
+			prices: (name: string) =>
+				within(rendered.getByRole('group', { name }))
+					.getAllByRole('option')
+					.map((row) => row.querySelector('.listing-row__price')?.textContent?.replace(/\s/g, ' '))
+		}));
+		await fireEvent.click(getByRole('button', { name: /Filtr/ }));
+		await fireEvent.click(getByRole('checkbox', { name: 'Jen zlevněné' }));
+		await fireEvent.click(document.body);
+		await fireEvent.click(getByRole('button', { name: 'Označit vše jako zobrazené' }));
+		await fireEvent.click(getByRole('button', { name: 'Zrušit Jen zlevněné' }));
+		expect(prices('Nové')).toEqual(['20 000 Kč']);
+		expect(prices('Už zobrazené')).toEqual(['25 000 Kč']);
+	});
+
 	test('says when nothing matches the filter, and clears it', async () => {
 		const { getByRole, getAllByRole, getByText, queryAllByRole } = await renderInbox();
 		await fireEvent.click(getByRole('button', { name: /Filtr/ }));
