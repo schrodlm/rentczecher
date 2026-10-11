@@ -14,6 +14,7 @@ from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.disposition import Disposition
+from rentczecher_engine.domain.geo import GeoPoint
 
 PROFILE = "praha7-byty"
 OTHER_PROFILE = "letna-byty"
@@ -366,6 +367,14 @@ class TestInboxListings:
         (card,) = repo.inbox_listings(PROFILE)
         assert card.disposition == Disposition(rooms=3, kitchen="separate")
 
+    def test_carries_the_property_point(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("UPDATE properties SET lat = 50.1029, lon = 14.4293 WHERE id = ?", (PROPERTY,))
+        conn.commit()
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.point == GeoPoint(lat=50.1029, lon=14.4293)
+
     def test_missing_property_facts_are_none_not_dropped(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
@@ -376,6 +385,7 @@ class TestInboxListings:
         assert card.land_m2 is None
         assert card.disposition_raw_text is None
         assert card.disposition is None
+        assert card.point is None
 
     def test_carries_tracking_state(self, tmp_path):
         repo, conn = _repo(tmp_path)
