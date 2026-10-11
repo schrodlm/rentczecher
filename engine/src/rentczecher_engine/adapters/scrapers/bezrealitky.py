@@ -165,6 +165,11 @@ class BezrealitkyScraper(BaseScraper):
         advert_id = advert.get("id", "")
         uri = advert.get("uri", "")
         price = advert.get("price", 0)
+        # The search asks for CZK and the portal converts nearly every advert,
+        # but now and then one still comes back in its own currency, mostly
+        # euros, whose number is not a price in crowns.
+        if advert.get("currency") != "CZK":
+            return None
 
         if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
