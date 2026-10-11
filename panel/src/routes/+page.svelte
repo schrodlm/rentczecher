@@ -4,7 +4,7 @@
 	import { SidecarClient } from '$lib/api/client';
 	import { sidecarConnection } from '$lib/api/connection';
 	import { onEngineStopped } from '$lib/api/engine';
-	import type { ListingModel, PortalHealthModel, ProfileModel } from '$lib/api/client';
+	import type { ListingModel, PortalHealthModel, PostingPricesModel, ProfileModel } from '$lib/api/client';
 	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
@@ -62,6 +62,11 @@
 			if (profileId !== selectedProfileId) return;
 			listingsError = errorMessage(err);
 		}
+	}
+
+	async function loadPriceHistory(listingId: string): Promise<PostingPricesModel[]> {
+		if (selectedProfileId === null) return [];
+		return client.priceHistory(selectedProfileId, listingId);
 	}
 
 	async function loadAllNewCounts(profileList: ProfileModel[]): Promise<void> {
@@ -284,6 +289,7 @@
 					onview={handleViewed}
 					onfavourite={handleFavourite}
 					onmarkallviewed={handleMarkAllViewed}
+					{loadPriceHistory}
 				/>
 			{/key}
 		{/if}

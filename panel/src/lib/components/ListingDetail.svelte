@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel } from '$lib/api/client';
+	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 	import { formatArea, formatPerM2, formatPrice, formatPricePerM2 } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
@@ -20,6 +20,7 @@
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreListing, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
+	import PriceChart from './PriceChart.svelte';
 	import ScoreRing from './ScoreRing.svelte';
 	import StandingStrip from './StandingStrip.svelte';
 
@@ -30,11 +31,13 @@
 		listing,
 		listings,
 		preferences,
+		priceHistory,
 		onfavourite
 	}: {
 		listing: ListingModel;
 		listings: readonly ListingModel[];
 		preferences: ScoringPreferences | null;
+		priceHistory: PostingPricesModel[] | null;
 		onfavourite: (favourite: boolean) => void;
 	} = $props();
 
@@ -180,6 +183,13 @@
 						</li>
 					{/each}
 				</ul>
+			</section>
+		{/if}
+
+		{#if priceHistory}
+			<section class="listing-detail__panel">
+				<h3>{t.t('Price over time')}</h3>
+				<PriceChart postings={priceHistory} />
 			</section>
 		{/if}
 
