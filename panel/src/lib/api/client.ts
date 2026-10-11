@@ -93,7 +93,7 @@ export class SidecarClient {
 		return this.require(data, response, error);
 	}
 
-	/* The prices of every portal posting of the flat, the cheapest first. */
+	/* The prices of the flat's listings the profile tracks, the cheapest first. */
 	async priceHistory(profileId: string, propertyId: string): Promise<PostingPricesModel[]> {
 		const { data, response, error } = await this.api.GET(
 			'/v1/profiles/{profile_id}/properties/{property_id}/price-history',
