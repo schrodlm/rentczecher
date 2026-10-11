@@ -2,7 +2,7 @@ from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PortalH
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.geo import GeoPoint
-from rentczecher_engine.domain.listing import TrackedProperty, SiblingSource
+from rentczecher_engine.domain.property import TrackedProperty, SiblingSource
 from tests.profiles import profile
 
 

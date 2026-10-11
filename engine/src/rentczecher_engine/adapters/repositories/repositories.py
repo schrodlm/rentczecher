@@ -4,9 +4,8 @@ lives behind them."""
 from abc import ABC, abstractmethod
 
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import TrackedProperty
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation
-from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation
+from rentczecher_engine.domain.property import PropertyIdentity, PropertyLocation, TrackedProperty
 
 
 class PropertyRepository(ABC):

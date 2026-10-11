@@ -7,9 +7,8 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.disposition import parse_disposition
 from rentczecher_engine.domain.geo import GeoPoint
-from rentczecher_engine.domain.listing import TrackedProperty, SiblingSource
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
-from rentczecher_engine.domain.property import PropertyLocation
+from rentczecher_engine.domain.property import PropertyLocation, SiblingSource, TrackedProperty
 
 
 class SqliteListingRepository(ListingRepository):

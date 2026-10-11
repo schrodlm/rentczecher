@@ -7,9 +7,8 @@ from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
-from rentczecher_engine.domain.listing import TrackedProperty
 from rentczecher_engine.domain.price import PostingPrices
-from rentczecher_engine.domain.property import PropertyLocation
+from rentczecher_engine.domain.property import PropertyLocation, TrackedProperty
 from rentczecher_engine.services.assemble import assemble_location, assemble_property
 from rentczecher_engine.services.dedup import DedupOutcome, match_score_to_json
 

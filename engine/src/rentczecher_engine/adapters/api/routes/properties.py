@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from rentczecher_engine.adapters.api.deps import resolve_profile
 from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PostingPricesModel
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
-from rentczecher_engine.domain.listing import TrackedProperty
+from rentczecher_engine.domain.property import TrackedProperty
 from rentczecher_engine.domain.location import Location
 from rentczecher_engine.domain.profile import Profile
 
