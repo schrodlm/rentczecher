@@ -1,11 +1,14 @@
 import type { components } from '$lib/api/types.gen';
 
-type ListingModel = components['schemas']['ListingModel'];
+type TrackedPropertyModel = components['schemas']['TrackedPropertyModel'];
 type LocationModel = components['schemas']['LocationModel'];
 type PreferencesModel = components['schemas']['PreferencesModel'];
 type PlaceRef = components['schemas']['PlaceRefModel'];
 
-export type ScoredListing = Pick<ListingModel, 'price' | 'size_m2' | 'land_m2' | 'disposition' | 'resolved_location'>;
+export type ScoredListing = Pick<
+	TrackedPropertyModel,
+	'price' | 'size_m2' | 'land_m2' | 'disposition' | 'resolved_location'
+>;
 export type ScoringPreferences = Omit<PreferencesModel, 'preferred_places'> & { preferred_places: PlaceRef[] };
 
 /* One preference's share of a score: the points it gives a listing out of

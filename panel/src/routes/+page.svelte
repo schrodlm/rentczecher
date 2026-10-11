@@ -4,7 +4,7 @@
 	import { SidecarClient } from '$lib/api/client';
 	import { sidecarConnection } from '$lib/api/connection';
 	import { onEngineStopped } from '$lib/api/engine';
-	import type { ListingModel, PortalHealthModel, PostingPricesModel, ProfileModel } from '$lib/api/client';
+	import type { TrackedPropertyModel, PortalHealthModel, PostingPricesModel, ProfileModel } from '$lib/api/client';
 	import { errorMessage } from '$lib/errors';
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
@@ -26,7 +26,7 @@
 	let selectedProfileId = $state<string | null>(null);
 	let health = $state<PortalHealthModel[]>([]);
 	let runError = $state<string | null>(null);
-	let listings = $state<ListingModel[] | null>(null);
+	let listings = $state<TrackedPropertyModel[] | null>(null);
 	let listingsError = $state<string | null>(null);
 	let newCounts = $state<Record<string, number>>({});
 	// The profile open in the editor, with the id it is stored under, or null
@@ -53,7 +53,7 @@
 	async function loadListings(profileId: string): Promise<void> {
 		listingsError = null;
 		try {
-			const fetched = await client.listListings(profileId, 'all');
+			const fetched = await client.listTrackedProperties(profileId, 'all');
 			// A slow response for a tab the user already left must not
 			// overwrite the tab they are on.
 			if (profileId !== selectedProfileId) return;
@@ -74,7 +74,7 @@
 		const counts = await Promise.all(
 			others.map(async (profile) => {
 				try {
-					const newOnes = await client.listListings(profile.id, 'new');
+					const newOnes = await client.listTrackedProperties(profile.id, 'new');
 					return [profile.id, newOnes.length] as const;
 				} catch {
 					return [profile.id, 0] as const;

@@ -1,15 +1,15 @@
-import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import { formatArea } from '$lib/format';
 import type { Translator } from '$lib/i18n/translator';
 
 /* The listing's layout as shown, or null when the portal gave none. */
-export function layoutOf(listing: ListingModel, t: Translator): string | null {
+export function layoutOf(listing: TrackedPropertyModel, t: Translator): string | null {
 	if (listing.disposition === 'atypicky') return t.t('atypical layout');
 	return listing.disposition ?? listing.disposition_raw_text;
 }
 
 /* The listing's layout, size and place in one line, leaving out what it lacks. */
-export function factsOf(listing: ListingModel, t: Translator): string {
+export function factsOf(listing: TrackedPropertyModel, t: Translator): string {
 	return [layoutOf(listing, t), listing.size_m2 === null ? null : formatArea(listing.size_m2), listing.location_raw_text]
 		.filter((fact) => fact !== null)
 		.join(' · ');
@@ -28,9 +28,9 @@ export type Standing = {
 
 /* Null when the listing lacks the fact, or no other listing has it. */
 export function standingOf(
-	listing: ListingModel,
-	listings: readonly ListingModel[],
-	factOf: (listing: ListingModel) => number | null
+	listing: TrackedPropertyModel,
+	listings: readonly TrackedPropertyModel[],
+	factOf: (listing: TrackedPropertyModel) => number | null
 ): Standing | null {
 	const own = factOf(listing);
 	if (own === null) return null;
@@ -79,7 +79,10 @@ export type ListingEvent =
 /* What happened to a listing, newest first. Its price changes come from its
 own posting's prices, the first of the postings, and are left out until those
 are known. */
-export function historyOf(listing: ListingModel, postings: readonly PostingPricesModel[] | null): ListingEvent[] {
+export function historyOf(
+	listing: TrackedPropertyModel,
+	postings: readonly PostingPricesModel[] | null
+): ListingEvent[] {
 	const events: ListingEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
 	const ownChanges = postings?.[0]?.changes ?? [];
 	for (let index = 1; index < ownChanges.length; index++) {
@@ -95,7 +98,7 @@ export function historyOf(listing: ListingModel, postings: readonly PostingPrice
 	return events.sort((a, b) => b.at.localeCompare(a.at));
 }
 
-export function pricePerM2(listing: ListingModel): number | null {
+export function pricePerM2(listing: TrackedPropertyModel): number | null {
 	if (listing.price === null || listing.size_m2 === null || listing.size_m2 <= 0) return null;
 	return listing.price / listing.size_m2;
 }

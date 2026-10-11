@@ -1,6 +1,6 @@
-import type { ListingModel } from '$lib/api/client';
+import type { TrackedPropertyModel } from '$lib/api/client';
 
-export function listing(id: string, overrides: Partial<ListingModel> = {}): ListingModel {
+export function listing(id: string, overrides: Partial<TrackedPropertyModel> = {}): TrackedPropertyModel {
 	return {
 		id,
 		listing_id: id,
