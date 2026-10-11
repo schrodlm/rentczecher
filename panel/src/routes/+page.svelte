@@ -115,10 +115,10 @@
 		marked.viewed_at = marked.viewed_at ?? now;
 	}
 
-	async function handleMarkAllViewed(): Promise<void> {
+	async function handleMarkAllViewed(listingIds: string[]): Promise<void> {
 		if (selectedProfileId === null) return;
 		const profileId = selectedProfileId;
-		await Promise.all(newListings.map((l) => client.markViewed(profileId, l.id).catch(() => {})));
+		await Promise.all(listingIds.map((listingId) => client.markViewed(profileId, listingId).catch(() => {})));
 		await loadListings(profileId);
 	}
 
