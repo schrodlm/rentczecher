@@ -12,15 +12,6 @@ from rentczecher_engine.domain.price import PostingPrices, PriceObservation, pri
 from rentczecher_engine.domain.property import PropertyLocation
 
 
-def _cheapest_first(posting: PostingPrices) -> tuple[bool, int, str]:
-    """Orders postings as a tracked property picks the one it shows: by their
-    current price, the first seen among equally cheap ones, and those not
-    priced yet last."""
-    if not posting.changes:
-        return (True, 0, "")
-    return (False, posting.changes[-1].price, posting.changes[0].first_seen_at)
-
-
 class SqliteListingRepository(ListingRepository):
     """A listing row is a fact of the portal posting, shared by every
     profile that sees it. Which profile has seen it, when, and how many
@@ -152,7 +143,7 @@ class SqliteListingRepository(ListingRepository):
         postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (property_id, profile_id))]
         if not postings:
             return None
-        return sorted(postings, key=_cheapest_first)
+        return postings
 
     def _to_posting_prices(self, row: sqlite3.Row) -> PostingPrices:
         return PostingPrices(
