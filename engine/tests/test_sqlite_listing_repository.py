@@ -126,6 +126,30 @@ class TestPriceHistory:
             "SELECT count(*) FROM price_observations WHERE price = 17000").fetchone()[0] == 1
 
 
+class TestPriceHistories:
+    def test_puts_the_listings_own_posting_first_with_its_collapsed_prices(self, tmp_path):
+        repo, _ = _repo(tmp_path, now=_clock(*(BASE + timedelta(hours=hour) for hour in range(4))))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=21000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        postings = repo.price_histories(PROFILE, "sreality:1")
+        assert postings is not None
+        assert [posting.listing_id for posting in postings] == ["sreality:1", "bezrealitky:1"]
+        own, other = postings
+        assert [change.price for change in own.changes] == [20000, 19000]
+        assert own.changes[0].first_seen_at == BASE.isoformat()
+        assert own.changes[0].last_seen_at == (BASE + timedelta(hours=2)).isoformat()
+        assert other.source == "bezrealitky"
+        assert [change.price for change in other.changes] == [21000]
+
+    def test_is_none_for_a_listing_the_profile_does_not_track(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1"))
+        assert repo.price_histories(PROFILE, "sreality:1") is None
+        assert repo.price_histories(PROFILE, "sreality:unknown") is None
+
+
 class TestMissCounts:
     def test_absent_increments_present_resets(self, tmp_path):
         repo, conn = _repo(tmp_path)
