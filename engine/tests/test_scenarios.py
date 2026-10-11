@@ -1,6 +1,7 @@
 """Tests for the scenario loader and the shipped scenarios: each replays into
 the inbox its file describes."""
 
+import json
 import sqlite3
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
@@ -200,3 +201,56 @@ def test_a_malformed_offset_is_rejected(text):
     """Anything but now or a negative day, hour or minute offset fails."""
     with pytest.raises(ValueError, match="expected 'now' or an offset"):
         offset_from_now(text)
+
+
+A_PROFILE = """
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7}
+"""
+
+
+def _user_config(tmp_path):
+    return json.loads((tmp_path / "user_config.json").read_text(encoding="utf-8"))
+
+
+def test_a_scenario_stating_no_panel_starts_the_app_set_up_with_the_defaults(tmp_path):
+    Scenario.from_text("plain", A_PROFILE).replay_into(tmp_path, NOW)
+    assert _user_config(tmp_path) == {"version": 1, "theme": "system", "language": "cs"}
+
+
+def test_a_scenario_states_the_panels_theme_and_language(tmp_path):
+    text = A_PROFILE + "panel: {theme: dark, language: en}\n"
+    Scenario.from_text("stated", text).replay_into(tmp_path, NOW)
+    assert _user_config(tmp_path) == {"version": 1, "theme": "dark", "language": "en"}
+
+
+def test_a_scenario_stating_only_the_language_keeps_the_default_theme(tmp_path):
+    text = A_PROFILE + "panel: {language: en}\n"
+    Scenario.from_text("stated", text).replay_into(tmp_path, NOW)
+    assert _user_config(tmp_path) == {"version": 1, "theme": "system", "language": "en"}
+
+
+def test_first_run_leaves_out_the_user_config_and_every_profile(tmp_path):
+    """The first-run scenario opens an app nobody has set up: an empty
+    database and no user config."""
+    assert Scenario.load("first-run").replay_into(tmp_path, NOW) is None
+    assert not (tmp_path / "user_config.json").exists()
+    conn = connection.connect(tmp_path / "data" / "rentczecher.db")
+    assert SqliteProfileRepository(conn).list_profiles() == []
+
+
+@pytest.mark.parametrize("panel, message", [
+    ("{colour: dark}", "unknown panel keys \\['colour'\\]"),
+    ("{theme: sepia}", "theme must be one of"),
+    ("{language: de}", "language must be one of"),
+    ("later", "panel must be 'first-run' or a mapping"),
+])
+def test_a_misstated_panel_fails_loudly(panel, message):
+    with pytest.raises(ValueError, match=message):
+        Scenario.from_text("typo", A_PROFILE + f"panel: {panel}\n")
+
+
+def test_scans_without_a_profile_are_refused():
+    with pytest.raises(ValueError, match="scans and views need a profile"):
+        Scenario.from_text("typo", "scans:\n  - at: -1h\n    listings: []\n")
