@@ -67,7 +67,8 @@ _Avoid_: geocoder, place database
 
 **Profile**:
 One person's saved search: its criteria, its preferences and the portals it
-scans. Every scan is per-profile.
+scans. Every scan is per-profile. It keeps every flat its scans found as its
+tracked properties, and shows what is new and what has changed.
 _Avoid_: search, watch, subscription
 
 **Criteria**:
