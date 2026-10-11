@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
+import type { PostingPricesModel } from '$lib/api/client';
 import { Translator } from '$lib/i18n/translator';
 import { listing } from '$lib/test-support/listing';
 import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './listing-detail';
@@ -77,22 +78,46 @@ describe('factsOf', () => {
 });
 
 describe('historyOf', () => {
-	test('lists what happened newest first, an undated drop just after the finding', () => {
+	const OWN_PRICES: PostingPricesModel = {
+		listing_id: 'a',
+		source: 'sreality',
+		url: 'https://example.invalid/a',
+		changes: [
+			{ price: 20000, charges: null, first_seen_at: '2026-10-01T00:00:00Z', last_seen_at: '2026-10-02T00:00:00Z' },
+			{ price: 18000, charges: null, first_seen_at: '2026-10-04T00:00:00Z', last_seen_at: '2026-10-06T00:00:00Z' },
+			{ price: 19000, charges: null, first_seen_at: '2026-10-07T00:00:00Z', last_seen_at: '2026-10-07T00:00:00Z' }
+		]
+	};
+	const OTHER_PRICES: PostingPricesModel = {
+		listing_id: 'b',
+		source: 'remax',
+		url: 'https://example.invalid/b',
+		changes: [
+			{ price: 30000, charges: null, first_seen_at: '2026-10-01T00:00:00Z', last_seen_at: '2026-10-01T00:00:00Z' },
+			{ price: 10000, charges: null, first_seen_at: '2026-10-02T00:00:00Z', last_seen_at: '2026-10-02T00:00:00Z' }
+		]
+	};
+
+	test("lists what happened newest first, each change of the listing's own price dated", () => {
 		const events = historyOf(
 			listing('a', {
 				first_seen_at: '2026-10-01T00:00:00Z',
 				viewed_at: '2026-10-03T00:00:00Z',
-				favourited_at: '2026-10-05T00:00:00Z',
-				price: 18000,
-				price_drop_from: 20000
-			})
+				favourited_at: '2026-10-05T00:00:00Z'
+			}),
+			[OWN_PRICES, OTHER_PRICES]
 		);
-		expect(events.map((event) => event.kind)).toEqual(['favourite', 'viewed', 'priceDrop', 'found']);
-		expect(events[2]).toEqual({ kind: 'priceDrop', at: null, from: 20000, to: 18000 });
+		expect(events).toEqual([
+			{ kind: 'priceChange', at: '2026-10-07T00:00:00Z', from: 18000, to: 19000 },
+			{ kind: 'favourite', at: '2026-10-05T00:00:00Z' },
+			{ kind: 'priceChange', at: '2026-10-04T00:00:00Z', from: 20000, to: 18000 },
+			{ kind: 'viewed', at: '2026-10-03T00:00:00Z' },
+			{ kind: 'found', at: '2026-10-01T00:00:00Z' }
+		]);
 	});
 
-	test('lists only the finding of a listing nothing else happened to', () => {
-		expect(historyOf(listing('a', { first_seen_at: '2026-10-01T00:00:00Z' }))).toEqual([
+	test('lists no price change until the prices are known', () => {
+		expect(historyOf(listing('a', { first_seen_at: '2026-10-01T00:00:00Z', price_drop_from: 25000 }), null)).toEqual([
 			{ kind: 'found', at: '2026-10-01T00:00:00Z' }
 		]);
 	});

@@ -88,10 +88,18 @@ describe('ListingDetail', () => {
 		expect(getByText('Nejmenší v profilu')).toBeInTheDocument();
 	});
 
-	test('lists what happened to the listing', async () => {
+	test('lists what happened to the listing, its price changes dated', async () => {
 		const { getByText } = await renderDetail();
-		expect(getByText('Zlevněno z 20 500 Kč na 18 900 Kč')).toBeInTheDocument();
+		expect(getByText('Zlevněno z 20 500 Kč na 18 900 Kč')).toHaveTextContent('25. 9. 2026');
 		expect(getByText('Poprvé nalezeno')).toBeInTheDocument();
+	});
+
+	test('names a rise in price as a rise', async () => {
+		const risen: PostingPricesModel[] = [
+			{ ...FLAT_PRICES[0], changes: [...FLAT_PRICES[0].changes].reverse() }
+		];
+		const { getByText } = await renderDetail(FLAT, PREFERENCES, risen);
+		expect(getByText('Zdraženo z 18 900 Kč na 20 500 Kč')).toBeInTheDocument();
 	});
 
 	test('shows the price over time once it is known', async () => {
