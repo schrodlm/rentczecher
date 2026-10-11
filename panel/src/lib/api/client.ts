@@ -11,7 +11,7 @@ export type PostingPricesModel = components['schemas']['PostingPricesModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
 type ListingFilter = NonNullable<
-	paths['/v1/profiles/{profile_id}/listings']['get']['parameters']['query']
+	paths['/v1/profiles/{profile_id}/properties']['get']['parameters']['query']
 >['filter'];
 
 /* A request the sidecar refused. The reason is the sidecar's own message,
@@ -87,46 +87,46 @@ export class SidecarClient {
 	}
 
 	async listListings(profileId: string, filter: ListingFilter = 'new'): Promise<ListingModel[]> {
-		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/listings', {
+		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/properties', {
 			params: { path: { profile_id: profileId }, query: { filter } }
 		});
 		return this.require(data, response, error);
 	}
 
-	/* The prices of every portal posting of the listing's flat, its own first. */
-	async priceHistory(profileId: string, listingId: string): Promise<PostingPricesModel[]> {
+	/* The prices of every portal posting of the flat, the cheapest first. */
+	async priceHistory(profileId: string, propertyId: string): Promise<PostingPricesModel[]> {
 		const { data, response, error } = await this.api.GET(
-			'/v1/profiles/{profile_id}/listings/{listing_id}/price-history',
-			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+			'/v1/profiles/{profile_id}/properties/{property_id}/price-history',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		return this.require(data, response, error);
 	}
 
-	async markViewed(profileId: string, listingId: string): Promise<void> {
+	async markViewed(profileId: string, propertyId: string): Promise<void> {
 		const { response, error } = await this.api.PATCH(
-			'/v1/profiles/{profile_id}/listings/{listing_id}/viewed',
-			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+			'/v1/profiles/{profile_id}/properties/{property_id}/viewed',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		if (!response.ok) {
 			throw this.httpError(response, error);
 		}
 	}
 
-	/* Keeps the listing as the profile's favourite, which also views it. */
-	async markFavourite(profileId: string, listingId: string): Promise<void> {
+	/* Keeps the flat as the profile's favourite, which also views it. */
+	async markFavourite(profileId: string, propertyId: string): Promise<void> {
 		const { response, error } = await this.api.PUT(
-			'/v1/profiles/{profile_id}/listings/{listing_id}/favourite',
-			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+			'/v1/profiles/{profile_id}/properties/{property_id}/favourite',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		if (!response.ok) {
 			throw this.httpError(response, error);
 		}
 	}
 
-	async clearFavourite(profileId: string, listingId: string): Promise<void> {
+	async clearFavourite(profileId: string, propertyId: string): Promise<void> {
 		const { response, error } = await this.api.DELETE(
-			'/v1/profiles/{profile_id}/listings/{listing_id}/favourite',
-			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+			'/v1/profiles/{profile_id}/properties/{property_id}/favourite',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		if (!response.ok) {
 			throw this.httpError(response, error);
