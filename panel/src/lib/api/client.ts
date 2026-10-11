@@ -7,6 +7,7 @@ export type ProfileUpdateBody = components['schemas']['ProfileUpdateBody'];
 export type PlaceRef = components['schemas']['PlaceRefModel'];
 export type NamedPlace = components['schemas']['NamedPlaceModel'];
 export type ListingModel = components['schemas']['ListingModel'];
+export type PostingPricesModel = components['schemas']['PostingPricesModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
 type ListingFilter = NonNullable<
@@ -89,6 +90,15 @@ export class SidecarClient {
 		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/listings', {
 			params: { path: { profile_id: profileId }, query: { filter } }
 		});
+		return this.require(data, response, error);
+	}
+
+	/* The prices of every portal posting of the listing's flat, its own first. */
+	async priceHistory(profileId: string, listingId: string): Promise<PostingPricesModel[]> {
+		const { data, response, error } = await this.api.GET(
+			'/v1/profiles/{profile_id}/listings/{listing_id}/price-history',
+			{ params: { path: { profile_id: profileId, listing_id: listingId } } }
+		);
 		return this.require(data, response, error);
 	}
 
