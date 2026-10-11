@@ -1,4 +1,4 @@
-from rentczecher_engine.adapters.api.models import ListingModel, PortalHealthModel, ProfileModel
+from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PortalHealthModel, ProfileModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.geo import GeoPoint
@@ -14,7 +14,7 @@ class TestProfileModel:
         assert model.paused_at == "2026-10-04T00:00:00+00:00"
 
 
-class TestListingModel:
+class TestTrackedPropertyModel:
     def test_from_tracked_property_maps_every_field_by_name(self):
         """from_tracked_property carries every tracked property field into the wire model,
         siblings included."""
@@ -38,7 +38,7 @@ class TestListingModel:
             price_drop_from=27000,
             sibling_sources=(SiblingSource(source="bezrealitky", url="https://example.com/b"),),
         )
-        assert ListingModel.from_tracked_property(card, None).model_dump() == {
+        assert TrackedPropertyModel.from_tracked_property(card, None).model_dump() == {
             "id": "prop-1",
             "listing_id": "sreality:1",
             "source": "sreality",
@@ -81,7 +81,7 @@ class TestListingModel:
             price_drop_from=None,
             sibling_sources=(),
         )
-        assert ListingModel.from_tracked_property(card, None).disposition is None
+        assert TrackedPropertyModel.from_tracked_property(card, None).disposition is None
 
 
 class TestPortalHealthModel:

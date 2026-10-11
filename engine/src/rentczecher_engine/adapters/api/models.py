@@ -262,7 +262,7 @@ class PointModel(BaseModel):
         return cls(lat=point.lat, lon=point.lon)
 
 
-class ListingModel(BaseModel):
+class TrackedPropertyModel(BaseModel):
     id: str
     listing_id: str
     source: str
@@ -283,7 +283,7 @@ class ListingModel(BaseModel):
     sibling_sources: list[SiblingSourceModel]
 
     @classmethod
-    def from_tracked_property(cls, card: TrackedProperty, resolved_location: Location | None) -> "ListingModel":
+    def from_tracked_property(cls, card: TrackedProperty, resolved_location: Location | None) -> "TrackedPropertyModel":
         return cls(
             id=card.id,
             listing_id=card.listing_id,
