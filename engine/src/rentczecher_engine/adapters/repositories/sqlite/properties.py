@@ -108,8 +108,28 @@ class SqlitePropertyRepository(PropertyRepository):
 
     def fold_into(self, loser_id: str, winner_id: str) -> None:
         """Marks the loser as merged into the winner. A folded property is a
-        tombstone: it stays for its history but is never a merge target."""
+        tombstone: it stays for its history but is never a merge target. Each
+        profile's tracking of the loser is copied onto the winner, where the
+        flat stays viewed and starred since the first of the two was. The
+        loser keeps its own, since a listing the merge did not move stays on
+        it and still shows there."""
         stmt = "UPDATE properties SET merged_into = ? WHERE id = ?"
+        self._conn.execute(stmt, (winner_id, loser_id))
+        stmt = """
+            INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at)
+            SELECT profile_id, ?, viewed_at, favourited_at FROM property_tracking WHERE property_id = ?
+            ON CONFLICT (profile_id, property_id) DO UPDATE SET
+                viewed_at = CASE
+                    WHEN property_tracking.viewed_at IS NULL THEN excluded.viewed_at
+                    WHEN excluded.viewed_at IS NULL THEN property_tracking.viewed_at
+                    ELSE min(property_tracking.viewed_at, excluded.viewed_at)
+                END,
+                favourited_at = CASE
+                    WHEN property_tracking.favourited_at IS NULL THEN excluded.favourited_at
+                    WHEN excluded.favourited_at IS NULL THEN property_tracking.favourited_at
+                    ELSE min(property_tracking.favourited_at, excluded.favourited_at)
+                END
+        """
         self._conn.execute(stmt, (winner_id, loser_id))
 
     def attach_listing(self, property_id: str, listing_id: str) -> None:
