@@ -64,9 +64,9 @@
 		}
 	}
 
-	async function loadPriceHistory(listingId: string): Promise<PostingPricesModel[]> {
+	async function loadPriceHistory(propertyId: string): Promise<PostingPricesModel[]> {
 		if (selectedProfileId === null) return [];
-		return client.priceHistory(selectedProfileId, listingId);
+		return client.priceHistory(selectedProfileId, propertyId);
 	}
 
 	async function loadAllNewCounts(profileList: ProfileModel[]): Promise<void> {
@@ -84,41 +84,41 @@
 		newCounts = { ...newCounts, ...Object.fromEntries(counts) };
 	}
 
-	async function handleViewed(listingId: string): Promise<void> {
+	async function handleViewed(propertyId: string): Promise<void> {
 		if (selectedProfileId === null) return;
 		try {
-			await client.markViewed(selectedProfileId, listingId);
+			await client.markViewed(selectedProfileId, propertyId);
 		} catch {
 			// A failed PATCH is not retried, the listing stays new until the
 			// next reload.
 			return;
 		}
-		const marked = listings?.find((l) => l.id === listingId);
+		const marked = listings?.find((l) => l.id === propertyId);
 		if (marked && marked.viewed_at === null) {
 			marked.viewed_at = new Date().toISOString();
 		}
 	}
 
-	async function handleFavourite(listingId: string, favourite: boolean): Promise<void> {
+	async function handleFavourite(propertyId: string, favourite: boolean): Promise<void> {
 		if (selectedProfileId === null) return;
 		try {
-			if (favourite) await client.markFavourite(selectedProfileId, listingId);
-			else await client.clearFavourite(selectedProfileId, listingId);
+			if (favourite) await client.markFavourite(selectedProfileId, propertyId);
+			else await client.clearFavourite(selectedProfileId, propertyId);
 		} catch {
 			// A failed favourite is not retried, the star stays as it was.
 			return;
 		}
-		const marked = listings?.find((l) => l.id === listingId);
+		const marked = listings?.find((l) => l.id === propertyId);
 		if (marked === undefined) return;
 		const now = new Date().toISOString();
 		marked.favourited_at = favourite ? now : null;
 		marked.viewed_at = marked.viewed_at ?? now;
 	}
 
-	async function handleMarkAllViewed(listingIds: string[]): Promise<void> {
+	async function handleMarkAllViewed(propertyIds: string[]): Promise<void> {
 		if (selectedProfileId === null) return;
 		const profileId = selectedProfileId;
-		await Promise.all(listingIds.map((listingId) => client.markViewed(profileId, listingId).catch(() => {})));
+		await Promise.all(propertyIds.map((propertyId) => client.markViewed(profileId, propertyId).catch(() => {})));
 		await loadListings(profileId);
 	}
 

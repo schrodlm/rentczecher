@@ -31,10 +31,10 @@
 	}: {
 		listings: readonly TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
-		onview: (listingId: string) => void;
-		onfavourite: (listingId: string, favourite: boolean) => void;
-		onmarkallviewed: (listingIds: string[]) => void;
-		loadPriceHistory: (listingId: string) => Promise<PostingPricesModel[]>;
+		onview: (propertyId: string) => void;
+		onfavourite: (propertyId: string, favourite: boolean) => void;
+		onmarkallviewed: (propertyIds: string[]) => void;
+		loadPriceHistory: (propertyId: string) => Promise<PostingPricesModel[]>;
 	} = $props();
 
 	const t = getTranslatorContext();
@@ -87,12 +87,12 @@
 	// The selected listing's prices load beside it. An answer for a listing
 	// no longer selected is dropped, and a failed one leaves the panel out.
 	$effect(() => {
-		const listingId = selected?.id;
+		const propertyId = selected?.id;
 		priceHistory = null;
-		if (listingId === undefined) return;
-		loadPriceHistory(listingId)
+		if (propertyId === undefined) return;
+		loadPriceHistory(propertyId)
 			.then((postings) => {
-				if (selected?.id === listingId) priceHistory = postings;
+				if (selected?.id === propertyId) priceHistory = postings;
 			})
 			.catch(() => {});
 	});
