@@ -142,7 +142,7 @@ class Listing:
 
 @dataclass(frozen=True, slots=True)
 class SiblingSource:
-    """Another portal's posting of the same property - the take-na badge."""
+    """One of the profile's other listings of the property."""
 
     source: str
     url: str
