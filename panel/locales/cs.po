@@ -564,3 +564,6 @@ msgstr "Další inzerát"
 
 msgid "Previous listing"
 msgstr "Předchozí inzerát"
+
+msgid "The price has not changed since {date}"
+msgstr "Cena se nezměnila od {date}"
