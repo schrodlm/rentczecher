@@ -1,4 +1,6 @@
-use std::io::{BufRead, BufReader};
+use std::fs;
+use std::io::{BufRead, BufReader, ErrorKind};
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::thread;
@@ -45,6 +47,47 @@ struct Sidecar {
     _parent_link: ChildStdin,
 }
 
+/// The file holding the user config. The panel owns its shape, the shell only
+/// moves its text.
+struct UserConfigFile(PathBuf);
+
+impl UserConfigFile {
+    fn in_folder(folder: &Path) -> UserConfigFile {
+        UserConfigFile(folder.join("user_config.json"))
+    }
+}
+
+/// The user config as written, or None while it does not exist yet.
+#[tauri::command]
+fn read_user_config(file: tauri::State<'_, UserConfigFile>) -> Result<Option<String>, String> {
+    match fs::read_to_string(&file.0) {
+        Ok(contents) => Ok(Some(contents)),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(format!("could not read {}: {error}", file.0.display())),
+    }
+}
+
+/// Replaces the user config. It is written beside the file and renamed over
+/// it, so a crash midway never leaves half a file behind.
+#[tauri::command]
+fn write_user_config(file: tauri::State<'_, UserConfigFile>, contents: String) -> Result<(), String> {
+    let path = &file.0;
+    let folder = path.parent().ok_or_else(|| format!("{} has no folder", path.display()))?;
+    fs::create_dir_all(folder).map_err(|error| format!("could not create {}: {error}", folder.display()))?;
+    let unfinished = path.with_extension("json.unfinished");
+    fs::write(&unfinished, contents).map_err(|error| format!("could not write {}: {error}", unfinished.display()))?;
+    fs::rename(&unfinished, path).map_err(|error| format!("could not replace {}: {error}", path.display()))
+}
+
+/// The app's own folder in the OS config folder.
+fn config_folder(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let os_folder = app
+        .path()
+        .config_dir()
+        .map_err(|error| format!("could not locate the config folder: {error}"))?;
+    Ok(os_folder.join("rentczecher"))
+}
+
 #[tauri::command]
 fn sidecar_connection(sidecar: tauri::State<'_, Sidecar>) -> SidecarConnection {
     sidecar.connection.clone()
@@ -68,17 +111,35 @@ fn generate_token() -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-/// A debug build runs the engine from source, so engine edits show on the
-/// next launch without re-freezing. With RENTCZECHER_SCENARIO set, it first
-/// replays that scenario into a scratch folder and runs the engine there, so
-/// development never touches the real data.
+/// The engine's source folder, which a debug build runs the engine from.
 #[cfg(debug_assertions)]
-fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
-    let engine = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine");
+fn engine_source() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine")
+}
+
+/// With RENTCZECHER_SCENARIO set, a debug build first replays that scenario
+/// into a scratch folder and runs there, so development never touches the
+/// real data or the real user config.
+#[cfg(debug_assertions)]
+fn scenario_home() -> Result<Option<PathBuf>, String> {
+    match std::env::var("RENTCZECHER_SCENARIO") {
+        Ok(scenario) => replay_scenario(&engine_source(), &scenario).map(Some),
+        Err(_) => Ok(None),
+    }
+}
+
+#[cfg(not(debug_assertions))]
+fn scenario_home() -> Result<Option<PathBuf>, String> {
+    Ok(None)
+}
+
+/// A debug build runs the engine from source, so engine edits show on the
+/// next launch without re-freezing.
+#[cfg(debug_assertions)]
+fn engine_command(_app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<Command, String> {
     let mut command = Command::new("uv");
-    command.args(["run", "rentczecher", "serve"]).current_dir(&engine);
-    if let Ok(scenario) = std::env::var("RENTCZECHER_SCENARIO") {
-        let home = replay_scenario(&engine, &scenario)?;
+    command.args(["run", "rentczecher", "serve"]).current_dir(engine_source());
+    if let Some(home) = scenario_home {
         command.env("RENTCZECHER_DATA_DIR", home.join("data"));
     }
     Ok(command)
@@ -87,7 +148,7 @@ fn engine_command(_app: &tauri::AppHandle) -> Result<Command, String> {
 /// Replays the named scenario into a scratch folder of its own, replacing
 /// any earlier replay, and returns that folder.
 #[cfg(debug_assertions)]
-fn replay_scenario(engine: &std::path::Path, scenario: &str) -> Result<std::path::PathBuf, String> {
+fn replay_scenario(engine: &Path, scenario: &str) -> Result<PathBuf, String> {
     let home = std::env::temp_dir().join("rentczecher-scenarios").join(scenario);
     let status = Command::new("uv")
         .args(["run", "python", "-m", "tests.scenarios", scenario])
@@ -104,7 +165,7 @@ fn replay_scenario(engine: &std::path::Path, scenario: &str) -> Result<std::path
 
 /// A release build runs the frozen engine the bundle ships as a resource.
 #[cfg(not(debug_assertions))]
-fn engine_command(app: &tauri::AppHandle) -> Result<Command, String> {
+fn engine_command(app: &tauri::AppHandle, _scenario_home: Option<&Path>) -> Result<Command, String> {
     let executable = if cfg!(windows) { "rentczecher-sidecar.exe" } else { "rentczecher-sidecar" };
     let path = app
         .path()
@@ -118,9 +179,9 @@ fn engine_command(app: &tauri::AppHandle) -> Result<Command, String> {
     Ok(command)
 }
 
-fn start_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
+fn start_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<Sidecar, String> {
     let token = generate_token();
-    let mut command = engine_command(app)?;
+    let mut command = engine_command(app, scenario_home)?;
     command.args(["--port", "0", "--exit-with-parent"]);
     for origin in WINDOW_ORIGINS {
         command.args(["--allow-origin", origin]);
@@ -201,8 +262,8 @@ fn wait_for_health(connection: &SidecarConnection) -> Result<(), String> {
 
 /// Starts the engine and waits until it is healthy, killing it again when it
 /// never becomes healthy so no half-started engine is left behind.
-fn start_healthy_engine(app: &tauri::AppHandle) -> Result<Sidecar, String> {
-    let sidecar = start_engine(app)?;
+fn start_healthy_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<Sidecar, String> {
+    let sidecar = start_engine(app, scenario_home)?;
     if let Err(error) = wait_for_health(&sidecar.connection) {
         if let Ok(mut process) = sidecar.process.lock() {
             let _ = process.kill();
@@ -237,14 +298,23 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let sidecar = match start_healthy_engine(app.handle()) {
-                Ok(sidecar) => sidecar,
+            let started = scenario_home().and_then(|home| {
+                let user_config = match &home {
+                    Some(home) => UserConfigFile::in_folder(home),
+                    None => UserConfigFile::in_folder(&config_folder(app.handle())?),
+                };
+                let sidecar = start_healthy_engine(app.handle(), home.as_deref())?;
+                Ok((user_config, sidecar))
+            });
+            let (user_config, sidecar) = match started {
+                Ok(started) => started,
                 Err(error) => {
                     // No window opens. The dialog's callback ends the app.
                     report_startup_failure(app.handle(), &error);
                     return Ok(());
                 }
             };
+            app.manage(user_config);
             app.manage(sidecar);
 
             // The window is declared in tauri.conf.json but created only now,
@@ -259,7 +329,12 @@ pub fn run() {
             tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?.build()?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![sidecar_connection, open_in_browser])
+        .invoke_handler(tauri::generate_handler![
+            sidecar_connection,
+            open_in_browser,
+            read_user_config,
+            write_user_config
+        ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
