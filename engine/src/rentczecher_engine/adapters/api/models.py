@@ -283,28 +283,28 @@ class TrackedPropertyModel(BaseModel):
     sibling_sources: list[SiblingSourceModel]
 
     @classmethod
-    def from_tracked_property(cls, card: TrackedProperty, resolved_location: Location | None) -> "TrackedPropertyModel":
+    def from_tracked_property(cls, tracked: TrackedProperty, resolved_location: Location | None) -> "TrackedPropertyModel":
         return cls(
-            id=card.id,
-            listing_id=card.listing_id,
-            source=card.source,
-            url=card.url,
-            title=card.title,
-            location_raw_text=card.location_raw_text,
+            id=tracked.id,
+            listing_id=tracked.listing_id,
+            source=tracked.source,
+            url=tracked.url,
+            title=tracked.title,
+            location_raw_text=tracked.location_raw_text,
             resolved_location=LocationModel.from_location(resolved_location) if resolved_location else None,
-            point=PointModel.from_point(card.point) if card.point is not None else None,
-            size_m2=card.size_m2,
-            land_m2=card.land_m2,
-            disposition_raw_text=card.disposition_raw_text,
-            disposition=card.disposition.code if card.disposition is not None else None,
-            first_seen_at=card.first_seen_at,
-            viewed_at=card.viewed_at,
-            favourited_at=card.favourited_at,
-            price=card.price,
-            price_drop_from=card.price_drop_from,
+            point=PointModel.from_point(tracked.point) if tracked.point is not None else None,
+            size_m2=tracked.size_m2,
+            land_m2=tracked.land_m2,
+            disposition_raw_text=tracked.disposition_raw_text,
+            disposition=tracked.disposition.code if tracked.disposition is not None else None,
+            first_seen_at=tracked.first_seen_at,
+            viewed_at=tracked.viewed_at,
+            favourited_at=tracked.favourited_at,
+            price=tracked.price,
+            price_drop_from=tracked.price_drop_from,
             sibling_sources=[
                 SiblingSourceModel(source=sibling.source, url=sibling.url)
-                for sibling in card.sibling_sources
+                for sibling in tracked.sibling_sources
             ],
         )
 
