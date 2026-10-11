@@ -662,6 +662,30 @@ class TestRemaxParsing:
         (listing,) = RemaxScraper(REMAX_CRITERIA, client).scrape()
         assert listing.price == 4750000
 
+    @staticmethod
+    def _priced_card(listing_id, data_price, title="Prodej pozemku 662 m², Domažlice"):
+        return f'''
+        <div class="pl-items__item" data-price="{data_price}" data-title="{title}" data-display-address="Domažlice">
+          <a href="/reality/detail/{listing_id}/prodej">{title}</a>
+        </div>'''
+
+    def test_prices_a_plot_priced_per_m2_for_its_whole_area(self, monkeypatch):
+        card = self._priced_card(9, "1&#160;200&#160;Kč <small>(za m²)</small>")
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([card])})
+        (listing,) = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert listing.price == 794400
+
+    def test_skips_a_price_stated_per_year(self, monkeypatch):
+        card = self._priced_card(10, "120&#160;000&#160;Kč <small>(za rok)</small>")
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([card])})
+        assert RemaxScraper(REMAX_CRITERIA, client).scrape() == []
+
+    def test_reads_a_monthly_price_with_vat(self, monkeypatch):
+        card = self._priced_card(11, "45&#160;000&#160;Kč <small>(vč. DPH, za měsíc)</small>")
+        client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([card])})
+        (listing,) = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert listing.price == 45000
+
     def test_skips_a_card_without_a_price_field(self, monkeypatch):
         card = '''
         <div class="pl-items__item" data-title="Prodej rodinného domu" data-display-address="Domažlice">
