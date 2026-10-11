@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { layoutName, layoutsByRooms, type Layout } from '$lib/layouts';
+	import { LAYOUTS, layoutName, layoutsByRooms, type Layout } from '$lib/layouts';
 
-	/* The layouts a search accepts, each a chip that toggles, those of one
-	room count joined side by side. None picked accepts any layout. */
-	let { selected = $bindable(), name }: { selected: Layout[]; name: string } = $props();
+	/* Layouts to pick, every one unless fewer are offered, each a chip that
+	toggles, those of one room count joined side by side. None picked accepts
+	any layout. */
+	let {
+		selected = $bindable(),
+		name,
+		offered = LAYOUTS
+	}: { selected: Layout[]; name: string; offered?: readonly Layout[] } = $props();
 
 	const t = getTranslatorContext();
-	const groups = layoutsByRooms();
+	const groups = $derived(layoutsByRooms(offered));
 
 	function toggle(layout: Layout): void {
 		selected = selected.includes(layout) ? selected.filter((picked) => picked !== layout) : [...selected, layout];
