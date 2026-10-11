@@ -208,12 +208,8 @@ class SqliteListingRepository(ListingRepository):
         }
 
     def tracked_listings(self, profile_id: str, only_new: bool = False) -> list[TrackedListing]:
-        """The profile's tracked listings as the GUI's inbox renders them:
-        listing and property facts, the property's stored location, this
-        profile's tracking state, the latest price, a price-drop baseline,
-        and sibling postings on other portals. only_new restricts to listings
-        never viewed by the profile.
-        """
+        """Every listing the profile tracks, or with only_new those it never
+        viewed."""
         # Latest and previous price observation per listing: highest id wins
         # ties on observed_at, since id is monotonic insertion order and
         # observed_at is not guaranteed distinct.

@@ -109,4 +109,5 @@ class ListingRepository(ABC):
 
     @abstractmethod
     def tracked_listings(self, profile_id: str, only_new: bool = False) -> list[TrackedListing]:
-        """The profile's tracked listings as the GUI's inbox renders them."""
+        """Every listing the profile tracks, or with only_new those it never
+        viewed."""

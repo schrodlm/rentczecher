@@ -15,7 +15,7 @@ class TestProfileModel:
 
 class TestListingModel:
     def test_from_tracked_listing_maps_every_field_by_name(self):
-        """from_tracked_listing carries every inbox card field into the wire model,
+        """from_tracked_listing carries every tracked listing field into the wire model,
         siblings included."""
         card = TrackedListing(
             id="sreality:1",
