@@ -150,16 +150,10 @@ class SiblingSource:
 
 @dataclass(frozen=True, slots=True)
 class TrackedListing:
-    """One listing as the GUI's inbox renders it: listing and property facts,
-    this profile's tracking state, the latest observed price, a price-drop
-    baseline when the previous observation was higher, and sibling postings
-    of the same property on other portals.
-
-    title/location_raw_text/size_m2/land_m2/disposition_raw_text/price are nullable: a card can exist
-    before its property has facts or before any price was ever observed.
-    property_location is None until a posting's text resolves to a place,
-    and disposition is None when the property's text names no layout.
-    """
+    """One listing as one profile tracks it: the posting, its property's
+    facts, the profile's tracking of it and its current price.
+    price_drop_from is the higher price it last dropped from, and
+    sibling_sources are the property's postings on other portals."""
 
     id: str
     source: str
