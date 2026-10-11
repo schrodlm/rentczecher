@@ -38,6 +38,14 @@ def _house_numbers(street_slot: str) -> tuple[str | None, str | None]:
     return popisne, orientacni
 
 
+def _price_of(text: str) -> int:
+    """The price a card's price field states, or 0 when it states none. The
+    field is formatted ('16 500 Kč (za měsíc)'), so the price is the digits
+    before the currency, and a rented flat's card says 'Pronajato' instead."""
+    digits = re.sub(r"\D", "", text.partition("Kč")[0])
+    return int(digits) if digits else 0
+
+
 def _names_kraj(segment: str) -> bool:
     """'Karlovarský kraj' and 'Kraj Vysočina' name the kraj, which the
     address adds after everything finer."""
@@ -142,9 +150,7 @@ class RemaxScraper(BaseScraper):
         ends the crawl instead of raising."""
         soup = BeautifulSoup(html, "lxml")
 
-        cards: list = soup.select("div.pl-items__item, article.property-card, div.card-property")
-        if not cards:
-            cards = self._find_listing_blocks(soup)
+        cards: list = soup.select("div.pl-items__item")
         if not cards:
             return [], False
 
@@ -156,25 +162,6 @@ class RemaxScraper(BaseScraper):
 
         has_next = soup.select_one('a[rel="next"], a.pagination__next, li.next a') is not None
         return listings, has_next
-
-    def _find_listing_blocks(self, soup: BeautifulSoup) -> list:
-        blocks = []
-        seen_links = set()
-        for link in soup.find_all("a", href=re.compile(r"/reality/detail/\d+")):
-            href = link.get("href", "")
-            if href in seen_links:
-                continue
-            seen_links.add(href)
-            parent = link.parent
-            for _ in range(5):
-                if parent and parent.name in ("div", "article", "li") and parent not in blocks:
-                    text = parent.get_text()
-                    if "Kc" in text or "Kč" in text or re.search(r"\d[\d\s]+Kc", text):
-                        blocks.append(parent)
-                        break
-                if parent:
-                    parent = parent.parent
-        return blocks
 
     def _parse_card(self, card) -> Listing | None:
         link = card.find("a", href=re.compile(r"/reality/detail/\d+"))
@@ -205,28 +192,12 @@ class RemaxScraper(BaseScraper):
             title = re.sub(r"\s*\(ID\s+[^)]+\)\s*$", "", title)
 
         # Price
-        price = 0
-        if data_price:
-            try:
-                price = int(data_price)
-            except ValueError:
-                pass
-
-        if not price:
-            card_text = card.get_text()
-            price_match = re.search(r"(\d[\d\s\xa0]*\d)\s*(?:Kc|Kč)", card_text)
-            if not price_match:
-                price_match = re.search(r"(\d)\s*(?:Kc|Kč)", card_text)
-            if price_match:
-                price_str = price_match.group(1).replace(" ", "").replace("\xa0", "")
-                try:
-                    price = int(price_str)
-                except ValueError:
-                    pass
-
+        price = _price_of(data_price or "")
+        if price == 0:
+            return None
         if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
-        if (self.criteria.min_price is not None and price < self.criteria.min_price) or price == 0:
+        if self.criteria.min_price is not None and price < self.criteria.min_price:
             return None
 
         card_text = " ".join(card.get_text().split())  # Normalize whitespace
