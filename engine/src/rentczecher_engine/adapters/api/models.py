@@ -264,6 +264,7 @@ class PointModel(BaseModel):
 
 class ListingModel(BaseModel):
     id: str
+    listing_id: str
     source: str
     url: str
     title: str | None
@@ -285,6 +286,7 @@ class ListingModel(BaseModel):
     def from_tracked_property(cls, card: TrackedProperty, resolved_location: Location | None) -> "ListingModel":
         return cls(
             id=card.id,
+            listing_id=card.listing_id,
             source=card.source,
             url=card.url,
             title=card.title,

@@ -311,6 +311,10 @@
             ],
             "title": "Land M2"
           },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "string"
+          },
           "location_raw_text": {
             "anyOf": [
               {
@@ -415,6 +419,7 @@
         },
         "required": [
           "id",
+          "listing_id",
           "source",
           "url",
           "title",
@@ -1861,9 +1866,9 @@
         "summary": "Update Profile"
       }
     },
-    "/v1/profiles/{profile_id}/listings": {
+    "/v1/profiles/{profile_id}/properties": {
       "get": {
-        "operationId": "list_listings_v1_profiles__profile_id__listings_get",
+        "operationId": "list_tracked_properties_v1_profiles__profile_id__properties_get",
         "parameters": [
           {
             "in": "path",
@@ -1913,7 +1918,7 @@
                   "items": {
                     "$ref": "#/components/schemas/ListingModel"
                   },
-                  "title": "Response List Listings V1 Profiles  Profile Id  Listings Get",
+                  "title": "Response List Tracked Properties V1 Profiles  Profile Id  Properties Get",
                   "type": "array"
                 }
               }
@@ -1931,19 +1936,19 @@
             "description": "Validation Error"
           }
         },
-        "summary": "List Listings"
+        "summary": "List Tracked Properties"
       }
     },
-    "/v1/profiles/{profile_id}/listings/{listing_id}/favourite": {
+    "/v1/profiles/{profile_id}/properties/{property_id}/favourite": {
       "delete": {
-        "operationId": "clear_favourite_v1_profiles__profile_id__listings__listing_id__favourite_delete",
+        "operationId": "clear_favourite_v1_profiles__profile_id__properties__property_id__favourite_delete",
         "parameters": [
           {
             "in": "path",
-            "name": "listing_id",
+            "name": "property_id",
             "required": true,
             "schema": {
-              "title": "Listing Id",
+              "title": "Property Id",
               "type": "string"
             }
           },
@@ -1991,14 +1996,14 @@
         "summary": "Clear Favourite"
       },
       "put": {
-        "operationId": "mark_favourite_v1_profiles__profile_id__listings__listing_id__favourite_put",
+        "operationId": "mark_favourite_v1_profiles__profile_id__properties__property_id__favourite_put",
         "parameters": [
           {
             "in": "path",
-            "name": "listing_id",
+            "name": "property_id",
             "required": true,
             "schema": {
-              "title": "Listing Id",
+              "title": "Property Id",
               "type": "string"
             }
           },
@@ -2046,16 +2051,16 @@
         "summary": "Mark Favourite"
       }
     },
-    "/v1/profiles/{profile_id}/listings/{listing_id}/price-history": {
+    "/v1/profiles/{profile_id}/properties/{property_id}/price-history": {
       "get": {
-        "operationId": "price_history_v1_profiles__profile_id__listings__listing_id__price_history_get",
+        "operationId": "price_history_v1_profiles__profile_id__properties__property_id__price_history_get",
         "parameters": [
           {
             "in": "path",
-            "name": "listing_id",
+            "name": "property_id",
             "required": true,
             "schema": {
-              "title": "Listing Id",
+              "title": "Property Id",
               "type": "string"
             }
           },
@@ -2093,7 +2098,7 @@
                   "items": {
                     "$ref": "#/components/schemas/PostingPricesModel"
                   },
-                  "title": "Response Price History V1 Profiles  Profile Id  Listings  Listing Id  Price History Get",
+                  "title": "Response Price History V1 Profiles  Profile Id  Properties  Property Id  Price History Get",
                   "type": "array"
                 }
               }
@@ -2114,16 +2119,16 @@
         "summary": "Price History"
       }
     },
-    "/v1/profiles/{profile_id}/listings/{listing_id}/viewed": {
+    "/v1/profiles/{profile_id}/properties/{property_id}/viewed": {
       "patch": {
-        "operationId": "mark_viewed_v1_profiles__profile_id__listings__listing_id__viewed_patch",
+        "operationId": "mark_viewed_v1_profiles__profile_id__properties__property_id__viewed_patch",
         "parameters": [
           {
             "in": "path",
-            "name": "listing_id",
+            "name": "property_id",
             "required": true,
             "schema": {
-              "title": "Listing Id",
+              "title": "Property Id",
               "type": "string"
             }
           },

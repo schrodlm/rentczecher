@@ -88,13 +88,18 @@ class TestPersistOutcomeCommitsTogether:
             "SELECT count(*) FROM listings WHERE id = 'sreality:1'").fetchone()[0] == 1
 
 
+def _property_of(conn, listing_id):
+    (property_id,) = conn.execute("SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
+    return property_id
+
+
 class TestMarkViewed:
     def test_commits_as_its_own_unit_of_work(self, tmp_path):
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
                               {}, current_ids={"sreality:1"})
-        store.mark_viewed(profile_id, "sreality:1")
+        store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         conn.close()
 
         reopened = connection.connect(tmp_path / "t.db")
@@ -112,9 +117,9 @@ class TestTrackedProperties:
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
                               {}, current_ids={"sreality:1"})
-        store.mark_viewed(profile_id, "sreality:1")
+        store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         (card,) = store.tracked_properties(profile_id)
-        assert card.id == "sreality:1"
+        assert card.listing_id == "sreality:1"
         assert card.viewed_at == BASE.isoformat()
 
     def test_only_new_excludes_the_viewed_listing(self, tmp_path):
@@ -122,7 +127,7 @@ class TestTrackedProperties:
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
                               {}, current_ids={"sreality:1"})
-        store.mark_viewed(profile_id, "sreality:1")
+        store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         assert store.tracked_properties(profile_id, only_new=True) == []
 
     def test_a_card_carries_the_stored_property_location(self, tmp_path):

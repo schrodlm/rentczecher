@@ -12,6 +12,15 @@ from rentczecher_engine.domain.price import PostingPrices, PriceObservation, pri
 from rentczecher_engine.domain.property import PropertyLocation
 
 
+def _cheapest_first(posting: PostingPrices) -> tuple[bool, int, str]:
+    """Orders postings as a tracked property picks the one it shows: by their
+    current price, the first seen among equally cheap ones, and those not
+    priced yet last."""
+    if not posting.changes:
+        return (True, 0, "")
+    return (False, posting.changes[-1].price, posting.changes[0].first_seen_at)
+
+
 class SqliteListingRepository(ListingRepository):
     """A listing row is a fact of the portal posting, shared by every
     profile that sees it. Which profile has seen it, when, and how many
@@ -79,8 +88,8 @@ class SqliteListingRepository(ListingRepository):
             listing_id=listing.id, price=listing.price,
             charges=listing.charges, observed_at=now))
 
-    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
-        """Records the listing's property as viewed by the profile, without
+    def mark_viewed(self, profile_id: str, property_id: str) -> None:
+        """Records the property as viewed by the profile, without
         committing. The caller owns the transaction boundary.
 
         Viewed is set once: an already-viewed property keeps its first
@@ -88,32 +97,30 @@ class SqliteListingRepository(ListingRepository):
         """
         stmt = """
             UPDATE property_tracking SET viewed_at = ?
-            WHERE profile_id = ? AND viewed_at IS NULL
-              AND property_id = (SELECT property_id FROM listings WHERE id = ?)
+            WHERE profile_id = ? AND property_id = ? AND viewed_at IS NULL
         """
-        self._conn.execute(stmt, (self._now().isoformat(), profile_id, listing_id))
+        self._conn.execute(stmt, (self._now().isoformat(), profile_id, property_id))
 
-    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Records the listing's property as the profile's favourite and views
-        it, without committing. A favourite keeps its first favourited_at, and
+    def mark_favourite(self, profile_id: str, property_id: str) -> None:
+        """Records the property as the profile's favourite and views it,
+        without committing. A favourite keeps its first favourited_at, and
         a viewed property its first viewed_at.
         """
         now = self._now().isoformat()
         stmt = """
             UPDATE property_tracking
             SET favourited_at = coalesce(favourited_at, ?), viewed_at = coalesce(viewed_at, ?)
-            WHERE profile_id = ? AND property_id = (SELECT property_id FROM listings WHERE id = ?)
+            WHERE profile_id = ? AND property_id = ?
         """
-        self._conn.execute(stmt, (now, now, profile_id, listing_id))
+        self._conn.execute(stmt, (now, now, profile_id, property_id))
 
-    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Stops keeping the listing's property as a favourite, without
-        committing."""
+    def clear_favourite(self, profile_id: str, property_id: str) -> None:
+        """Stops keeping the property as a favourite, without committing."""
         stmt = """
             UPDATE property_tracking SET favourited_at = NULL
-            WHERE profile_id = ? AND property_id = (SELECT property_id FROM listings WHERE id = ?)
+            WHERE profile_id = ? AND property_id = ?
         """
-        self._conn.execute(stmt, (profile_id, listing_id))
+        self._conn.execute(stmt, (profile_id, property_id))
 
     def record_price_observation(self, observation: PriceObservation) -> None:
         stmt = """
@@ -134,21 +141,13 @@ class SqliteListingRepository(ListingRepository):
         rows = self._conn.execute(stmt, (listing_id,))
         return [self._to_observation(row) for row in rows]
 
-    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
-        stmt = """
-            SELECT listings.property_id AS property_id
-            FROM listing_tracking
-            JOIN listings ON listings.id = listing_tracking.listing_id
-            WHERE listing_tracking.profile_id = ? AND listing_tracking.listing_id = ?
-        """
-        tracked = self._conn.execute(stmt, (profile_id, listing_id)).fetchone()
-        if tracked is None:
+    def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
+        stmt = "SELECT property_id FROM property_tracking WHERE profile_id = ? AND property_id = ?"
+        if self._conn.execute(stmt, (profile_id, property_id)).fetchone() is None:
             return None
         stmt = "SELECT id, source, url FROM listings WHERE property_id = ? ORDER BY source, id"
-        postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (tracked["property_id"],))]
-        own = [posting for posting in postings if posting.listing_id == listing_id]
-        others = [posting for posting in postings if posting.listing_id != listing_id]
-        return own + others
+        postings = [self._to_posting_prices(row) for row in self._conn.execute(stmt, (property_id,))]
+        return sorted(postings, key=_cheapest_first)
 
     def _to_posting_prices(self, row: sqlite3.Row) -> PostingPrices:
         return PostingPrices(
@@ -287,7 +286,8 @@ class SqliteListingRepository(ListingRepository):
             if listing["id"] != row["id"]
         )
         return TrackedProperty(
-            id=row["id"],
+            id=row["property_id"],
+            listing_id=row["id"],
             source=row["source"],
             url=row["url"],
             title=row["title"],

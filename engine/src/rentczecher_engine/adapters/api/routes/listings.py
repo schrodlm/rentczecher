@@ -12,8 +12,8 @@ from rentczecher_engine.domain.profile import Profile
 router = APIRouter()
 
 
-@router.get("/v1/profiles/{profile_id}/listings", response_model=list[ListingModel])
-def list_listings(
+@router.get("/v1/profiles/{profile_id}/properties", response_model=list[ListingModel])
+def list_tracked_properties(
     request: Request, filter: Literal["new", "all"] = "new",
     profile: Profile = Depends(resolve_profile),
 ) -> list[ListingModel]:
@@ -31,42 +31,42 @@ def _resolved_location(card: TrackedProperty, gazetteer: Gazetteer) -> Location 
 
 
 @router.get(
-    "/v1/profiles/{profile_id}/listings/{listing_id}/price-history",
+    "/v1/profiles/{profile_id}/properties/{property_id}/price-history",
     response_model=list[PostingPricesModel],
 )
 def price_history(
-    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
 ) -> list[PostingPricesModel]:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        postings = store.price_histories(profile.id, listing_id)
+        postings = store.price_histories(profile.id, property_id)
     if postings is None:
-        raise HTTPException(status_code=404, detail=f"profile {profile.id} does not track listing {listing_id}")
+        raise HTTPException(status_code=404, detail=f"profile {profile.id} does not track property {property_id}")
     return [PostingPricesModel.from_posting(posting) for posting in postings]
 
 
-@router.patch("/v1/profiles/{profile_id}/listings/{listing_id}/viewed", status_code=204)
+@router.patch("/v1/profiles/{profile_id}/properties/{property_id}/viewed", status_code=204)
 def mark_viewed(
-    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
 ) -> None:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        store.mark_viewed(profile.id, listing_id)
+        store.mark_viewed(profile.id, property_id)
 
 
-@router.put("/v1/profiles/{profile_id}/listings/{listing_id}/favourite", status_code=204)
+@router.put("/v1/profiles/{profile_id}/properties/{property_id}/favourite", status_code=204)
 def mark_favourite(
-    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
 ) -> None:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        store.mark_favourite(profile.id, listing_id)
+        store.mark_favourite(profile.id, property_id)
 
 
-@router.delete("/v1/profiles/{profile_id}/listings/{listing_id}/favourite", status_code=204)
+@router.delete("/v1/profiles/{profile_id}/properties/{property_id}/favourite", status_code=204)
 def clear_favourite(
-    listing_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
 ) -> None:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
-        store.clear_favourite(profile.id, listing_id)
+        store.clear_favourite(profile.id, property_id)

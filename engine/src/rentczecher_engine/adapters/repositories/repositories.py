@@ -68,9 +68,9 @@ class ListingRepository(ABC):
         ...
 
     @abstractmethod
-    def price_histories(self, profile_id: str, listing_id: str) -> list[PostingPrices] | None:
-        """The prices of every portal posting of the listing's property, the
-        listing's own first, or None when the profile does not track it."""
+    def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
+        """The prices of every portal posting of the property, cheapest first,
+        or None when the profile does not track it."""
 
     @abstractmethod
     def increment_miss_counts(self, profile_id: str, current_ids: set[str]) -> None:
@@ -96,18 +96,18 @@ class ListingRepository(ABC):
         ...
 
     @abstractmethod
-    def mark_viewed(self, profile_id: str, listing_id: str) -> None:
-        """Record the listing as viewed by the profile, once."""
+    def mark_viewed(self, profile_id: str, property_id: str) -> None:
+        """Record the property as viewed by the profile, once."""
 
     @abstractmethod
-    def mark_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Keep the listing as the profile's favourite, which also views it."""
+    def mark_favourite(self, profile_id: str, property_id: str) -> None:
+        """Keep the property as the profile's favourite, which also views it."""
 
     @abstractmethod
-    def clear_favourite(self, profile_id: str, listing_id: str) -> None:
-        """Stop keeping the listing as a favourite. It stays viewed."""
+    def clear_favourite(self, profile_id: str, property_id: str) -> None:
+        """Stop keeping the property as a favourite. It stays viewed."""
 
     @abstractmethod
     def tracked_properties(self, profile_id: str, only_new: bool = False) -> list[TrackedProperty]:
-        """Every listing the profile tracks, or with only_new those it never
+        """Every property the profile tracks, or with only_new those it never
         viewed."""
