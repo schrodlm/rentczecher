@@ -166,6 +166,19 @@ The SvelteKit web application. It renders in the shell's webview and talks
 only to the sidecar.
 _Avoid_: frontend, webapp, GUI (the whole desktop experience, not this app)
 
+**User config**:
+The choices a person makes about the app itself on one machine: its theme,
+the system's, light or dark, and its language. Kept by the desktop app, never
+by the engine, so each client of a headless engine keeps its own. Missing
+until the welcome wizard is finished.
+_Avoid_: settings, preferences (a profile's scoring), config
+
+**Welcome wizard**:
+The three steps the app shows over its dimmed window on the first run: the
+language, the theme, and the first profile. Finishing it, with or without a
+profile, keeps the user config, so it never shows again.
+_Avoid_: onboarding, setup
+
 **Shell**:
 The desktop program the user launches. It owns the window showing the GUI
 and the sidecar's lifetime.
