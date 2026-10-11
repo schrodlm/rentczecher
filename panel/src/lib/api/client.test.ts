@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { ApiError, SidecarClient, type NewProfileBody, type ProfileUpdateBody } from './client';
+import { ApiError, SidecarClient, type NewProfileBody, type PostingPricesModel, type ProfileUpdateBody } from './client';
 
 const BASE_URL = 'http://127.0.0.1:8765';
 const TOKEN = 'secret';
@@ -152,6 +152,31 @@ describe('clearFavourite', () => {
 		const [request] = requests;
 		expect(request.method).toBe('DELETE');
 		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/favourite`);
+	});
+});
+
+describe('priceHistory', () => {
+	test("gets the prices of every posting of the listing's flat", async () => {
+		const postings: PostingPricesModel[] = [
+			{
+				listing_id: 'sreality:1',
+				source: 'sreality',
+				url: 'https://sreality.cz/detail/1',
+				changes: [{ price: 20000, charges: null, first_seen_at: '2026-10-01', last_seen_at: '2026-10-03' }]
+			}
+		];
+		answerWith(200, postings);
+		const answered = await new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'sreality:1');
+
+		const [request] = requests;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/price-history`);
+		expect(answered).toEqual(postings);
+	});
+
+	test('throws for a listing the profile does not track', async () => {
+		answerWith(404, { detail: 'profile p1 does not track listing sreality:1' });
+		await expect(new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'sreality:1')).rejects.toThrow('404');
 	});
 });
 
