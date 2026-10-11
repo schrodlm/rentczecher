@@ -661,15 +661,15 @@ class TestRemaxPlaceBasedUrl:
         scraper = RemaxScraper(criteria, _refusing_client())
         url = scraper._build_url()
         assert url.startswith("https://www.remax-czech.cz/reality/vyhledavani/?")
-        assert "hledani=2" in url
+        assert "sale=2" in url
         assert "types%5B4%5D=on" in url
         assert "regions%5B19%5D%5B78%5D=on" in url
         assert "price_from=17000" in url and "price_to=25000" in url
 
-    def test_sale_house_maps_types_and_hledani(self):
+    def test_sale_house_maps_types_and_the_sale_field(self):
         criteria = Criteria(offer_type="sale", estate_type="house", place=PlaceRef("okres", 3401), max_price=5000000)
         url = RemaxScraper(criteria, _refusing_client())._build_url()
-        assert "hledani=1" in url
+        assert "sale=1" in url
         assert "types%5B6%5D=on" in url
         assert "regions%5B43%5D%5B3401%5D=on" in url
         assert "price_from" not in url
