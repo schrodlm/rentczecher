@@ -399,6 +399,24 @@ class TestInboxListings:
         (card,) = repo.inbox_listings(PROFILE)
         assert card.price_drop_from == 20000
 
+    def test_price_drop_from_survives_a_repeat_scan_at_the_dropped_price(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price_drop_from == 20000
+
+    def test_price_drop_from_is_none_once_the_price_rises_back(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
+        (card,) = repo.inbox_listings(PROFILE)
+        assert card.price_drop_from is None
+
     def test_price_drop_from_is_none_when_the_price_is_unchanged_or_up(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
