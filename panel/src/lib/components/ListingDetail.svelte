@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { opensInBrowser } from '$lib/browser-link';
 	import { formatArea, formatPerM2, formatPrice, formatPricePerM2 } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
@@ -35,8 +35,8 @@
 		priceHistory,
 		onfavourite
 	}: {
-		listing: ListingModel;
-		listings: readonly ListingModel[];
+		listing: TrackedPropertyModel;
+		listings: readonly TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
 		priceHistory: PostingPricesModel[] | null;
 		onfavourite: (favourite: boolean) => void;

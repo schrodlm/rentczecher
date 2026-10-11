@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel } from '$lib/api/client';
+	import type { TrackedPropertyModel } from '$lib/api/client';
 	import { formatPrice, sourceInitial } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { factsOf } from '$lib/listing-detail';
@@ -14,7 +14,7 @@
 		selected,
 		onselect
 	}: {
-		listing: ListingModel;
+		listing: TrackedPropertyModel;
 		id: string;
 		score: number | null;
 		selected: boolean;

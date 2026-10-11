@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { activeFacets, noFilter, passes, type ListingFilter } from '$lib/listing-filter';
 	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
@@ -29,7 +29,7 @@
 		onmarkallviewed,
 		loadPriceHistory
 	}: {
-		listings: readonly ListingModel[];
+		listings: readonly TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
 		onview: (listingId: string) => void;
 		onfavourite: (listingId: string, favourite: boolean) => void;
@@ -103,23 +103,23 @@
 		if (selectedRowId !== null) document.getElementById(selectedRowId)?.scrollIntoView({ block: 'nearest' });
 	});
 
-	function placementOf(listing: ListingModel): Placement {
+	function placementOf(listing: TrackedPropertyModel): Placement {
 		if (listing.favourited_at !== null) return { section: 'favourite', date: listing.favourited_at };
 		if (listing.viewed_at !== null) return { section: 'viewed', date: listing.viewed_at };
 		return { section: 'new', date: listing.first_seen_at };
 	}
 
-	function scoreOf(listing: ListingModel): number | null {
+	function scoreOf(listing: TrackedPropertyModel): number | null {
 		return preferences === null ? null : scoreListing(listing, preferences);
 	}
 
-	function rowId(listing: ListingModel): string {
+	function rowId(listing: TrackedPropertyModel): string {
 		return `${listId}-${listing.id}`;
 	}
 
 	// A narrow window shows the details over the list, so only a click opens
 	// them there: moving with the arrows keeps the list, and its focus, in view.
-	function select(listing: ListingModel, openDetail: boolean): void {
+	function select(listing: TrackedPropertyModel, openDetail: boolean): void {
 		selectedId = listing.id;
 		if (openDetail) detailOpen = true;
 		if (listing.viewed_at === null) onview(listing.id);
@@ -164,7 +164,7 @@
 
 <svelte:window {onkeydown} />
 
-{#snippet section(title: string, sectionListings: ListingModel[])}
+{#snippet section(title: string, sectionListings: TrackedPropertyModel[])}
 	<div class="inbox__section" role="group" aria-label={title}>
 		<h2 class="inbox__heading">{title}</h2>
 		{#each sectionListings as listing (listing.id)}

@@ -1,4 +1,4 @@
-import type { ListingModel } from '$lib/api/client';
+import type { TrackedPropertyModel } from '$lib/api/client';
 import { pricePerM2 } from '$lib/listing-detail';
 
 /* What a profile's listings can be ordered by. */
@@ -18,17 +18,17 @@ export function naturalOrder(field: SortField): ListingOrder {
 /* The listings in an order. A listing missing the field goes last either way,
 and ties go newest first. The date is the section's own, given by `dateOf`. */
 export function sortListings(
-	listings: readonly ListingModel[],
+	listings: readonly TrackedPropertyModel[],
 	order: ListingOrder,
-	scoreOf: (listing: ListingModel) => number | null,
-	dateOf: (listing: ListingModel) => string
-): ListingModel[] {
-	const newestFirst = (a: ListingModel, b: ListingModel) => dateOf(b).localeCompare(dateOf(a));
+	scoreOf: (listing: TrackedPropertyModel) => number | null,
+	dateOf: (listing: TrackedPropertyModel) => string
+): TrackedPropertyModel[] {
+	const newestFirst = (a: TrackedPropertyModel, b: TrackedPropertyModel) => dateOf(b).localeCompare(dateOf(a));
 	if (order.field === 'date') {
 		const sorted = [...listings].sort(newestFirst);
 		return order.descending ? sorted : sorted.reverse();
 	}
-	const valueOf = (listing: ListingModel): number | null => {
+	const valueOf = (listing: TrackedPropertyModel): number | null => {
 		if (order.field === 'score') return scoreOf(listing);
 		if (order.field === 'price') return listing.price;
 		if (order.field === 'pricePerM2') return pricePerM2(listing);

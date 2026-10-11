@@ -6,11 +6,11 @@ export type NewProfileBody = components['schemas']['NewProfileBody'];
 export type ProfileUpdateBody = components['schemas']['ProfileUpdateBody'];
 export type PlaceRef = components['schemas']['PlaceRefModel'];
 export type NamedPlace = components['schemas']['NamedPlaceModel'];
-export type ListingModel = components['schemas']['ListingModel'];
+export type TrackedPropertyModel = components['schemas']['TrackedPropertyModel'];
 export type PostingPricesModel = components['schemas']['PostingPricesModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
-type ListingFilter = NonNullable<
+type NewOrAll = NonNullable<
 	paths['/v1/profiles/{profile_id}/properties']['get']['parameters']['query']
 >['filter'];
 
@@ -86,7 +86,7 @@ export class SidecarClient {
 		return this.require(data, response, error);
 	}
 
-	async listListings(profileId: string, filter: ListingFilter = 'new'): Promise<ListingModel[]> {
+	async listTrackedProperties(profileId: string, filter: NewOrAll = 'new'): Promise<TrackedPropertyModel[]> {
 		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/properties', {
 			params: { path: { profile_id: profileId }, query: { filter } }
 		});

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel } from '$lib/api/client';
+	import type { TrackedPropertyModel } from '$lib/api/client';
 	import LayoutChips from '$lib/forms/LayoutChips.svelte';
 	import RangeSlider from '$lib/forms/RangeSlider.svelte';
 	import { Scale } from '$lib/forms/scale';
@@ -22,7 +22,7 @@
 		filter = $bindable(),
 		listings,
 		scored
-	}: { filter: ListingFilter; listings: readonly ListingModel[]; scored: boolean } = $props();
+	}: { filter: ListingFilter; listings: readonly TrackedPropertyModel[]; scored: boolean } = $props();
 
 	const t = getTranslatorContext();
 	const panelId = $props.id();

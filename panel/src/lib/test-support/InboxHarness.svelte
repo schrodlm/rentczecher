@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import Inbox from '$lib/components/Inbox.svelte';
 	import type { ScoringPreferences } from '$lib/scoring/score';
 
@@ -12,7 +12,7 @@
 		onfavourite,
 		loadPriceHistory = async () => []
 	}: {
-		listings: ListingModel[];
+		listings: TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
 		onview: (listingId: string) => void;
 		onfavourite: (listingId: string, favourite: boolean) => void;

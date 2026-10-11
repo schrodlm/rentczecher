@@ -1,4 +1,4 @@
-import type { ListingModel } from '$lib/api/client';
+import type { TrackedPropertyModel } from '$lib/api/client';
 import { Scale } from '$lib/forms/scale';
 import { LAYOUTS, type Layout } from '$lib/layouts';
 import { PORTALS, type Portal } from '$lib/portals';
@@ -60,7 +60,7 @@ export function withoutFacet(filter: ListingFilter, facet: Facet): ListingFilter
 }
 
 /* A listing lacking a fact a facet asks about does not pass that facet. */
-export function passes(listing: ListingModel, filter: ListingFilter, score: number | null): boolean {
+export function passes(listing: TrackedPropertyModel, filter: ListingFilter, score: number | null): boolean {
 	if (filter.portals.length > 0 && !filter.portals.some((portal) => portal === listing.source)) return false;
 	if (filter.onlyPriceDrops && listing.price_drop_from === null) return false;
 	if (filter.minimumScore !== null && (score === null || score < filter.minimumScore)) return false;
@@ -77,11 +77,11 @@ function within(value: number | null, low: number | null, high: number | null): 
 }
 
 /* The portals and layouts some listing has, in the order the app lists them. */
-export function portalsAmong(listings: readonly ListingModel[]): Portal[] {
+export function portalsAmong(listings: readonly TrackedPropertyModel[]): Portal[] {
 	return PORTALS.map((shown) => shown.portal).filter((portal) => listings.some((listing) => listing.source === portal));
 }
 
-export function layoutsAmong(listings: readonly ListingModel[]): Layout[] {
+export function layoutsAmong(listings: readonly TrackedPropertyModel[]): Layout[] {
 	return LAYOUTS.filter((layout) => listings.some((listing) => listing.disposition === layout));
 }
 
@@ -90,8 +90,8 @@ const SCALE_STOPS = 20;
 /* A slider scale from the lowest to the highest value the listings have, in
 round steps, or null when fewer than two listings differ in it. */
 export function scaleAmong(
-	listings: readonly ListingModel[],
-	factOf: (listing: ListingModel) => number | null,
+	listings: readonly TrackedPropertyModel[],
+	factOf: (listing: TrackedPropertyModel) => number | null,
 	roundTo: number
 ): Scale | null {
 	const values = listings.map(factOf).filter((value) => value !== null);

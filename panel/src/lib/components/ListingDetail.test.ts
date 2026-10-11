@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
-import type { ListingModel, PostingPricesModel } from '$lib/api/client';
+import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import { listing } from '$lib/test-support/listing';
 import { renderWithTranslator } from '$lib/test-support/render';
@@ -42,7 +42,7 @@ const FLAT_PRICES: PostingPricesModel[] = [
 ];
 
 async function renderDetail(
-	shown: ListingModel = FLAT,
+	shown: TrackedPropertyModel = FLAT,
 	preferences: ScoringPreferences | null = PREFERENCES,
 	priceHistory: PostingPricesModel[] | null = FLAT_PRICES
 ) {
