@@ -227,9 +227,9 @@ class SqliteListingRepository(ListingRepository):
             LEFT JOIN price_observations AS previous_price
                 ON previous_price.id = (
                     SELECT id FROM price_observations
-                    WHERE listing_id = listings.id
+                    WHERE listing_id = listings.id AND price != latest_price.price
                     ORDER BY observed_at DESC, id DESC
-                    LIMIT 1 OFFSET 1
+                    LIMIT 1
                 )
             WHERE listing_tracking.profile_id = ?
         """
