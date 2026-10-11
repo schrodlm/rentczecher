@@ -16,6 +16,17 @@ The inferred real-world housing unit behind one or more listings. The same
 flat posted on two portals is one property with two listings.
 _Avoid_: estate, home
 
+**Tracked listing**:
+A listing as one profile tracks it: when the profile first saw it, whether it
+viewed or starred it, and the listing's current price. What the engine serves
+for the panel and notification channels to present each in their own way.
+_Avoid_: inbox card, card
+
+**Inbox**:
+The panel's view of one profile's tracked listings, a list beside the selected
+one's details. A view of the panel's, never an engine concept.
+_Avoid_: feed
+
 **Disposition**:
 A property's layout: its number of rooms and whether the kitchen is a
 kitchenette (2+kk) or a separate room (2+1). A layout fitting neither is
