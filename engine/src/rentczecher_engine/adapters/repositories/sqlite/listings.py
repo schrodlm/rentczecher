@@ -6,6 +6,7 @@ from rentczecher_engine.adapters.repositories.repositories import ListingReposit
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.disposition import parse_disposition
+from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.listing import InboxCard, SiblingSource
 from rentczecher_engine.domain.price import PostingPrices, PriceObservation, price_changes
 from rentczecher_engine.domain.property import PropertyLocation
@@ -223,6 +224,7 @@ class SqliteListingRepository(ListingRepository):
                    properties.size_m2 AS size_m2, properties.land_m2 AS land_m2,
                    properties.disposition_raw_text AS disposition_raw_text,
                    properties.disposition_code AS disposition_code,
+                   properties.lat AS lat, properties.lon AS lon,
                    property_locations.kraj_code AS kraj_code,
                    property_locations.okres_code AS okres_code,
                    property_locations.obec_code AS obec_code,
@@ -302,6 +304,7 @@ class SqliteListingRepository(ListingRepository):
             title=row["title"],
             location_raw_text=row["location_raw_text"],
             property_location=self._to_property_location(row) if row["kraj_code"] is not None else None,
+            point=GeoPoint(lat=row["lat"], lon=row["lon"]) if row["lat"] is not None and row["lon"] is not None else None,
             size_m2=row["size_m2"],
             land_m2=row["land_m2"],
             disposition_raw_text=row["disposition_raw_text"],
