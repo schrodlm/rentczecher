@@ -149,7 +149,7 @@ class SiblingSource:
 
 
 @dataclass(frozen=True, slots=True)
-class TrackedListing:
+class TrackedProperty:
     """One listing as one profile tracks it: the posting, its property's
     facts, the profile's tracking of it and its current price.
     price_drop_from is the higher price it last dropped from, and

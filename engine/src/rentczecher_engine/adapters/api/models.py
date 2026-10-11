@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition, DispositionCode, parse_disposition
 from rentczecher_engine.domain.geo import GeoPoint
-from rentczecher_engine.domain.listing import TrackedListing
+from rentczecher_engine.domain.listing import TrackedProperty
 from rentczecher_engine.domain.location import Location, Place, PlaceKind, PlaceMatch, PlaceRef
 from rentczecher_engine.domain.price import PostingPrices, PriceChange
 from rentczecher_engine.domain.profile import Criteria, EstateType, OfferType, Portal, Preferences, Profile
@@ -282,7 +282,7 @@ class ListingModel(BaseModel):
     sibling_sources: list[SiblingSourceModel]
 
     @classmethod
-    def from_tracked_listing(cls, card: TrackedListing, resolved_location: Location | None) -> "ListingModel":
+    def from_tracked_property(cls, card: TrackedProperty, resolved_location: Location | None) -> "ListingModel":
         return cls(
             id=card.id,
             source=card.source,

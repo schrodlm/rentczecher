@@ -341,7 +341,7 @@ class TestPropertyIdOf:
         assert repo.property_id_of("sreality:ghost") is None
 
 
-class TestTrackedListings:
+class TestTrackedProperties:
     def test_carries_listing_and_property_facts(self, tmp_path):
         repo, conn = _repo(tmp_path)
         conn.execute("UPDATE properties SET title = ?, location_raw_text = ?, size_m2 = ?, land_m2 = ?, "
@@ -349,7 +349,7 @@ class TestTrackedListings:
                      ("Byt 2+kk", "Praha 7", 55, 400, "2+kk", PROPERTY))
         conn.commit()
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.id == "sreality:1"
         assert card.source == "sreality"
         assert card.url == "u"
@@ -364,7 +364,7 @@ class TestTrackedListings:
         conn.execute("UPDATE properties SET disposition_code = '3+1' WHERE id = ?", (PROPERTY,))
         conn.commit()
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.disposition == Disposition(rooms=3, kitchen="separate")
 
     def test_carries_the_property_point(self, tmp_path):
@@ -372,13 +372,13 @@ class TestTrackedListings:
         conn.execute("UPDATE properties SET lat = 50.1029, lon = 14.4293 WHERE id = ?", (PROPERTY,))
         conn.commit()
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.point == GeoPoint(lat=50.1029, lon=14.4293)
 
     def test_missing_property_facts_are_none_not_dropped(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.title is None
         assert card.location_raw_text is None
         assert card.size_m2 is None
@@ -395,7 +395,7 @@ class TestTrackedListings:
             "WHERE profile_id = ? AND listing_id = 'sreality:1'", (BASE.isoformat(), PROFILE))
         conn.commit()
         repo.mark_viewed(PROFILE, "sreality:1")
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.first_seen_at == BASE.isoformat()
         assert card.viewed_at == BASE.isoformat()
         assert card.favourited_at == BASE.isoformat()
@@ -403,14 +403,14 @@ class TestTrackedListings:
     def test_never_viewed_is_none(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.viewed_at is None
 
     def test_carries_the_latest_price(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price == 19000
 
     def test_no_price_observation_yet_is_none(self, tmp_path):
@@ -423,14 +423,14 @@ class TestTrackedListings:
             "last_seen_at, miss_count) VALUES (?, 'sreality:1', ?, ?, 0)",
             (PROFILE, BASE.isoformat(), BASE.isoformat()))
         conn.commit()
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price is None
 
     def test_price_drop_from_is_set_when_the_previous_price_was_higher(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price_drop_from == 20000
 
     def test_price_drop_from_survives_a_repeat_scan_at_the_dropped_price(self, tmp_path):
@@ -439,7 +439,7 @@ class TestTrackedListings:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price_drop_from == 20000
 
     def test_price_drop_from_is_none_once_the_price_rises_back(self, tmp_path):
@@ -448,27 +448,27 @@ class TestTrackedListings:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price_drop_from is None
 
     def test_price_drop_from_is_none_when_the_price_is_unchanged_or_up(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price_drop_from is None
 
     def test_price_drop_from_is_none_with_only_one_observation(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=20000))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.price_drop_from is None
 
     def test_carries_sibling_sources_on_the_same_property(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1"))
-        cards = {card.id: card for card in repo.tracked_listings(PROFILE)}
+        cards = {card.id: card for card in repo.tracked_properties(PROFILE)}
         assert [s.source for s in cards["sreality:1"].sibling_sources] == ["bezrealitky"]
         assert cards["sreality:1"].sibling_sources[0].url == "u"
         assert [s.source for s in cards["bezrealitky:1"].sibling_sources] == ["sreality"]
@@ -476,7 +476,7 @@ class TestTrackedListings:
     def test_no_siblings_is_an_empty_tuple(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
-        (card,) = repo.tracked_listings(PROFILE)
+        (card,) = repo.tracked_properties(PROFILE)
         assert card.sibling_sources == ()
 
     def test_only_new_excludes_viewed_listings(self, tmp_path):
@@ -484,21 +484,21 @@ class TestTrackedListings:
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:2"))
         repo.mark_viewed(PROFILE, "sreality:1")
-        cards = repo.tracked_listings(PROFILE, only_new=True)
+        cards = repo.tracked_properties(PROFILE, only_new=True)
         assert [card.id for card in cards] == ["sreality:2"]
 
     def test_only_new_false_includes_viewed_listings(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
         repo.mark_viewed(PROFILE, "sreality:1")
-        cards = repo.tracked_listings(PROFILE, only_new=False)
+        cards = repo.tracked_properties(PROFILE, only_new=False)
         assert [card.id for card in cards] == ["sreality:1"]
 
     def test_scoped_to_the_profile(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:mine"))
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:theirs"))
-        cards = repo.tracked_listings(PROFILE)
+        cards = repo.tracked_properties(PROFILE)
         assert [card.id for card in cards] == ["sreality:mine"]
 
 
