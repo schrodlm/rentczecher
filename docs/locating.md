@@ -72,10 +72,16 @@ It then picks **one** match, the anchor, by asking these questions in order:
 2. **Is it the only one inside an okres the text names?**
 3. **Can the name only mean one town?** "Kdyně" exists only in Kdyně. A town's
    own name means the town, not its central část obce of the same name.
-4. **Failing all that, the okres the text names, if there is exactly one.** A
+4. **Is it the only one inside the place the profile searched?** A portal
+   returned the listing for that search, so it almost surely lies there. Of
+   the streets named Veletržní, a search of Praha 7 picks the one in Praha. A
+   street with any address inside the search place counts. This question
+   comes after the text's own evidence, so it only settles what the text left
+   open, and with no candidate inside the search place it settles nothing.
+5. **Failing all that, the okres the text names, if there is exactly one.** A
    coarse true answer beats a precise wrong one.
 
-The first three questions check the most specific kind first: street, then
+The first four questions check the most specific kind first: street, then
 část obce, then městská část, then obec. A kind counts only when exactly one
 candidate is left. Two candidates are a tie, and a tie moves on to the next
 question. When no question settles it, the listing gets no Location rather
