@@ -42,7 +42,7 @@ def test_fresh_scrape_shows_new_and_viewed_listings(tmp_path):
     """The viewed list marks exactly those listings viewed, the rest stay new."""
     store, profile_id = replayed("fresh-scrape", tmp_path)
     cards = store.tracked_properties(profile_id)
-    assert len(cards) == 7
+    assert len(cards) == 6
     assert {card.id for card in cards if card.viewed_at is not None} == {"sreality:1002", "remax:3001"}
 
 
@@ -53,7 +53,6 @@ def test_fresh_scrape_moves_prices_on_one_portal_and_on_two(tmp_path):
     by_id = {card.id: card for card in store.tracked_properties(profile_id)}
     assert [sibling.source for sibling in by_id["bezrealitky:2002"].sibling_sources] == ["sreality"]
     assert by_id["bezrealitky:2002"].price_drop_from == 24500
-    assert by_id["sreality:1003"].price_drop_from == 25900
     assert by_id["sreality:1001"].price_drop_from == 23500
     assert by_id["remax:3002"].price == 19900
     assert by_id["remax:3002"].price_drop_from is None
@@ -88,11 +87,11 @@ def test_disappeared_misses_the_listing_three_scans_in_a_row(tmp_path):
 
 
 def test_cross_portal_folds_the_same_flat_into_one_property(tmp_path):
-    """The two postings of one flat point at each other as siblings, the
-    unrelated flat has none."""
+    """The two postings of one flat show as one, its cheaper posting with
+    the other as its sibling, and the unrelated flat has none."""
     store, profile_id = replayed("cross-portal", tmp_path)
     siblings = {card.id: {s.source for s in card.sibling_sources} for card in store.tracked_properties(profile_id)}
-    assert siblings == {"sreality:1301": {"bezrealitky"}, "bezrealitky:2301": {"sreality"}, "remax:3301": set()}
+    assert siblings == {"bezrealitky:2301": {"sreality"}, "remax:3301": set()}
 
 
 def test_replaying_onto_an_existing_database_is_refused(tmp_path):
