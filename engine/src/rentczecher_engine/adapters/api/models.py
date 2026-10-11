@@ -17,6 +17,7 @@ from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition, DispositionCode, parse_disposition
 from rentczecher_engine.domain.listing import InboxCard
 from rentczecher_engine.domain.location import Location, Place, PlaceKind, PlaceMatch, PlaceRef
+from rentczecher_engine.domain.price import PostingPrices, PriceChange
 from rentczecher_engine.domain.profile import Criteria, EstateType, OfferType, Portal, Preferences, Profile
 
 
@@ -291,6 +292,38 @@ class ListingModel(BaseModel):
                 SiblingSourceModel(source=sibling.source, url=sibling.url)
                 for sibling in card.sibling_sources
             ],
+        )
+
+
+class PriceChangeModel(BaseModel):
+    price: int
+    charges: int | None
+    first_seen_at: str
+    last_seen_at: str
+
+    @classmethod
+    def from_change(cls, change: PriceChange) -> "PriceChangeModel":
+        return cls(
+            price=change.price,
+            charges=change.charges,
+            first_seen_at=change.first_seen_at,
+            last_seen_at=change.last_seen_at,
+        )
+
+
+class PostingPricesModel(BaseModel):
+    listing_id: str
+    source: str
+    url: str
+    changes: list[PriceChangeModel]
+
+    @classmethod
+    def from_posting(cls, posting: PostingPrices) -> "PostingPricesModel":
+        return cls(
+            listing_id=posting.listing_id,
+            source=posting.source,
+            url=posting.url,
+            changes=[PriceChangeModel.from_change(change) for change in posting.changes],
         )
 
 

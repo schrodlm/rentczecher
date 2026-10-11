@@ -741,6 +741,37 @@
         "title": "PortalHealthModel",
         "type": "object"
       },
+      "PostingPricesModel": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PriceChangeModel"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "listing_id",
+          "source",
+          "url",
+          "changes"
+        ],
+        "title": "PostingPricesModel",
+        "type": "object"
+      },
       "PreferencesBody": {
         "additionalProperties": false,
         "properties": {
@@ -962,6 +993,41 @@
           "preferred_price"
         ],
         "title": "PreferencesModel",
+        "type": "object"
+      },
+      "PriceChangeModel": {
+        "properties": {
+          "charges": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charges"
+          },
+          "first_seen_at": {
+            "title": "First Seen At",
+            "type": "string"
+          },
+          "last_seen_at": {
+            "title": "Last Seen At",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "price",
+          "charges",
+          "first_seen_at",
+          "last_seen_at"
+        ],
+        "title": "PriceChangeModel",
         "type": "object"
       },
       "ProfileModel": {
@@ -1949,6 +2015,74 @@
           }
         },
         "summary": "Mark Favourite"
+      }
+    },
+    "/v1/profiles/{profile_id}/listings/{listing_id}/price-history": {
+      "get": {
+        "operationId": "price_history_v1_profiles__profile_id__listings__listing_id__price_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "title": "Listing Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PostingPricesModel"
+                  },
+                  "title": "Response Price History V1 Profiles  Profile Id  Listings  Listing Id  Price History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Price History"
       }
     },
     "/v1/profiles/{profile_id}/listings/{listing_id}/viewed": {
