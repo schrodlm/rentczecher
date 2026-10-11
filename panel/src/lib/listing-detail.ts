@@ -1,4 +1,4 @@
-import type { ListingModel } from '$lib/api/client';
+import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 import { formatArea } from '$lib/format';
 import type { Translator } from '$lib/i18n/translator';
 
@@ -69,27 +69,30 @@ export function percentFromMiddle(standing: Standing): number {
 	return Math.round(((standing.own - standing.middle) / standing.middle) * 100);
 }
 
-/* Something that happened to a listing. A price drop carries no date,
-since the listing keeps only the price it last dropped from. */
+/* Something that happened to a listing. */
 export type ListingEvent =
 	| { kind: 'found'; at: string }
-	| { kind: 'priceDrop'; at: null; from: number; to: number }
+	| { kind: 'priceChange'; at: string; from: number; to: number }
 	| { kind: 'viewed'; at: string }
 	| { kind: 'favourite'; at: string };
 
-/* What happened to a listing, newest first. The undated price drop goes
-just after its finding, the one thing it surely came after. */
-export function historyOf(listing: ListingModel): ListingEvent[] {
-	const dated: { kind: 'viewed' | 'favourite'; at: string }[] = [];
-	if (listing.favourited_at !== null) dated.push({ kind: 'favourite', at: listing.favourited_at });
-	if (listing.viewed_at !== null) dated.push({ kind: 'viewed', at: listing.viewed_at });
-	dated.sort((a, b) => b.at.localeCompare(a.at));
-	const events: ListingEvent[] = [...dated];
-	if (listing.price_drop_from !== null && listing.price !== null) {
-		events.push({ kind: 'priceDrop', at: null, from: listing.price_drop_from, to: listing.price });
+/* What happened to a listing, newest first. Its price changes come from its
+own posting's prices, the first of the postings, and are left out until those
+are known. */
+export function historyOf(listing: ListingModel, postings: readonly PostingPricesModel[] | null): ListingEvent[] {
+	const events: ListingEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
+	const ownChanges = postings?.[0]?.changes ?? [];
+	for (let index = 1; index < ownChanges.length; index++) {
+		events.push({
+			kind: 'priceChange',
+			at: ownChanges[index].first_seen_at,
+			from: ownChanges[index - 1].price,
+			to: ownChanges[index].price
+		});
 	}
-	events.push({ kind: 'found', at: listing.first_seen_at });
-	return events;
+	if (listing.viewed_at !== null) events.push({ kind: 'viewed', at: listing.viewed_at });
+	if (listing.favourited_at !== null) events.push({ kind: 'favourite', at: listing.favourited_at });
+	return events.sort((a, b) => b.at.localeCompare(a.at));
 }
 
 export function pricePerM2(listing: ListingModel): number | null {

@@ -47,7 +47,7 @@
 	const favourite = $derived(listing.favourited_at !== null);
 	const score = $derived(preferences === null ? null : scoreListing(listing, preferences));
 	const parts = $derived(preferences === null ? [] : scoreParts(listing, preferences));
-	const history = $derived(historyOf(listing));
+	const history = $derived(historyOf(listing, priceHistory));
 	const layout = $derived(layoutOf(listing, t));
 	const facts = $derived(factsOf(listing, t));
 	const priceStanding = $derived(standingOf(listing, listings, (each) => each.price));
@@ -119,7 +119,10 @@
 		if (event.kind === 'found') return t.t('First found');
 		if (event.kind === 'viewed') return t.t('You viewed it');
 		if (event.kind === 'favourite') return t.t('Added to favourites');
-		return t.t('Price dropped from {from} to {to}', { from: formatPrice(event.from), to: formatPrice(event.to) });
+		if (event.to < event.from) {
+			return t.t('Price dropped from {from} to {to}', { from: formatPrice(event.from), to: formatPrice(event.to) });
+		}
+		return t.t('Price rose from {from} to {to}', { from: formatPrice(event.from), to: formatPrice(event.to) });
 	}
 
 	function day(iso: string): string {
@@ -236,7 +239,7 @@
 			<h3>{t.t('History')}</h3>
 			<ol class="listing-detail__history">
 				{#each history as event (`${event.kind}:${event.at}`)}
-					<li><span>{event.at === null ? '' : day(event.at)}</span>{eventText(event)}</li>
+					<li><span>{day(event.at)}</span>{eventText(event)}</li>
 				{/each}
 			</ol>
 		</section>
