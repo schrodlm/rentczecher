@@ -22,7 +22,8 @@ found, when the profile first saw it, whether it viewed or starred it, and
 the lowest current price among those listings. Listings of the property that
 the profile's scans never found are not part of it. What the engine serves for
 the panel and notification channels to present each in their own way, so each
-flat appears once.
+flat appears once. In the panel every property is a tracked one, so its code
+says `Property…` for short.
 _Avoid_: tracked listing, inbox card, card
 
 **Inbox**:
