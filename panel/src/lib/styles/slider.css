@@ -8,6 +8,14 @@ round handles, and the typed numbers beside it. */
 	gap: var(--space-3);
 }
 
+/* Where its container is too narrow for the numbers beside the track, they
+go under it. Only a container that declares itself one asks this. */
+@container (max-width: 24rem) {
+	.slider {
+		grid-template-columns: 1fr;
+	}
+}
+
 .slider__track {
 	position: relative;
 	height: 1.5rem;
