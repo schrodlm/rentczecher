@@ -407,6 +407,54 @@ class TestPreferredSettingsMigration:
             conn.execute(f"UPDATE profile_preferences SET {setting} = 0")
 
 
+class TestPropertyTrackingMigration:
+    """A profile's viewed and starred state moves from each listing onto its
+    flat, as of the first of its listings."""
+
+    NOW = "2026-10-11T00:00:00+00:00"
+
+    def _migrated_from_14(self, tmp_path, tracking):
+        conn = _db_at_version(tmp_path, 14)
+        for profile_id in ("a", "b"):
+            conn.execute("INSERT INTO profiles (id, name, created_at) VALUES (?, 'P', ?)", (profile_id, self.NOW))
+        for property_id in ("flat", "other"):
+            conn.execute("INSERT INTO properties (id, created_at) VALUES (?, ?)", (property_id, self.NOW))
+        for listing_id, property_id in (("sreality:1", "flat"), ("bezrealitky:1", "flat"), ("remax:1", "other")):
+            conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) VALUES (?, ?, ?, 'u', ?)",
+                         (listing_id, property_id, listing_id.split(":")[0], self.NOW))
+        for profile_id, listing_id, viewed_at, favourited_at in tracking:
+            conn.execute(
+                "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at, "
+                "viewed_at, favourited_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (profile_id, listing_id, self.NOW, self.NOW, viewed_at, favourited_at))
+        conn.commit()
+        assert migrate.apply_pending(conn) == [15]
+        return conn
+
+    def _tracking(self, conn):
+        stmt = "SELECT profile_id, property_id, viewed_at, favourited_at FROM property_tracking ORDER BY 1, 2"
+        return [tuple(row) for row in conn.execute(stmt)]
+
+    def test_a_flat_keeps_the_first_of_its_listings_views_and_stars(self, tmp_path):
+        conn = self._migrated_from_14(tmp_path, [
+            ("a", "sreality:1", "2026-10-03", None),
+            ("a", "bezrealitky:1", "2026-10-01", "2026-10-02"),
+        ])
+        assert self._tracking(conn) == [("a", "flat", "2026-10-01", "2026-10-02")]
+
+    def test_each_profile_keeps_its_own_row(self, tmp_path):
+        conn = self._migrated_from_14(tmp_path, [
+            ("a", "sreality:1", "2026-10-01", None),
+            ("b", "sreality:1", None, None),
+            ("b", "remax:1", None, "2026-10-05"),
+        ])
+        assert self._tracking(conn) == [
+            ("a", "flat", "2026-10-01", None),
+            ("b", "flat", None, None),
+            ("b", "other", None, "2026-10-05"),
+        ]
+
+
 class TestConcurrentWriters:
     """busy_timeout, not luck, lets a second writer wait out a held write lock."""
 
