@@ -6,9 +6,15 @@ the listings each scan saw, then what the user did. Replaying it runs the
 engine's own pipeline with faked scrapers and a controlled clock, so the
 resulting database is exactly what real scans would have left, and schema
 changes leave scenario files untouched.
+
+The replay also writes the panel's user config, so the app opens set up. A
+scenario may state its theme and language, or say first-run to leave the
+config out and open on the welcome wizard.
 """
 
+import json
 import re
+import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -44,6 +50,12 @@ _PREFERENCE_KEYS = {"price_per_m2_weight", "disposition_weight", "preferred_disp
                     "size_weight", "preferred_size_m2", "place_weight", "preferred_places",
                     "land_weight", "preferred_land_m2", "price_weight", "preferred_price"}
 
+# The user config's format, which the panel checks on reading it.
+USER_CONFIG_VERSION = 1
+_THEMES = ("system", "light", "dark")
+_LANGUAGES = ("cs", "en")
+FIRST_RUN = "first-run"
+
 _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
 
@@ -58,6 +70,14 @@ def offset_from_now(text: str) -> timedelta:
         raise ValueError(f"expected 'now' or an offset like -3d, -2h, -30m, got {text!r}")
     amount, unit = match.groups()
     return -timedelta(**{_OFFSET_UNITS[unit]: int(amount)})
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioUserConfig:
+    """The panel's user config the app starts with."""
+
+    theme: str
+    language: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,14 +109,17 @@ class ScenarioScraper:
 
 
 class Scenario:
-    """One scenario file: a profile, the scans it went through, and the
-    listings the user viewed afterwards."""
+    """One scenario file: a profile, the scans it went through, the listings
+    the user viewed afterwards, and the user config, None for a first run. A
+    scenario without a profile is an app nobody has set up yet."""
 
-    def __init__(self, name: str, profile: dict, scans: tuple[ScenarioScan, ...], viewed: tuple[str, ...]):
+    def __init__(self, name: str, profile: dict | None, scans: tuple[ScenarioScan, ...],
+                 viewed: tuple[str, ...], user_config: ScenarioUserConfig | None):
         self.name = name
         self.profile = profile
         self.scans = scans
         self.viewed = viewed
+        self.user_config = user_config
 
     @classmethod
     def names(cls) -> list[str]:
@@ -112,23 +135,28 @@ class Scenario:
     @classmethod
     def from_text(cls, name: str, text: str) -> "Scenario":
         raw = yaml.safe_load(text)
-        unknown = set(raw) - {"profile", "scans", "viewed"}
+        unknown = set(raw) - {"profile", "scans", "viewed", "panel"}
         if unknown:
             raise ValueError(f"scenario {name!r}: unknown keys {sorted(unknown)}")
-        unknown_profile = set(raw["profile"]) - {"name", "search", "portals", "preferences"}
-        if unknown_profile:
-            raise ValueError(f"scenario {name!r}: unknown profile keys {sorted(unknown_profile)}")
+        profile = raw.get("profile")
+        if profile is None and ("scans" in raw or "viewed" in raw):
+            raise ValueError(f"scenario {name!r}: scans and views need a profile")
+        if profile is not None:
+            unknown_profile = set(profile) - {"name", "search", "portals", "preferences"}
+            if unknown_profile:
+                raise ValueError(f"scenario {name!r}: unknown profile keys {sorted(unknown_profile)}")
         scans = tuple(
             ScenarioScan(at=offset_from_now(scan["at"]), listings=tuple(scan.get("listings") or ()))
             for scan in raw.get("scans", ())
         )
-        return cls(name, raw["profile"], scans, tuple(raw.get("viewed", ())))
+        user_config = _user_config(name, raw.get("panel", {}))
+        return cls(name, profile, scans, tuple(raw.get("viewed", ())), user_config)
 
-    def portals(self) -> list[str]:
+    def portals(self, profile: dict) -> list[str]:
         """The portals the profile states, or else every portal any scan saw
         a listing from."""
-        if "portals" in self.profile:
-            return sorted(self.profile["portals"])
+        if "portals" in profile:
+            return sorted(profile["portals"])
         return self._sources()
 
     def _sources(self) -> list[str]:
@@ -137,51 +165,70 @@ class Scenario:
         sources = {_source_of(listing["id"]) for scan in self.scans for listing in scan.listings}
         return sorted(sources)
 
-    def replay_into(self, home: Path, now: datetime) -> str:
+    def replay_into(self, home: Path, now: datetime) -> str | None:
         """Adds the scenario's profile, dated at its first scan, to a fresh
-        home/data/rentczecher.db, replays every scan, then every view, and
-        returns the profile's id. A home that already holds a database is
-        refused, since replaying on top would stack two stories."""
+        home/data/rentczecher.db, replays every scan, then every view, writes
+        the user config, and returns the profile's id, None without a profile.
+        A home that already holds a database is refused, since replaying on
+        top would stack two stories."""
         if (home / "data" / "rentczecher.db").exists():
             raise ValueError(f"{home} already holds a database, replay into a fresh folder")
         data_dir = home / "data"
         data_dir.mkdir(parents=True, exist_ok=True)
+        self._write_user_config(home)
 
-        clock = ReplayClock(now)
         conn = connection.connect(data_dir / "rentczecher.db")
         try:
             migrate.apply_pending(conn)
-            store = SqliteRunStore(conn, now=clock)
-            gazetteer = Gazetteer()
-            if self.scans:
-                clock.current = now + self.scans[0].at
-            profile = SqliteProfileRepository(conn, now=clock).add(
-                self.profile["name"], tuple(self.portals()), self._criteria(gazetteer), self._preferences(gazetteer))
             conn.commit()
-            for scan in self.scans:
-                clock.current = now + scan.at
-                deps = PipelineDeps(
-                    store=store,
-                    clock=clock,
-                    client=None,
-                    scrapers=self._scrapers_for(scan, clock.current),
-                    gazetteer=gazetteer,
-                )
-                run_profile(profile, deps)
-            clock.current = now
-            for listing_id in self.viewed:
-                (property_id,) = conn.execute(
-                    "SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
-                store.mark_viewed(profile.id, property_id)
+            if self.profile is None:
+                return None
+            return self._replay_profile(conn, self.profile, now)
         finally:
             conn.close()
+
+    def _write_user_config(self, home: Path) -> None:
+        if self.user_config is None:
+            return
+        contents = {
+            "version": USER_CONFIG_VERSION,
+            "theme": self.user_config.theme,
+            "language": self.user_config.language,
+        }
+        (home / "user_config.json").write_text(json.dumps(contents, indent=2) + "\n", encoding="utf-8")
+
+    def _replay_profile(self, conn: sqlite3.Connection, stated: dict, now: datetime) -> str:
+        clock = ReplayClock(now)
+        store = SqliteRunStore(conn, now=clock)
+        gazetteer = Gazetteer()
+        if self.scans:
+            clock.current = now + self.scans[0].at
+        profile = SqliteProfileRepository(conn, now=clock).add(
+            stated["name"], tuple(self.portals(stated)), self._criteria(stated, gazetteer),
+            self._preferences(stated, gazetteer))
+        conn.commit()
+        for scan in self.scans:
+            clock.current = now + scan.at
+            deps = PipelineDeps(
+                store=store,
+                clock=clock,
+                client=None,
+                scrapers=self._scrapers_for(scan, clock.current),
+                gazetteer=gazetteer,
+            )
+            run_profile(profile, deps)
+        clock.current = now
+        for listing_id in self.viewed:
+            (property_id,) = conn.execute(
+                "SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
+            store.mark_viewed(profile.id, property_id)
         return profile.id
 
-    def _criteria(self, gazetteer: Gazetteer) -> Criteria:
+    def _criteria(self, profile: dict, gazetteer: Gazetteer) -> Criteria:
         """The profile's search, its place written by kind and name, like
         'obvod Praha 7'. An unknown key or place kind, or a place name that
         is unknown or ambiguous, fails loudly."""
-        search = self.profile["search"]
+        search = profile["search"]
         unknown = set(search) - _SEARCH_KEYS
         if unknown:
             raise ValueError(f"scenario {self.name!r}: unknown search keys {sorted(unknown)}")
@@ -197,10 +244,10 @@ class Scenario:
             dispositions=layouts(*search.get("dispositions", [])),
         )
 
-    def _preferences(self, gazetteer: Gazetteer) -> Preferences:
+    def _preferences(self, profile: dict, gazetteer: Gazetteer) -> Preferences:
         """The profile's preferences, every one off unless the scenario sets
         it, with preferred places written like the search place."""
-        stated = self.profile.get("preferences", {})
+        stated = profile.get("preferences", {})
         unknown = set(stated) - _PREFERENCE_KEYS
         if unknown:
             raise ValueError(f"scenario {self.name!r}: unknown preference keys {sorted(unknown)}")
@@ -235,6 +282,25 @@ class Scenario:
             portal: _scraper_returning(listings)
             for portal, listings in by_portal.items()
         }
+
+
+def _user_config(name: str, stated: dict | str) -> ScenarioUserConfig | None:
+    """The user config a scenario states, the defaults where it states
+    nothing, or None for a first run. An unknown key or value fails loudly."""
+    if stated == FIRST_RUN:
+        return None
+    if not isinstance(stated, dict):
+        raise ValueError(f"scenario {name!r}: panel must be {FIRST_RUN!r} or a mapping, got {stated!r}")
+    unknown = set(stated) - {"theme", "language"}
+    if unknown:
+        raise ValueError(f"scenario {name!r}: unknown panel keys {sorted(unknown)}")
+    user_config = ScenarioUserConfig(theme=stated.get("theme", "system"), language=stated.get("language", "cs"))
+    if user_config.theme not in _THEMES:
+        raise ValueError(f"scenario {name!r}: theme must be one of {list(_THEMES)}, got {user_config.theme!r}")
+    if user_config.language not in _LANGUAGES:
+        raise ValueError(
+            f"scenario {name!r}: language must be one of {list(_LANGUAGES)}, got {user_config.language!r}")
+    return user_config
 
 
 def _scraper_returning(listings: list[Listing]) -> Callable[[Criteria, object], ScenarioScraper]:
