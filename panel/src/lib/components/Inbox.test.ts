@@ -1,5 +1,7 @@
 import { fireEvent, within } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import type { PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import InboxHarness from '$lib/test-support/InboxHarness.svelte';
 import { listing } from '$lib/test-support/listing';
@@ -25,6 +27,15 @@ function flats() {
 		listing('b', { price: 25000 }),
 		listing('c', { price: 30000, viewed_at: '2026-10-01T00:00:00Z' })
 	];
+}
+
+function pricesOf(listingId: string): PostingPricesModel {
+	return {
+		listing_id: listingId,
+		source: 'sreality',
+		url: `https://example.invalid/${listingId}`,
+		changes: [{ price: 20000, charges: null, first_seen_at: '2026-10-01T00:00:00Z', last_seen_at: '2026-10-02T00:00:00Z' }]
+	};
 }
 
 async function renderInbox() {
@@ -170,6 +181,40 @@ describe('Inbox', () => {
 		await fireEvent.keyDown(getByRole('button', { name: /Přidat do oblíbených/ }), { key: 'Enter' });
 		expect(open).not.toHaveBeenCalled();
 		open.mockRestore();
+	});
+
+	test("loads the selected listing's prices beside its details", async () => {
+		const loadPriceHistory = vi.fn(async (listingId: string) => [pricesOf(listingId)]);
+		const { getAllByRole, findByRole } = await renderWithTranslator(InboxHarness, {
+			listings: flats(),
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn(),
+			loadPriceHistory
+		});
+		expect(await findByRole('heading', { name: 'Vývoj ceny' })).toBeInTheDocument();
+		await fireEvent.click(getAllByRole('option')[1]);
+		expect(loadPriceHistory).toHaveBeenLastCalledWith('b');
+	});
+
+	test('drops prices that arrive for a listing no longer selected', async () => {
+		let answerFirst: (postings: PostingPricesModel[]) => void = () => {};
+		const loadPriceHistory = vi.fn((listingId: string) =>
+			listingId === 'a'
+				? new Promise<PostingPricesModel[]>((resolve) => (answerFirst = resolve))
+				: new Promise<PostingPricesModel[]>(() => {})
+		);
+		const { getAllByRole, queryByRole } = await renderWithTranslator(InboxHarness, {
+			listings: flats(),
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn(),
+			loadPriceHistory
+		});
+		await fireEvent.click(getAllByRole('option')[1]);
+		answerFirst([pricesOf('a')]);
+		await tick();
+		expect(queryByRole('heading', { name: 'Vývoj ceny' })).toBeNull();
 	});
 
 	test('says when a profile has no listings yet', async () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ListingModel } from '$lib/api/client';
+	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 	import Inbox from '$lib/components/Inbox.svelte';
 	import type { ScoringPreferences } from '$lib/scoring/score';
 
@@ -9,12 +9,14 @@
 		listings,
 		preferences,
 		onview,
-		onfavourite
+		onfavourite,
+		loadPriceHistory = async () => []
 	}: {
 		listings: ListingModel[];
 		preferences: ScoringPreferences | null;
 		onview: (listingId: string) => void;
 		onfavourite: (listingId: string, favourite: boolean) => void;
+		loadPriceHistory?: (listingId: string) => Promise<PostingPricesModel[]>;
 	} = $props();
 
 	const NOW = '2026-10-11T10:00:00Z';
@@ -41,4 +43,11 @@
 	}
 </script>
 
-<Inbox listings={held} {preferences} onview={view} onfavourite={favourite} onmarkallviewed={markAllViewedAndReload} />
+<Inbox
+	listings={held}
+	{preferences}
+	onview={view}
+	onfavourite={favourite}
+	onmarkallviewed={markAllViewedAndReload}
+	{loadPriceHistory}
+/>
