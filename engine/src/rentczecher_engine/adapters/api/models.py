@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition, DispositionCode, parse_disposition
+from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.listing import TrackedListing
 from rentczecher_engine.domain.location import Location, Place, PlaceKind, PlaceMatch, PlaceRef
 from rentczecher_engine.domain.price import PostingPrices, PriceChange
@@ -252,6 +253,15 @@ class LocationModel(BaseModel):
         )
 
 
+class PointModel(BaseModel):
+    lat: float
+    lon: float
+
+    @classmethod
+    def from_point(cls, point: GeoPoint) -> "PointModel":
+        return cls(lat=point.lat, lon=point.lon)
+
+
 class ListingModel(BaseModel):
     id: str
     source: str
@@ -259,6 +269,7 @@ class ListingModel(BaseModel):
     title: str | None
     location_raw_text: str | None
     resolved_location: LocationModel | None
+    point: PointModel | None
     size_m2: int | None
     land_m2: int | None
     disposition_raw_text: str | None
@@ -279,6 +290,7 @@ class ListingModel(BaseModel):
             title=card.title,
             location_raw_text=card.location_raw_text,
             resolved_location=LocationModel.from_location(resolved_location) if resolved_location else None,
+            point=PointModel.from_point(card.point) if card.point is not None else None,
             size_m2=card.size_m2,
             land_m2=card.land_m2,
             disposition_raw_text=card.disposition_raw_text,
