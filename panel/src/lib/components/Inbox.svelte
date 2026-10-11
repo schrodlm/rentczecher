@@ -2,8 +2,11 @@
 	import { untrack } from 'svelte';
 	import type { ListingModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { activeFacets, noFilter, passes, type ListingFilter } from '$lib/listing-filter';
 	import { naturalOrder, SORT_FIELDS, sortListings, type ListingOrder } from '$lib/listing-order';
 	import { scoreListing, type ScoringPreferences } from '$lib/scoring/score';
+	import FilterChips from './FilterChips.svelte';
+	import FilterMenu from './FilterMenu.svelte';
 	import ListingDetail from './ListingDetail.svelte';
 	import ListingRow from './ListingRow.svelte';
 	import SortMenu from './SortMenu.svelte';
@@ -38,6 +41,7 @@
 	const listId = $props.id();
 
 	let order = $state<ListingOrder>(naturalOrder('score'));
+	let filter = $state<ListingFilter>(noFilter());
 	let selectedId = $state<string | null>(null);
 	let priceHistory = $state<PostingPricesModel[] | null>(null);
 	let detailOpen = $state(false);
@@ -54,10 +58,12 @@
 		const loaded = listings;
 		return untrack(() => new Map(loaded.map((listing) => [listing.id, placementOf(listing)])));
 	});
+	const shown = $derived(listings.filter((listing) => passes(listing, filter, scoreOf(listing))));
+	const filtering = $derived(activeFacets(filter).length > 0);
 	const sections = $derived.by(() => {
 		const inSection = (section: Section) =>
 			sortListings(
-				listings.filter((listing) => placements.get(listing.id)?.section === section),
+				shown.filter((listing) => placements.get(listing.id)?.section === section),
 				shownOrder,
 				scoreOf,
 				(listing) => placements.get(listing.id)?.date ?? ''
@@ -71,9 +77,10 @@
 	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
 
 	// A profile opens on its first listing, selected but not viewed, and a
-	// selected listing that leaves the profile gives way to the first again.
+	// selected listing that leaves the profile or the filter's view gives way
+	// to the first shown again.
 	$effect(() => {
-		if (listings.some((listing) => listing.id === selectedId)) return;
+		if (ordered.some((listing) => listing.id === selectedId)) return;
 		selectedId = ordered[0]?.id ?? null;
 	});
 
@@ -173,8 +180,10 @@
 			{#if unviewed}
 				<button type="button" class="inbox__mark-all" onclick={onmarkallviewed}>{t.t('Mark all viewed')}</button>
 			{/if}
+			<FilterMenu bind:filter {listings} scored={preferences !== null} />
 			<SortMenu bind:order={() => shownOrder, (chosen) => (order = chosen)} {fields} />
 		</div>
+		<FilterChips bind:filter shown={shown.length} count={listings.length} />
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			bind:this={rows}
@@ -184,15 +193,24 @@
 			aria-label={t.t('Listings')}
 			aria-activedescendant={selectedRowId ?? undefined}
 		>
-			{@render section(t.t('New'), sections.new)}
-			{#if sections.new.length === 0}
-				<p class="inbox__empty">{t.t('No new listings')}</p>
-			{/if}
-			{#if sections.favourite.length > 0}
-				{@render section(t.t('Favourites'), sections.favourite)}
-			{/if}
-			{#if sections.viewed.length > 0}
-				{@render section(t.t('Viewed'), sections.viewed)}
+			{#if filtering && shown.length === 0}
+				<div class="inbox__unmatched">
+					<p class="inbox__empty">{t.t('Nothing matches the filter')}</p>
+					<button type="button" class="inbox__mark-all" onclick={() => (filter = noFilter())}>
+						{t.t('Clear the filter')}
+					</button>
+				</div>
+			{:else}
+				{@render section(t.t('New'), sections.new)}
+				{#if sections.new.length === 0}
+					<p class="inbox__empty">{t.t('No new listings')}</p>
+				{/if}
+				{#if sections.favourite.length > 0}
+					{@render section(t.t('Favourites'), sections.favourite)}
+				{/if}
+				{#if sections.viewed.length > 0}
+					{@render section(t.t('Viewed'), sections.viewed)}
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -208,7 +226,7 @@
 					{priceHistory}
 					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
 				/>
-			{:else}
+			{:else if listings.length === 0}
 				<p class="inbox__empty">{t.t('No listings yet. A scan finds them.')}</p>
 			{/if}
 		</div>
@@ -294,6 +312,18 @@
 		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+
+	.inbox__unmatched {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1);
+		margin: var(--space-4) var(--space-2);
+	}
+
+	.inbox__unmatched .inbox__empty {
+		margin: 0;
 	}
 
 	.inbox__empty {
