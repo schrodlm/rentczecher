@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import type { PostingPricesModel } from '$lib/api/client';
 import { Translator } from '$lib/i18n/translator';
-import { listing } from '$lib/test-support/tracked-property';
+import { trackedProperty } from '$lib/test-support/tracked-property';
 import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './property-detail';
 
-const CHEAP = listing('a', { price: 18000, size_m2: 40 });
-const MIDDLE = listing('b', { price: 22000, size_m2: 55 });
-const DEAR = listing('c', { price: 30000, size_m2: 60 });
+const CHEAP = trackedProperty('a', { price: 18000, size_m2: 40 });
+const MIDDLE = trackedProperty('b', { price: 22000, size_m2: 55 });
+const DEAR = trackedProperty('c', { price: 30000, size_m2: 60 });
 const PROFILE = [CHEAP, MIDDLE, DEAR];
 
 describe('standingOf', () => {
@@ -25,7 +25,7 @@ describe('standingOf', () => {
 	});
 
 	test('stands nowhere without the fact or another listing', () => {
-		expect(standingOf(listing('d', { price: null }), PROFILE, (each) => each.price)).toBeNull();
+		expect(standingOf(trackedProperty('d', { price: null }), PROFILE, (each) => each.price)).toBeNull();
 		expect(standingOf(CHEAP, [CHEAP], (each) => each.price)).toBeNull();
 	});
 });
@@ -45,7 +45,7 @@ describe('percentages', () => {
 
 describe('extremes', () => {
 	test('count only a value every other listing lies strictly beyond', () => {
-		const many = [CHEAP, MIDDLE, ...Array.from({ length: 250 }, (_, index) => listing(`d${index}`, { price: 30000 }))];
+		const many = [CHEAP, MIDDLE, ...Array.from({ length: 250 }, (_, index) => trackedProperty(`d${index}`, { price: 30000 }))];
 		const nearlyCheapest = standingOf(MIDDLE, many, (each) => each.price)!;
 		expect(percentAbove(nearlyCheapest)).toBe(100);
 		expect(isLowest(nearlyCheapest)).toBe(false);
@@ -53,7 +53,7 @@ describe('extremes', () => {
 	});
 
 	test('leave a value tied with every other listing at neither end', () => {
-		const tied = [listing('a', { price: 20000 }), listing('b', { price: 20000 })];
+		const tied = [trackedProperty('a', { price: 20000 }), trackedProperty('b', { price: 20000 })];
 		const standing = standingOf(tied[0], tied, (each) => each.price)!;
 		expect(isLowest(standing)).toBe(false);
 		expect(isHighest(standing)).toBe(false);
@@ -67,12 +67,12 @@ describe('factsOf', () => {
 	});
 
 	test('joins the layout, the formatted size and the place', () => {
-		const flat = listing('a', { disposition: '2+kk', size_m2: 1200, location_raw_text: 'Praha 7' });
+		const flat = trackedProperty('a', { disposition: '2+kk', size_m2: 1200, location_raw_text: 'Praha 7' });
 		expect(factsOf(flat, t).replace(/\s/g, ' ')).toBe('2+kk · 1 200 m² · Praha 7');
 	});
 
 	test('names an atypical layout and leaves out what the listing lacks', () => {
-		const flat = listing('a', { disposition: 'atypicky', size_m2: null, location_raw_text: null });
+		const flat = trackedProperty('a', { disposition: 'atypicky', size_m2: null, location_raw_text: null });
 		expect(factsOf(flat, t)).toBe('atypická dispozice');
 	});
 });
@@ -100,7 +100,7 @@ describe('historyOf', () => {
 
 	test("lists what happened newest first, each change of the listing's own price dated", () => {
 		const events = historyOf(
-			listing('a', {
+			trackedProperty('a', {
 				first_seen_at: '2026-10-01T00:00:00Z',
 				viewed_at: '2026-10-03T00:00:00Z',
 				favourited_at: '2026-10-05T00:00:00Z'
@@ -117,7 +117,7 @@ describe('historyOf', () => {
 	});
 
 	test('lists no price change until the prices are known', () => {
-		expect(historyOf(listing('a', { first_seen_at: '2026-10-01T00:00:00Z', price_drop_from: 25000 }), null)).toEqual([
+		expect(historyOf(trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z', price_drop_from: 25000 }), null)).toEqual([
 			{ kind: 'found', at: '2026-10-01T00:00:00Z' }
 		]);
 	});

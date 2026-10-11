@@ -2,7 +2,7 @@
 	import { formatArea, formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
-	import { activeFacets, withoutFacet, type Facet, type ListingFilter } from '$lib/property-filter';
+	import { activeFacets, withoutFacet, type Facet, type PropertyFilter } from '$lib/property-filter';
 	import { shownPortal } from '$lib/portals';
 
 	/* The filter's active parts as chips that each clear their part, and how
@@ -11,7 +11,7 @@
 		filter = $bindable(),
 		shown,
 		count
-	}: { filter: ListingFilter; shown: number; count: number } = $props();
+	}: { filter: PropertyFilter; shown: number; count: number } = $props();
 
 	const t = getTranslatorContext();
 

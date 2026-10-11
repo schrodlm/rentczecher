@@ -7,19 +7,19 @@ export type SortField = 'score' | 'date' | 'price' | 'pricePerM2' | 'size';
 export const SORT_FIELDS: readonly SortField[] = ['score', 'date', 'price', 'pricePerM2', 'size'];
 
 /* A field to order by and which way. */
-export type ListingOrder = { field: SortField; descending: boolean };
+export type PropertyOrder = { field: SortField; descending: boolean };
 
 /* The way a field is first ordered when picked: the best score, the newest,
 the largest, the cheapest. */
-export function naturalOrder(field: SortField): ListingOrder {
+export function naturalOrder(field: SortField): PropertyOrder {
 	return { field, descending: field === 'score' || field === 'date' || field === 'size' };
 }
 
 /* The listings in an order. A listing missing the field goes last either way,
 and ties go newest first. The date is the section's own, given by `dateOf`. */
-export function sortListings(
+export function sortProperties(
 	listings: readonly TrackedPropertyModel[],
-	order: ListingOrder,
+	order: PropertyOrder,
 	scoreOf: (listing: TrackedPropertyModel) => number | null,
 	dateOf: (listing: TrackedPropertyModel) => string
 ): TrackedPropertyModel[] {

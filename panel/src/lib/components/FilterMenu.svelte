@@ -11,7 +11,7 @@
 		noFilter,
 		portalsAmong,
 		scaleAmong,
-		type ListingFilter
+		type PropertyFilter
 	} from '$lib/property-filter';
 	import { shownPortal, type Portal } from '$lib/portals';
 
@@ -22,7 +22,7 @@
 		filter = $bindable(),
 		listings,
 		scored
-	}: { filter: ListingFilter; listings: readonly TrackedPropertyModel[]; scored: boolean } = $props();
+	}: { filter: PropertyFilter; listings: readonly TrackedPropertyModel[]; scored: boolean } = $props();
 
 	const t = getTranslatorContext();
 	const panelId = $props.id();

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import InboxHarness from '$lib/test-support/InboxHarness.svelte';
-import { listing } from '$lib/test-support/tracked-property';
+import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 
 const PREFERENCES: ScoringPreferences = {
@@ -23,9 +23,9 @@ const PREFERENCES: ScoringPreferences = {
 
 function flats() {
 	return [
-		listing('a', { price: 20000 }),
-		listing('b', { price: 25000 }),
-		listing('c', { price: 30000, viewed_at: '2026-10-01T00:00:00Z' })
+		trackedProperty('a', { price: 20000 }),
+		trackedProperty('b', { price: 25000 }),
+		trackedProperty('c', { price: 30000, viewed_at: '2026-10-01T00:00:00Z' })
 	];
 }
 
@@ -51,7 +51,7 @@ async function renderInbox() {
 	const prices = (name: string) =>
 		within(section(name))
 			.getAllByRole('option')
-			.map((row) => row.querySelector('.listing-row__price')?.textContent?.replace(/\s/g, ' '));
+			.map((row) => row.querySelector('.property-row__price')?.textContent?.replace(/\s/g, ' '));
 	return { onview, onfavourite, section, prices, listbox: rendered.getByRole('listbox'), ...rendered };
 }
 
@@ -59,8 +59,8 @@ async function renderWithFavourites() {
 	const onfavourite = vi.fn();
 	const rendered = await renderWithTranslator(InboxHarness, {
 		listings: [
-			listing('x', { price: 21000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-05T00:00:00Z' }),
-			listing('y', { price: 20000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-03T00:00:00Z' })
+			trackedProperty('x', { price: 21000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-05T00:00:00Z' }),
+			trackedProperty('y', { price: 20000, viewed_at: '2026-10-01T00:00:00Z', favourited_at: '2026-10-03T00:00:00Z' })
 		],
 		preferences: null,
 		onview: vi.fn(),
@@ -69,7 +69,7 @@ async function renderWithFavourites() {
 	const prices = (name: string) =>
 		within(rendered.getByRole('group', { name }))
 			.getAllByRole('option')
-			.map((row) => row.querySelector('.listing-row__price')?.textContent?.replace(/\s/g, ' '));
+			.map((row) => row.querySelector('.property-row__price')?.textContent?.replace(/\s/g, ' '));
 	return { onfavourite, prices, ...rendered };
 }
 
@@ -88,7 +88,7 @@ describe('Inbox', () => {
 		const { getAllByRole, onview, container } = await renderInbox();
 		await fireEvent.click(getAllByRole('option')[1]);
 		expect(onview).toHaveBeenCalledWith('b');
-		expect(container.querySelector('.listing-detail__price')).toHaveTextContent('25 000 Kč');
+		expect(container.querySelector('.property-detail__price')).toHaveTextContent('25 000 Kč');
 	});
 
 	test('keeps viewed listings in their section until the listings load again', async () => {
@@ -219,7 +219,7 @@ describe('Inbox', () => {
 
 	test('shows only what the filter lets through, and moves the selection onto it', async () => {
 		const { getByRole, getAllByRole, getByText } = await renderWithTranslator(InboxHarness, {
-			listings: [listing('a', { price: 20000 }), listing('b', { price: 25000, price_drop_from: 27000 })],
+			listings: [trackedProperty('a', { price: 20000 }), trackedProperty('b', { price: 25000, price_drop_from: 27000 })],
 			preferences: PREFERENCES,
 			onview: vi.fn(),
 			onfavourite: vi.fn()
@@ -233,7 +233,7 @@ describe('Inbox', () => {
 
 	test('marks only the new listings the filter shows as viewed', async () => {
 		const { getByRole, prices } = await renderWithTranslator(InboxHarness, {
-			listings: [listing('a', { price: 20000 }), listing('b', { price: 25000, price_drop_from: 27000 })],
+			listings: [trackedProperty('a', { price: 20000 }), trackedProperty('b', { price: 25000, price_drop_from: 27000 })],
 			preferences: PREFERENCES,
 			onview: vi.fn(),
 			onfavourite: vi.fn()
@@ -242,7 +242,7 @@ describe('Inbox', () => {
 			prices: (name: string) =>
 				within(rendered.getByRole('group', { name }))
 					.getAllByRole('option')
-					.map((row) => row.querySelector('.listing-row__price')?.textContent?.replace(/\s/g, ' '))
+					.map((row) => row.querySelector('.property-row__price')?.textContent?.replace(/\s/g, ' '))
 		}));
 		await fireEvent.click(getByRole('button', { name: /Filtr/ }));
 		await fireEvent.click(getByRole('checkbox', { name: 'Jen zlevněné' }));

@@ -32,37 +32,37 @@
 a row focuses the list and a screen reader follows the selection from there. -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->
 <div
-	class="listing-row"
-	class:listing-row--selected={selected}
-	class:listing-row--new={listing.viewed_at === null}
-	class:listing-row--favourite={favourite}
-	class:listing-row--viewed={listing.viewed_at !== null && !favourite}
+	class="property-row"
+	class:property-row--selected={selected}
+	class:property-row--new={listing.viewed_at === null}
+	class:property-row--favourite={favourite}
+	class:property-row--viewed={listing.viewed_at !== null && !favourite}
 	{id}
 	role="option"
 	aria-selected={selected}
 	onclick={onselect}
 >
-	<span class="listing-row__thumb">
+	<span class="property-row__thumb">
 		{#if portal}
-			<img class="listing-row__logo" src={portal.logo} alt="" />
+			<img class="property-row__logo" src={portal.logo} alt="" />
 		{:else}
 			{sourceInitial(listing.source)}
 		{/if}
 	</span>
-	<span class="listing-row__text">
-		<span class="listing-row__price">{listing.price === null ? '–' : formatPrice(listing.price)}</span>
-		<span class="listing-row__facts">{facts}</span>
+	<span class="property-row__text">
+		<span class="property-row__price">{listing.price === null ? '–' : formatPrice(listing.price)}</span>
+		<span class="property-row__facts">{facts}</span>
 	</span>
 	{#if favourite}
-		<span class="listing-row__star" aria-label={t.t('Favourite')}>★</span>
+		<span class="property-row__star" aria-label={t.t('Favourite')}>★</span>
 	{/if}
 	{#if score !== null}
-		<span class="listing-row__score">{score}</span>
+		<span class="property-row__score">{score}</span>
 	{/if}
 </div>
 
 <style>
-	.listing-row {
+	.property-row {
 		display: grid;
 		grid-template-columns: 2.5rem 1fr auto auto;
 		align-items: center;
@@ -74,37 +74,37 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		cursor: pointer;
 	}
 
-	.listing-row:hover {
+	.property-row:hover {
 		background: var(--color-card);
 	}
 
-	.listing-row--new {
+	.property-row--new {
 		border-left-color: var(--color-amber);
 	}
 
-	.listing-row--favourite {
+	.property-row--favourite {
 		border-left-color: var(--color-gold);
 	}
 
-	.listing-row--selected {
+	.property-row--selected {
 		border-color: var(--color-line);
 		background: var(--color-card);
 	}
 
-	.listing-row--new.listing-row--selected {
+	.property-row--new.property-row--selected {
 		border-left-color: var(--color-amber);
 	}
 
-	.listing-row--favourite.listing-row--selected {
+	.property-row--favourite.property-row--selected {
 		border-left-color: var(--color-gold);
 	}
 
-	.listing-row--viewed .listing-row__text,
-	.listing-row--viewed .listing-row__score {
+	.property-row--viewed .property-row__text,
+	.property-row--viewed .property-row__score {
 		opacity: 0.6;
 	}
 
-	.listing-row__thumb {
+	.property-row__thumb {
 		display: grid;
 		place-items: center;
 		width: 2.5rem;
@@ -115,23 +115,23 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		font-weight: 700;
 	}
 
-	.listing-row__logo {
+	.property-row__logo {
 		width: 1.75rem;
 		height: 1.75rem;
 		object-fit: contain;
 	}
 
-	.listing-row__text {
+	.property-row__text {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
 	}
 
-	.listing-row__price {
+	.property-row__price {
 		font-weight: 700;
 	}
 
-	.listing-row__facts {
+	.property-row__facts {
 		overflow: hidden;
 		color: var(--color-bronze);
 		font-size: 0.8125rem;
@@ -139,11 +139,11 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		white-space: nowrap;
 	}
 
-	.listing-row__star {
+	.property-row__star {
 		color: var(--color-gold);
 	}
 
-	.listing-row__score {
+	.property-row__score {
 		min-width: 2rem;
 		font-weight: 800;
 		font-variant-numeric: tabular-nums;

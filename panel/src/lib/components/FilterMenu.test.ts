@@ -2,12 +2,12 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
 import type { TrackedPropertyModel } from '$lib/api/client';
 import FilterMenuHarness from '$lib/test-support/FilterMenuHarness.svelte';
-import { listing } from '$lib/test-support/tracked-property';
+import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 
 const LISTINGS: TrackedPropertyModel[] = [
-	listing('sreality:1', { source: 'sreality', disposition: '2+kk', price: 18000, size_m2: 40 }),
-	listing('remax:1', { source: 'remax', disposition: '3+1', price: 26000, size_m2: 80 })
+	trackedProperty('sreality:1', { source: 'sreality', disposition: '2+kk', price: 18000, size_m2: 40 }),
+	trackedProperty('remax:1', { source: 'remax', disposition: '3+1', price: 26000, size_m2: 80 })
 ];
 
 async function renderMenu(scored = true) {

@@ -15,12 +15,12 @@
 		percentFromMiddle,
 		pricePerM2,
 		standingOf,
-		type ListingEvent,
+		type PropertyEvent,
 		type Standing
 	} from '$lib/property-detail';
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { shownPortal } from '$lib/portals';
-	import { scoreListing, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
+	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
 	import PriceChart from './PriceChart.svelte';
 	import ScoreRing from './ScoreRing.svelte';
 	import StandingStrip from './StandingStrip.svelte';
@@ -46,7 +46,7 @@
 
 	const portal = $derived(shownPortal(listing.source));
 	const favourite = $derived(listing.favourited_at !== null);
-	const score = $derived(preferences === null ? null : scoreListing(listing, preferences));
+	const score = $derived(preferences === null ? null : scoreProperty(listing, preferences));
 	const parts = $derived(preferences === null ? [] : scoreParts(listing, preferences));
 	const history = $derived(historyOf(listing, priceHistory));
 	const layout = $derived(layoutOf(listing, t));
@@ -116,7 +116,7 @@
 		return '';
 	}
 
-	function eventText(event: ListingEvent): string {
+	function eventText(event: PropertyEvent): string {
 		if (event.kind === 'found') return t.t('First found');
 		if (event.kind === 'viewed') return t.t('You viewed it');
 		if (event.kind === 'favourite') return t.t('Added to favourites');
@@ -131,32 +131,32 @@
 	}
 </script>
 
-<article class="listing-detail">
-	<header class="listing-detail__head">
-		<span class="listing-detail__logo">
+<article class="property-detail">
+	<header class="property-detail__head">
+		<span class="property-detail__logo">
 			{#if portal}<img src={portal.logo} alt="" />{/if}
 		</span>
-		<div class="listing-detail__headline">
-			<div class="listing-detail__price">
+		<div class="property-detail__headline">
+			<div class="property-detail__price">
 				{listing.price === null ? '–' : formatPrice(listing.price)}
 				{#if listing.price !== null && listing.size_m2 !== null}
 					<small>{formatPricePerM2(listing.price, listing.size_m2)}</small>
 				{/if}
 			</div>
-			<div class="listing-detail__facts">{facts}</div>
-			<div class="listing-detail__actions">
+			<div class="property-detail__facts">{facts}</div>
+			<div class="property-detail__actions">
 				<button
 					type="button"
-					class="listing-detail__favourite"
-					class:listing-detail__favourite--on={favourite}
+					class="property-detail__favourite"
+					class:property-detail__favourite--on={favourite}
 					aria-pressed={favourite}
 					onclick={() => onfavourite(!favourite)}
 				>
-					<span class="listing-detail__star" aria-hidden="true">{favourite ? '★' : '☆'}</span>
+					<span class="property-detail__star" aria-hidden="true">{favourite ? '★' : '☆'}</span>
 					{favourite ? t.t('In favourites') : t.t('Add to favourites')}
 				</button>
 				<a
-					class="listing-detail__open"
+					class="property-detail__open"
 					href={listing.url}
 					target="_blank"
 					rel="noopener noreferrer"
@@ -166,7 +166,7 @@
 				</a>
 				{#each listing.sibling_sources as sibling (sibling.source)}
 					<a
-						class="listing-detail__other"
+						class="property-detail__other"
 						href={sibling.url}
 						target="_blank"
 						rel="noopener noreferrer"
@@ -179,22 +179,22 @@
 		</div>
 	</header>
 
-	<div class="listing-detail__panels">
+	<div class="property-detail__panels">
 		{#if score !== null && parts.length > 0}
-			<section class="listing-detail__panel listing-detail__score">
-				<div class="listing-detail__ring"><ScoreRing {score} /></div>
+			<section class="property-detail__panel property-detail__score">
+				<div class="property-detail__ring"><ScoreRing {score} /></div>
 			</section>
 
-			<section class="listing-detail__panel">
+			<section class="property-detail__panel">
 				<h3>{t.tn('Why {count} point', 'Why {count} points', score)}</h3>
-				<ul class="listing-detail__parts">
+				<ul class="property-detail__parts">
 					{#each parts as part (part.preference)}
 						<li>
-							<div class="listing-detail__part-line">
+							<div class="property-detail__part-line">
 								<b>{partName(part)}</b>
 								<span>{t.t('+{points} of {weight}', { points: Math.round(part.points), weight: part.weight })}</span>
 							</div>
-							<span class="listing-detail__bar"><i style:width="{(100 * part.points) / part.weight}%"></i></span>
+							<span class="property-detail__bar"><i style:width="{(100 * part.points) / part.weight}%"></i></span>
 							<small>{partDetail(part)}</small>
 						</li>
 					{/each}
@@ -203,16 +203,16 @@
 		{/if}
 
 		{#if priceHistory}
-			<section class="listing-detail__panel">
+			<section class="property-detail__panel">
 				<h3>{t.t('Price over time')}</h3>
 				<PriceChart postings={priceHistory} />
 			</section>
 		{/if}
 
 		{#if priceStanding || sizeStanding || perM2Standing}
-			<section class="listing-detail__panel">
+			<section class="property-detail__panel">
 				<h3>{t.t('Compared within the profile')}</h3>
-				<div class="listing-detail__standings">
+				<div class="property-detail__standings">
 					{#if priceStanding}
 						<StandingStrip
 							standing={priceStanding}
@@ -242,15 +242,15 @@
 		{/if}
 
 		{#if listing.resolved_location !== null}
-			<section class="listing-detail__panel">
+			<section class="property-detail__panel">
 				<h3>{t.t('Where')} · {listing.location_raw_text ?? listing.resolved_location.kraj.name}</h3>
-				<div class="listing-detail__map"><PlaceMap location={listing.resolved_location} point={listing.point} /></div>
+				<div class="property-detail__map"><PlaceMap location={listing.resolved_location} point={listing.point} /></div>
 			</section>
 		{/if}
 
-		<section class="listing-detail__panel">
+		<section class="property-detail__panel">
 			<h3>{t.t('History')}</h3>
-			<ol class="listing-detail__history">
+			<ol class="property-detail__history">
 				{#each history as event (`${event.kind}:${event.at}`)}
 					<li><span>{day(event.at)}</span>{eventText(event)}</li>
 				{/each}
@@ -260,20 +260,20 @@
 </article>
 
 <style>
-	.listing-detail {
+	.property-detail {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
 	}
 
-	.listing-detail__head {
+	.property-detail__head {
 		display: grid;
 		grid-template-columns: 4.5rem 1fr;
 		align-items: start;
 		gap: var(--space-4);
 	}
 
-	.listing-detail__logo {
+	.property-detail__logo {
 		display: grid;
 		place-items: center;
 		width: 4.5rem;
@@ -282,38 +282,38 @@
 		background: var(--color-card);
 	}
 
-	.listing-detail__logo img {
+	.property-detail__logo img {
 		width: 3rem;
 		height: 3rem;
 		object-fit: contain;
 	}
 
-	.listing-detail__price {
+	.property-detail__price {
 		font-size: 1.75rem;
 		font-weight: 800;
 	}
 
-	.listing-detail__price small {
+	.property-detail__price small {
 		margin-left: var(--space-2);
 		color: var(--color-bronze);
 		font-size: 0.9375rem;
 		font-weight: 400;
 	}
 
-	.listing-detail__facts {
+	.property-detail__facts {
 		font-size: 1.0625rem;
 	}
 
-	.listing-detail__actions {
+	.property-detail__actions {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		margin-top: var(--space-3);
 	}
 
-	.listing-detail__favourite,
-	.listing-detail__open,
-	.listing-detail__other {
+	.property-detail__favourite,
+	.property-detail__open,
+	.property-detail__other {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
@@ -327,50 +327,50 @@
 		cursor: pointer;
 	}
 
-	.listing-detail__favourite--on {
+	.property-detail__favourite--on {
 		border-color: var(--color-gold);
 	}
 
-	.listing-detail__star {
+	.property-detail__star {
 		color: var(--color-gold);
 		font-size: 1.125rem;
 	}
 
-	.listing-detail__open {
+	.property-detail__open {
 		border-color: var(--color-amber);
 		background: var(--color-amber);
 		color: var(--color-on-amber);
 		font-weight: 700;
 	}
 
-	.listing-detail__score {
+	.property-detail__score {
 		display: grid;
 		place-items: center;
 	}
 
-	.listing-detail__ring {
+	.property-detail__ring {
 		width: 11rem;
 	}
 
-	.listing-detail__panels {
+	.property-detail__panels {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
 		gap: var(--space-4);
 	}
 
-	.listing-detail__panel {
+	.property-detail__panel {
 		padding: var(--space-4);
 		border: 1px solid var(--color-line);
 		border-radius: var(--radius-md);
 		background: var(--color-card);
 	}
 
-	.listing-detail__panel h3 {
+	.property-detail__panel h3 {
 		margin: 0 0 var(--space-3);
 		font-size: 0.9375rem;
 	}
 
-	.listing-detail__parts {
+	.property-detail__parts {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
@@ -379,13 +379,13 @@
 		list-style: none;
 	}
 
-	.listing-detail__part-line {
+	.property-detail__part-line {
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.875rem;
 	}
 
-	.listing-detail__bar {
+	.property-detail__bar {
 		display: block;
 		height: 6px;
 		margin: var(--space-1) 0;
@@ -394,28 +394,28 @@
 		background: var(--color-line);
 	}
 
-	.listing-detail__bar i {
+	.property-detail__bar i {
 		display: block;
 		height: 100%;
 		background: var(--color-olive);
 	}
 
-	.listing-detail__parts small {
+	.property-detail__parts small {
 		color: var(--color-bronze);
 		font-size: 0.8125rem;
 	}
 
-	.listing-detail__standings {
+	.property-detail__standings {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
 	}
 
-	.listing-detail__map {
+	.property-detail__map {
 		height: 14rem;
 	}
 
-	.listing-detail__history {
+	.property-detail__history {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
@@ -425,13 +425,13 @@
 		font-size: 0.875rem;
 	}
 
-	.listing-detail__history li {
+	.property-detail__history li {
 		display: grid;
 		grid-template-columns: 6.5rem 1fr;
 		gap: var(--space-2);
 	}
 
-	.listing-detail__history span {
+	.property-detail__history span {
 		color: var(--color-bronze);
 		white-space: nowrap;
 	}

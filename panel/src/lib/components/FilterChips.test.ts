@@ -1,10 +1,10 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
-import { noFilter, type ListingFilter } from '$lib/property-filter';
+import { noFilter, type PropertyFilter } from '$lib/property-filter';
 import FilterChipsHarness from '$lib/test-support/FilterChipsHarness.svelte';
 import { renderWithTranslator } from '$lib/test-support/render';
 
-const FILTER: ListingFilter = {
+const FILTER: PropertyFilter = {
 	...noFilter(),
 	portals: ['sreality', 'remax'],
 	onlyPriceDrops: true,
@@ -14,7 +14,7 @@ const FILTER: ListingFilter = {
 	maxSize: 60
 };
 
-async function renderChips(filter: ListingFilter = FILTER) {
+async function renderChips(filter: PropertyFilter = FILTER) {
 	const rendered = await renderWithTranslator(FilterChipsHarness, { filter, shown: 3, count: 7 });
 	const written = () => JSON.parse(rendered.getByTestId('filter').textContent ?? '');
 	return { written, ...rendered };

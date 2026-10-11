@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import recorded from './recorded-scores.json';
-import { scoreListing, scoreParts, type ScoredListing, type ScoringPreferences } from './score';
+import { scoreProperty, scoreParts, type ScoredProperty, type ScoringPreferences } from './score';
 
-type RecordedCase = { name: string; listing: ScoredListing; preferences: ScoringPreferences; score: number };
+type RecordedCase = { name: string; listing: ScoredProperty; preferences: ScoringPreferences; score: number };
 
-describe('scoreListing', () => {
+describe('scoreProperty', () => {
 	it.each(recorded.cases as RecordedCase[])('gives the recorded score when $name', (recordedCase) => {
-		expect(scoreListing(recordedCase.listing, recordedCase.preferences)).toBe(recordedCase.score);
+		expect(scoreProperty(recordedCase.listing, recordedCase.preferences)).toBe(recordedCase.score);
 	});
 });
 

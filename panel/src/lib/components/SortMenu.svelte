@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { naturalOrder, type ListingOrder, type SortField } from '$lib/property-order';
+	import { naturalOrder, type PropertyOrder, type SortField } from '$lib/property-order';
 
 	/* What the listings are ordered by, picked from a menu, and an arrow that
 	turns the order around. */
-	let { order = $bindable(), fields }: { order: ListingOrder; fields: readonly SortField[] } = $props();
+	let { order = $bindable(), fields }: { order: PropertyOrder; fields: readonly SortField[] } = $props();
 
 	const t = getTranslatorContext();
 	const menuId = $props.id();
