@@ -38,12 +38,21 @@ def _house_numbers(street_slot: str) -> tuple[str | None, str | None]:
     return popisne, orientacni
 
 
-def _price_of(text: str) -> int:
-    """The price a card's price field states, or 0 when it states none. The
-    field is formatted ('16 500 Kč (za měsíc)'), so the price is the digits
-    before the currency, and a rented flat's card says 'Pronajato' instead."""
-    digits = re.sub(r"\D", "", text.partition("Kč")[0])
-    return int(digits) if digits else 0
+def _price_of(text: str, area_m2: int | None) -> int:
+    """The whole property's price a card's price field states, or 0 when it
+    states none. The field is formatted ('16 500 Kč (za měsíc)'), with the
+    price's unit in brackets after the currency. A plot may be priced per m²
+    of the area the card names, a rent may be yearly, which no monthly rent
+    compares with, and a rented flat's card says 'Pronajato' instead."""
+    amount, _, unit = text.partition("Kč")
+    digits = re.sub(r"\D", "", amount)
+    if not digits:
+        return 0
+    if "za m²" in unit:
+        return int(digits) * area_m2 if area_m2 is not None else 0
+    if "za rok" in unit:
+        return 0
+    return int(digits)
 
 
 def _names_kraj(segment: str) -> bool:
@@ -191,16 +200,18 @@ class RemaxScraper(BaseScraper):
                 title = title_el.get_text(strip=True)
             title = re.sub(r"\s*\(ID\s+[^)]+\)\s*$", "", title)
 
+        card_text = " ".join(card.get_text().split())  # Normalize whitespace
+        size = parse_size_m2(card_text)
+        land = parse_land_m2(card_text)
+
         # Price
-        price = _price_of(data_price or "")
+        price = _price_of(data_price or "", land if land is not None else size)
         if price == 0:
             return None
         if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
         if self.criteria.min_price is not None and price < self.criteria.min_price:
             return None
-
-        card_text = " ".join(card.get_text().split())  # Normalize whitespace
 
         # Location
         location = ""
@@ -219,9 +230,6 @@ class RemaxScraper(BaseScraper):
             image_url = img.get("src") or img.get("data-src")
             if image_url and not image_url.startswith("http"):
                 image_url = f"https://www.remax-czech.cz{image_url}"
-
-        size = parse_size_m2(card_text)
-        land = parse_land_m2(card_text)
 
         # Disposition
         disposition = None
