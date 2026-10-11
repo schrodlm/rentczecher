@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from rentczecher_engine.domain.disposition import Disposition
+from rentczecher_engine.domain.geo import GeoPoint
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,3 +51,40 @@ class PropertyLocation:
         finest_rank = next(rank for rank, code in enumerate(codes_most_specific_first) if code is not None)
         has_no_house_number = self.cislo_popisne is None and self.cislo_orientacni is None
         return finest_rank, has_no_house_number
+
+
+@dataclass(frozen=True, slots=True)
+class SiblingSource:
+    """One of the profile's other listings of the property."""
+
+    source: str
+    url: str
+
+
+@dataclass(frozen=True, slots=True)
+class TrackedProperty:
+    """A property as one profile tracks it, identified by the property's id
+    and shown by the cheapest of its listings the profile tracks: that
+    listing's id, portal, link and price, the property's facts, and the
+    profile's tracking of the property. price_drop_from is the higher price
+    that listing last dropped from, and sibling_sources are the profile's
+    other listings of the property."""
+
+    id: str
+    listing_id: str
+    source: str
+    url: str
+    title: str | None
+    location_raw_text: str | None
+    property_location: PropertyLocation | None
+    point: GeoPoint | None
+    size_m2: int | None
+    land_m2: int | None
+    disposition_raw_text: str | None
+    disposition: Disposition | None
+    first_seen_at: str
+    viewed_at: str | None
+    favourited_at: str | None
+    price: int | None
+    price_drop_from: int | None
+    sibling_sources: tuple[SiblingSource, ...]

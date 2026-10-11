@@ -8,9 +8,7 @@ new ScrapedListing); conclusions change by replacement, never by mutation
 from dataclasses import dataclass, fields, replace
 
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
-from rentczecher_engine.domain.geo import GeoPoint
 from rentczecher_engine.domain.location import Location, ParsedPlace
-from rentczecher_engine.domain.property import PropertyLocation
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,40 +136,3 @@ class Listing:
     @property
     def resolved_location(self) -> Location | None:
         return self.annotations.resolved_location
-
-
-@dataclass(frozen=True, slots=True)
-class SiblingSource:
-    """One of the profile's other listings of the property."""
-
-    source: str
-    url: str
-
-
-@dataclass(frozen=True, slots=True)
-class TrackedProperty:
-    """A property as one profile tracks it, identified by the property's id
-    and shown by the cheapest of its listings the profile tracks: that
-    listing's id, portal, link and price, the property's facts, and the
-    profile's tracking of the property. price_drop_from is the higher price
-    that listing last dropped from, and sibling_sources are the profile's
-    other listings of the property."""
-
-    id: str
-    listing_id: str
-    source: str
-    url: str
-    title: str | None
-    location_raw_text: str | None
-    property_location: PropertyLocation | None
-    point: GeoPoint | None
-    size_m2: int | None
-    land_m2: int | None
-    disposition_raw_text: str | None
-    disposition: Disposition | None
-    first_seen_at: str
-    viewed_at: str | None
-    favourited_at: str | None
-    price: int | None
-    price_drop_from: int | None
-    sibling_sources: tuple[SiblingSource, ...]
