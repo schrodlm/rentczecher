@@ -8,6 +8,7 @@ export function listing(id: string, overrides: Partial<ListingModel> = {}): List
 		title: 'Byt 2+kk',
 		location_raw_text: 'Praha 7',
 		resolved_location: null,
+		point: null,
 		size_m2: 52,
 		land_m2: null,
 		disposition_raw_text: '2+kk',

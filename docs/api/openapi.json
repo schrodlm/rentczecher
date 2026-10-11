@@ -322,6 +322,16 @@
             ],
             "title": "Location Raw Text"
           },
+          "point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PointModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "price": {
             "anyOf": [
               {
@@ -410,6 +420,7 @@
           "title",
           "location_raw_text",
           "resolved_location",
+          "point",
           "size_m2",
           "land_m2",
           "disposition_raw_text",
@@ -694,6 +705,24 @@
           "code"
         ],
         "title": "PlaceRefModel",
+        "type": "object"
+      },
+      "PointModel": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "PointModel",
         "type": "object"
       },
       "PortalHealthModel": {
