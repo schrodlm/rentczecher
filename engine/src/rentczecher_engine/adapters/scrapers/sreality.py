@@ -143,6 +143,10 @@ class SrealityScraper(BaseScraper):
             return None
 
         price = int(estate.get("price_czk") or estate.get("price") or 0)
+        # An advert with its price "on request" serves 0, with a note such as
+        # "Info u realitního specialisty" where the price would be.
+        if price == 0:
+            return None
         if self.criteria.max_price is not None and price > self.criteria.max_price:
             return None
         if self.criteria.min_price is not None and price < self.criteria.min_price:
