@@ -193,6 +193,33 @@ class TestResolveStatedDistrict:
         assert gazetteer.resolve(ParsedPlace(district="Kdyně")) is None
 
 
+class TestResolveSearchPlace:
+    """The place a listing was searched in breaks only the ties the text
+    leaves."""
+
+    PRAHA_7 = PlaceRef(kind="obvod", code=78)
+
+    def test_a_street_repeated_across_the_country_resolves_inside_the_search_place(self, gazetteer):
+        assert gazetteer.resolve(ParsedPlace(names=("Veletržní",))) is None
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní",)), within=self.PRAHA_7)
+        assert location.most_specific()[0] == "ulice"
+        assert location.obec.name == "Praha"
+
+    def test_a_street_with_addresses_inside_the_search_place_counts_as_inside(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Dělnická",)), within=self.PRAHA_7)
+        assert location.most_specific()[1].name == "Dělnická"
+        assert location.obec.name == "Praha"
+
+    def test_adds_nothing_when_no_candidate_lies_inside(self, gazetteer):
+        assert gazetteer.resolve(ParsedPlace(names=("Nádražní",)), within=self.PRAHA_7) is None
+
+    def test_never_changes_an_answer_the_text_already_gives(self, gazetteer):
+        vouched = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Brno")), within=self.PRAHA_7)
+        assert vouched.obec.name == "Brno"
+        unique = gazetteer.resolve(ParsedPlace(names=("Škarmanská",)), within=self.PRAHA_7)
+        assert unique.obec.name == "Kdyně"
+
+
 class TestResolveParents:
     """A resolved location carries the strict parents of its unit."""
 
