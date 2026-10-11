@@ -661,6 +661,7 @@ class TestRemaxPlaceBasedUrl:
         scraper = RemaxScraper(criteria, _refusing_client())
         url = scraper._build_url()
         assert url.startswith("https://www.remax-czech.cz/reality/vyhledavani/?")
+        assert "hledani=1" in url
         assert "sale=2" in url
         assert "types%5B4%5D=on" in url
         assert "regions%5B19%5D%5B78%5D=on" in url
