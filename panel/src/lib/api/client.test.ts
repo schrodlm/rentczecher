@@ -129,34 +129,34 @@ describe('deleteProfile', () => {
 });
 
 describe('markFavourite', () => {
-	test('puts the listing among the profile\'s favourites', async () => {
+	test('puts the flat among the profile\'s favourites', async () => {
 		answerWith(204);
-		await new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'sreality:1');
+		await new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'prop-1');
 
 		const [request] = requests;
 		expect(request.method).toBe('PUT');
-		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/favourite`);
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties/prop-1/favourite`);
 	});
 
 	test('throws for an unknown profile', async () => {
 		answerWith(404, { detail: "unknown profile 'p1'" });
-		await expect(new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'sreality:1')).rejects.toThrow('404');
+		await expect(new SidecarClient(BASE_URL, TOKEN).markFavourite('p1', 'prop-1')).rejects.toThrow('404');
 	});
 });
 
 describe('clearFavourite', () => {
-	test('takes the listing out of the profile\'s favourites', async () => {
+	test('takes the flat out of the profile\'s favourites', async () => {
 		answerWith(204);
-		await new SidecarClient(BASE_URL, TOKEN).clearFavourite('p1', 'sreality:1');
+		await new SidecarClient(BASE_URL, TOKEN).clearFavourite('p1', 'prop-1');
 
 		const [request] = requests;
 		expect(request.method).toBe('DELETE');
-		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/favourite`);
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties/prop-1/favourite`);
 	});
 });
 
 describe('priceHistory', () => {
-	test("gets the prices of every posting of the listing's flat", async () => {
+	test("gets the prices of every posting of the flat", async () => {
 		const postings: PostingPricesModel[] = [
 			{
 				listing_id: 'sreality:1',
@@ -166,17 +166,17 @@ describe('priceHistory', () => {
 			}
 		];
 		answerWith(200, postings);
-		const answered = await new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'sreality:1');
+		const answered = await new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'prop-1');
 
 		const [request] = requests;
 		expect(request.method).toBe('GET');
-		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/listings/sreality%3A1/price-history`);
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties/prop-1/price-history`);
 		expect(answered).toEqual(postings);
 	});
 
-	test('throws for a listing the profile does not track', async () => {
-		answerWith(404, { detail: 'profile p1 does not track listing sreality:1' });
-		await expect(new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'sreality:1')).rejects.toThrow('404');
+	test('throws for a flat the profile does not track', async () => {
+		answerWith(404, { detail: 'profile p1 does not track property prop-1' });
+		await expect(new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'prop-1')).rejects.toThrow('404');
 	});
 });
 
