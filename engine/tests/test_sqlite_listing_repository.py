@@ -256,6 +256,46 @@ class TestFavourite:
         assert self._row(conn)["favourited_at"] is None
 
 
+class TestTrackingAFlat:
+    """Viewing and starring act on the flat, whichever of its listings the
+    profile acts through."""
+
+    def test_viewing_one_listing_views_the_flat_shown_by_another(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
+        repo.mark_viewed(PROFILE, "bezrealitky:1")
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.id == "sreality:1"
+        assert card.viewed_at == BASE.isoformat()
+
+    def test_clearing_a_favourite_clears_the_whole_flat(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=19000))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="bezrealitky:1", price=20000))
+        repo.mark_favourite(PROFILE, "bezrealitky:1")
+        repo.clear_favourite(PROFILE, "sreality:1")
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.favourited_at is None
+        assert card.viewed_at is not None
+
+    def test_leaves_another_profiles_tracking_of_the_flat_alone(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.mark_favourite(PROFILE, "sreality:1")
+        (other,) = repo.tracked_properties(OTHER_PROFILE)
+        assert (other.viewed_at, other.favourited_at) == (None, None)
+
+    def test_pruning_forgets_a_flat_with_no_tracked_listing_left(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.mark_viewed(PROFILE, "sreality:1")
+        conn.execute("UPDATE listing_tracking SET last_seen_at = ?", ((BASE - timedelta(days=91)).isoformat(),))
+        assert repo.prune(PROFILE) == 1
+        assert conn.execute("SELECT count(*) FROM property_tracking WHERE profile_id = ?", (PROFILE,)).fetchone()[0] == 0
+
+
 class TestPendingDisappeared:
     """A listing disappears when it is absent from a run, was first seen
     within the window, and reaches three misses counting that run."""
