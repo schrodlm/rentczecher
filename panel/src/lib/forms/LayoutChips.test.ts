@@ -20,6 +20,10 @@ describe('layouts', () => {
 		expect(groups.flat()).toEqual(LAYOUTS);
 	});
 
+	test('groups only the layouts given, in their order', () => {
+		expect(layoutsByRooms(['2+kk', '2+1', '3+1'])).toEqual([['2+kk', '2+1'], ['3+1']]);
+	});
+
 	test('names atypical in words and the rest by their code', async () => {
 		const t = await Translator.load('cs');
 		expect(layoutName('atypicky', t)).toBe('atypická');
@@ -33,6 +37,11 @@ describe('LayoutChips', () => {
 		const chips = getAllByRole('button');
 		expect(chips).toHaveLength(19);
 		expect(chips.every((chip) => chip.getAttribute('aria-pressed') === 'false')).toBe(true);
+	});
+
+	test('offers only the layouts given', async () => {
+		const { getAllByRole } = await renderWithTranslator(LayoutChipsHarness, { selected: [], offered: ['2+kk', '3+1'] });
+		expect(getAllByRole('button').map((chip) => chip.textContent?.trim())).toEqual(['2+kk', '3+1']);
 	});
 
 	test('picks a layout and drops it again', async () => {
