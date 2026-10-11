@@ -257,189 +257,6 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
-      "ListingModel": {
-        "properties": {
-          "disposition": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Disposition"
-          },
-          "disposition_raw_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Disposition Raw Text"
-          },
-          "favourited_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Favourited At"
-          },
-          "first_seen_at": {
-            "title": "First Seen At",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "land_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Land M2"
-          },
-          "listing_id": {
-            "title": "Listing Id",
-            "type": "string"
-          },
-          "location_raw_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location Raw Text"
-          },
-          "point": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PointModel"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "price": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price"
-          },
-          "price_drop_from": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price Drop From"
-          },
-          "resolved_location": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LocationModel"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "sibling_sources": {
-            "items": {
-              "$ref": "#/components/schemas/SiblingSourceModel"
-            },
-            "title": "Sibling Sources",
-            "type": "array"
-          },
-          "size_m2": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Size M2"
-          },
-          "source": {
-            "title": "Source",
-            "type": "string"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "url": {
-            "title": "Url",
-            "type": "string"
-          },
-          "viewed_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Viewed At"
-          }
-        },
-        "required": [
-          "id",
-          "listing_id",
-          "source",
-          "url",
-          "title",
-          "location_raw_text",
-          "resolved_location",
-          "point",
-          "size_m2",
-          "land_m2",
-          "disposition_raw_text",
-          "disposition",
-          "first_seen_at",
-          "viewed_at",
-          "favourited_at",
-          "price",
-          "price_drop_from",
-          "sibling_sources"
-        ],
-        "title": "ListingModel",
-        "type": "object"
-      },
       "ListingsArrivedEvent": {
         "properties": {
           "new": {
@@ -1323,6 +1140,189 @@
         "title": "SiblingSourceModel",
         "type": "object"
       },
+      "TrackedPropertyModel": {
+        "properties": {
+          "disposition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposition"
+          },
+          "disposition_raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposition Raw Text"
+          },
+          "favourited_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favourited At"
+          },
+          "first_seen_at": {
+            "title": "First Seen At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "land_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Land M2"
+          },
+          "listing_id": {
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "location_raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Raw Text"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PointModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "price_drop_from": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Drop From"
+          },
+          "resolved_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocationModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sibling_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SiblingSourceModel"
+            },
+            "title": "Sibling Sources",
+            "type": "array"
+          },
+          "size_m2": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size M2"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "viewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewed At"
+          }
+        },
+        "required": [
+          "id",
+          "listing_id",
+          "source",
+          "url",
+          "title",
+          "location_raw_text",
+          "resolved_location",
+          "point",
+          "size_m2",
+          "land_m2",
+          "disposition_raw_text",
+          "disposition",
+          "first_seen_at",
+          "viewed_at",
+          "favourited_at",
+          "price",
+          "price_drop_from",
+          "sibling_sources"
+        ],
+        "title": "TrackedPropertyModel",
+        "type": "object"
+      },
       "TriggerRunBody": {
         "properties": {
           "profile_id": {
@@ -1916,7 +1916,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ListingModel"
+                    "$ref": "#/components/schemas/TrackedPropertyModel"
                   },
                   "title": "Response List Tracked Properties V1 Profiles  Profile Id  Properties Get",
                   "type": "array"

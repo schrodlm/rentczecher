@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from rentczecher_engine.adapters.api.deps import resolve_profile
-from rentczecher_engine.adapters.api.models import ListingModel, PostingPricesModel
+from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PostingPricesModel
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.listing import TrackedProperty
 from rentczecher_engine.domain.location import Location
@@ -12,16 +12,16 @@ from rentczecher_engine.domain.profile import Profile
 router = APIRouter()
 
 
-@router.get("/v1/profiles/{profile_id}/properties", response_model=list[ListingModel])
+@router.get("/v1/profiles/{profile_id}/properties", response_model=list[TrackedPropertyModel])
 def list_tracked_properties(
     request: Request, filter: Literal["new", "all"] = "new",
     profile: Profile = Depends(resolve_profile),
-) -> list[ListingModel]:
+) -> list[TrackedPropertyModel]:
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         cards = store.tracked_properties(profile.id, only_new=filter == "new")
     with deps.open_gazetteer() as gazetteer:
-        return [ListingModel.from_tracked_property(card, _resolved_location(card, gazetteer)) for card in cards]
+        return [TrackedPropertyModel.from_tracked_property(card, _resolved_location(card, gazetteer)) for card in cards]
 
 
 def _resolved_location(card: TrackedProperty, gazetteer: Gazetteer) -> Location | None:
