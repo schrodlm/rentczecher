@@ -58,8 +58,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 15
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 16
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -228,7 +228,7 @@ class TestProfilesMigration:
         conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
                      "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
         conn.commit()
-        assert migrate.apply_pending(conn) == [11, 12, 13, 14, 15]
+        assert migrate.apply_pending(conn) == [11, 12, 13, 14, 15, 16]
         assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
         assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
@@ -332,7 +332,7 @@ class TestAcceptedDispositionsMigration:
             "min_rooms, max_rooms, kitchen) VALUES ('p', 'rent', 'flat', 'obvod', 78, ?, ?, ?)",
             (min_rooms, max_rooms, kitchen))
         conn.commit()
-        assert migrate.apply_pending(conn) == [13, 14, 15]
+        assert migrate.apply_pending(conn) == [13, 14, 15, 16]
         stmt = "SELECT disposition FROM accepted_dispositions WHERE profile_id = 'p' ORDER BY disposition"
         return [row[0] for row in conn.execute(stmt)]
 
@@ -392,7 +392,7 @@ class TestPreferredSettingsMigration:
             "size_weight, ideal_size_m2, place_weight, land_weight, ideal_land_m2, price_weight, max_good_price) "
             "VALUES ('p', 0, 0, 20, 70, 0, 30, 800, 50, 22000)")
         conn.commit()
-        assert migrate.apply_pending(conn) == [14, 15]
+        assert migrate.apply_pending(conn) == [14, 15, 16]
         return conn
 
     def test_a_stored_setting_keeps_its_value(self, tmp_path):
@@ -428,7 +428,7 @@ class TestPropertyTrackingMigration:
                 "viewed_at, favourited_at) VALUES (?, ?, ?, ?, ?, ?)",
                 (profile_id, listing_id, self.NOW, self.NOW, viewed_at, favourited_at))
         conn.commit()
-        assert migrate.apply_pending(conn) == [15]
+        assert migrate.apply_pending(conn) == [15, 16]
         return conn
 
     def _tracking(self, conn):
