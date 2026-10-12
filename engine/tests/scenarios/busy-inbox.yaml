@@ -1,0 +1,108 @@
+# Forty flats across all three portals, a week of scans and a few viewed:
+# an inbox long enough to scroll, with some prices dropping between scans.
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
+  preferences:
+    price_weight: 40
+    preferred_price: 22000
+    size_weight: 30
+    preferred_size_m2: 60
+    disposition_weight: 30
+    preferred_dispositions: [2+1, 3+kk]
+scans:
+  - at: -7d
+    listings:
+      - {id: "sreality:5001", price: 15000, location_raw_text: "Milady Horákové, Praha 7", size_m2: 28, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:5002", price: 24200, location_raw_text: "Veletržní, Praha 7", size_m2: 63, disposition_raw_text: "2+1"}
+      - {id: "remax:5003", price: 29900, location_raw_text: "Letohradská, Praha 7", size_m2: 100, disposition_raw_text: "4+kk"}
+      - {id: "sreality:5004", price: 17700, location_raw_text: "Strojnická, Praha 7", size_m2: 51, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:5005", price: 26300, location_raw_text: "Komunardů, Praha 7", size_m2: 81, disposition_raw_text: "3+1"}
+      - {id: "remax:5006", price: 26600, location_raw_text: "Jankovcova, Praha 7", size_m2: 42, disposition_raw_text: "1+1"}
+      - {id: "sreality:5007", price: 21000, location_raw_text: "Dělnická, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:5008", price: 20400, location_raw_text: "Osadní, Praha 7", size_m2: 32, disposition_raw_text: "1+kk"}
+      - {id: "remax:5009", price: 28600, location_raw_text: "Tusarova, Praha 7", size_m2: 58, disposition_raw_text: "2+1"}
+      - {id: "sreality:5010", price: 23000, location_raw_text: "Přístavní, Praha 7", size_m2: 95, disposition_raw_text: "4+kk"}
+      - {id: "bezrealitky:5011", price: 23200, location_raw_text: "Ortenovo náměstí, Praha 7", size_m2: 55, disposition_raw_text: "2+kk"}
+      - {id: "remax:5012", price: 29900, location_raw_text: "Kamenická, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
+      - {id: "sreality:5013", price: 16000, location_raw_text: "Čechova, Praha 7", size_m2: 37, disposition_raw_text: "1+1"}
+      - {id: "bezrealitky:5014", price: 25400, location_raw_text: "Šmeralova, Praha 7", size_m2: 73, disposition_raw_text: "3+kk"}
+      - {id: "remax:5015", price: 25900, location_raw_text: "Korunovační, Praha 7", size_m2: 36, disposition_raw_text: "1+kk"}
+      - {id: "sreality:5016", price: 19000, location_raw_text: "Nad Štolou, Praha 7", size_m2: 62, disposition_raw_text: "2+1"}
+      - {id: "bezrealitky:5017", price: 28500, location_raw_text: "Františka Křížka, Praha 7", size_m2: 99, disposition_raw_text: "4+kk"}
+      - {id: "remax:5018", price: 27600, location_raw_text: "Heřmanova, Praha 7", size_m2: 50, disposition_raw_text: "2+kk"}
+      - {id: "sreality:5019", price: 21200, location_raw_text: "Janovského, Praha 7", size_m2: 80, disposition_raw_text: "3+1"}
+      - {id: "bezrealitky:5020", price: 21500, location_raw_text: "Bubenská, Praha 7", size_m2: 41, disposition_raw_text: "1+1"}
+      - {id: "remax:5021", price: 29900, location_raw_text: "Milady Horákové, Praha 7", size_m2: 77, disposition_raw_text: "3+kk"}
+      - {id: "sreality:5022", price: 15300, location_raw_text: "Veletržní, Praha 7", size_m2: 31, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:5023", price: 23400, location_raw_text: "Letohradská, Praha 7", size_m2: 57, disposition_raw_text: "2+1"}
+      - {id: "remax:5024", price: 29900, location_raw_text: "Strojnická, Praha 7", size_m2: 103, disposition_raw_text: "4+kk"}
+      - {id: "sreality:5025", price: 18100, location_raw_text: "Komunardů, Praha 7", size_m2: 54, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:5026", price: 26700, location_raw_text: "Jankovcova, Praha 7", size_m2: 84, disposition_raw_text: "3+1"}
+      - {id: "remax:5027", price: 25900, location_raw_text: "Dělnická, Praha 7", size_m2: 36, disposition_raw_text: "1+1"}
+      - {id: "sreality:5028", price: 20200, location_raw_text: "Osadní, Praha 7", size_m2: 72, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:5029", price: 20800, location_raw_text: "Tusarova, Praha 7", size_m2: 35, disposition_raw_text: "1+kk"}
+      - {id: "remax:5030", price: 28900, location_raw_text: "Přístavní, Praha 7", size_m2: 61, disposition_raw_text: "2+1"}
+      - {id: "sreality:5031", price: 23400, location_raw_text: "Ortenovo náměstí, Praha 7", size_m2: 98, disposition_raw_text: "4+kk"}
+      - {id: "bezrealitky:5032", price: 22500, location_raw_text: "Kamenická, Praha 7", size_m2: 49, disposition_raw_text: "2+kk"}
+      - {id: "remax:5033", price: 29900, location_raw_text: "Čechova, Praha 7", size_m2: 88, disposition_raw_text: "3+1"}
+      - {id: "sreality:5034", price: 16400, location_raw_text: "Šmeralova, Praha 7", size_m2: 40, disposition_raw_text: "1+1"}
+      - {id: "bezrealitky:5035", price: 25700, location_raw_text: "Korunovační, Praha 7", size_m2: 76, disposition_raw_text: "3+kk"}
+      - {id: "remax:5036", price: 25200, location_raw_text: "Nad Štolou, Praha 7", size_m2: 30, disposition_raw_text: "1+kk"}
+      - {id: "sreality:5037", price: 18300, location_raw_text: "Františka Křížka, Praha 7", size_m2: 56, disposition_raw_text: "2+1"}
+      - {id: "bezrealitky:5038", price: 28800, location_raw_text: "Heřmanova, Praha 7", size_m2: 102, disposition_raw_text: "4+kk"}
+      - {id: "remax:5039", price: 28000, location_raw_text: "Janovského, Praha 7", size_m2: 53, disposition_raw_text: "2+kk"}
+      - {id: "sreality:5040", price: 21600, location_raw_text: "Bubenská, Praha 7", size_m2: 83, disposition_raw_text: "3+1"}
+  - at: -1d
+    listings:
+      - {id: "sreality:5001", price: 14000, location_raw_text: "Milady Horákové, Praha 7", size_m2: 28, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:5002", price: 24200, location_raw_text: "Veletržní, Praha 7", size_m2: 63, disposition_raw_text: "2+1"}
+      - {id: "remax:5003", price: 29900, location_raw_text: "Letohradská, Praha 7", size_m2: 100, disposition_raw_text: "4+kk"}
+      - {id: "sreality:5004", price: 17700, location_raw_text: "Strojnická, Praha 7", size_m2: 51, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:5005", price: 26300, location_raw_text: "Komunardů, Praha 7", size_m2: 81, disposition_raw_text: "3+1"}
+      - {id: "remax:5006", price: 26600, location_raw_text: "Jankovcova, Praha 7", size_m2: 42, disposition_raw_text: "1+1"}
+      - {id: "sreality:5007", price: 20000, location_raw_text: "Dělnická, Praha 7", size_m2: 78, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:5008", price: 20400, location_raw_text: "Osadní, Praha 7", size_m2: 32, disposition_raw_text: "1+kk"}
+      - {id: "remax:5009", price: 28600, location_raw_text: "Tusarova, Praha 7", size_m2: 58, disposition_raw_text: "2+1"}
+      - {id: "sreality:5010", price: 23000, location_raw_text: "Přístavní, Praha 7", size_m2: 95, disposition_raw_text: "4+kk"}
+      - {id: "bezrealitky:5011", price: 23200, location_raw_text: "Ortenovo náměstí, Praha 7", size_m2: 55, disposition_raw_text: "2+kk"}
+      - {id: "remax:5012", price: 29900, location_raw_text: "Kamenická, Praha 7", size_m2: 85, disposition_raw_text: "3+1"}
+      - {id: "sreality:5013", price: 15000, location_raw_text: "Čechova, Praha 7", size_m2: 37, disposition_raw_text: "1+1"}
+      - {id: "bezrealitky:5014", price: 25400, location_raw_text: "Šmeralova, Praha 7", size_m2: 73, disposition_raw_text: "3+kk"}
+      - {id: "remax:5015", price: 25900, location_raw_text: "Korunovační, Praha 7", size_m2: 36, disposition_raw_text: "1+kk"}
+      - {id: "sreality:5016", price: 19000, location_raw_text: "Nad Štolou, Praha 7", size_m2: 62, disposition_raw_text: "2+1"}
+      - {id: "bezrealitky:5017", price: 28500, location_raw_text: "Františka Křížka, Praha 7", size_m2: 99, disposition_raw_text: "4+kk"}
+      - {id: "remax:5018", price: 27600, location_raw_text: "Heřmanova, Praha 7", size_m2: 50, disposition_raw_text: "2+kk"}
+      - {id: "sreality:5019", price: 20200, location_raw_text: "Janovského, Praha 7", size_m2: 80, disposition_raw_text: "3+1"}
+      - {id: "bezrealitky:5020", price: 21500, location_raw_text: "Bubenská, Praha 7", size_m2: 41, disposition_raw_text: "1+1"}
+      - {id: "remax:5021", price: 29900, location_raw_text: "Milady Horákové, Praha 7", size_m2: 77, disposition_raw_text: "3+kk"}
+      - {id: "sreality:5022", price: 15300, location_raw_text: "Veletržní, Praha 7", size_m2: 31, disposition_raw_text: "1+kk"}
+      - {id: "bezrealitky:5023", price: 23400, location_raw_text: "Letohradská, Praha 7", size_m2: 57, disposition_raw_text: "2+1"}
+      - {id: "remax:5024", price: 29900, location_raw_text: "Strojnická, Praha 7", size_m2: 103, disposition_raw_text: "4+kk"}
+      - {id: "sreality:5025", price: 17100, location_raw_text: "Komunardů, Praha 7", size_m2: 54, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:5026", price: 26700, location_raw_text: "Jankovcova, Praha 7", size_m2: 84, disposition_raw_text: "3+1"}
+      - {id: "remax:5027", price: 25900, location_raw_text: "Dělnická, Praha 7", size_m2: 36, disposition_raw_text: "1+1"}
+      - {id: "sreality:5028", price: 20200, location_raw_text: "Osadní, Praha 7", size_m2: 72, disposition_raw_text: "3+kk"}
+      - {id: "bezrealitky:5029", price: 20800, location_raw_text: "Tusarova, Praha 7", size_m2: 35, disposition_raw_text: "1+kk"}
+      - {id: "remax:5030", price: 28900, location_raw_text: "Přístavní, Praha 7", size_m2: 61, disposition_raw_text: "2+1"}
+      - {id: "sreality:5031", price: 22400, location_raw_text: "Ortenovo náměstí, Praha 7", size_m2: 98, disposition_raw_text: "4+kk"}
+      - {id: "bezrealitky:5032", price: 22500, location_raw_text: "Kamenická, Praha 7", size_m2: 49, disposition_raw_text: "2+kk"}
+      - {id: "remax:5033", price: 29900, location_raw_text: "Čechova, Praha 7", size_m2: 88, disposition_raw_text: "3+1"}
+      - {id: "sreality:5034", price: 16400, location_raw_text: "Šmeralova, Praha 7", size_m2: 40, disposition_raw_text: "1+1"}
+      - {id: "bezrealitky:5035", price: 25700, location_raw_text: "Korunovační, Praha 7", size_m2: 76, disposition_raw_text: "3+kk"}
+      - {id: "remax:5036", price: 25200, location_raw_text: "Nad Štolou, Praha 7", size_m2: 30, disposition_raw_text: "1+kk"}
+      - {id: "sreality:5037", price: 17300, location_raw_text: "Františka Křížka, Praha 7", size_m2: 56, disposition_raw_text: "2+1"}
+      - {id: "bezrealitky:5038", price: 28800, location_raw_text: "Heřmanova, Praha 7", size_m2: 102, disposition_raw_text: "4+kk"}
+      - {id: "remax:5039", price: 28000, location_raw_text: "Janovského, Praha 7", size_m2: 53, disposition_raw_text: "2+kk"}
+      - {id: "sreality:5040", price: 21600, location_raw_text: "Bubenská, Praha 7", size_m2: 83, disposition_raw_text: "3+1"}
+viewed:
+  - "bezrealitky:5002"
+  - "remax:5006"
+  - "sreality:5010"
+  - "bezrealitky:5014"
+  - "remax:5018"
+  - "sreality:5022"
+  - "bezrealitky:5026"
+  - "remax:5030"
+  - "sreality:5034"
+  - "bezrealitky:5038"
