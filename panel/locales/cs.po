@@ -613,5 +613,8 @@ msgstr "Tmavý"
 msgid "Follow the system"
 msgstr "Podle systému"
 
+msgid "Language"
+msgstr "Jazyk"
+
 msgid "Light"
 msgstr "Světlý"
