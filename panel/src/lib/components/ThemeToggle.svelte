@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { themeName } from '$lib/theme';
 	import { THEMES, type Theme } from '$lib/user-config';
 	import ThemeIcon from './ThemeIcon.svelte';
 
@@ -7,13 +8,7 @@
 
 	const t = getTranslatorContext();
 
-	const label = $derived(t.t('Appearance: {name}', { name: themeName() }));
-
-	function themeName(): string {
-		if (theme === 'light') return t.t('Light');
-		if (theme === 'dark') return t.t('Dark');
-		return t.t('Follow the system');
-	}
+	const label = $derived(t.t('Appearance: {name}', { name: themeName(theme, t) }));
 
 	function next(): void {
 		onchange(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]);
