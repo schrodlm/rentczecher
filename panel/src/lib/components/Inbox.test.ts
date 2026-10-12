@@ -274,3 +274,32 @@ describe('Inbox', () => {
 		expect(getByText('Zatím žádné inzeráty. Najde je scan.')).toBeInTheDocument();
 	});
 });
+
+describe('Inbox selection', () => {
+	async function renderSelecting(selectedId: string | null) {
+		return renderWithTranslator(InboxHarness, {
+			listings: flats(),
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn(),
+			selectedId
+		});
+	}
+
+	test('opens on the listing it is given', async () => {
+		const { getByRole } = await renderSelecting('b');
+		expect(getByRole('option', { selected: true })).toHaveTextContent('25 000 Kč');
+	});
+
+	test('opens on the first listing when given one it does not hold', async () => {
+		const { getByRole, getByTestId } = await renderSelecting('gone');
+		expect(getByRole('option', { selected: true })).toHaveTextContent('20 000 Kč');
+		expect(getByTestId('selected')).toHaveTextContent('a');
+	});
+
+	test('tells which listing is selected', async () => {
+		const { getAllByRole, getByTestId } = await renderSelecting(null);
+		await fireEvent.click(getAllByRole('option')[1]);
+		expect(getByTestId('selected')).toHaveTextContent('b');
+	});
+});

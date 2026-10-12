@@ -4,25 +4,30 @@
 	import type { ScoringPreferences } from '$lib/scoring/score';
 
 	/* Holds listings the way the inbox page does: viewing and starring change
-	them in place, while marking all viewed loads them afresh. */
+	them in place, while marking all viewed loads them afresh. It also holds
+	the selected listing, shown for a test to read. */
 	let {
 		listings,
 		preferences,
 		onview,
 		onfavourite,
-		loadPriceHistory = async () => []
+		loadPriceHistory = async () => [],
+		selectedId = null
 	}: {
 		listings: TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
 		onview: (propertyId: string) => void;
 		onfavourite: (propertyId: string, favourite: boolean) => void;
 		loadPriceHistory?: (propertyId: string) => Promise<PostingPricesModel[]>;
+		selectedId?: string | null;
 	} = $props();
 
 	const NOW = '2026-10-11T10:00:00Z';
 
 	// svelte-ignore state_referenced_locally
 	let held = $state(listings);
+	// svelte-ignore state_referenced_locally
+	let selected = $state(selectedId);
 
 	function view(propertyId: string): void {
 		onview(propertyId);
@@ -52,4 +57,6 @@
 	onfavourite={favourite}
 	onmarkallviewed={markAllViewedAndReload}
 	{loadPriceHistory}
+	bind:selectedId={selected}
 />
+<output data-testid="selected">{selected}</output>
