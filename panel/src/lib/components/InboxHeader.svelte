@@ -36,7 +36,7 @@
 				: t.t('Scan failed');
 		}
 		if (lastFinishedAt !== null) {
-			return t.t('Last scan: {time}', { time: lastFinishedAt.toLocaleTimeString('cs-CZ') });
+			return t.t('Last scan: {time}', { time: t.time(lastFinishedAt) });
 		}
 		return t.t('No scan yet');
 	});

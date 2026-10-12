@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { opensInBrowser } from '$lib/browser-link';
-	import { formatArea, formatPerM2, formatPrice, formatPricePerM2 } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import {
@@ -88,20 +87,20 @@
 		if (preferences === null) return '';
 		if (part.preference === 'price' && listing.price !== null && preferences.preferred_price !== null) {
 			return t.t('{value} · preferred up to {preferred}', {
-				value: formatPrice(listing.price),
-				preferred: formatPrice(preferences.preferred_price)
+				value: t.price(listing.price),
+				preferred: t.price(preferences.preferred_price)
 			});
 		}
 		if (part.preference === 'size' && listing.size_m2 !== null && preferences.preferred_size_m2 !== null) {
 			return t.t('{value} · preferred {preferred}', {
-				value: formatArea(listing.size_m2),
-				preferred: formatArea(preferences.preferred_size_m2)
+				value: t.area(listing.size_m2),
+				preferred: t.area(preferences.preferred_size_m2)
 			});
 		}
 		if (part.preference === 'land' && listing.land_m2 !== null && preferences.preferred_land_m2 !== null) {
 			return t.t('{value} · preferred {preferred}', {
-				value: formatArea(listing.land_m2),
-				preferred: formatArea(preferences.preferred_land_m2)
+				value: t.area(listing.land_m2),
+				preferred: t.area(preferences.preferred_land_m2)
 			});
 		}
 		if (part.preference === 'disposition' && layout !== null) {
@@ -121,13 +120,13 @@
 		if (event.kind === 'viewed') return t.t('You viewed it');
 		if (event.kind === 'favourite') return t.t('Added to favourites');
 		if (event.to < event.from) {
-			return t.t('Price dropped from {from} to {to}', { from: formatPrice(event.from), to: formatPrice(event.to) });
+			return t.t('Price dropped from {from} to {to}', { from: t.price(event.from), to: t.price(event.to) });
 		}
-		return t.t('Price rose from {from} to {to}', { from: formatPrice(event.from), to: formatPrice(event.to) });
+		return t.t('Price rose from {from} to {to}', { from: t.price(event.from), to: t.price(event.to) });
 	}
 
 	function day(iso: string): string {
-		return new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' });
+		return t.date(iso);
 	}
 </script>
 
@@ -138,9 +137,9 @@
 		</span>
 		<div class="property-detail__headline">
 			<div class="property-detail__price">
-				{listing.price === null ? '–' : formatPrice(listing.price)}
+				{listing.price === null ? '–' : t.price(listing.price)}
 				{#if listing.price !== null && listing.size_m2 !== null}
-					<small>{formatPricePerM2(listing.price, listing.size_m2)}</small>
+					<small>{t.pricePerM2(listing.price, listing.size_m2)}</small>
 				{/if}
 			</div>
 			<div class="property-detail__facts">{facts}</div>
@@ -217,7 +216,7 @@
 						<StandingStrip
 							standing={priceStanding}
 							label={t.t('Price')}
-							format={formatPrice}
+							format={(price) => t.price(price)}
 							saying={priceSaying(priceStanding)}
 						/>
 					{/if}
@@ -225,7 +224,7 @@
 						<StandingStrip
 							standing={sizeStanding}
 							label={t.t('Size')}
-							format={formatArea}
+							format={(area) => t.area(area)}
 							saying={sizeSaying(sizeStanding)}
 						/>
 					{/if}
@@ -233,7 +232,7 @@
 						<StandingStrip
 							standing={perM2Standing}
 							label={t.t('Price per m²')}
-							format={formatPerM2}
+							format={(perM2) => t.perM2(perM2)}
 							saying={perM2Saying(perM2Standing)}
 						/>
 					{/if}

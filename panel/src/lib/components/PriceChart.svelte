@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PostingPricesModel } from '$lib/api/client';
-	import { formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { shownPortal } from '$lib/portals';
 	import { priceChartOf, type PlotBox } from '$lib/price-history';
@@ -21,7 +20,7 @@
 	}
 
 	function day(iso: string): string {
-		return new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+		return t.dayAndMonth(iso);
 	}
 </script>
 
@@ -29,10 +28,10 @@
 	<div class="price-chart">
 		<div class="price-chart__plot">
 			{#if unchanged}
-				<span class="price-chart__price price-chart__price--level">{formatPrice(chart.highest)}</span>
+				<span class="price-chart__price price-chart__price--level">{t.price(chart.highest)}</span>
 			{:else}
-				<span class="price-chart__price price-chart__price--high">{formatPrice(chart.highest)}</span>
-				<span class="price-chart__price price-chart__price--low">{formatPrice(chart.lowest)}</span>
+				<span class="price-chart__price price-chart__price--high">{t.price(chart.highest)}</span>
+				<span class="price-chart__price price-chart__price--low">{t.price(chart.lowest)}</span>
 			{/if}
 			<svg viewBox="0 0 {BOX.width} {BOX.height}" aria-hidden="true">
 				{#if !unchanged}
@@ -60,7 +59,7 @@
 				{#each chart.lines as line (line.listingId)}
 					<li>
 						<i class="price-chart__key" class:price-chart__key--own={line.own}></i>
-						{portalName(line.source)} · {formatPrice(line.current)}
+						{portalName(line.source)} · {t.price(line.current)}
 					</li>
 				{/each}
 			</ul>

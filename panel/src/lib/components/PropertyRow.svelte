@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { TrackedPropertyModel } from '$lib/api/client';
-	import { formatPrice, sourceInitial } from '$lib/format';
+	import { sourceInitial } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { factsOf } from '$lib/property-detail';
 	import { shownPortal } from '$lib/portals';
@@ -50,7 +50,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		{/if}
 	</span>
 	<span class="property-row__text">
-		<span class="property-row__price">{listing.price === null ? '–' : formatPrice(listing.price)}</span>
+		<span class="property-row__price">{listing.price === null ? '–' : t.price(listing.price)}</span>
 		<span class="property-row__facts">{facts}</span>
 	</span>
 	{#if favourite}

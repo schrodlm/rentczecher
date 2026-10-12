@@ -38,16 +38,11 @@ export function priceScale(offerType: 'rent' | 'sale'): Scale {
 	return offerType === 'rent' ? RENT_SCALE : SALE_SCALE;
 }
 
-/* A number as a slider's box shows it, thousands spaced the Czech way, and
-an empty box for no number. parseTypedNumber reads it back. */
-export function writeTypedNumber(value: number | null): string {
-	return value === null ? '' : value.toLocaleString('cs-CZ');
-}
-
-/* A whole number typed in a slider's box, spaces between thousands allowed,
-or null when the box is empty or holds no number. */
+/* A whole number typed in a slider's box, spaces or commas between thousands
+allowed, as Czech and English group them, or null when the box is empty or
+holds no number. */
 export function parseTypedNumber(text: string): number | null {
-	const digits = text.replace(/\s/g, '');
+	const digits = text.replace(/[\s,]/g, '');
 	if (!/^\d+$/.test(digits)) return null;
 	return Number(digits);
 }

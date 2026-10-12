@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '$lib/styles/slider.css';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { parseTypedNumber, writeTypedNumber, type Scale } from './scale';
+	import { parseTypedNumber, type Scale } from './scale';
 
 	/* A range with a handle at each end and its two numbers typed beside it.
 	A handle at the end of the scale, or an empty box, is no bound on that
@@ -69,7 +69,7 @@
 			inputmode="numeric"
 			placeholder="0"
 			aria-label={t.t('{name} from', { name })}
-			value={writeTypedNumber(low)}
+			value={t.typedNumber(low)}
 			onchange={(event) => (low = parseTypedNumber(event.currentTarget.value))}
 		/>
 		<span>{t.t('to')}</span>
@@ -78,7 +78,7 @@
 			inputmode="numeric"
 			placeholder={t.t('no limit')}
 			aria-label={t.t('{name} to', { name })}
-			value={writeTypedNumber(high)}
+			value={t.typedNumber(high)}
 			onchange={(event) => (high = parseTypedNumber(event.currentTarget.value))}
 		/>
 		<span class="slider__unit">{unit}</span>
