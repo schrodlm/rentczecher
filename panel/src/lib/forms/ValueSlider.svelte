@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '$lib/styles/slider.css';
-	import { parseTypedNumber, writeTypedNumber, type Scale } from './scale';
+	import { getTranslatorContext } from '$lib/i18n/context';
+	import { parseTypedNumber, type Scale } from './scale';
 
 	/* One value on a slider, typed beside it too. The handle at the start of
 	the scale, or an empty box, is no value. A typed number is kept as typed,
@@ -19,6 +20,7 @@
 		placeholder: string;
 	} = $props();
 
+	const t = getTranslatorContext();
 	const index = $derived(value === null ? 0 : scale.nearestIndex(value));
 
 	function slide(to: number): void {
@@ -45,7 +47,7 @@
 			inputmode="numeric"
 			{placeholder}
 			aria-label={name}
-			value={writeTypedNumber(value)}
+			value={t.typedNumber(value)}
 			onchange={(event) => (value = parseTypedNumber(event.currentTarget.value))}
 		/>
 		<span class="slider__unit">{unit}</span>

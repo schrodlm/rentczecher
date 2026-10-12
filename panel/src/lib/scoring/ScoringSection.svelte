@@ -5,7 +5,6 @@
 	import PreferredPlaces from '$lib/forms/PreferredPlaces.svelte';
 	import ValueSlider from '$lib/forms/ValueSlider.svelte';
 	import { LAND_SCALE, priceScale, SIZE_SCALE } from '$lib/forms/scale';
-	import { formatArea, formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import { kindsInside } from '$lib/places';
@@ -82,7 +81,7 @@
 				'All {count} point up to {preferred}, none from {twice}.',
 				'All {count} points up to {preferred}, none from {twice}.',
 				points,
-				{ preferred: formatPrice(preferred), twice: formatPrice(2 * preferred) }
+				{ preferred: t.price(preferred), twice: t.price(2 * preferred) }
 			);
 		}
 		if (preference === 'size') {
@@ -92,7 +91,7 @@
 				'All {count} point at {preferred} or more, half at {half}.',
 				'All {count} points at {preferred} or more, half at {half}.',
 				points,
-				{ preferred: formatArea(preferred), half: formatArea(Math.round(preferred / 2)) }
+				{ preferred: t.area(preferred), half: t.area(Math.round(preferred / 2)) }
 			);
 		}
 		if (preference === 'land') {
@@ -102,7 +101,7 @@
 				'All {count} point at {preferred} of land or more, none without land data.',
 				'All {count} points at {preferred} of land or more, none without land data.',
 				points,
-				{ preferred: formatArea(preferred) }
+				{ preferred: t.area(preferred) }
 			);
 		}
 		if (preference === 'layout') {
@@ -127,15 +126,15 @@
 	}
 
 	function sizeFact(card: ExampleListing): string {
-		return card.size === null ? '' : formatArea(card.size);
+		return card.size === null ? '' : t.area(card.size);
 	}
 
 	function landFact(card: ExampleListing): string {
-		return card.land === null ? '' : t.t('{area} of land', { area: formatArea(card.land) });
+		return card.land === null ? '' : t.t('{area} of land', { area: t.area(card.land) });
 	}
 
 	function fact(card: ExampleListing, part: ScorePart): string {
-		if (part.preference === 'price' || part.preference === 'pricePerM2') return formatPrice(card.price);
+		if (part.preference === 'price' || part.preference === 'pricePerM2') return t.price(card.price);
 		if (part.preference === 'size') return sizeFact(card);
 		if (part.preference === 'land') return landFact(card);
 		if (part.preference === 'disposition') return layoutFact(card);
@@ -250,7 +249,7 @@
 						</svg>
 						<div class="example-card__facts">
 							{facts(card)}
-							<br /><b>{formatPrice(card.price)}</b>{#if card.place}&nbsp;· {card.place.name}{/if}
+							<br /><b>{t.price(card.price)}</b>{#if card.place}&nbsp;· {card.place.name}{/if}
 						</div>
 						<div class="example-card__score">{card.score}</div>
 					</div>

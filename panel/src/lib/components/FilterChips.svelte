@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { formatArea, formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import { activeFacets, withoutFacet, type Facet, type PropertyFilter } from '$lib/property-filter';
@@ -28,9 +27,9 @@
 		if (facet === 'priceDrops') return t.t('Only price drops');
 		if (facet === 'score') return t.t('Score at least {score}', { score: filter.minimumScore ?? 0 });
 		if (facet === 'layouts') return filter.layouts.map((layout) => layoutName(layout, t)).join(', ');
-		if (facet === 'price') return range(filter.minPrice, filter.maxPrice, formatPrice);
-		if (facet === 'size') return range(filter.minSize, filter.maxSize, formatArea);
-		return `${t.t('Land')} ${range(filter.minLand, filter.maxLand, formatArea)}`;
+		if (facet === 'price') return range(filter.minPrice, filter.maxPrice, (price) => t.price(price));
+		if (facet === 'size') return range(filter.minSize, filter.maxSize, (area) => t.area(area));
+		return `${t.t('Land')} ${range(filter.minLand, filter.maxLand, (area) => t.area(area))}`;
 	}
 </script>
 

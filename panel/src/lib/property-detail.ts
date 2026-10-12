@@ -1,5 +1,4 @@
 import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
-import { formatArea } from '$lib/format';
 import type { Translator } from '$lib/i18n/translator';
 
 /* The listing's layout as shown, or null when the portal gave none. */
@@ -10,7 +9,7 @@ export function layoutOf(listing: TrackedPropertyModel, t: Translator): string |
 
 /* The listing's layout, size and place in one line, leaving out what it lacks. */
 export function factsOf(listing: TrackedPropertyModel, t: Translator): string {
-	return [layoutOf(listing, t), listing.size_m2 === null ? null : formatArea(listing.size_m2), listing.location_raw_text]
+	return [layoutOf(listing, t), listing.size_m2 === null ? null : t.area(listing.size_m2), listing.location_raw_text]
 		.filter((fact) => fact !== null)
 		.join(' · ');
 }

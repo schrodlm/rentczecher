@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { NamedPlace } from '$lib/api/client';
-	import { formatArea, formatPrice } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import { placeLabel } from '$lib/places';
@@ -15,11 +14,11 @@
 		[
 			what(),
 			placeLabel(place, t),
-			bounds(search.min_price, search.max_price, formatPrice),
-			search.estate_type === 'land' ? null : bounds(search.min_size_m2, search.max_size_m2, formatArea),
+			bounds(search.min_price, search.max_price, (price) => t.price(price)),
+			search.estate_type === 'land' ? null : bounds(search.min_size_m2, search.max_size_m2, (area) => t.area(area)),
 			search.estate_type === 'flat' || search.min_land_m2 === null
 				? null
-				: t.t('land from {area}', { area: formatArea(search.min_land_m2) }),
+				: t.t('land from {area}', { area: t.area(search.min_land_m2) }),
 			search.estate_type === 'land' || search.dispositions.length === 0
 				? null
 				: search.dispositions.map((layout) => layoutName(layout, t)).join(', ')

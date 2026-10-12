@@ -10,5 +10,7 @@ export const load: LayoutLoad = async () => {
 	// Before the first paint, so the app never flashes the other theme.
 	applyTheme(userConfig?.theme ?? 'system');
 	const translator = await Translator.load(userConfig?.language ?? systemLanguage(navigator.languages));
+	// Screen readers and hyphenation read the page in this language.
+	document.documentElement.lang = translator.language;
 	return { translator };
 };
