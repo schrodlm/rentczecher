@@ -1,8 +1,7 @@
 /* The five-color palette is the whole
 identity. Every UI color is one of these, a derived neutral, a tint of one
 named here, or the gold that marks favourites, nothing else enters. Light values are the defaults, dark
-values apply under prefers-color-scheme: dark, matching this repo's own
-theme convention. */
+values follow the theme the user config chooses. */
 
 :root {
 	--color-ink: #343330;
@@ -42,8 +41,11 @@ theme convention. */
 	--radius-full: 999px;
 }
 
+/* The dark values apply on a dark system unless the user config asks for
+light, and always when it asks for dark. They are written out twice, since
+no one selector says both. */
 @media (prefers-color-scheme: dark) {
-	:root {
+	:root:not([data-theme='light']) {
 		--color-ink: #f3ede2;
 		--color-ground: #343330;
 		--color-card: #3e3d38;
@@ -54,4 +56,22 @@ theme convention. */
 		--color-amber-bright: #ffa737;
 		--color-gold: #e0cc3d;
 	}
+}
+
+:root[data-theme='dark'] {
+	--color-ink: #f3ede2;
+	--color-ground: #343330;
+	--color-card: #3e3d38;
+	--color-line: #4c4a42;
+	--color-olive: #a9ac6b;
+	--color-bronze: #c79a5b;
+	--color-amber: #ffa737;
+	--color-amber-bright: #ffa737;
+	--color-gold: #e0cc3d;
+	color-scheme: dark;
+}
+
+/* Scrollbars and form controls follow a chosen theme too. */
+:root[data-theme='light'] {
+	color-scheme: light;
 }
