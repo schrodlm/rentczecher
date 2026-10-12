@@ -3,24 +3,32 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 const shell = vi.hoisted(() => ({
 	inApp: false,
 	file: null as string | null,
-	unreadable: false
+	unreadable: false,
+	writes: [] as string[]
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	isTauri: () => shell.inApp,
-	invoke: async (command: string) => {
+	invoke: async (command: string, args: { contents: string }) => {
+		if (command === 'write_user_config') {
+			shell.writes.push(args.contents);
+			return null;
+		}
 		if (command !== 'read_user_config') throw new Error(`unexpected command ${command}`);
 		if (shell.unreadable) throw new Error('could not read user_config.json: permission denied');
 		return shell.file;
 	}
 }));
 
-const { parseUserConfig, systemLanguage, systemUserConfig, UserConfigFile } = await import('./user-config');
+const { parseUserConfig, serializeUserConfig, systemLanguage, systemUserConfig, UserConfigFile } = await import(
+	'./user-config'
+);
 
 afterEach(() => {
 	shell.inApp = false;
 	shell.file = null;
 	shell.unreadable = false;
+	shell.writes = [];
 });
 
 describe('systemLanguage', () => {
@@ -57,7 +65,25 @@ describe('parseUserConfig', () => {
 	});
 });
 
+describe('serializeUserConfig', () => {
+	test('writes a config the panel reads back as it was', () => {
+		const config = { theme: 'dark', language: 'en' } as const;
+		expect(parseUserConfig(serializeUserConfig(config))).toEqual(config);
+	});
+});
+
 describe('UserConfigFile', () => {
+	test('saves a config through the shell', async () => {
+		shell.inApp = true;
+		await new UserConfigFile().save({ theme: 'light', language: 'cs' });
+		expect(shell.writes.map(parseUserConfig)).toEqual([{ theme: 'light', language: 'cs' }]);
+	});
+
+	test('keeps nothing outside the app', async () => {
+		await new UserConfigFile().save({ theme: 'light', language: 'cs' });
+		expect(shell.writes).toEqual([]);
+	});
+
 	test('loads the config the shell keeps', async () => {
 		shell.inApp = true;
 		shell.file = '{"version": 1, "theme": "light", "language": "cs"}';
