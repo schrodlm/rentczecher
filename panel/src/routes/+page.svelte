@@ -10,10 +10,19 @@
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
 	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
 	import Inbox from '$lib/components/Inbox.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
+	import { applyTheme } from '$lib/theme';
+	import { UserConfigFile, type Theme, type UserConfig } from '$lib/user-config';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 
 	const t = getTranslatorContext();
+	const userConfigFile = new UserConfigFile();
+	// svelte-ignore state_referenced_locally
+	let userConfig = $state<UserConfig>(data.userConfig);
 	// Built on mount, once the connection is known. Every use below runs
 	// after that, from the mount sequence or from user actions.
 	let client: SidecarClient;
@@ -181,6 +190,20 @@
 		if (profiles.length > 0) selectProfile(profiles[0].id);
 	}
 
+	// A config that could not be saved is not shown either, so the app never
+	// looks set to something it will not open with.
+	async function changeTheme(theme: Theme): Promise<void> {
+		const changed = { theme, language: userConfig.language };
+		applyTheme(theme);
+		try {
+			await userConfigFile.save(changed);
+		} catch {
+			applyTheme(userConfig.theme);
+			return;
+		}
+		userConfig = changed;
+	}
+
 	async function handleRun(): Promise<void> {
 		if (selectedProfileId === null) return;
 		runError = null;
@@ -259,13 +282,17 @@
 					<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
 				{/if}
 			</nav>
-			<InboxHeader
-				{health}
-				runState={runProgress.state}
-				lastFinishedAt={runProgress.lastFinishedAt}
-				triggerError={runError}
-				onrun={handleRun}
-			/>
+			<div class="topbar__end">
+				<InboxHeader
+					{health}
+					runState={runProgress.state}
+					lastFinishedAt={runProgress.lastFinishedAt}
+					triggerError={runError}
+					onrun={handleRun}
+				/>
+				<span class="topbar__divider" aria-hidden="true"></span>
+				<ThemeToggle theme={userConfig.theme} onchange={changeTheme} />
+			</div>
 		</header>
 
 		{#if engineStopped}
@@ -377,6 +404,19 @@
 		padding: var(--space-2) var(--space-4) 0;
 		border-bottom: 1px solid var(--color-line);
 		background: var(--color-card);
+	}
+
+	.topbar__end {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.topbar__divider {
+		width: 1px;
+		height: 1.25rem;
+		margin: 0 var(--space-1);
+		background: var(--color-line);
 	}
 
 	.tabs {

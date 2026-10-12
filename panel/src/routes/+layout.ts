@@ -13,5 +13,5 @@ export const load: LayoutLoad = async () => {
 	const translator = await Translator.load(userConfig.language);
 	// Screen readers and hyphenation read the page in this language.
 	document.documentElement.lang = translator.language;
-	return { translator };
+	return { translator, userConfig };
 };

@@ -603,3 +603,15 @@ msgstr "do {value}"
 
 msgid "{shown} of {count} shown"
 msgstr "Zobrazeno {shown} z {count}"
+
+msgid "Appearance: {name}"
+msgstr "Vzhled: {name}"
+
+msgid "Dark"
+msgstr "Tmavý"
+
+msgid "Follow the system"
+msgstr "Podle systému"
+
+msgid "Light"
+msgstr "Světlý"
