@@ -26,6 +26,17 @@ flat appears once. In the panel every property is a tracked one, so its code
 says `Property…` for short.
 _Avoid_: tracked listing, inbox card, card
 
+**Photo**:
+One picture of a property as a portal published it with a listing, kept on
+the user's machine so it outlives the listing being delisted and the portal
+being down.
+_Avoid_: image, picture
+
+**Gallery**:
+A listing's photos in the portal's order, at most twenty. A tracked property
+shows the gallery of its listing with the most photos.
+_Avoid_: album, photos (for the set)
+
 **Inbox**:
 The panel's view of one profile's tracked properties, a list beside the
 selected one's details. A view of the panel's, never an engine concept. On
