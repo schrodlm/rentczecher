@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { LANGUAGES, type Language } from '$lib/user-config';
+	import { LANGUAGE_NAMES, LANGUAGES, type Language } from '$lib/user-config';
 	import Flag from './Flag.svelte';
 
 	/* The top bar's choice of language, each named in its own language. */
 	let { language, onchange }: { language: Language; onchange: (language: Language) => void } = $props();
 
 	const t = getTranslatorContext();
-
-	const OWN_NAMES: Record<Language, string> = { cs: 'Čeština', en: 'English' };
 </script>
 
 <div class="language-toggle" role="group" aria-label={t.t('Language')}>
@@ -18,7 +16,7 @@
 			class="language-toggle__option"
 			class:language-toggle__option--on={each === language}
 			aria-pressed={each === language}
-			title={OWN_NAMES[each]}
+			title={LANGUAGE_NAMES[each]}
 			onclick={() => {
 				if (each !== language) onchange(each);
 			}}
