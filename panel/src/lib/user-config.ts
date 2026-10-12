@@ -42,9 +42,13 @@ export function parseUserConfig(text: string): UserConfig | null {
 	return { theme: knownTheme, language: knownLanguage };
 }
 
+export function serializeUserConfig(config: UserConfig): string {
+	return JSON.stringify({ version: VERSION, theme: config.theme, language: config.language }, null, 2) + '\n';
+}
+
 /* The config file the shell keeps. Outside the app, as in a browser tab
 during development, there is no file: the config is the system's and is
-never asked for. */
+never asked for, and saving keeps nothing. */
 export class UserConfigFile {
 	/* Null on the first run, while no readable config exists. A file that
 	cannot be read or is not a config is left as it is until a new config
@@ -58,5 +62,10 @@ export class UserConfigFile {
 			return null;
 		}
 		return text === null ? null : parseUserConfig(text);
+	}
+
+	async save(config: UserConfig): Promise<void> {
+		if (!isTauri()) return;
+		await invoke('write_user_config', { contents: serializeUserConfig(config) });
 	}
 }
