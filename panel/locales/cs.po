@@ -618,3 +618,69 @@ msgstr "Jazyk"
 
 msgid "Light"
 msgstr "Světlý"
+
+msgid "A profile is a search you set up once. The app runs it again and again, keeps every flat it finds, and tells you what is new and what has changed."
+msgstr "Profil je hledání, které nastavíte jednou. Aplikace ho spouští znovu a znovu, pamatuje si každý nalezený byt a dá vám vědět, co je nového a co se změnilo."
+
+msgid "Appearance"
+msgstr "Vzhled"
+
+msgid "Continue"
+msgstr "Pokračovat"
+
+msgid "Each flat keeps its price history on every portal, so you see when it gets cheaper. Star the ones you like and they stay, even after the portals take them down."
+msgstr "Každý byt si pamatuje vývoj ceny na všech portálech, takže uvidíte, kdy zlevní. Ty, které se vám líbí, si označte hvězdičkou a zůstanou, i když je portály stáhnou."
+
+msgid "Every scan searches the portals you picked. A flat posted on several of them shows once, with a link to each, and a new one is marked until you open it."
+msgstr "Každý scan projde portály, které jste vybrali. Byt nabízený na více z nich uvidíte jednou, s odkazem na každý, a nový zůstane označený, dokud ho neotevřete."
+
+msgid "It watches the portals for you"
+msgstr "Hlídá portály za vás"
+
+msgid "It watches the real-estate portals and shows you every new flat just once."
+msgstr "Hlídá realitní portály a ukáže vám každý nový byt jen jednou."
+
+msgid "Later"
+msgstr "Později"
+
+msgid "Light, dark, or following the system. Change it anytime in the top bar."
+msgstr "Světlý, tmavý, nebo podle systému. Změníte ho kdykoli v horní liště."
+
+msgid "Next"
+msgstr "Další"
+
+msgid "Nothing slips past you"
+msgstr "Nic vám neuteče"
+
+msgid "Pick the place on the map, from a whole region down to a street, then rent or buy, the price, the size and the layouts. A listing that misses any of them never shows."
+msgstr "Vyberte místo na mapě, od celého kraje po ulici, pak nájem nebo koupi, cenu, velikost a dispozice. Inzerát, který některé nesplní, se vám neukáže."
+
+msgid "Previous"
+msgstr "Předchozí"
+
+msgid "Say what you are looking for"
+msgstr "Řekněte, co hledáte"
+
+msgid "Slide {n} of {count}"
+msgstr "Ukázka {n} z {count}"
+
+msgid "Tell the profile what you would prefer, a price, a size, a few places, and how much each matters. Every flat gets a score out of 100 that orders the list, and nothing is ever hidden for scoring low."
+msgstr "Řekněte profilu, co byste preferovali, cenu, velikost, pár míst, a jak moc na čem záleží. Každý byt dostane skóre ze 100, podle kterého se seznam řadí, a nízké skóre nikdy nic neschová."
+
+msgid "The best flats come first"
+msgstr "Nejlepší byty nahoře"
+
+msgid "Welcome to rentczecher"
+msgstr "Vítejte v rentczecheru"
+
+msgid "Which language should the app speak?"
+msgstr "Jakým jazykem má aplikace mluvit?"
+
+msgid "Your first profile"
+msgstr "Váš první profil"
+
+msgid "up to {price}"
+msgstr "do {price}"
+
+msgid "Step {n} of {count}"
+msgstr "Krok {n} z {count}"

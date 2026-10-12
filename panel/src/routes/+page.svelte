@@ -17,6 +17,7 @@
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { applyTheme } from '$lib/theme';
 	import { UserConfigFile, type Language, type Theme, type UserConfig } from '$lib/user-config';
+	import WelcomeWizard from '$lib/welcome/WelcomeWizard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -25,6 +26,8 @@
 	const userConfigFile = new UserConfigFile();
 	// svelte-ignore state_referenced_locally
 	let userConfig = $state<UserConfig>(data.userConfig);
+	// svelte-ignore state_referenced_locally
+	let welcoming = $state(data.firstRun);
 	// Built on mount, once the connection is known. Every use below runs
 	// after that, from the mount sequence or from user actions.
 	let client: SidecarClient;
@@ -222,6 +225,18 @@
 		location.reload();
 	}
 
+	async function completeWelcome(config: UserConfig, createProfile: boolean): Promise<void> {
+		try {
+			await userConfigFile.save(config);
+		} catch {
+			// Unsaved, the wizard simply shows again on the next launch.
+		}
+		userConfig = config;
+		welcoming = false;
+		// The editor saves into the profiles, so it waits until they have loaded.
+		if (createProfile && profiles !== null) openNewProfile();
+	}
+
 	async function handleRun(): Promise<void> {
 		if (selectedProfileId === null) return;
 		runError = null;
@@ -261,7 +276,7 @@
 	});
 </script>
 
-<div class="shell">
+<div class="shell" inert={welcoming}>
 	<aside class="sidebar">
 		<h1 class="sidebar__brand">
 			<img class="sidebar__logo" src={logo} alt="" />
@@ -347,6 +362,10 @@
 		{/if}
 	</div>
 </div>
+
+{#if welcoming}
+	<WelcomeWizard theme={userConfig.theme} oncomplete={completeWelcome} />
+{/if}
 
 {#if editing !== null}
 	<ProfileEditor
