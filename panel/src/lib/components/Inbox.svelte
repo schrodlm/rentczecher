@@ -27,7 +27,8 @@
 		onview,
 		onfavourite,
 		onmarkallviewed,
-		loadPriceHistory
+		loadPriceHistory,
+		selectedId = $bindable(null)
 	}: {
 		listings: readonly TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
@@ -35,6 +36,7 @@
 		onfavourite: (propertyId: string, favourite: boolean) => void;
 		onmarkallviewed: (propertyIds: string[]) => void;
 		loadPriceHistory: (propertyId: string) => Promise<PostingPricesModel[]>;
+		selectedId?: string | null;
 	} = $props();
 
 	const t = getTranslatorContext();
@@ -42,7 +44,6 @@
 
 	let order = $state<PropertyOrder>(naturalOrder('score'));
 	let filter = $state<PropertyFilter>(noFilter());
-	let selectedId = $state<string | null>(null);
 	let priceHistory = $state<PostingPricesModel[] | null>(null);
 	let detailOpen = $state(false);
 	let detail = $state<HTMLElement>();

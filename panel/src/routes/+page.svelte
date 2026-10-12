@@ -13,6 +13,7 @@
 	import LanguageToggle from '$lib/components/LanguageToggle.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { keepSelection, takeKeptSelection } from '$lib/kept-selection';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { applyTheme } from '$lib/theme';
 	import { UserConfigFile, type Language, type Theme, type UserConfig } from '$lib/user-config';
@@ -34,6 +35,7 @@
 	let profiles = $state<ProfileModel[] | null>(null);
 	let profilesError = $state<string | null>(null);
 	let selectedProfileId = $state<string | null>(null);
+	let selectedPropertyId = $state<string | null>(null);
 	let health = $state<PortalHealthModel[]>([]);
 	let runError = $state<string | null>(null);
 	let listings = $state<TrackedPropertyModel[] | null>(null);
@@ -146,6 +148,7 @@
 			newCounts = { ...newCounts, [selectedProfileId]: newListings.length };
 		}
 		selectedProfileId = profileId;
+		selectedPropertyId = null;
 		listings = null;
 		void loadListings(profileId);
 		runProgress.connect(client.eventsUrl(), profileId, () => {
@@ -206,7 +209,7 @@
 	}
 
 	// The panel speaks one language for its whole life, so another one takes
-	// a reload.
+	// a reload, which opens on the same profile and listing again.
 	async function changeLanguage(language: Language): Promise<void> {
 		const changed = { theme: userConfig.theme, language };
 		try {
@@ -215,6 +218,7 @@
 			return;
 		}
 		userConfig = changed;
+		if (selectedProfileId !== null) keepSelection({ profileId: selectedProfileId, propertyId: selectedPropertyId });
 		location.reload();
 	}
 
@@ -230,6 +234,9 @@
 
 	onMount(() => {
 		const stopListening = onEngineStopped(() => (engineStopped = true));
+		// Taken before anything can fail, so it never outlives the reload it was
+		// kept for.
+		const kept = takeKeptSelection();
 		(async () => {
 			try {
 				const connection = await sidecarConnection();
@@ -239,8 +246,10 @@
 				profilesError = errorMessage(err);
 				return;
 			}
-			if (profiles.length > 0) {
-				selectProfile(profiles[0].id);
+			const opening = profiles.find((profile) => profile.id === kept?.profileId) ?? profiles[0];
+			if (opening !== undefined) {
+				selectProfile(opening.id);
+				if (opening.id === kept?.profileId) selectedPropertyId = kept.propertyId;
 			}
 			await Promise.all([loadAllNewCounts(profiles ?? []), loadHealth()]);
 		})();
@@ -332,6 +341,7 @@
 					onfavourite={handleFavourite}
 					onmarkallviewed={handleMarkAllViewed}
 					{loadPriceHistory}
+					bind:selectedId={selectedPropertyId}
 				/>
 			{/key}
 		{/if}
