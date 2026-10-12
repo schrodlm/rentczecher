@@ -282,7 +282,6 @@
 			<img class="sidebar__logo" src={logo} alt="" />
 			rentczecher
 		</h1>
-		<button class="sidebar__settings">{t.t('Settings')}</button>
 	</aside>
 
 	<div class="shell__main">
@@ -407,21 +406,6 @@
 	.sidebar__logo {
 		width: 1.5rem;
 		height: 1.5rem;
-	}
-
-	.sidebar__settings {
-		background: var(--color-ground);
-		border: 1px solid var(--color-line);
-		border-radius: var(--radius-full);
-		color: inherit;
-		text-align: center;
-		padding: var(--space-2) var(--space-4);
-		cursor: pointer;
-		font-size: 0.875rem;
-	}
-
-	.sidebar__settings:hover {
-		background: var(--color-line);
 	}
 
 	.engine-stopped {
