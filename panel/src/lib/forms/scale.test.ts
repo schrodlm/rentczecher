@@ -49,6 +49,7 @@ describe('parseTypedNumber', () => {
 	test.each([
 		['25000', 25000],
 		['25 000', 25000],
+		['25,000', 25000],
 		[' 1 500 000 ', 1500000],
 		['0', 0]
 	])('reads %j as %i', (text, number) => {

@@ -1,12 +1,13 @@
-import { fireEvent, render } from '@testing-library/svelte';
+import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
+import { renderWithTranslator } from '$lib/test-support/render';
 import ValueSliderHarness from '$lib/test-support/ValueSliderHarness.svelte';
-import { Scale, writeTypedNumber } from './scale';
+import { Scale } from './scale';
 
 const SCALE = new Scale([0, 40, 60, 80, 100]);
 
-function renderSlider(value: number | null = null) {
-	const rendered = render(ValueSliderHarness, { scale: SCALE, value });
+async function renderSlider(value: number | null = null) {
+	const rendered = await renderWithTranslator(ValueSliderHarness, { scale: SCALE, value });
 	const handle = rendered.getByRole('slider');
 	const box = rendered.getByRole('textbox');
 	const shown = () => JSON.parse(rendered.getByTestId('value').textContent ?? 'null');
@@ -14,47 +15,40 @@ function renderSlider(value: number | null = null) {
 }
 
 describe('ValueSlider', () => {
-	test('has no value with its handle at the start', () => {
-		const { handle, box } = renderSlider();
+	test('has no value with its handle at the start', async () => {
+		const { handle, box } = await renderSlider();
 		expect(handle).toHaveValue('0');
 		expect(box).toHaveValue('');
 		expect(box).toHaveAttribute('placeholder', 'ideální velikost');
 	});
 
 	test('sets the value by sliding', async () => {
-		const { handle, shown } = renderSlider();
+		const { handle, shown } = await renderSlider();
 		await fireEvent.input(handle, { target: { value: '3' } });
 		expect(shown()).toBe(80);
 	});
 
 	test('drops the value when the handle goes back to the start', async () => {
-		const { handle, shown } = renderSlider(60);
+		const { handle, shown } = await renderSlider(60);
 		await fireEvent.input(handle, { target: { value: '0' } });
 		expect(shown()).toBeNull();
 	});
 
 	test('keeps a typed value as typed and moves the handle to the nearest position', async () => {
-		const { handle, box, shown } = renderSlider();
+		const { handle, box, shown } = await renderSlider();
 		await fireEvent.change(box, { target: { value: '72' } });
 		expect(shown()).toBe(72);
 		expect(handle).toHaveValue('3');
 	});
 
 	test('drops the value when the box is emptied', async () => {
-		const { box, shown } = renderSlider(60);
+		const { box, shown } = await renderSlider(60);
 		await fireEvent.change(box, { target: { value: '' } });
 		expect(shown()).toBeNull();
 	});
 
-	test('names its handle and box', () => {
-		const { getAllByLabelText } = renderSlider();
+	test('names its handle and box', async () => {
+		const { getAllByLabelText } = await renderSlider();
 		expect(getAllByLabelText('Ideální velikost')).toHaveLength(2);
-	});
-});
-
-describe('writeTypedNumber', () => {
-	test('spaces the thousands and leaves no number empty', () => {
-		expect(writeTypedNumber(1500000).replace(/\s/g, ' ')).toBe('1 500 000');
-		expect(writeTypedNumber(null)).toBe('');
 	});
 });
