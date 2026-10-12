@@ -31,9 +31,6 @@ msgstr "Načítám nabídky..."
 msgid "Could not load listings: {message}"
 msgstr "Nepodařilo se načíst nabídky: {message}"
 
-msgid "Settings"
-msgstr "Nastavení"
-
 msgid "Add profile"
 msgstr "Přidat profil"
 
