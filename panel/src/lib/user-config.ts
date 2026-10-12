@@ -9,6 +9,10 @@ export type UserConfig = { theme: Theme; language: Language };
 export const THEMES: readonly Theme[] = ['system', 'light', 'dark'];
 export const LANGUAGES: readonly Language[] = ['cs', 'en'];
 
+/* Each language as it names itself, never translated, so a person finds
+their own whatever the app speaks. */
+export const LANGUAGE_NAMES: Record<Language, string> = { cs: 'Čeština', en: 'English' };
+
 // The format this panel writes. A file of any other version reads as no
 // config at all, so it is never misread.
 const VERSION = 1;
