@@ -10,11 +10,12 @@
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
 	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
 	import Inbox from '$lib/components/Inbox.svelte';
+	import LanguageToggle from '$lib/components/LanguageToggle.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { applyTheme } from '$lib/theme';
-	import { UserConfigFile, type Theme, type UserConfig } from '$lib/user-config';
+	import { UserConfigFile, type Language, type Theme, type UserConfig } from '$lib/user-config';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -204,6 +205,19 @@
 		userConfig = changed;
 	}
 
+	// The panel speaks one language for its whole life, so another one takes
+	// a reload.
+	async function changeLanguage(language: Language): Promise<void> {
+		const changed = { theme: userConfig.theme, language };
+		try {
+			await userConfigFile.save(changed);
+		} catch {
+			return;
+		}
+		userConfig = changed;
+		location.reload();
+	}
+
 	async function handleRun(): Promise<void> {
 		if (selectedProfileId === null) return;
 		runError = null;
@@ -292,6 +306,7 @@
 				/>
 				<span class="topbar__divider" aria-hidden="true"></span>
 				<ThemeToggle theme={userConfig.theme} onchange={changeTheme} />
+				<LanguageToggle language={userConfig.language} onchange={changeLanguage} />
 			</div>
 		</header>
 
