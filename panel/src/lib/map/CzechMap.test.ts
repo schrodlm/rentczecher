@@ -80,4 +80,12 @@ describe('CzechMap', () => {
 		await fireEvent.click(shape(container, '.czech-map__kraj', 'Hlavní město Praha'));
 		expect(getByText('Klikněte na pražský obvod a hledejte v něm.')).toBeInTheDocument();
 	});
+
+	test('credits ČÚZK with the year of the RÚIAN dataset it was drawn from, linking their terms', async () => {
+		const { getByRole } = await renderMap();
+		expect(getByRole('link', { name: 'ČÚZK, 2026' })).toHaveAttribute(
+			'href',
+			'https://cuzk.gov.cz/Predpisy/Podminky-poskytovani-prostor-dat-a-sitovych-sluzeb/Podminky-poskytovani-prostorovych-dat-CUZK.aspx'
+		);
+	});
 });
