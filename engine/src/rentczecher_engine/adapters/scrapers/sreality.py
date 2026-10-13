@@ -168,11 +168,11 @@ class SrealityScraper(BaseScraper):
         lon = locality.get("gps_lon")
 
         images = estate.get("advert_images") or []
-        image_url = None
+        main_photo_url = None
         if images:
-            image_url = images[0]
-            if image_url.startswith("//"):
-                image_url = f"https:{image_url}"
+            main_photo_url = images[0]
+            if main_photo_url.startswith("//"):
+                main_photo_url = f"https:{main_photo_url}"
 
         return Listing.build(
             id=f"sreality:{hash_id}",
@@ -182,7 +182,7 @@ class SrealityScraper(BaseScraper):
             location_raw_text=location,
             parsed_place=_parse_location(locality),
             url=self._build_detail_url(estate, hash_id, disposition, locality),
-            image_url=image_url,
+            photo_urls=(main_photo_url,) if main_photo_url else (),
             size_m2=size,
             disposition_raw_text=disposition,
             lat=lat,

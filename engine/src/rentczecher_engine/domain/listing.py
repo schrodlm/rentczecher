@@ -19,7 +19,8 @@ class ScrapedListing:
     price: int
     location_raw_text: str
     url: str
-    image_url: str | None = None
+    # The listing's gallery as each photo's portal URL, the main one first.
+    photo_urls: tuple[str, ...] = ()
     size_m2: int | None = None
     disposition_raw_text: str | None = None
     lat: float | None = None
@@ -86,8 +87,8 @@ class Listing:
         return self.scraped.url
 
     @property
-    def image_url(self) -> str | None:
-        return self.scraped.image_url
+    def photo_urls(self) -> tuple[str, ...]:
+        return self.scraped.photo_urls
 
     @property
     def size_m2(self) -> int | None:
