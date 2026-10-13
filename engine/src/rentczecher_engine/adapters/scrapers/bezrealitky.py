@@ -219,12 +219,12 @@ class BezrealitkyScraper(BaseScraper):
             lat = gps.get("lat")
             lon = gps.get("lng")
 
-        # Resolve main image
-        image_url = None
+        # Resolve main photo
+        main_photo_url = None
         main_img_ref = advert.get("mainImage", {})
         if isinstance(main_img_ref, dict) and "__ref" in main_img_ref:
             img_obj = cache.get(main_img_ref["__ref"], {})
-            image_url = _apollo_get(img_obj, "url")
+            main_photo_url = _apollo_get(img_obj, "url")
 
         # Build title
         offer_label = "Pronajem" if OFFER_TYPE_PARAM[self.criteria.offer_type] == "PRONAJEM" else "Prodej"
@@ -247,7 +247,7 @@ class BezrealitkyScraper(BaseScraper):
             location_raw_text=address,
             parsed_place=_parse_location(address),
             url=f"{DETAIL_BASE}/{uri}",
-            image_url=image_url,
+            photo_urls=(main_photo_url,) if main_photo_url else (),
             size_m2=int(float(surface)) if surface else None,
             disposition_raw_text=disposition if disposition else None,
             lat=lat,

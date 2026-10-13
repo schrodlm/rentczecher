@@ -254,13 +254,13 @@ class RemaxScraper(BaseScraper):
                 location = loc_match.group(0)
         parsed_place = _parse_location(location, title)
 
-        # Image
-        image_url = None
+        # Main photo
+        main_photo_url = None
         img = card.find("img")
         if img:
-            image_url = img.get("src") or img.get("data-src")
-            if image_url and not image_url.startswith("http"):
-                image_url = f"https://www.remax-czech.cz{image_url}"
+            main_photo_url = img.get("src") or img.get("data-src")
+            if main_photo_url and not main_photo_url.startswith("http"):
+                main_photo_url = f"https://www.remax-czech.cz{main_photo_url}"
 
         # Disposition
         disposition = None
@@ -276,7 +276,7 @@ class RemaxScraper(BaseScraper):
             location_raw_text=location,
             parsed_place=parsed_place,
             url=detail_url,
-            image_url=image_url,
+            photo_urls=(main_photo_url,) if main_photo_url else (),
             size_m2=size,
             disposition_raw_text=disposition,
             land_m2=land,

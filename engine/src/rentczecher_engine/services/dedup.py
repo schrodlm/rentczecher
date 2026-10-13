@@ -308,14 +308,14 @@ def cross_source_dedup(
                 li.charges is not None,
                 li.land_m2 is not None,
                 li.size_m2 is not None,
-                bool(li.image_url),
+                bool(li.photo_urls),
             ])
             j_score = sum([
                 lj.lat is not None,
                 lj.charges is not None,
                 lj.land_m2 is not None,
                 lj.size_m2 is not None,
-                bool(lj.image_url),
+                bool(lj.photo_urls),
             ])
 
             if i_score >= j_score:
