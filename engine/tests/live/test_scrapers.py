@@ -147,7 +147,7 @@ class TestBezrealitkyLive:
         s = _scraper(BezrealitkyScraper, "praha7-byty", client)
         listings = s.scrape()
         assert len(listings) > 0
-        with_img = [l for l in listings if l.image_url]
+        with_img = [l for l in listings if l.photo_urls]
         assert len(with_img) > 0, "No listings have images"
 
     def test_praha7_dispositions_are_valid(self, client):

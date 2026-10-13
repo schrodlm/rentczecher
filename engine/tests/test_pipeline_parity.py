@@ -47,6 +47,7 @@ def _build_fixture_listing(record):
     place = record.get("parsed_place")
     if place is not None:
         record["parsed_place"] = ParsedPlace(names=tuple(place["names"]), district=place.get("district"))
+    record["photo_urls"] = tuple(record.get("photo_urls", ()))
     return Listing.build(**record)
 
 
@@ -105,7 +106,7 @@ def _listing_snapshot(listing):
         "price": listing.price,
         "location_raw_text": listing.location_raw_text,
         "url": listing.url,
-        "image_url": listing.image_url,
+        "photo_urls": list(listing.photo_urls),
         "size_m2": listing.size_m2,
         "disposition_raw_text": listing.disposition_raw_text,
         "lat": listing.lat,

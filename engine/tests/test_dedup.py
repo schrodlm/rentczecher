@@ -467,7 +467,7 @@ class TestSharedNameFactorWithNoGps:
 
 
 class TestKeeperChoice:
-    """Completeness score: lat, charges, land_m2, size_m2 (is not None) + image_url (bool)."""
+    """Completeness score: lat, charges, land_m2, size_m2 (is not None) + any photo URL."""
 
     def test_exact_tie_keeps_first_in_input_order(self):
         l1 = _make_listing(id="s:1", source="s", price=20000, disposition_raw_text="2+kk",
@@ -478,13 +478,11 @@ class TestKeeperChoice:
         assert len(result) == 1
         assert result[0].id == "s:1"
 
-    def test_empty_string_image_scores_same_as_none(self):
-        # image_url uses bool() (:94) rather than the `is not None` used for the other
-        # four completeness fields, so "" and None are indistinguishable here.
+    def test_no_photo_urls_scores_the_same_as_none_given(self):
         l1 = _make_listing(id="s:1", source="s", price=20000, disposition_raw_text="2+kk",
-                           size_m2=50, lat=50.10, lon=14.40, image_url="")
+                           size_m2=50, lat=50.10, lon=14.40, photo_urls=())
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
-                           size_m2=50, lat=50.1001, lon=14.4001, image_url=None)
+                           size_m2=50, lat=50.1001, lon=14.4001)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
         assert result[0].id == "s:1"
@@ -547,7 +545,7 @@ class TestNoTransitiveGrouping:
         # own -- a straight pairwise match, not graph closure through B. A~B matches first (A
         # richer, so A keeps and B is removed); A is then compared to C directly and matches too.
         a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
-                          lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
+                          lat=50.10, lon=14.40, charges=1000, land_m2=10, photo_urls=("http://x",))
         b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
         c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
@@ -565,7 +563,7 @@ class TestNoTransitiveGrouping:
         # favor (remove_to_keeper[C]=A). C's absorbed source (B) re-parents onto A when C is
         # displaced, so the final survivor A carries both B and C even though C never survives.
         a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
-                          lat=50.10, lon=14.40, charges=1000, land_m2=10, image_url="http://x")
+                          lat=50.10, lon=14.40, charges=1000, land_m2=10, photo_urls=("http://x",))
         b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
         c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
@@ -582,7 +580,7 @@ class TestCrossSourceAccumulation:
 
     def test_keeper_accumulates_both_sources_in_order(self):
         a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
-                          lat=50.10, lon=14.40, charges=1, land_m2=1, image_url="x")
+                          lat=50.10, lon=14.40, charges=1, land_m2=1, photo_urls=("x",))
         b = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1001, lon=14.4001)
         c = _make_listing(id="c:1", source="c", price=20000, disposition_raw_text="2+kk",
