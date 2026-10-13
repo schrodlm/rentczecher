@@ -1,6 +1,6 @@
 {
- "meta_description": "120 domů v aktuální nabídce rodinné domy k prodeji Domažlice ✓ Parametry hledání: rodinný dům, Domažlice ✓ Největší nabídka nemovitostí v Česku (105 851 inzerátů) s hledáním na mapě a filtrováním s desítkami parametrů ✓",
- "meta_title": "Prodej rodinného domu Domažlice • Sreality.cz",
+ "meta_description": "Rodinné domy na prodej Domažlice",
+ "meta_title": "Rodinné domy na prodej Domažlice",
  "pagination": {
   "limit": 100,
   "offset": 0,
@@ -9,153 +9,153 @@
  "results": [
   {
    "advert_images": [
-    "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CFdAHBNydGiGzL0/65fa.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWZuTBMosGiGzNZ/0935.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtBwNESBdP2GiGzOE/5bb1.jpeg"
+    "//img.example/sreality/920000001/0.jpeg",
+    "//img.example/sreality/920000001/1.jpeg",
+    "//img.example/sreality/920000001/2.jpeg"
    ],
    "advert_images_all": [
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CFdAHBNydGiGzL0/65fa.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/0.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWZuTBMosGiGzNZ/0935.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/1.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtBwNESBdP2GiGzOE/5bb1.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/2.jpeg",
      "restb_room_type": 5,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CNPfpBlPjGiGzOj/b6b6.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/3.jpeg",
      "restb_room_type": 5,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWZuTBMrJGiGzPL/29e2.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/4.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CoHumBNT0GiGzP2/2f36.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/5.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtBRc2UEeWGiGzQX/21eb.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/6.jpeg",
      "restb_room_type": 1,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CNPfpBlPjGiGzRO/0acd.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/7.jpeg",
      "restb_room_type": 1,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5bIUBBO1WGiGzSH/a1c7.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/8.jpeg",
      "restb_room_type": 15,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CoHumBNRmGiGzSp/8da2.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/9.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtCDcb5DxcGiGzTj/4cfb.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/10.jpeg",
      "restb_room_type": 6,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtEDuRmG1sGiGzUJ/ace6.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/11.jpeg",
      "restb_room_type": 6,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CGpNZBNbfGiGzUt/5066.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/12.jpeg",
      "restb_room_type": 10,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5DwDWzBkwPGiGzVO/282c.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/13.jpeg",
      "restb_room_type": 15,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtCJexHE6zGiGzV2/7706.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/14.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWLrlBNJpGiGzWZ/3eed.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/15.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtzYqGBDqoGiGzXA/96bc.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/16.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtDrxR2BDAoGiGzXr/74be.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/17.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtBRc2UEefGiGzYW/8f8d.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/18.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtzYqGBDq6GiGzY9/6776.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/19.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWZuTBMrJGiGzZt/4112.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/20.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CDciVBkPvGiGzab/f019.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/21.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5BWZuTBMqOGiGzbN/4036.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/22.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtEDuRmG1jGiGzcf/e182.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/23.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtCJexHE2bGiGzeA/9ee8.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/24.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtBRc2UEefGiGzed/38a9.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/25.jpeg",
      "restb_room_type": 23,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtDgLT0BC70GiGzfA/5c80.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/26.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/nCTUX1iX5CGpNZBNbfGiGzfb/ae05.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/27.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_A/kcHp2YdDtDrxR2BDAoGiGzhW/66fc.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000001/28.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     }
@@ -176,7 +176,7 @@
    "discount_show": false,
    "has_matterport_url": true,
    "has_video": true,
-   "hash_id": 527867980,
+   "hash_id": 920000001,
    "locality": {
     "city": "Horšovský Týn",
     "city_seo_name": "horsovsky-tyn",
@@ -189,10 +189,10 @@
     "district_id": 8,
     "district_seo_name": "domazlice",
     "entity_type": "address",
-    "geohash": "u2c1z6hfqx",
-    "gps_lat": 49.53778,
-    "gps_lon": 12.981662,
-    "housenumber": "18",
+    "geohash": "",
+    "gps_lat": 49.54,
+    "gps_lon": 12.98,
+    "housenumber": "101",
     "inaccuracy_type": "gps",
     "municipality": null,
     "municipality_id": 1166,
@@ -225,13 +225,13 @@
    "poi_train_distance": 400,
    "poi_vet_distance": 3246,
    "premise": {
-    "city_seo_name": "plzen",
-    "quarter_seo_name": "plzen-3",
-    "seo_name": "taurum-reality-s-r-o",
-    "ward_seo_name": "vnitrni-mesto"
+    "city_seo_name": "praha",
+    "quarter_seo_name": "praha-1",
+    "seo_name": "example-reality",
+    "ward_seo_name": "nove-mesto"
    },
-   "premise_id": 16351,
-   "premise_logo": "https://d48-a.sdn.cz/d_48/c_img_qB_A/nO2CysqjGrB9kIMBASGuitb1/234b.png",
+   "premise_id": 1,
+   "premise_logo": "",
    "price": 3990000.0,
    "price_currency_cb": {
     "name": "Kč",
@@ -249,162 +249,162 @@
     "name": "za nemovitost",
     "value": 1
    },
-   "user_id": 320302
+   "user_id": 1
   },
   {
    "advert_images": [
-    "//d18-a.sdn.cz/d_18/c_img_qB_B/kcHp2YdDtCJexHHk1GmSSqY/2897.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoQAuLB5YEpRcmB/09fc.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_qB_B/nCTUX1iX5CoHumBR17GmSSrz/c85a.jpeg"
+    "//img.example/sreality/920000002/0.jpeg",
+    "//img.example/sreality/920000002/1.jpeg",
+    "//img.example/sreality/920000002/2.jpeg"
    ],
    "advert_images_all": [
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_B/kcHp2YdDtCJexHHk1GmSSqY/2897.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/0.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoQAuLB5YEpRcmB/09fc.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/1.jpeg",
      "restb_room_type": 1,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_B/nCTUX1iX5CoHumBR17GmSSrz/c85a.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/2.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBBGDkbCheEpRcnB/53da.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/3.jpeg",
      "restb_room_type": 1,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBDN2yrChREpRcn5/5c9b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/4.jpeg",
      "restb_room_type": 1,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBCBv9BCk7EpRco3/31b5.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/5.jpeg",
      "restb_room_type": 5,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBNlDMChlEpRcpz/ddc5.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/6.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoC2bQRB61EpRcqq/3b13.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/7.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBC0ZD7CiREpRcra/6f5d.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/8.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBDmHSdCjuEpRcsX/1aa1.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/9.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoC2bQRB8BEpRctW/3744.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/10.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoCswkNB5QEpRcub/be79.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/11.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoKFXEBAeEpRcvW/e771.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/12.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoDuFBcB5TEpRcwX/c76e.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/13.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoDiQhqB51EpRcxW/d668.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/14.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoDdPdoB9GEpRcyT/4420.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/15.jpeg",
      "restb_room_type": 17,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjB17k9Ck5EpRczI/b489.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/16.jpeg",
      "restb_room_type": 6,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBNlDMChuEpRc0o/b699.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/17.jpeg",
      "restb_room_type": 6,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoDuFBcB5TEpRc4H/2c62.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/18.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_B/nCTUX1iX5BWLrlBRtPGmSSsz/6207.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/19.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qB_B/kcHp2YdDtCJexHHk1GmSSuA/e301.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/20.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBC0ZD7ChjEpR3JT/c80a.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/21.jpeg",
      "restb_room_type": 23,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoDdPdoB9YEpR3J8/7117.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/22.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBDN2yrCjAEpR3KU/a5b9.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/23.jpeg",
      "restb_room_type": 23,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBDmHSdCjuEpR3K8/b39f.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/24.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBD7Q0hCiMEpRc9a/a7aa.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/25.jpeg",
      "restb_room_type": 23,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoKFXEBAeEpR3Lg/d66d.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/26.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoKFXEBAVEpRdAY/cef1.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/27.jpeg",
      "restb_room_type": 23,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/nO1Ur3YPjBCBv9BClWEpRdBi/643b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/28.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_oe_C/kOzmiQlmfoCswkNB5REpRdC9/fa04.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000002/29.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     }
@@ -425,7 +425,7 @@
    "discount_show": false,
    "has_matterport_url": true,
    "has_video": true,
-   "hash_id": 659669836,
+   "hash_id": 920000002,
    "locality": {
     "city": "Horšovský Týn",
     "city_seo_name": "horsovsky-tyn",
@@ -438,10 +438,10 @@
     "district_id": 8,
     "district_seo_name": "domazlice",
     "entity_type": "address",
-    "geohash": "u2c1wrtbwv",
-    "gps_lat": 49.523738,
-    "gps_lon": 12.939099,
-    "housenumber": "63",
+    "geohash": "",
+    "gps_lat": 49.525,
+    "gps_lon": 12.94,
+    "housenumber": "102",
     "inaccuracy_type": "gps",
     "municipality": null,
     "municipality_id": 1166,
@@ -474,13 +474,13 @@
    "poi_train_distance": 131,
    "poi_vet_distance": 235,
    "premise": {
-    "city_seo_name": "plzen",
-    "quarter_seo_name": "plzen-3",
-    "seo_name": "taurum-reality-s-r-o",
-    "ward_seo_name": "vnitrni-mesto"
+    "city_seo_name": "praha",
+    "quarter_seo_name": "praha-1",
+    "seo_name": "example-reality",
+    "ward_seo_name": "nove-mesto"
    },
-   "premise_id": 16351,
-   "premise_logo": "https://d48-a.sdn.cz/d_48/c_img_qB_A/nO2CysqjGrB9kIMBASGuitb1/234b.png",
+   "premise_id": 2,
+   "premise_logo": "",
    "price": 8990000.0,
    "price_currency_cb": {
     "name": "Kč",
@@ -498,267 +498,267 @@
     "name": "za nemovitost",
     "value": 1
    },
-   "user_id": 299219
+   "user_id": 2
   },
   {
    "advert_images": [
-    "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmChFvGD8vG0FbTp/cf06.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDp4mD7RG0FbV0/d6c2.jpeg",
-    "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDkXaGP0G0FbYf/e72b.jpeg"
+    "//img.example/sreality/920000003/0.jpeg",
+    "//img.example/sreality/920000003/1.jpeg",
+    "//img.example/sreality/920000003/2.jpeg"
    ],
    "advert_images_all": [
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmChFvGD8vG0FbTp/cf06.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/0.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDp4mD7RG0FbV0/d6c2.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/1.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDkXaGP0G0FbYf/e72b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/2.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrCDmo6GNEG0Fba9/9381.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/3.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrB9kIMH6UG0FbcM/3435.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/4.jpeg",
      "restb_room_type": 10,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmCni4DD1gG0Fbd9/f187.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/5.jpeg",
      "restb_room_type": 3,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrBgjUXF6WG0Fbfb/9f84.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/6.jpeg",
      "restb_room_type": 3,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrDPliFGNKG0Fbha/841a.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/7.jpeg",
      "restb_room_type": 15,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD66G0Fbiy/5775.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/8.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrScbvFsVG0Fblz/17c4.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/9.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmwiaBDsoG0FbnX/419a.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/10.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD3qG0FbpI/06da.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/11.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDp4mD7PG0Fbq5/812e.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/12.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrDPliFGNdG0Fbs7/1b10.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/13.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmCni4DD71G0Fbu6/04d2.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/14.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmChFvGD8vG0Fbwt/2f24.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/15.jpeg",
      "restb_room_type": 21,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrC2szhJBXG0Fbxi/cafd.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/16.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmChFvGD8lG0FbyN/ffd7.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/17.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD6oG0Fbyt/3a44.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/18.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDkXaGQTG0Fb1U/4616.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/19.jpeg",
      "restb_room_type": 24,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrBgjUXF55G0Fb34/a8bc.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/20.jpeg",
      "restb_room_type": 22,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDkXaGP0G0Fb7X/b504.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/21.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmUKhkD4tG0FcCr/8bab.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/22.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrB9kIMH6BG0FcHH/9b0d.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/23.jpeg",
      "restb_room_type": 5,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrCP7qOGH5G0FcLD/c345.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/24.jpeg",
      "restb_room_type": 2,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmwiaBDsMG0FcP9/f4b7.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/25.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrC2szhI11G0FcUf/3a47.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/26.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmUKhkD4bG0FcYd/75d9.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/27.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrCP7qOGHdG0Fccb/aa9d.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/28.jpeg",
      "restb_room_type": 6,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrud5yFmiG0FchN/601b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/29.jpeg",
      "restb_room_type": 4,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmUKhkD4kG0Fcm7/2b35.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/30.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD66G0Fcrl/aad4.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/31.jpeg",
      "restb_room_type": 17,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrCP7qOGHnG0Fcww/969b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/32.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDkXaGP0G0Fc2N/fdb2.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/33.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrRICCHkRG0Fc4v/f432.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/34.jpeg",
      "restb_room_type": 32,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD6fG0Fc5o/3327.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/35.jpeg",
      "restb_room_type": 32,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrRICCHkIG0Fc7B/cc92.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/36.jpeg",
      "restb_room_type": 19,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmEA35RDrfG0Fc8b/fe64.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/37.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrDPliFGMSG0Fc9l/384b.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/38.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmBDp4mD7RG0FdAx/dfff.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/39.jpeg",
      "restb_room_type": 19,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrRICCHkRG0FdCl/dc15.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/40.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmCni4DD71G0FdEC/02f7.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/41.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmChFvGD8SG0FdF2/84e4.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/42.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmUKhkD4bG0FdHo/6fac.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/43.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrRICCHkRG0FdJN/0e56.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/44.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrC2szhJCEG0FdLe/a512.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/45.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmD87zEEIcG0FdNU/4b76.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/46.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmD87zEEFrG0FdPE/3f4e.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/47.jpeg",
      "restb_room_type": 0,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmCni4DD70G0FdQx/17b7.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/48.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/nO2CysqjGrScbvFsuG0FdSZ/7999.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/49.jpeg",
      "restb_room_type": 29,
      "room_type_confidence": 0.699999988079071
     },
     {
-     "advert_image_sdn_url": "//d18-a.sdn.cz/d_18/c_img_qC_A/kQMlcCt5zmC5zFHD6fG0FdUu/4e46.jpeg",
+     "advert_image_sdn_url": "//img.example/sreality/920000003/50.jpeg",
      "restb_room_type": 26,
      "room_type_confidence": 0.699999988079071
     }
@@ -779,7 +779,7 @@
    "discount_show": false,
    "has_matterport_url": false,
    "has_video": false,
-   "hash_id": 3870457932,
+   "hash_id": 920000003,
    "locality": {
     "city": "Drahotín",
     "city_seo_name": "drahotin",
@@ -792,10 +792,10 @@
     "district_id": 8,
     "district_seo_name": "domazlice",
     "entity_type": "address",
-    "geohash": "u2c1drg1rh",
-    "gps_lat": 49.5252344539439,
-    "gps_lon": 12.7595575003702,
-    "housenumber": "38",
+    "geohash": "",
+    "gps_lat": 49.525,
+    "gps_lon": 12.76,
+    "housenumber": "103",
     "inaccuracy_type": "gps",
     "municipality": null,
     "municipality_id": 1157,
@@ -829,12 +829,12 @@
    "poi_vet_distance": 3521,
    "premise": {
     "city_seo_name": "praha",
-    "quarter_seo_name": "praha-8",
-    "seo_name": "century-21-synergy",
-    "ward_seo_name": "karlin"
+    "quarter_seo_name": "praha-1",
+    "seo_name": "example-reality",
+    "ward_seo_name": "nove-mesto"
    },
-   "premise_id": 73156,
-   "premise_logo": "https://d48-a.sdn.cz/d_48/c_img_oY_A/nPw2pRkMOeC4jvZqZCwn4b6/d6ad.png",
+   "premise_id": 3,
+   "premise_logo": "",
    "price": 2690000.0,
    "price_currency_cb": {
     "name": "Kč",
@@ -852,7 +852,7 @@
     "name": "za nemovitost",
     "value": 1
    },
-   "user_id": 321871
+   "user_id": 3
   }
  ],
  "search_title": "Rodinné domy na prodej Domažlice",
