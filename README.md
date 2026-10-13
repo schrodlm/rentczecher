@@ -39,6 +39,23 @@ hosted. Your searches and your history stay on your disk.
   as disappeared in the scan's results. Three misses filters out portal API
   flicker.
 
+## Using the portals
+
+rentczecher is an independent project. It is not affiliated with, endorsed by
+or connected to Sreality.cz (Seznam.cz), Bezrealitky or RE/MAX, and their
+names and logos belong to their owners.
+
+It is built for personal, non-commercial use: one person looking for their own
+home. It runs on your computer, reads the portals for your searches only, and
+never republishes what it reads. Each portal has its own terms of use, and when
+you run rentczecher you are the one using the portal, so following those terms
+is up to you. Professional use, as an agent or an investor for example, is
+outside what it is built for.
+
+If you run one of these portals and have a concern about how rentczecher uses
+it, please [open an issue](https://github.com/schrodlm/rentczecher/issues).
+Every such request gets a quick answer.
+
 ## Requirements
 
 - Python 3.11 or newer
