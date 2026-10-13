@@ -19,7 +19,12 @@ export type Town = { code: number; name: string; okres: number; kraj: number; x:
 /* The lat/lon box the map was drawn over, in degrees. */
 type Bounds = { west: number; east: number; south: number; north: number };
 
+/* The gazetteer build the map was drawn from: when, and from which RÚIAN
+files, each named after the date of its dataset. */
+type Gazetteer = { generated_at: string; source: string };
+
 type CzechMap = {
+	gazetteer: Gazetteer;
 	width: number;
 	height: number;
 	bounds: Bounds;
@@ -32,6 +37,12 @@ type CzechMap = {
 // JSON types its kinds as plain strings and its boxes as lists of any length,
 // so the shape cannot be checked here. The map's tests pin it.
 const czechMap = data as unknown as CzechMap;
+
+// ČÚZK licenses RÚIAN on the condition that every view of it credits them
+// with the year of the dataset used and links their terms of use.
+export const MAP_CREDIT = `ČÚZK, ${czechMap.gazetteer.source.slice(0, 4)}`;
+export const MAP_CREDIT_TERMS =
+	'https://cuzk.gov.cz/Predpisy/Podminky-poskytovani-prostor-dat-a-sitovych-sluzeb/Podminky-poskytovani-prostorovych-dat-CUZK.aspx';
 
 export const MAP_WIDTH = czechMap.width;
 export const MAP_HEIGHT = czechMap.height;
