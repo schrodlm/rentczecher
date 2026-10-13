@@ -116,7 +116,7 @@ class TestSrealityParsing:
         assert l.parsed_place.names == ("U Vody", "Praha", "Holešovice", "Praha 7")
         assert l.parsed_place.district is None
         assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/910000001"
-        assert l.image_url.startswith("https://")
+        assert l.photo_urls[0].startswith("https://")
 
     def test_houses_fixture_parses_land_and_district(self, monkeypatch):
         # One of the three fixture houses exceeds the 5M price cap.
@@ -373,7 +373,7 @@ class TestBezrealitkyParsing:
         assert l.parsed_place.names == ("Veletržní", "Praha 7")
         assert l.parsed_place.district is None
         assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
-        assert l.image_url == "https://img.bezrealitky.cz/1.jpg"
+        assert l.photo_urls == ("https://img.bezrealitky.cz/1.jpg",)
         assert l.size_m2 == 55
         assert l.disposition_raw_text == "2+kk"
         assert l.charges == 3500
@@ -690,7 +690,7 @@ class TestRemaxParsing:
         assert l.parsed_place.district == "Domažlice"
         assert l.parsed_place.names == ("Týnské Předměstí",)
         assert l.url == "https://www.remax-czech.cz/reality/detail/12345/prodej-domu"
-        assert l.image_url == "https://www.remax-czech.cz/img/12345.jpg"
+        assert l.photo_urls == ("https://www.remax-czech.cz/img/12345.jpg",)
         assert l.size_m2 == 120
         assert l.land_m2 == 800
         assert l.disposition_raw_text == "4+kk"
