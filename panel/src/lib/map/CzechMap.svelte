@@ -3,7 +3,8 @@
 	import { Tween } from 'svelte/motion';
 	import type { NamedPlace } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { KRAJE, labelName, regionOf, regionPlace, townPlace, type Region, type Town } from './czech-map';
+	import { opensInBrowser } from '$lib/browser-link';
+	import { KRAJE, MAP_CREDIT, MAP_CREDIT_TERMS, labelName, regionOf, regionPlace, townPlace, type Region, type Town } from './czech-map';
 	import { placeLabels } from './labels';
 	import type { MapNavigation } from './navigation.svelte';
 
@@ -202,6 +203,15 @@
 			{t.t('Click a region to zoom in.')}
 		{/if}
 	</p>
+	<a
+		class="czech-map__credit"
+		href={MAP_CREDIT_TERMS}
+		target="_blank"
+		rel="noopener noreferrer"
+		use:opensInBrowser
+	>
+		{MAP_CREDIT}
+	</a>
 </div>
 
 <style>
@@ -381,6 +391,12 @@
 		margin: 0;
 		color: var(--color-bronze);
 		font-size: 0.8125rem;
+	}
+
+	.czech-map__credit {
+		align-self: flex-end;
+		color: var(--color-bronze);
+		font-size: 0.6875rem;
 	}
 
 	/* Layers fade in once the zoom has mostly landed. CSS animations only,
