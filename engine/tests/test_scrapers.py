@@ -87,7 +87,8 @@ class TestSrealitySearchParams:
 
 
 class TestSrealityParsing:
-    """Fixture-driven parsing of recorded /api/v1/estates/search responses."""
+    """Fixture-driven parsing of /api/v1/estates/search responses, made up in the
+    shape the portal answers with."""
 
     def _scrape_fixture(self, monkeypatch, fixture_name, criteria):
         payload = json.loads((FIXTURES / fixture_name).read_text())
@@ -96,10 +97,10 @@ class TestSrealityParsing:
         return listings, calls, payload
 
     def test_flats_fixture_parses_all_fields(self, monkeypatch):
-        # The fixture holds three real listings; two exceed the profile's
+        # The fixture holds three listings; two exceed the profile's
         # 25000 price cap and must be dropped by the client-side filter.
         listings, calls, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
-        assert [x.id for x in listings] == ["sreality:1222430796"]
+        assert [x.id for x in listings] == ["sreality:910000001"]
         l = listings[0]
         assert l.source == "sreality"
         assert l.title == payload["results"][0]["advert_name"]
@@ -108,29 +109,29 @@ class TestSrealityParsing:
         assert l.disposition_raw_text == "2+kk"
         assert l.size_m2 == 56
         assert l.land_m2 is None
-        assert abs(l.lat - 50.111328) < 1e-6
-        assert abs(l.lon - 14.448094) < 1e-6
+        assert abs(l.lat - 50.105) < 1e-6
+        assert abs(l.lon - 14.44) < 1e-6
         assert l.location_raw_text == "U Vody, Praha - Holešovice, Praha 7"
         assert l.parsed_place.names == ("U Vody", "Praha", "Holešovice", "Praha 7")
         assert l.parsed_place.district is None
-        assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/1222430796"
+        assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/910000001"
         assert l.image_url.startswith("https://")
 
     def test_houses_fixture_parses_land_and_district(self, monkeypatch):
         # One of the three fixture houses exceeds the 5M price cap.
         listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_CRITERIA)
-        assert sorted(x.id for x in listings) == ["sreality:3870457932", "sreality:527867980"]
-        l = next(x for x in listings if x.id == "sreality:527867980")
+        assert sorted(x.id for x in listings) == ["sreality:920000001", "sreality:920000003"]
+        l = next(x for x in listings if x.id == "sreality:920000001")
         assert l.disposition_raw_text == "Rodinný"
         assert l.size_m2 == 142
         assert l.land_m2 == 728
         assert "Domažlice" in l.location_raw_text
-        assert l.url == "https://www.sreality.cz/detail/prodej/dum/rodinny/horsovsky-tyn-semosice/527867980"
+        assert l.url == "https://www.sreality.cz/detail/prodej/dum/rodinny/horsovsky-tyn-semosice/920000001"
 
     def test_city_equal_to_citypart_is_not_duplicated_in_location(self, monkeypatch):
         # Village listings often have city == citypart (Drahotín/Drahotín).
         listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_CRITERIA)
-        l = next(x for x in listings if x.id == "sreality:3870457932")
+        l = next(x for x in listings if x.id == "sreality:920000003")
         assert l.location_raw_text == "Drahotín, Domažlice"
 
     def test_request_sends_browser_headers(self, monkeypatch):
