@@ -3,6 +3,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	// Lists every bundled package with its license text, which the installers
+	// must carry. The release build collects it into the app's notices.
+	build: { license: true },
 	// The shell grants CORS for exactly this origin, a silent port shift would
 	// surface as opaque browser errors two layers from the cause.
 	server: { port: 5173, strictPort: true }
