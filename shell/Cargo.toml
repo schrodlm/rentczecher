@@ -3,6 +3,7 @@ name = "rentczecher"
 description = "The rentczecher desktop shell"
 authors = ["Matěj Schrödl"]
 repository = "https://github.com/schrodlm/rentczecher"
+license = "GPL-3.0-or-later"
 edition = "2024"
 rust-version = "1.90"
 
