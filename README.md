@@ -255,5 +255,11 @@ which ČÚZK publishes with its metadata.
 
 ## License
 
-Not yet chosen. The project is intended to be free and open source. If you're
-looking at this before a `LICENSE` file lands, ask.
+rentczecher is free software, licensed under the
+[GNU General Public License, version 3 or later](LICENSE). You may use, study,
+change and share it, also for money. Whoever distributes it, changed or not,
+must pass it on under the same license together with its full source.
+
+The license covers the code. The name rentczecher and its logo are not part of
+it, so a fork is welcome under a name of its own. The RÚIAN data keeps its own
+license, see [Data from ČÚZK](#data-from-čúzk).
