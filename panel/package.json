@@ -1,6 +1,7 @@
 {
 	"name": "panel",
 	"private": true,
+	"license": "GPL-3.0-or-later",
 	"type": "module",
 	"engines": {
 		"node": ">=20.0.0",
