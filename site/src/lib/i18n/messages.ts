@@ -25,6 +25,7 @@ export interface Messages {
 	nav: {
 		label: string;
 		roadmap: string;
+		devlog: string;
 		faq: string;
 	};
 	languageLabel: string;
@@ -43,6 +44,7 @@ export interface Messages {
 	devlog: {
 		heading: string;
 		intro: string;
+		writtenInEnglish: string;
 		allPosts: string;
 		read: string;
 		minutesToRead: (minutes: number) => string;

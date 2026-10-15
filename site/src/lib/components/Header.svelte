@@ -17,6 +17,7 @@
 	</a>
 	<nav aria-label={t.nav.label}>
 		<a href="{homePath(lang)}#roadmap">{t.nav.roadmap}</a>
+		<a href="{homePath(lang)}#devlog">{t.nav.devlog}</a>
 		<a href="{homePath(lang)}#faq">{t.nav.faq}</a>
 	</nav>
 	<div class="controls">
