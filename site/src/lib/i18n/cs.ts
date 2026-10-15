@@ -81,6 +81,10 @@ export const cs: Messages = {
 			}
 		}
 	},
+	privacy: {
+		heading: 'Všechno zůstává u vás.',
+		body: 'rentczecher nemá žádný server. Vaše hledání, oblíbené nabídky i historie cen jsou uložené jen ve vašem počítači. Žádný účet, žádné sledování. A protože je kód otevřený, můžete si to sami ověřit.'
+	},
 	download: {
 		heading: 'Stáhnout',
 		version: 'Verze',

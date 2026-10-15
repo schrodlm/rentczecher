@@ -81,6 +81,10 @@ export interface Messages {
 			free: FeatureCard;
 		};
 	};
+	privacy: {
+		heading: string;
+		body: string;
+	};
 	download: {
 		heading: string;
 		version: string;
