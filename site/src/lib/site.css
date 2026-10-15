@@ -31,6 +31,16 @@
 	color-scheme: dark;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
 body {
 	margin: 0;
 	background: var(--bg);
@@ -52,4 +62,66 @@ h2,
 h3,
 p {
 	margin: 0;
+}
+
+.container {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding-left: 24px;
+	padding-right: 24px;
+	box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+	.container {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 48px;
+	padding: 0 22px;
+	border-radius: 999px;
+	font-weight: 700;
+	font-size: 17px;
+	text-decoration: none;
+	box-sizing: border-box;
+}
+
+.btn-line {
+	border: 2px solid var(--olive);
+	color: var(--olive);
+}
+
+.btn-line:hover {
+	background: var(--olive);
+	color: var(--on-olive);
+}
+
+.btn-sm {
+	min-height: 44px;
+	padding: 0 16px;
+	font-size: 15px;
+}
+
+.iconbtn {
+	width: 44px;
+	height: 44px;
+	border-radius: 999px;
+	border: 1px solid var(--line-strong);
+	background: transparent;
+	color: var(--text);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	padding: 0;
+}
+
+.iconbtn:hover {
+	border-color: var(--text);
 }

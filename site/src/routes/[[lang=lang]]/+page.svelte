@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Header from '$lib/components/Header.svelte';
 	import { LANGUAGES, MESSAGES, homePath } from '$lib/i18n';
 	import type { PageProps } from './$types';
 
@@ -19,4 +20,8 @@
 	{/each}
 	<meta property="og:title" content={t.meta.title} />
 	<meta property="og:description" content={t.meta.description} />
+	<meta property="og:image" content="{SITE_ORIGIN}/logo.png" />
 </svelte:head>
+
+<Header {t} {lang} />
+<main id="top"></main>
