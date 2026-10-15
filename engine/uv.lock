@@ -836,6 +836,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
+    { name = "packaging" },
     { name = "prek" },
     { name = "pyinstaller" },
     { name = "pyproj" },
@@ -857,6 +858,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy" },
+    { name = "packaging", specifier = ">=26.2" },
     { name = "prek" },
     { name = "pyinstaller", specifier = ">=6.22.3" },
     { name = "pyproj", specifier = ">=3.7.1" },
