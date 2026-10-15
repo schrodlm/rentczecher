@@ -215,6 +215,13 @@ export const cs: Messages = {
 			}
 		]
 	},
+	footer: {
+		label: 'Odkazy',
+		credit:
+			'Vytvořil Matěj Schrödl. Nezávislý open-source projekt, nijak nespojený s žádným realitním portálem.',
+		operators: 'Pro provozovatele portálů',
+		support: 'Poděkovat'
+	},
 	operators: {
 		title: 'Pro provozovatele portálů',
 		intro: 'Pokud jste sem přišli z hlavičky User-Agent ve svých logech, tady je, co je rentczecher a jak čte váš web.',

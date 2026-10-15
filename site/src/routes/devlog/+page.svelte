@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DevlogCard from '$lib/components/DevlogCard.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { DEVLOG_LANGUAGE, MESSAGES, pathsInEveryLanguage } from '$lib/i18n';
 	import type { PageProps } from './$types';
@@ -24,6 +25,7 @@
 		{/each}
 	</div>
 </main>
+<Footer {t} lang={DEVLOG_LANGUAGE} />
 
 <style>
 	main {

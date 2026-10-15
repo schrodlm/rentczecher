@@ -215,6 +215,13 @@ export const en: Messages = {
 			}
 		]
 	},
+	footer: {
+		label: 'Links',
+		credit:
+			'Made by Matěj Schrödl. An independent open-source project, not affiliated with any real-estate portal.',
+		operators: 'For portal operators',
+		support: 'Say thanks'
+	},
 	operators: {
 		title: 'For portal operators',
 		intro: 'If you came here from a User-Agent header in your logs, this is what rentczecher is and how it reads your site.',

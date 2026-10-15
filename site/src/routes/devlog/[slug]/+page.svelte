@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { formatDate } from '$lib/format';
 	import { DEVLOG_LANGUAGE, MESSAGES, pathsInEveryLanguage } from '$lib/i18n';
@@ -26,6 +27,7 @@
 	<!-- The HTML is rendered at build time from the repository's own Markdown files. -->
 	<article>{@html data.html}</article>
 </main>
+<Footer {t} lang={DEVLOG_LANGUAGE} />
 
 <style>
 	main {

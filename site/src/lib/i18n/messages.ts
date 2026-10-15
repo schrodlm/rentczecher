@@ -131,6 +131,12 @@ export interface Messages {
 		heading: string;
 		items: FaqItem[];
 	};
+	footer: {
+		label: string;
+		credit: string;
+		operators: string;
+		support: string;
+	};
 	operators: {
 		title: string;
 		intro: string;
