@@ -46,7 +46,7 @@ function filledBlank(): ProfileDraft {
 describe('ProfileDraft.blank', () => {
 	test('watches every portal that does not ask to be turned on knowingly, and waits for a name and a place', () => {
 		const draft = ProfileDraft.blank();
-		expect(draft.portals).toEqual(['bezrealitky', 'remax']);
+		expect(draft.portals).toEqual(['remax']);
 		expect(draft.missing).toEqual(['name', 'place']);
 		expect(draft.canSave).toBe(false);
 	});
