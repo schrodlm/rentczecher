@@ -79,10 +79,26 @@ p {
 	}
 }
 
+.band-surface {
+	background: var(--surface);
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+}
+
 .section-heading {
 	font-size: 38px;
 	letter-spacing: -0.02em;
 	line-height: 1.15;
+}
+
+.section-intro {
+	font-size: 18px;
+	line-height: 1.55;
+	color: var(--muted);
+}
+
+.muted {
+	color: var(--muted);
 }
 
 .btn {
@@ -130,4 +146,15 @@ p {
 
 .iconbtn:hover {
 	border-color: var(--text);
+}
+
+.chip {
+	display: inline-block;
+	align-self: flex-start;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 3px 10px;
+	border-radius: 999px;
 }

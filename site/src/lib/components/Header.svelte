@@ -16,6 +16,7 @@
 		rentczecher
 	</a>
 	<nav aria-label={t.nav.label}>
+		<a href="#roadmap">{t.nav.roadmap}</a>
 		<a href="#faq">{t.nav.faq}</a>
 	</nav>
 	<div class="controls">

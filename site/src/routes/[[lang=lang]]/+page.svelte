@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Faq from '$lib/components/Faq.svelte';
 	import Header from '$lib/components/Header.svelte';
+	import Roadmap from '$lib/components/Roadmap.svelte';
 	import { LANGUAGES, MESSAGES, homePath } from '$lib/i18n';
 	import type { PageProps } from './$types';
 
@@ -26,5 +27,6 @@
 
 <Header {t} {lang} />
 <main id="top">
+	<Roadmap {t} />
 	<Faq {t} />
 </main>
