@@ -8,6 +8,13 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'is-it-legal-to-release-this',
+		title: 'Is it legal to release this?',
+		date: '2026-10-14',
+		summary:
+			'Before going further I checked whether publishing rentczecher is safe. The answer shaped the tool: local, free, linking back to the portals, and licensed GPL.'
+	},
+	{
 		slug: 'a-welcome-and-a-choice-of-language',
 		title: 'A welcome and a choice of language',
 		date: '2026-10-12',
