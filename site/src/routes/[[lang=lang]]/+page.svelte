@@ -3,6 +3,7 @@
 	import Download from '$lib/components/Download.svelte';
 	import Faq from '$lib/components/Faq.svelte';
 	import Features from '$lib/components/Features.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Hero from '$lib/components/Hero.svelte';
 	import OpenSource from '$lib/components/OpenSource.svelte';
@@ -44,3 +45,4 @@
 	<Devlog {t} {lang} entries={data.latestDevlog} />
 	<Faq {t} />
 </main>
+<Footer {t} {lang} />

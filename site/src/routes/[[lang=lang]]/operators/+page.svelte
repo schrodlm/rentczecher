@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import RichText from '$lib/components/RichText.svelte';
 	import { MESSAGES, pathsInEveryLanguage } from '$lib/i18n';
@@ -41,6 +42,7 @@
 	<p><RichText parts={t.operators.contact} /></p>
 	<p class="muted">{t.operators.notAffiliated}</p>
 </main>
+<Footer {t} {lang} />
 
 <style>
 	main {
