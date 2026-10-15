@@ -73,6 +73,23 @@
 		margin-bottom: 8px;
 	}
 
+	article :global(figure) {
+		margin: 28px 0;
+	}
+
+	article :global(figure svg) {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+
+	article :global(figcaption) {
+		margin-top: 10px;
+		font-size: 14px;
+		color: var(--muted);
+		text-align: center;
+	}
+
 	article :global(code) {
 		font-family: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 		font-size: 0.9em;
