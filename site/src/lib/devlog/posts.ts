@@ -20,5 +20,12 @@ export const POSTS: DevlogPost[] = [
 		date: '2026-10-03',
 		summary:
 			"A listing's location used to be the portal's line of text. Now it is a set of official places, from the street up to the region."
+	},
+	{
+		slug: 'a-real-desktop-app',
+		title: 'A real desktop app',
+		date: '2026-09-30',
+		summary:
+			'The Tauri shell now ships a PyInstaller-frozen engine, and each of the two processes notices when the other one dies.'
 	}
 ];
