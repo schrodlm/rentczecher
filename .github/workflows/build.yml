@@ -45,10 +45,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: shell
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.2
 
-      # Builds the panel, freezes the engine and compiles the shell, through
-      # the beforeBuildCommand in tauri.conf.json.
-      - run: npm run tauri build
+      # Builds the panel, freezes the engine, writes the third-party notices
+      # and compiles the shell, through the beforeBuildCommand in
+      # tauri.release.conf.json.
+      - run: npm run tauri build -- --config ../shell/tauri.release.conf.json
         working-directory: panel
 
       # Runs the engine this OS just froze, the way the shell runs it.
