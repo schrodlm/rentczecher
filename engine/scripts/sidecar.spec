@@ -15,6 +15,20 @@ a = Analysis(
     # uvicorn picks its event loop and protocol implementations by string at
     # runtime, invisible to PyInstaller's import scan.
     hiddenimports=collect_submodules("uvicorn"),
+    # The dev tools installed beside the engine are imported by code paths it
+    # never runs, such as anyio's pytest helpers and pydantic's mypy plugin.
+    # PyInstaller cannot tell, and would ship them inside the app.
+    excludes=[
+        "mypy",
+        "mypy_extensions",
+        "_pytest",
+        "pytest",
+        "pygments",
+        "setuptools",
+        "_distutils_hack",
+        "pkg_resources",
+        "packaging",
+    ],
 )
 pyz = PYZ(a.pure)
 exe = EXE(
