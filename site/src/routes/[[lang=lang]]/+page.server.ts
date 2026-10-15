@@ -1,5 +1,8 @@
 import type { EntryGenerator, PageServerLoad } from './$types';
 import { ALTERNATE_LANGUAGES, DEFAULT_LANGUAGE } from '$lib/i18n';
+import { listDevlog } from '$lib/server/devlog';
+
+const DEVLOG_POSTS_SHOWN = 3;
 
 export const entries: EntryGenerator = () => [
 	{ lang: undefined },
@@ -8,6 +11,7 @@ export const entries: EntryGenerator = () => [
 
 export const load: PageServerLoad = ({ params }) => {
 	return {
-		lang: params.lang ?? DEFAULT_LANGUAGE
+		lang: params.lang ?? DEFAULT_LANGUAGE,
+		latestDevlog: listDevlog().slice(0, DEVLOG_POSTS_SHOWN)
 	};
 };

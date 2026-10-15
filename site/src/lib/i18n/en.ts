@@ -11,6 +11,7 @@ export const en: Messages = {
 	nav: {
 		label: 'Main',
 		roadmap: 'Roadmap',
+		devlog: 'Devlog',
 		faq: 'FAQ'
 	},
 	languageLabel: 'Language',
@@ -65,6 +66,7 @@ export const en: Messages = {
 	devlog: {
 		heading: 'Devlog',
 		intro: "How rentczecher gets made: what worked, what didn't and what I learned along the way.",
+		writtenInEnglish: 'Posts are written in English.',
 		allPosts: 'All posts',
 		read: 'Read',
 		minutesToRead: (minutes) => `${minutes} min read`

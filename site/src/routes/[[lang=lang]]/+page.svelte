@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Devlog from '$lib/components/Devlog.svelte';
 	import Faq from '$lib/components/Faq.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Roadmap from '$lib/components/Roadmap.svelte';
@@ -28,5 +29,6 @@
 <Header {t} {lang} />
 <main id="top">
 	<Roadmap {t} />
+	<Devlog {t} {lang} entries={data.latestDevlog} />
 	<Faq {t} />
 </main>
