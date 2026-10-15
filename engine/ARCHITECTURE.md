@@ -273,33 +273,28 @@ map rather than here.
 
 ### The bigger arc
 
-rentczecher is on a long road from a cron script for one household to a public,
-aggregate-only observatory of the Czech housing market. The seams are being built
-in order:
+rentczecher is on a long road from a cron script for one household to a desktop
+app anyone searching for a home can install. The seams are being built in order:
 
 1. **Foundations** (where we are): the package, the frozen domain model, the
-   location resolver, SQLite and migrations, the scraper framework with recorded
-   fixtures, and now a pipeline extracted from the CLI.
-2. **Robustness**: a real test pyramid (pure unit, recorded-fixture contract,
+   location resolver, SQLite and migrations, the scraper framework with made-up
+   fixtures in each portal's response shape, and now a pipeline extracted from
+   the CLI.
+2. **Robustness**: a real test pyramid (pure unit, fixture contract,
    nightly live-drift, e2e), property tests, boundary pins on the tuned dedup and
    scoring constants, CI.
 3. **Quick-glance UX**: a settled card design, notification channels as API
-   clients (email, Telegram, ntfy, webhook), score explainability.
+   clients delivering to the owner's own endpoints, score explainability.
 4. **Desktop app**: a Tauri and SvelteKit shell over a Python sidecar that
    imports this exact `services` layer, with a signed auto-updater (scrapers rot,
    and fixes have to reach non-technical users on their own). The package is the
    product, the GUI is a client.
-5. **Adoption**: landing site, docs, a staged launch. Free and open source.
-6. **Platform**: a website publishing rigorous, novel statistics (time-on-market
-   survival, price-cut hazard, delisting dynamics) fed by opted-in users' local
-   runs. Aggregate-only, never re-serving individual listings, always
-   deep-linking back to the portals.
 
-That's why the domain model, the append-only price series, and the location
-resolver exist well before anything uses them the obvious way. Each is a seam a
-later phase consumes. The binding architecture decisions are the ADRs in
-`docs/adr/`, and the order of upcoming work lives in the GitHub milestones.
-The summary above is enough to orient a contributor.
+That's why the domain model and the location resolver exist well before
+anything uses them the obvious way. Each is a seam a later phase consumes. The
+binding architecture decisions are the ADRs in `docs/adr/`, and the order of
+upcoming work lives in the GitHub milestones. The summary above is enough to
+orient a contributor.
 
 ## Conventions worth knowing before you send a patch
 
