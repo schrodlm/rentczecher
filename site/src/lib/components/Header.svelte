@@ -5,7 +5,11 @@
 	import type { Messages } from '$lib/i18n/messages';
 	import { REPO_URL } from '$lib/links';
 
-	let { t, lang }: { t: Messages; lang: Language } = $props();
+	let {
+		t,
+		lang,
+		languagePaths
+	}: { t: Messages; lang: Language; languagePaths: Record<Language, string> } = $props();
 </script>
 
 <a class="topbar" href={REPO_URL}>{t.topbar}</a>
@@ -30,7 +34,7 @@
 			{#each LANGUAGES as option (option)}
 				<!-- A full load, so the server sets the html lang attribute for the new language. -->
 				<a
-					href={homePath(option)}
+					href={languagePaths[option]}
 					data-sveltekit-reload
 					hreflang={option}
 					lang={option}
