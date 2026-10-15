@@ -81,6 +81,10 @@ export const en: Messages = {
 			}
 		}
 	},
+	privacy: {
+		heading: 'Everything stays with you.',
+		body: 'rentczecher has no server. Your searches, saved listings and price history live only on your computer. No account, no tracking. And because the code is open, you can check that yourself.'
+	},
 	download: {
 		heading: 'Download',
 		version: 'Version',
