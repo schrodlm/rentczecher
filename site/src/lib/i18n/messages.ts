@@ -56,6 +56,13 @@ export interface Messages {
 		dropDetail: string;
 		dropAmount: string;
 	};
+	portals: {
+		label: string;
+		heading: string;
+		defaults: string;
+		more: string;
+		notAffiliated: string;
+	};
 	download: {
 		heading: string;
 		version: string;

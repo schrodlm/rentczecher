@@ -43,6 +43,13 @@ export const cs: Messages = {
 		dropDetail: 'Šumava, 2 450 000 Kč',
 		dropAmount: '−150 000'
 	},
+	portals: {
+		label: 'Podporované portály',
+		heading: 'Portály',
+		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX. Sreality a Bezrealitky si zapnete sami při nastavení hledání, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
+		more: '+ další brzy',
+		notAffiliated: 'rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
+	},
 	download: {
 		heading: 'Stáhnout',
 		version: 'Verze',
