@@ -2,6 +2,7 @@
 	import Devlog from '$lib/components/Devlog.svelte';
 	import Download from '$lib/components/Download.svelte';
 	import Faq from '$lib/components/Faq.svelte';
+	import Features from '$lib/components/Features.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Hero from '$lib/components/Hero.svelte';
 	import Portals from '$lib/components/Portals.svelte';
@@ -33,6 +34,7 @@
 <main id="top">
 	<Hero {t} appVersion={data.appVersion} />
 	<Portals {t} />
+	<Features {t} />
 	<Download {t} appVersion={data.appVersion} />
 	<Roadmap {t} />
 	<Devlog {t} {lang} entries={data.latestDevlog} />
