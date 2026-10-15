@@ -1,7 +1,8 @@
 # 10. Notification channels are API clients
 
 Status: accepted (2026-10-04). Supersedes the "notify, then commit" rule of
-ADR 7.
+ADR 7. Amended by ADR 12: a channel delivers only to the owner's own private
+endpoints.
 
 ## Context
 
