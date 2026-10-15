@@ -19,7 +19,13 @@ export const PORTALS: readonly PortalShown[] = [
 		logo: srealityLogo,
 		optInTerms: 'https://o-seznam.cz/napoveda/sreality/smluvni-podminky-sluzby-sreality-cz/'
 	},
-	{ portal: 'bezrealitky', name: 'Bezrealitky', site: 'bezrealitky.cz', logo: bezrealitkyLogo, optInTerms: null },
+	{
+		portal: 'bezrealitky',
+		name: 'Bezrealitky',
+		site: 'bezrealitky.cz',
+		logo: bezrealitkyLogo,
+		optInTerms: 'https://www.bezrealitky.cz/informace/smluvni-podminky'
+	},
 	{ portal: 'remax', name: 'RE/MAX', site: 'remax-czech.cz', logo: remaxLogo, optInTerms: null }
 ];
 
