@@ -4,6 +4,7 @@ Run: python3 -m pytest tests/test_scrapers.py -v
 """
 
 import json
+from importlib.metadata import version
 from pathlib import Path
 from typing import get_args
 
@@ -134,10 +135,10 @@ class TestSrealityParsing:
         l = next(x for x in listings if x.id == "sreality:920000003")
         assert l.location_raw_text == "Drahotín, Domažlice"
 
-    def test_request_sends_browser_headers(self, monkeypatch):
+    def test_request_names_the_app_at_its_package_version(self, monkeypatch):
         _, calls, _ = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
         headers = calls[0].headers
-        assert "Mozilla" in headers["User-Agent"]
+        assert headers["User-Agent"] == f"rentczecher/{version('rentczecher_engine')} (+https://rentczecher.cz)"
         assert headers["Accept"] == "application/json"
 
 
