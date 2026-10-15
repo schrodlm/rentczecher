@@ -33,6 +33,20 @@ export interface Messages {
 		toDark: string;
 		toLight: string;
 	};
+	download: {
+		heading: string;
+		version: string;
+		free: string;
+		allReleases: string;
+		button: string;
+		windows: string;
+		macos: string;
+		linux: string;
+		macWarning: string;
+		whatToDo: string;
+		buildYourself: string;
+		readme: string;
+	};
 	roadmap: {
 		heading: string;
 		intro: string;

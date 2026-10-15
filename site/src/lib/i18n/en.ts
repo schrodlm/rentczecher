@@ -19,6 +19,20 @@ export const en: Messages = {
 		toDark: 'Switch to dark mode',
 		toLight: 'Switch to light mode'
 	},
+	download: {
+		heading: 'Download',
+		version: 'Version',
+		free: 'free',
+		allReleases: 'All versions and release notes on GitHub',
+		button: 'Download',
+		windows: '.exe installer for Windows 10 and 11',
+		macos: '.dmg installer for Apple Silicon',
+		linux: 'AppImage or .deb',
+		macWarning: 'macOS asks whether you trust the app on first launch.',
+		whatToDo: 'What to do?',
+		buildYourself: 'Prefer to build it yourself?',
+		readme: 'See the README'
+	},
 	roadmap: {
 		heading: "What's coming",
 		intro: 'The plan follows what people need. Missing something? Say so on GitHub.',

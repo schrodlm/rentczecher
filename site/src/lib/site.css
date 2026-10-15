@@ -114,6 +114,16 @@ p {
 	box-sizing: border-box;
 }
 
+.btn-amber {
+	background: var(--amber);
+	color: var(--on-amber);
+}
+
+.btn-amber:hover {
+	background: var(--amber-hover);
+	color: var(--on-amber);
+}
+
 .btn-line {
 	border: 2px solid var(--olive);
 	color: var(--olive);
