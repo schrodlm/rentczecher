@@ -11,13 +11,13 @@
 <a class="topbar" href={REPO_URL}>{t.topbar}</a>
 
 <header class="container">
-	<a class="brand" href="#top">
+	<a class="brand" href={homePath(lang)}>
 		<img src="/logo.png" alt="" width="36" height="36" />
 		rentczecher
 	</a>
 	<nav aria-label={t.nav.label}>
-		<a href="#roadmap">{t.nav.roadmap}</a>
-		<a href="#faq">{t.nav.faq}</a>
+		<a href="{homePath(lang)}#roadmap">{t.nav.roadmap}</a>
+		<a href="{homePath(lang)}#faq">{t.nav.faq}</a>
 	</nav>
 	<div class="controls">
 		<a class="btn btn-line btn-sm" href={REPO_URL}>

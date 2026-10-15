@@ -158,3 +158,9 @@ p {
 	padding: 3px 10px;
 	border-radius: 999px;
 }
+
+.card {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
