@@ -10,6 +10,7 @@ export const en: Messages = {
 	topbar: 'rentczecher is open source. All the code is on GitHub, a star is always appreciated →',
 	nav: {
 		label: 'Main',
+		features: 'Features',
 		roadmap: 'Roadmap',
 		devlog: 'Devlog',
 		faq: 'FAQ'
@@ -49,6 +50,36 @@ export const en: Messages = {
 		defaults: 'RE/MAX is watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a search, after seeing what their terms say about automated reading.',
 		more: '+ more soon',
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
+	},
+	features: {
+		heading: 'A notebook for your home search',
+		intro: 'The portals are where listings live and where you talk to the seller. rentczecher keeps notes alongside: what is new, what you have already seen and how prices moved. To read an advert, it always sends you back to the portal it came from.',
+		cards: {
+			onlyNew: {
+				title: "Only what's new",
+				body: "It shows you what you haven't seen yet, and price drops on what you already know."
+			},
+			oneList: {
+				title: 'One list',
+				body: 'The same flat from several portals shows up once, with a link to each of its postings.'
+			},
+			memory: {
+				title: 'Memory',
+				body: "It remembers what you've seen, what you liked and how the price changed."
+			},
+			backToPortal: {
+				title: 'Back to the portal',
+				body: 'Every listing links to its advert. You read it there and contact the seller there.'
+			},
+			privacy: {
+				title: 'Privacy',
+				body: 'It runs only on your computer. No account, no cloud.'
+			},
+			free: {
+				title: 'Free',
+				body: 'No subscription and no paid version.'
+			}
+		}
 	},
 	download: {
 		heading: 'Download',

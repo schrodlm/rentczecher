@@ -6,6 +6,11 @@ export interface FaqItem {
 	answer: RichText;
 }
 
+export interface FeatureCard {
+	title: string;
+	body: string;
+}
+
 export interface RoadmapItem {
 	title: string;
 	body: string;
@@ -24,6 +29,7 @@ export interface Messages {
 	topbar: string;
 	nav: {
 		label: string;
+		features: string;
 		roadmap: string;
 		devlog: string;
 		faq: string;
@@ -62,6 +68,18 @@ export interface Messages {
 		defaults: string;
 		more: string;
 		notAffiliated: string;
+	};
+	features: {
+		heading: string;
+		intro: string;
+		cards: {
+			onlyNew: FeatureCard;
+			oneList: FeatureCard;
+			memory: FeatureCard;
+			backToPortal: FeatureCard;
+			privacy: FeatureCard;
+			free: FeatureCard;
+		};
 	};
 	download: {
 		heading: string;

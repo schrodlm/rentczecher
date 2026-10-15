@@ -10,6 +10,7 @@ export const cs: Messages = {
 	topbar: 'rentczecher je open source. Celý kód najdete na GitHubu, hvězdička potěší →',
 	nav: {
 		label: 'Hlavní',
+		features: 'Co umí',
 		roadmap: 'Co chystám',
 		devlog: 'Devlog',
 		faq: 'Otázky'
@@ -49,6 +50,36 @@ export const cs: Messages = {
 		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX. Sreality a Bezrealitky si zapnete sami při nastavení hledání, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
 		more: '+ další brzy',
 		notAffiliated: 'rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
+	},
+	features: {
+		heading: 'Zápisník pro vaše hledání bydlení',
+		intro: 'Nabídky najdete na portálech a tam se také domluvíte s prodávajícím. rentczecher si k tomu vede poznámky: co je nové, co jste už viděli a jak se měnily ceny. Inzerát si vždycky přečtete na portálu, odkud pochází.',
+		cards: {
+			onlyNew: {
+				title: 'Jen nové',
+				body: 'Ukáže vám, co jste ještě neviděli, a zlevnění toho, co už znáte.'
+			},
+			oneList: {
+				title: 'Jeden seznam',
+				body: 'Stejný byt z více portálů se ukáže jednou, s odkazem na každý jeho inzerát.'
+			},
+			memory: {
+				title: 'Paměť',
+				body: 'Pamatuje si, co jste viděli, co se vám líbí a jak se měnila cena.'
+			},
+			backToPortal: {
+				title: 'Zpátky na portál',
+				body: 'Každá nabídka vede na svůj inzerát. Tam si ho přečtete a ozvete se prodávajícímu.'
+			},
+			privacy: {
+				title: 'Soukromí',
+				body: 'Běží jen u vás v počítači. Bez účtu a bez cloudu.'
+			},
+			free: {
+				title: 'Zdarma',
+				body: 'Bez předplatného a bez placené verze.'
+			}
+		}
 	},
 	download: {
 		heading: 'Stáhnout',
