@@ -131,4 +131,16 @@ export interface Messages {
 		heading: string;
 		items: FaqItem[];
 	};
+	operators: {
+		title: string;
+		intro: string;
+		whatHeading: string;
+		whatItIs: string[];
+		howHeading: string;
+		userAgentIntro: string;
+		howItReads: string[];
+		contactHeading: string;
+		contact: RichText;
+		notAffiliated: string;
+	};
 }

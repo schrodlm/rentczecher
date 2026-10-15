@@ -1,5 +1,5 @@
 import type { Messages } from './messages';
-import { ISSUES_URL, REPO_URL, SUPPORT_URL } from '$lib/links';
+import { ISSUES_URL, OPERATOR_CONTACT_EMAIL, REPO_URL, SUPPORT_URL } from '$lib/links';
 
 export const en: Messages = {
 	meta: {
@@ -214,5 +214,32 @@ export const en: Messages = {
 				]
 			}
 		]
+	},
+	operators: {
+		title: 'For portal operators',
+		intro: 'If you came here from a User-Agent header in your logs, this is what rentczecher is and how it reads your site.',
+		whatHeading: 'What it is',
+		whatItIs: [
+			'A free, open-source desktop app, licensed GPL-3.0-or-later.',
+			'One person runs it on their own computer for their own home search.',
+			'It has no server and no accounts, and users share no data with each other.',
+			'It never republishes listings, stores no advert descriptions and links every listing back to its posting.'
+		],
+		howHeading: 'How it reads your site',
+		userAgentIntro: 'It names itself in every request with this User-Agent:',
+		howItReads: [
+			"It reads only its user's saved searches.",
+			'It pauses between pages and caps how many pages it reads per search.',
+			'It keeps a minimum interval between scans.',
+			'It uses no proxies, no rotating identities and no CAPTCHA or firewall bypass. If a portal refuses it, it leaves that portal alone.',
+			'A portal whose terms or robots.txt ask automated clients to stay away is off by default.'
+		],
+		contactHeading: 'Contact',
+		contact: [
+			'If you have any concern about how rentczecher uses your portal, email me at ',
+			{ text: OPERATOR_CONTACT_EMAIL, href: `mailto:${OPERATOR_CONTACT_EMAIL}` },
+			'. Every such message gets a quick answer.'
+		],
+		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any real-estate portal.'
 	}
 };
