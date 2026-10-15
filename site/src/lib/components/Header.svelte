@@ -15,6 +15,9 @@
 		<img src="/logo.png" alt="" width="36" height="36" />
 		rentczecher
 	</a>
+	<nav aria-label={t.nav.label}>
+		<a href="#faq">{t.nav.faq}</a>
+	</nav>
 	<div class="controls">
 		<a class="btn btn-line btn-sm" href={REPO_URL}>
 			<Icon name="branch" size={18} />
@@ -71,6 +74,23 @@
 		font-size: 20px;
 		letter-spacing: -0.01em;
 		margin-right: auto;
+	}
+
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 22px;
+		font-size: 15px;
+	}
+
+	nav a {
+		color: var(--text);
+		text-decoration: none;
+	}
+
+	nav a:hover {
+		color: var(--link);
 	}
 
 	.controls {
