@@ -3,4 +3,10 @@ export interface Messages {
 		title: string;
 		description: string;
 	};
+	topbar: string;
+	languageLabel: string;
+	theme: {
+		toDark: string;
+		toLight: string;
+	};
 }
