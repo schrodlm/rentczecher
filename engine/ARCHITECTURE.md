@@ -276,19 +276,18 @@ map rather than here.
 rentczecher is on a long road from a cron script for one household to a desktop
 app anyone searching for a home can install. The seams are being built in order:
 
-1. **Foundations** (where we are): the package, the frozen domain model, the
-   location resolver, SQLite and migrations, the scraper framework with made-up
-   fixtures in each portal's response shape, and now a pipeline extracted from
-   the CLI.
+1. **Foundations**: the package, the frozen domain model, the location
+   resolver, SQLite and migrations, the scraper framework with made-up fixtures
+   in each portal's response shape, and a pipeline extracted from the CLI.
 2. **Robustness**: a real test pyramid (pure unit, fixture contract,
    nightly live-drift, e2e), property tests, boundary pins on the tuned dedup and
    scoring constants, CI.
 3. **Quick-glance UX**: a settled card design, notification channels as API
    clients delivering to the owner's own endpoints, score explainability.
-4. **Desktop app**: a Tauri and SvelteKit shell over a Python sidecar that
-   imports this exact `services` layer, with a signed auto-updater (scrapers rot,
-   and fixes have to reach non-technical users on their own). The package is the
-   product, the GUI is a client.
+4. **Desktop app** (where we are): a Tauri and SvelteKit shell over a Python
+   sidecar that imports this exact `services` layer, with a signed auto-updater
+   (scrapers rot, and fixes have to reach non-technical users on their own). The
+   package is the product, the GUI is a client.
 
 That's why the domain model and the location resolver exist well before
 anything uses them the obvious way. Each is a seam a later phase consumes. The
