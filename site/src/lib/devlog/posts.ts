@@ -29,6 +29,13 @@ export const POSTS: DevlogPost[] = [
 			'The Tauri shell now ships a PyInstaller-frozen engine, and each of the two processes notices when the other one dies.'
 	},
 	{
+		slug: 'a-window-around-the-engine',
+		title: 'A window around the engine',
+		date: '2026-09-28',
+		summary:
+			'Proving the riskiest part first: a PyInstaller-packaged Python engine started by a Tauri desktop app, and the window waiting until it answers.'
+	},
+	{
 		slug: 'the-panel-and-the-inbox',
 		title: 'The panel and the inbox',
 		date: '2026-09-24',
