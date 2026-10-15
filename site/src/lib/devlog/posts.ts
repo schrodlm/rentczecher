@@ -15,6 +15,13 @@ export const POSTS: DevlogPost[] = [
 			'The same flat on two portals used to be two rows in the inbox. Now it is one, and what you have seen follows the flat, not the posting.'
 	},
 	{
+		slug: 'a-list-and-a-detail-view',
+		title: 'A list and a detail view',
+		date: '2026-10-10',
+		summary:
+			'The inbox became a list beside the selected listing, with favourites, a price history per portal and a pin on the map.'
+	},
+	{
 		slug: 'scoring-you-can-see',
 		title: 'Scoring you can see',
 		date: '2026-10-10',
