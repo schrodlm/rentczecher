@@ -157,6 +157,18 @@ msgstr "atypická"
 msgid "Pick at least one portal."
 msgstr "Vyberte aspoň jeden portál."
 
+msgid "{name} asks that apps like this one don't read its site. If you turn it on, rentczecher reads it only for your own searches, slowly, and stops if {name} says no."
+msgstr "Portál {name} žádá, aby jeho web nečetly aplikace, jako je tato. Když ho zapnete, rentczecher ho bude číst jen pro vaše vlastní hledání, pomalu, a přestane, jakmile ho portál odmítne."
+
+msgid "{name}'s terms"
+msgstr "Podmínky portálu {name}"
+
+msgid "Turn on"
+msgstr "Zapnout"
+
+msgid "Not now"
+msgstr "Teď ne"
+
 msgid "Remove {name}"
 msgstr "Odebrat {name}"
 

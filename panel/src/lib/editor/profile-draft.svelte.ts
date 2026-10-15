@@ -58,10 +58,11 @@ export class ProfileDraft {
 
 	canSave = $derived(this.missing.length === 0 && this.crossedRanges.length === 0);
 
-	/* A new profile watching every portal. */
+	/* A new profile watching every portal that does not ask to be turned on
+	knowingly. */
 	static blank(): ProfileDraft {
 		const draft = new ProfileDraft();
-		draft.portals = PORTALS.map((shown) => shown.portal);
+		draft.portals = PORTALS.filter((shown) => shown.optInTerms === null).map((shown) => shown.portal);
 		return draft;
 	}
 
