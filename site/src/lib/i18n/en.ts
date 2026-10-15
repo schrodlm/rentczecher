@@ -43,6 +43,13 @@ export const en: Messages = {
 		dropDetail: 'Šumava, 2,450,000 CZK',
 		dropAmount: '−150,000'
 	},
+	portals: {
+		label: 'Supported portals',
+		heading: 'Portals',
+		defaults: 'RE/MAX is watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a search, after seeing what their terms say about automated reading.',
+		more: '+ more soon',
+		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
+	},
 	download: {
 		heading: 'Download',
 		version: 'Version',
