@@ -5,6 +5,7 @@
 	import Features from '$lib/components/Features.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Hero from '$lib/components/Hero.svelte';
+	import OpenSource from '$lib/components/OpenSource.svelte';
 	import Portals from '$lib/components/Portals.svelte';
 	import PrivacyBand from '$lib/components/PrivacyBand.svelte';
 	import Roadmap from '$lib/components/Roadmap.svelte';
@@ -37,6 +38,7 @@
 	<Portals {t} />
 	<Features {t} />
 	<PrivacyBand {t} />
+	<OpenSource {t} appVersion={data.appVersion} />
 	<Download {t} appVersion={data.appVersion} />
 	<Roadmap {t} />
 	<Devlog {t} {lang} entries={data.latestDevlog} />

@@ -85,6 +85,18 @@ export interface Messages {
 		heading: string;
 		body: string;
 	};
+	openSource: {
+		chip: string;
+		heading: string;
+		body: string;
+		star: string;
+		reportBug: string;
+		repoDescription: string;
+		licence: string;
+		authorHeading: string;
+		authorBody: string;
+		support: string;
+	};
 	download: {
 		heading: string;
 		version: string;

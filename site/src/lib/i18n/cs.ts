@@ -85,6 +85,19 @@ export const cs: Messages = {
 		heading: 'Všechno zůstává u vás.',
 		body: 'rentczecher nemá žádný server. Vaše hledání, oblíbené nabídky i historie cen jsou uložené jen ve vašem počítači. Žádný účet, žádné sledování. A protože je kód otevřený, můžete si to sami ověřit.'
 	},
+	openSource: {
+		chip: 'Open source',
+		heading: 'Vzniká veřejně na GitHubu.',
+		body: 'Celý kód je veřejný. Můžete si ho přečíst, nahlásit chybu, navrhnout funkci nebo rovnou přispět. Každá hvězdička pomáhá, aby se o projektu dozvědělo víc lidí.',
+		star: 'Dát hvězdičku na GitHubu',
+		reportBug: 'Nahlásit chybu',
+		repoDescription: 'Hlídač nových nabídek z českých realitních portálů. Běží lokálně.',
+		licence: 'Licence',
+		authorHeading: 'Dělá to jeden člověk, po večerech.',
+		authorBody:
+			'rentczecher vyvíjím sám, ve svém volném čase, a nic za to nečekám. Pokud vám ale ušetřil hodiny scrollování a chcete poděkovat, budu rád za kávu.',
+		support: 'Poděkovat'
+	},
 	download: {
 		heading: 'Stáhnout',
 		version: 'Verze',

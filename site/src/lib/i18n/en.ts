@@ -85,6 +85,19 @@ export const en: Messages = {
 		heading: 'Everything stays with you.',
 		body: 'rentczecher has no server. Your searches, saved listings and price history live only on your computer. No account, no tracking. And because the code is open, you can check that yourself.'
 	},
+	openSource: {
+		chip: 'Open source',
+		heading: 'Built in the open on GitHub.',
+		body: 'All of the code is public. Read it, report a bug, suggest a feature or contribute directly. Every star helps more people find the project.',
+		star: 'Star on GitHub',
+		reportBug: 'Report a bug',
+		repoDescription: 'Watches Czech real-estate portals for new listings. Runs locally.',
+		licence: 'Licence',
+		authorHeading: 'Made by one person, in the evenings.',
+		authorBody:
+			"I build rentczecher on my own, in my free time, and don't expect anything for it. But if it saved you hours of scrolling and you'd like to say thanks, a coffee is always welcome.",
+		support: 'Say thanks'
+	},
 	download: {
 		heading: 'Download',
 		version: 'Version',
