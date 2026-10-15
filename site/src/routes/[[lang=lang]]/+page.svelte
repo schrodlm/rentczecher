@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Faq from '$lib/components/Faq.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import { LANGUAGES, MESSAGES, homePath } from '$lib/i18n';
 	import type { PageProps } from './$types';
@@ -24,4 +25,6 @@
 </svelte:head>
 
 <Header {t} {lang} />
-<main id="top"></main>
+<main id="top">
+	<Faq {t} />
+</main>
