@@ -1,5 +1,5 @@
 import type { Messages } from './messages';
-import { ISSUES_URL, REPO_URL, SUPPORT_URL } from '$lib/links';
+import { ISSUES_URL, OPERATOR_CONTACT_EMAIL, REPO_URL, SUPPORT_URL } from '$lib/links';
 
 export const cs: Messages = {
 	meta: {
@@ -214,5 +214,32 @@ export const cs: Messages = {
 				]
 			}
 		]
+	},
+	operators: {
+		title: 'Pro provozovatele portálů',
+		intro: 'Pokud jste sem přišli z hlavičky User-Agent ve svých logech, tady je, co je rentczecher a jak čte váš web.',
+		whatHeading: 'Co to je',
+		whatItIs: [
+			'Bezplatná desktopová aplikace s otevřeným kódem pod licencí GPL-3.0-or-later.',
+			'Spouští ji jeden člověk na vlastním počítači pro vlastní hledání bydlení.',
+			'Nemá žádný server ani účty a uživatelé mezi sebou nesdílejí žádná data.',
+			'Nabídky nikdy dál nezveřejňuje, neukládá texty inzerátů a každou nabídku odkazuje zpět na její inzerát.'
+		],
+		howHeading: 'Jak čte váš web',
+		userAgentIntro: 'V každém požadavku se představí touto hlavičkou User-Agent:',
+		howItReads: [
+			'Čte jen uložená hledání svého uživatele.',
+			'Mezi stránkami dělá pauzy a počet stránek, které na jedno hledání přečte, je omezený.',
+			'Mezi dvěma kontrolami dodržuje minimální odstup.',
+			'Nepoužívá proxy, nemění identitu a neobchází CAPTCHA ani firewall. Když ho portál odmítne, nechá ho být.',
+			'Portál, který ve svých podmínkách nebo v robots.txt automatické nástroje odmítá, je ve výchozím stavu vypnutý.'
+		],
+		contactHeading: 'Kontakt',
+		contact: [
+			'Pokud máte k tomu, jak rentczecher používá váš portál, jakoukoli připomínku, napište mi na ',
+			{ text: OPERATOR_CONTACT_EMAIL, href: `mailto:${OPERATOR_CONTACT_EMAIL}` },
+			'. Každá taková zpráva dostane rychlou odpověď.'
+		],
+		notAffiliated: 'rentczecher není s žádným realitním portálem nijak spojený a žádný ho nepodporuje.'
 	}
 };

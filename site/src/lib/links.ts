@@ -6,3 +6,5 @@ export const RELEASES_URL = `${REPO_URL}/releases`;
 export const CLONE_COMMAND = `git clone ${REPO_URL}.git`;
 
 export const SUPPORT_URL = 'https://github.com/sponsors/schrodlm';
+
+export const OPERATOR_CONTACT_EMAIL = 'matej.schrodl@gmail.com';
