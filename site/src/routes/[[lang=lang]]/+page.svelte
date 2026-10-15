@@ -3,6 +3,7 @@
 	import Download from '$lib/components/Download.svelte';
 	import Faq from '$lib/components/Faq.svelte';
 	import Header from '$lib/components/Header.svelte';
+	import Hero from '$lib/components/Hero.svelte';
 	import Roadmap from '$lib/components/Roadmap.svelte';
 	import { LANGUAGES, MESSAGES, homePath } from '$lib/i18n';
 	import type { PageProps } from './$types';
@@ -29,6 +30,7 @@
 
 <Header {t} {lang} />
 <main id="top">
+	<Hero {t} appVersion={data.appVersion} />
 	<Download {t} appVersion={data.appVersion} />
 	<Roadmap {t} />
 	<Devlog {t} {lang} entries={data.latestDevlog} />

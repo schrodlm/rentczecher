@@ -19,6 +19,30 @@ export const en: Messages = {
 		toDark: 'Switch to dark mode',
 		toLight: 'Switch to light mode'
 	},
+	hero: {
+		badge: 'Open source on GitHub, GPL-3.0 licence',
+		lead: 'New ',
+		kinds: ['flats', 'houses', 'cottages'],
+		kindsLabel: 'flats, houses and cottages',
+		tail: ' every day.',
+		promise: "I'll help you find them.",
+		intro:
+			"rentczecher keeps an eye on the major Czech real-estate portals and shows you only what's actually new. Price drops included.",
+		download: 'Download',
+		source: 'Source on GitHub',
+		freeVersion: (version) => `Free, version ${version}.`,
+		platforms: 'For Windows, macOS and Linux.',
+		mapLabel: 'Map of Czechia with new flats, houses and cottages appearing',
+		newBadge: 'NEW',
+		newAgo: '3 min ago',
+		newTitle: '2+kk flat, 54 m²',
+		newDetail: 'Brno, Žabovřesky, 18,900 CZK/month',
+		dropBadge: 'PRICE DROP',
+		dropAgo: 'today',
+		dropTitle: 'Cottage, 3 rooms',
+		dropDetail: 'Šumava, 2,450,000 CZK',
+		dropAmount: '−150,000'
+	},
 	download: {
 		heading: 'Download',
 		version: 'Version',

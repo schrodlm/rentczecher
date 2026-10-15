@@ -19,6 +19,30 @@ export const cs: Messages = {
 		toDark: 'Přepnout na tmavý režim',
 		toLight: 'Přepnout na světlý režim'
 	},
+	hero: {
+		badge: 'Open source na GitHubu, licence GPL-3.0',
+		lead: 'Každý den přibývají nové ',
+		kinds: ['byty', 'domy', 'chaty'],
+		kindsLabel: 'byty, domy a chaty',
+		tail: '',
+		promise: 'Pomůžu vám je najít.',
+		intro:
+			'rentczecher za vás hlídá hlavní české realitní portály a ukáže jen to, co je opravdu nové. Včetně zlevnění.',
+		download: 'Stáhnout',
+		source: 'Zdrojový kód na GitHubu',
+		freeVersion: (version) => `Zdarma, verze ${version}.`,
+		platforms: 'Pro Windows, macOS a Linux.',
+		mapLabel: 'Mapa Česka, na které přibývají nové byty, domy a chaty',
+		newBadge: 'NOVÝ',
+		newAgo: 'před 3 min',
+		newTitle: 'Byt 2+kk, 54 m²',
+		newDetail: 'Brno, Žabovřesky, 18 900 Kč/měs.',
+		dropBadge: 'ZLEVNĚNO',
+		dropAgo: 'dnes',
+		dropTitle: 'Chata, 3 pokoje',
+		dropDetail: 'Šumava, 2 450 000 Kč',
+		dropAmount: '−150 000'
+	},
 	download: {
 		heading: 'Stáhnout',
 		version: 'Verze',
