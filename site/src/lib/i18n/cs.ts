@@ -19,6 +19,20 @@ export const cs: Messages = {
 		toDark: 'Přepnout na tmavý režim',
 		toLight: 'Přepnout na světlý režim'
 	},
+	download: {
+		heading: 'Stáhnout',
+		version: 'Verze',
+		free: 'zdarma',
+		allReleases: 'Všechny verze a poznámky k vydání na GitHubu',
+		button: 'Stáhnout',
+		windows: 'Instalátor .exe pro Windows 10 a 11',
+		macos: 'Instalátor .dmg pro Apple Silicon',
+		linux: 'AppImage nebo .deb',
+		macWarning: 'macOS se při prvním spuštění zeptá, jestli aplikaci věříte.',
+		whatToDo: 'Co s tím?',
+		buildYourself: 'Raději si to sestavíte sami?',
+		readme: 'Návod je v README'
+	},
 	roadmap: {
 		heading: 'Co chystám',
 		intro: 'Plán se mění podle toho, co lidé potřebují. Chybí vám něco? Napište to na GitHub.',
