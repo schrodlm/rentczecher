@@ -8,6 +8,13 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'a-welcome-and-a-choice-of-language',
+		title: 'A welcome and a choice of language',
+		date: '2026-10-12',
+		summary:
+			'The app learned light and dark, Czech and English, and a welcome wizard that asks for both on the first launch.'
+	},
+	{
 		slug: 'each-flat-once',
 		title: 'Each flat once',
 		date: '2026-10-11',
