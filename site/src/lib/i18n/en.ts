@@ -10,12 +10,57 @@ export const en: Messages = {
 	topbar: 'rentczecher is open source. All the code is on GitHub, a star is always appreciated →',
 	nav: {
 		label: 'Main',
+		roadmap: 'Roadmap',
 		faq: 'FAQ'
 	},
 	languageLabel: 'Language',
 	theme: {
 		toDark: 'Switch to dark mode',
 		toLight: 'Switch to light mode'
+	},
+	roadmap: {
+		heading: "What's coming",
+		intro: 'The plan follows what people need. Missing something? Say so on GitHub.',
+		suggest: 'Suggest a feature',
+		inProgress: {
+			label: 'In progress',
+			items: [
+				{
+					title: 'Searches inside the app',
+					body: 'Create, edit and delete your searches in the app, and set your favourite listings aside.'
+				}
+			]
+		},
+		next: {
+			label: 'Next',
+			items: [
+				{
+					title: 'Watching in the background',
+					body: 'Checks run on a schedule with no window open. And if one fails, you hear about it.'
+				},
+				{
+					title: 'Photos kept with the flats you star',
+					body: 'Listing photos show right in the app, and stay saved with the flats you star.'
+				}
+			]
+		},
+		later: {
+			label: 'Later',
+			items: [
+				{
+					title: 'An easy first start',
+					body: 'Set up email and your first search in the app, without editing config files.'
+				},
+				{
+					title: 'More real-estate portals',
+					body: 'Reality.iDNES.cz comes first, the second largest Czech portal.'
+				},
+				{
+					title: 'On another computer',
+					body: 'Run the watching on one machine and connect to it from your other devices.'
+				}
+			]
+		}
 	},
 	faq: {
 		heading: 'Questions',

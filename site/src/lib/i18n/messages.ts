@@ -6,6 +6,16 @@ export interface FaqItem {
 	answer: RichText;
 }
 
+export interface RoadmapItem {
+	title: string;
+	body: string;
+}
+
+export interface RoadmapColumn {
+	label: string;
+	items: RoadmapItem[];
+}
+
 export interface Messages {
 	meta: {
 		title: string;
@@ -14,12 +24,21 @@ export interface Messages {
 	topbar: string;
 	nav: {
 		label: string;
+		roadmap: string;
 		faq: string;
 	};
 	languageLabel: string;
 	theme: {
 		toDark: string;
 		toLight: string;
+	};
+	roadmap: {
+		heading: string;
+		intro: string;
+		suggest: string;
+		inProgress: RoadmapColumn;
+		next: RoadmapColumn;
+		later: RoadmapColumn;
 	};
 	faq: {
 		heading: string;

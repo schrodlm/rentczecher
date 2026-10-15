@@ -10,12 +10,57 @@ export const cs: Messages = {
 	topbar: 'rentczecher je open source. Celý kód najdete na GitHubu, hvězdička potěší →',
 	nav: {
 		label: 'Hlavní',
+		roadmap: 'Co chystám',
 		faq: 'Otázky'
 	},
 	languageLabel: 'Jazyk',
 	theme: {
 		toDark: 'Přepnout na tmavý režim',
 		toLight: 'Přepnout na světlý režim'
+	},
+	roadmap: {
+		heading: 'Co chystám',
+		intro: 'Plán se mění podle toho, co lidé potřebují. Chybí vám něco? Napište to na GitHub.',
+		suggest: 'Navrhnout funkci',
+		inProgress: {
+			label: 'Právě dělám',
+			items: [
+				{
+					title: 'Hledání přímo v aplikaci',
+					body: 'Hledání vytvoříte, upravíte i smažete v aplikaci. A oblíbené nabídky si odložíte stranou.'
+				}
+			]
+		},
+		next: {
+			label: 'Brzy',
+			items: [
+				{
+					title: 'Hlídání na pozadí',
+					body: 'Kontroly poběží podle plánu i bez otevřeného okna. A když některá selže, dozvíte se to.'
+				},
+				{
+					title: 'Fotky u oblíbených bytů',
+					body: 'Fotky nabídek uvidíte přímo v aplikaci a u bytů s hvězdičkou zůstanou uložené.'
+				}
+			]
+		},
+		later: {
+			label: 'Později',
+			items: [
+				{
+					title: 'Snadný první start',
+					body: 'E-mail i první hledání nastavíte v aplikaci, bez úprav konfiguračních souborů.'
+				},
+				{
+					title: 'Další realitní portály',
+					body: 'Jako první přibude Reality.iDNES.cz, druhý největší český portál.'
+				},
+				{
+					title: 'Na jiném počítači',
+					body: 'Hlídání poběží na jednom počítači a připojíte se k němu z ostatních zařízení.'
+				}
+			]
+		}
 	},
 	faq: {
 		heading: 'Otázky',
