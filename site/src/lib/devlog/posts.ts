@@ -29,6 +29,13 @@ export const POSTS: DevlogPost[] = [
 			'The Tauri shell now ships a PyInstaller-frozen engine, and each of the two processes notices when the other one dies.'
 	},
 	{
+		slug: 'the-panel-and-the-inbox',
+		title: 'The panel and the inbox',
+		date: '2026-09-24',
+		summary:
+			'The part of the app you look at, built in Svelte: a typed client for the engine, a CORS surprise and why Czech needs three plural forms.'
+	},
+	{
 		slug: 'the-engine-learns-to-talk',
 		title: 'The engine learns to talk',
 		date: '2026-09-23',
