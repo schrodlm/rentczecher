@@ -22,6 +22,13 @@ export const POSTS: DevlogPost[] = [
 			"A listing's location used to be the portal's line of text. Now it is a set of official places, from the street up to the region."
 	},
 	{
+		slug: 'three-systems-one-build',
+		title: 'Three systems, one build',
+		date: '2026-10-01',
+		summary:
+			'The repository split into engine, panel and shell, decisions became ADRs, and GitHub Actions now builds and smoke-tests the app on Linux, Windows and macOS.'
+	},
+	{
 		slug: 'a-real-desktop-app',
 		title: 'A real desktop app',
 		date: '2026-09-30',
