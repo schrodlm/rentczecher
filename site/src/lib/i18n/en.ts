@@ -62,6 +62,13 @@ export const en: Messages = {
 			]
 		}
 	},
+	devlog: {
+		heading: 'Devlog',
+		intro: "How rentczecher gets made: what worked, what didn't and what I learned along the way.",
+		allPosts: 'All posts',
+		read: 'Read',
+		minutesToRead: (minutes) => `${minutes} min read`
+	},
 	faq: {
 		heading: 'Questions',
 		items: [

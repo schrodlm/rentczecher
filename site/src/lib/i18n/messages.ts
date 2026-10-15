@@ -40,6 +40,13 @@ export interface Messages {
 		next: RoadmapColumn;
 		later: RoadmapColumn;
 	};
+	devlog: {
+		heading: string;
+		intro: string;
+		allPosts: string;
+		read: string;
+		minutesToRead: (minutes: number) => string;
+	};
 	faq: {
 		heading: string;
 		items: FaqItem[];

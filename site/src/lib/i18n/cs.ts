@@ -62,6 +62,13 @@ export const cs: Messages = {
 			]
 		}
 	},
+	devlog: {
+		heading: 'Devlog',
+		intro: 'Jak rentczecher vzniká: co se povedlo, co ne a co jsem se cestou naučil.',
+		allPosts: 'Všechny příspěvky',
+		read: 'Číst',
+		minutesToRead: (minutes) => `${minutes} min čtení`
+	},
 	faq: {
 		heading: 'Otázky',
 		items: [
