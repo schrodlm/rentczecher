@@ -227,6 +227,19 @@ One command builds the panel, freezes the engine and compiles the shell. The
 installers land in `shell/target/release/bundle/`. Each OS builds only
 its own installers, since the frozen engine cannot be cross-compiled.
 
+A release build also bundles the license and the third-party notices, which
+list every package inside the app with its license text:
+
+```bash
+cargo install --locked --features cli cargo-about   # once, lists the Rust crates
+(cd panel && npm run tauri build -- --config ../shell/tauri.release.conf.json)
+```
+
+`shell/tauri.release.conf.json` is laid over `tauri.conf.json` and replaces its
+build command and bundled files whole, so a change to either belongs in both.
+The build fails when a bundled package uses a license missing from the
+`accepted` list in `shell/about.toml`. CI builds the tagged releases this way.
+
 ## Troubleshooting
 
 - **A scraper suddenly returns 0 results.** Usually the portal changed its page
