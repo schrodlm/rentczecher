@@ -7,7 +7,7 @@ import sqlite3
 
 import httpx
 
-from .portal import BROWSER_HEADERS, MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
+from .portal import MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
 
 SEARCH_URL = "https://www.sreality.cz/hledani/prodej/byty"
 
@@ -16,7 +16,7 @@ class Sreality:
     name = "sreality"
 
     def fetch(self, client: httpx.Client) -> PortalPlaces[int, int]:
-        response = client.get(SEARCH_URL, headers=BROWSER_HEADERS)
+        response = client.get(SEARCH_URL)
         response.raise_for_status()
         return parse_search_page(response.text)
 

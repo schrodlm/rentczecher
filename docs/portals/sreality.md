@@ -11,8 +11,9 @@ endpoint the portal's own Next.js frontend uses. It replaced
 bare `/api/` path started answering 404. Bare `/api/v1/estates`, without
 `/search`, answers 401 and is not the search endpoint.
 
-The API needs a browser User-Agent. It is undocumented, so when it moves
-again, the way back is the browser's network tab on a search page.
+The API answers the app's own User-Agent, which names rentczecher. It is
+undocumented, so when it moves again, the way back is the browser's network
+tab on a search page.
 
 ## Blocked or broken
 
@@ -24,6 +25,9 @@ datacenter machines, so the live tests never run there.
   Look in the network tab.
 - API 404 only from one network: that network is blocked, and the code is
   fine.
+- API 404 everywhere while the site's own search page still lists adverts
+  from the same address: the portal refuses the app itself. That is a no, and
+  the app is not changed to pass for a browser.
 
 ## Filters fail silently
 

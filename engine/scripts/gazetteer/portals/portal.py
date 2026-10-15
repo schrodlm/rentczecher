@@ -14,11 +14,6 @@ import httpx
 RegionIds = TypeVar("RegionIds")
 DistrictIds = TypeVar("DistrictIds")
 
-# Sreality serves browser user agents only, the others accept anything.
-BROWSER_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-}
-
 # Pause between requests to one portal, to stay a polite visitor.
 REQUEST_SPACING_S = 1.0
 

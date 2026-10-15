@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import httpx
 
-from .portal import BROWSER_HEADERS, PRAHA_KRAJ, MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
+from .portal import PRAHA_KRAJ, MatchedDistrict, MatchedRegion, PortalPlaces, add_unique
 
 FORM_URL = "https://www.remax-czech.cz/reality/vyhledavani/?hledani=1"
 
@@ -31,7 +31,7 @@ class Remax:
     name = "remax"
 
     def fetch(self, client: httpx.Client) -> PortalPlaces[int, RemaxDistrict]:
-        response = client.get(FORM_URL, headers=BROWSER_HEADERS)
+        response = client.get(FORM_URL)
         response.raise_for_status()
         return parse_search_form(response.text)
 
