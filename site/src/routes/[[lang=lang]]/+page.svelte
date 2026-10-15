@@ -9,7 +9,7 @@
 	import Portals from '$lib/components/Portals.svelte';
 	import PrivacyBand from '$lib/components/PrivacyBand.svelte';
 	import Roadmap from '$lib/components/Roadmap.svelte';
-	import { LANGUAGES, MESSAGES, homePath } from '$lib/i18n';
+	import { LANGUAGES, MESSAGES, homePath, pathsInEveryLanguage } from '$lib/i18n';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -32,7 +32,7 @@
 	<meta property="og:image" content="{SITE_ORIGIN}/logo.png" />
 </svelte:head>
 
-<Header {t} {lang} />
+<Header {t} {lang} languagePaths={pathsInEveryLanguage('')} />
 <main id="top">
 	<Hero {t} appVersion={data.appVersion} />
 	<Portals {t} />

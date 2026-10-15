@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DevlogCard from '$lib/components/DevlogCard.svelte';
 	import Header from '$lib/components/Header.svelte';
-	import { DEVLOG_LANGUAGE, MESSAGES } from '$lib/i18n';
+	import { DEVLOG_LANGUAGE, MESSAGES, pathsInEveryLanguage } from '$lib/i18n';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -14,7 +14,7 @@
 	<meta name="description" content={t.devlog.intro} />
 </svelte:head>
 
-<Header {t} lang={DEVLOG_LANGUAGE} />
+<Header {t} lang={DEVLOG_LANGUAGE} languagePaths={pathsInEveryLanguage('')} />
 <main class="container">
 	<h1 class="section-heading">{t.devlog.heading}</h1>
 	<p class="section-intro">{t.devlog.intro}</p>

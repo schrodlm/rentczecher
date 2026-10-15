@@ -23,3 +23,8 @@ export function isAlternateLanguage(param: string): param is Language {
 export function homePath(lang: Language): string {
 	return lang === DEFAULT_LANGUAGE ? '/' : `/${lang}/`;
 }
+
+/** The same page in every language, for a page that exists in all of them. */
+export function pathsInEveryLanguage(pageWithinLanguage: string): Record<Language, string> {
+	return { cs: `${homePath('cs')}${pageWithinLanguage}`, en: `${homePath('en')}${pageWithinLanguage}` };
+}

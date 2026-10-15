@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Header from '$lib/components/Header.svelte';
 	import { formatDate } from '$lib/format';
-	import { DEVLOG_LANGUAGE, MESSAGES } from '$lib/i18n';
+	import { DEVLOG_LANGUAGE, MESSAGES, pathsInEveryLanguage } from '$lib/i18n';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -16,7 +16,7 @@
 	<meta property="og:description" content={data.post.summary} />
 </svelte:head>
 
-<Header {t} lang={DEVLOG_LANGUAGE} />
+<Header {t} lang={DEVLOG_LANGUAGE} languagePaths={pathsInEveryLanguage('')} />
 <main class="container">
 	<a class="back" href="/devlog/">← {t.devlog.allPosts}</a>
 	<h1>{data.post.title}</h1>
