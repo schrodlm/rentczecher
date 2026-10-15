@@ -111,6 +111,10 @@ p {
 	color: var(--muted);
 }
 
+.mono {
+	font-family: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+}
+
 .btn {
 	display: inline-flex;
 	align-items: center;
