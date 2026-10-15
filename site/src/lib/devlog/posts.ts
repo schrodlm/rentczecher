@@ -27,5 +27,12 @@ export const POSTS: DevlogPost[] = [
 		date: '2026-09-30',
 		summary:
 			'The Tauri shell now ships a PyInstaller-frozen engine, and each of the two processes notices when the other one dies.'
+	},
+	{
+		slug: 'the-engine-learns-to-talk',
+		title: 'The engine learns to talk',
+		date: '2026-09-23',
+		summary:
+			'Before there could be a desktop app, the engine needed a way to be asked things. It got a FastAPI server with an OpenAPI contract and Server-Sent Events.'
 	}
 ];
