@@ -1,5 +1,5 @@
 <script lang="ts">
-	type IconName = 'branch' | 'sun' | 'moon';
+	type IconName = 'branch' | 'code' | 'download' | 'star' | 'sun' | 'moon';
 
 	let { name, size = 20 }: { name: IconName; size?: number } = $props();
 </script>
@@ -18,6 +18,12 @@
 	{#if name === 'branch'}
 		<circle cx="6" cy="5" r="2.5" /><circle cx="6" cy="19" r="2.5" /><circle cx="18" cy="7" r="2.5" />
 		<path d="M6 7.5v9" /><path d="M18 9.5c0 4-4 4.5-9.5 7.5" />
+	{:else if name === 'code'}
+		<path d="m8 7-5 5 5 5" /><path d="m16 7 5 5-5 5" />
+	{:else if name === 'download'}
+		<path d="M12 4v11" /><path d="m7 10 5 5 5-5" /><path d="M5 20h14" />
+	{:else if name === 'star'}
+		<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
 	{:else if name === 'sun'}
 		<circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" />
 		<path d="m4.9 4.9 1.4 1.4" /><path d="m17.7 17.7 1.4 1.4" /><path d="M2 12h2" />

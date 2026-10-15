@@ -33,6 +33,29 @@ export interface Messages {
 		toDark: string;
 		toLight: string;
 	};
+	hero: {
+		badge: string;
+		lead: string;
+		kinds: [string, string, string];
+		kindsLabel: string;
+		tail: string;
+		promise: string;
+		intro: string;
+		download: string;
+		source: string;
+		freeVersion: (version: string) => string;
+		platforms: string;
+		mapLabel: string;
+		newBadge: string;
+		newAgo: string;
+		newTitle: string;
+		newDetail: string;
+		dropBadge: string;
+		dropAgo: string;
+		dropTitle: string;
+		dropDetail: string;
+		dropAmount: string;
+	};
 	download: {
 		heading: string;
 		version: string;
