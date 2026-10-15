@@ -15,6 +15,13 @@ export const POSTS: DevlogPost[] = [
 			'The same flat on two portals used to be two rows in the inbox. Now it is one, and what you have seen follows the flat, not the posting.'
 	},
 	{
+		slug: 'the-profile-editor-takes-shape',
+		title: 'The profile editor takes shape',
+		date: '2026-10-09',
+		summary:
+			'Prototypes first, scoring moved into the panel, and a clickable map of Czechia whose borders are computed from the nearest village.'
+	},
+	{
 		slug: 'profiles-move-into-the-database',
 		title: 'Profiles move into the database',
 		date: '2026-10-05',
