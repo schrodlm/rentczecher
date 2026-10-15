@@ -15,6 +15,13 @@ export const POSTS: DevlogPost[] = [
 			'The same flat on two portals used to be two rows in the inbox. Now it is one, and what you have seen follows the flat, not the posting.'
 	},
 	{
+		slug: 'profiles-move-into-the-database',
+		title: 'Profiles move into the database',
+		date: '2026-10-05',
+		summary:
+			'Profiles stopped being lines in a config file. They live in SQLite now, have their own API, and point at real places from the RÚIAN register.'
+	},
+	{
 		slug: 'every-listing-gets-its-place',
 		title: 'Every listing gets its place',
 		date: '2026-10-03',
