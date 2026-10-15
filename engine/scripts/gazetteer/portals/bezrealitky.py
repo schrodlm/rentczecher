@@ -17,7 +17,6 @@ import httpx
 from rentczecher_engine.adapters.geocoding.gazetteer import normalize_name
 
 from .portal import (
-    BROWSER_HEADERS,
     PRAHA_KRAJ,
     REQUEST_SPACING_S,
     MatchedDistrict,
@@ -86,7 +85,7 @@ class Bezrealitky:
 
 
 def _api_places(client: httpx.Client) -> tuple[dict[str, str], dict[str, str]]:
-    response = client.post(GRAPHQL_URL, json={"query": REGIONS_QUERY}, headers=BROWSER_HEADERS)
+    response = client.post(GRAPHQL_URL, json={"query": REGIONS_QUERY})
     response.raise_for_status()
     return parse_regions(response.json())
 
@@ -111,13 +110,13 @@ def parse_regions(payload: dict) -> tuple[dict[str, str], dict[str, str]]:
 
 def _bundle_places(client: httpx.Client) -> tuple[dict[str, str], dict[str, str]]:
     time.sleep(REQUEST_SPACING_S)
-    home = client.get(HOME_URL, headers=BROWSER_HEADERS)
+    home = client.get(HOME_URL)
     home.raise_for_status()
     bundle_path = _APP_BUNDLE.search(home.text)
     if bundle_path is None:
         raise SystemExit("bezrealitky: no _app bundle linked from the home page, has the site changed?")
     time.sleep(REQUEST_SPACING_S)
-    bundle = client.get(HOME_URL.rstrip("/") + bundle_path.group(1), headers=BROWSER_HEADERS)
+    bundle = client.get(HOME_URL.rstrip("/") + bundle_path.group(1))
     bundle.raise_for_status()
     return parse_bundle(bundle.text)
 
@@ -142,7 +141,7 @@ def _verify(client: httpx.Client, ids_by_name: dict[str, str]) -> None:
     failed = []
     for name, osm_id in ids_by_name.items():
         time.sleep(REQUEST_SPACING_S)
-        response = client.get(SEARCH_URL, params={"regionOsmIds": osm_id}, headers=BROWSER_HEADERS)
+        response = client.get(SEARCH_URL, params={"regionOsmIds": osm_id})
         response.raise_for_status()
         if not heading_names(response.text, name):
             failed.append(f"{name} ({osm_id})")

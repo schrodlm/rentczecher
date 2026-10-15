@@ -11,6 +11,8 @@ from pathlib import Path
 
 import httpx
 
+from rentczecher_engine.adapters.scrapers.client import IDENTITY_HEADERS
+
 from .build import build_gazetteer
 from .harvest import harvest_portals
 from .portals.bezrealitky import Bezrealitky
@@ -41,7 +43,7 @@ def main() -> None:
             address_dump = address_dump or downloaded_dump
         built = Path(tmp) / "gazetteer.sqlite"
         build_gazetteer(state_file, address_dump, built)
-        with httpx.Client(timeout=60, follow_redirects=True) as client:
+        with httpx.Client(timeout=60, follow_redirects=True, headers=IDENTITY_HEADERS) as client:
             harvest_portals(built, client, [Sreality(), Remax(), Bezrealitky()])
         verify_gazetteer(built)
         shutil.copyfile(built, args.out)

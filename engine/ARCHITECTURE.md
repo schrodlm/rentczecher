@@ -125,8 +125,8 @@ without corrupting it.
 ### Scrapers
 
 Each portal is a `BaseScraper` subclass registered in `ALL_SCRAPERS`. They share
-one `httpx.Client` from `client.build_client()` (browser User-Agent, 30 s
-timeout, connect retries). Two design points matter:
+one `httpx.Client` from `client.build_client()` (a User-Agent naming the app,
+30 s timeout, connect retries). Two design points matter:
 
 - **Fetch/parse split.** `_fetch_page` is the only code that touches the network.
   Parsing is a pure function over the fetched bytes or JSON. That's what lets the
@@ -142,8 +142,8 @@ timeout, connect retries). Two design points matter:
   and records a `ScraperHealth` (`ok`, `zero_results`, or `broken`) instead of
   letting one portal's failure hide the others' listings.
 
-The portals, briefly. **Sreality** speaks its JSON API (`/api/v1/estates/search`,
-needs a browser UA). **Bezrealitky** is server-side Next.js: parse the
+The portals, briefly. **Sreality** speaks its JSON API
+(`/api/v1/estates/search`). **Bezrealitky** is server-side Next.js: parse the
 `__NEXT_DATA__` blob and walk the Apollo cache. **RE/MAX** is HTML parsed with
 BeautifulSoup. All three do client-side price filtering on top of the portal's
 price params, because those params aren't reliable.

@@ -1,9 +1,9 @@
 import httpx
 
-# Sreality's API 404s requests without a browser User-Agent; the other
-# portals tolerate it but a browser UA keeps all traffic uniform.
-BROWSER_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+# The app names itself and its site in every request. The version follows
+# the package's, which a frozen build cannot read at runtime.
+IDENTITY_HEADERS = {
+    "User-Agent": "rentczecher/0.1.0 (+https://rentczecher.cz)",
 }
 
 
@@ -12,7 +12,7 @@ def build_client(transport: httpx.BaseTransport | None = None) -> httpx.Client:
     # built against; httpx does not follow redirects by default.
     # Transport retries cover connect failures only, not HTTP errors.
     return httpx.Client(
-        headers=BROWSER_HEADERS,
+        headers=IDENTITY_HEADERS,
         timeout=30,
         follow_redirects=True,
         transport=transport if transport is not None else httpx.HTTPTransport(retries=3),

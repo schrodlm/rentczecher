@@ -10,10 +10,11 @@ import time
 import httpx
 import pytest
 
+from rentczecher_engine.adapters.scrapers.client import IDENTITY_HEADERS
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher_engine.domain.location import PlaceRef
 from scripts.gazetteer.portals.bezrealitky import heading_names
-from scripts.gazetteer.portals.portal import BROWSER_HEADERS, REQUEST_SPACING_S
+from scripts.gazetteer.portals.portal import REQUEST_SPACING_S
 
 SAMPLE = [
     PlaceRef("obvod", 19),
@@ -25,7 +26,7 @@ SAMPLE = [
 
 @pytest.fixture(scope="module")
 def client():
-    with httpx.Client(timeout=30, follow_redirects=True, headers=BROWSER_HEADERS) as c:
+    with httpx.Client(timeout=30, follow_redirects=True, headers=IDENTITY_HEADERS) as c:
         yield c
 
 
