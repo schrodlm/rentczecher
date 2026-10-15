@@ -1,0 +1,55 @@
+:root {
+	color-scheme: light dark;
+	--bg: light-dark(#faf5ec, #1a1916);
+	--surface: light-dark(#ffffff, #24231f);
+	--text: light-dark(#343330, #efe9dd);
+	--muted: light-dark(#5e5a52, #b3ab9b);
+	--line: light-dark(#e8dfcf, #35332c);
+	--line-strong: light-dark(#c9bda6, #4d493f);
+	--link: light-dark(#7e5920, #eaa850);
+	--link-hover: light-dark(#45462a, #f6c987);
+	--olive: light-dark(#45462a, #cfcd98);
+	--on-olive: light-dark(#faf5ec, #1a1916);
+	--band: light-dark(#45462a, #2d2e1d);
+	--band-text: light-dark(#faf5ec, #efe9dd);
+	--amber: light-dark(#dc851f, #e08f2e);
+	--amber-hover: light-dark(#c97516, #eba04a);
+	--on-amber: light-dark(#343330, #1f1e1b);
+	--kraj: light-dark(#e8dfcf, #2f2d27);
+	--kraj-praha: light-dark(#ddcfb6, #3b3830);
+	--shadow: light-dark(rgba(52, 51, 48, 0.08), rgba(0, 0, 0, 0.35));
+	--code: light-dark(#2b2a27, #0f0f0d);
+	--code-text: light-dark(#f3eee4, #efe9dd);
+	--code-dim: light-dark(#a9a191, #8f897c);
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-size: 17px;
+}
+
+a {
+	color: var(--link);
+}
+
+a:hover {
+	color: var(--link-hover);
+}
+
+h1,
+h2,
+h3,
+p {
+	margin: 0;
+}
