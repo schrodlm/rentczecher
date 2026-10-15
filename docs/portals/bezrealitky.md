@@ -44,10 +44,9 @@ October 2026. Now and then an advert still comes back with `currency`
 scraper skips any advert not in CZK. `originalPrice` is the price before the
 advert's last change, not a crown equivalent.
 
-## Robots and a better path
+## robots.txt
 
-The portal's `robots.txt` disallows `/vyhledat*` on the www host, which is
-the page the scraper parses. The API host is not covered. Moving the scraper
-to the `listAdverts` GraphQL query the portal's own frontend uses would
-avoid the disallowed path and be more robust than parsing the
-server-rendered page.
+The portal's `robots.txt` asks crawlers to stay off `/vyhledat*` and
+`/search*` on the www host, the search page the scraper reads, and off the
+whole API host. The portal is therefore off in new profiles, and the user
+turns it on after a note that says so.
