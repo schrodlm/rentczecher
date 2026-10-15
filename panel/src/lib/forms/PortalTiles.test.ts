@@ -35,6 +35,40 @@ describe('PortalTiles', () => {
 		expect(getByRole('button', { name: tile('Sreality') })).toHaveAttribute('aria-pressed', 'false');
 	});
 
+	test('turns on a portal that asks not to be read only once its note is confirmed', async () => {
+		const { getByRole, getByText, queryByText, picked } = await renderTiles([]);
+		await fireEvent.click(getByRole('button', { name: tile('Sreality') }));
+		expect(picked()).toEqual([]);
+		expect(getByText(/^Portál Sreality žádá/)).toBeInTheDocument();
+		await fireEvent.click(getByRole('button', { name: 'Zapnout' }));
+		expect(picked()).toEqual(['sreality']);
+		expect(queryByText(/^Portál Sreality žádá/)).toBeNull();
+	});
+
+	test('leaves a portal that asks not to be read off when its note is dismissed', async () => {
+		const { getByRole, queryByText, picked } = await renderTiles([]);
+		await fireEvent.click(getByRole('button', { name: tile('Sreality') }));
+		await fireEvent.click(getByRole('button', { name: 'Teď ne' }));
+		expect(picked()).toEqual([]);
+		expect(queryByText(/^Portál Sreality žádá/)).toBeNull();
+	});
+
+	test("links the portal's terms from its note", async () => {
+		const { getByRole } = await renderTiles([]);
+		await fireEvent.click(getByRole('button', { name: tile('Sreality') }));
+		expect(getByRole('link', { name: 'Podmínky portálu Sreality' })).toHaveAttribute(
+			'href',
+			'https://o-seznam.cz/napoveda/sreality/smluvni-podminky-sluzby-sreality-cz/'
+		);
+	});
+
+	test('turns on a portal that does not ask straight away', async () => {
+		const { getByRole, queryByRole, picked } = await renderTiles([]);
+		await fireEvent.click(getByRole('button', { name: tile('RE/MAX') }));
+		expect(picked()).toEqual(['remax']);
+		expect(queryByRole('button', { name: 'Zapnout' })).toBeNull();
+	});
+
 	test('asks for a portal while none is picked', async () => {
 		const { getByRole, getByText, queryByText } = await renderTiles(['sreality']);
 		expect(queryByText('Vyberte aspoň jeden portál.')).toBeNull();
