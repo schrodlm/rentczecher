@@ -283,6 +283,16 @@ class TestResolveFillsNamedUnits:
         assert location.okres.name == "Brno-město"
         assert location.cast_obce is None
 
+    def test_a_bare_okres_name_never_anchors_on_a_same_named_part(self, gazetteer):
+        # Brno has a část obce named like its okres, Brno-město.
+        location = gazetteer.resolve(ParsedPlace(names=("Brno-město",)))
+        assert location.most_specific()[0] == "okres"
+        assert location.okres.name == "Brno-město"
+
+    def test_a_town_named_like_its_okres_stays_the_town(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Domažlice",)))
+        assert location.obec.name == "Domažlice"
+
     def test_two_names_stating_different_obvody_leave_the_obvod_open(self, gazetteer):
         # Holešovice spans two městské části, so nothing else decides it.
         location = gazetteer.resolve(ParsedPlace(names=("Holešovice", "Praha", "Praha 1", "Praha 7")))
