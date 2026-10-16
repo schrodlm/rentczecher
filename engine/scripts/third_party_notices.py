@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import tomllib
 from dataclasses import dataclass
 from importlib import metadata
@@ -214,7 +215,12 @@ class PanelPackages:
 
 class ShellCrates:
     """The Rust crates the shell links, listed by cargo-about, which also
-    checks them against shell/about.toml."""
+    checks them against shell/about.toml.
+
+    Listing reads each crate's own license files, so it downloads any crate
+    not yet in Cargo's local registry, pinned to Cargo.lock. It runs before
+    the shell is compiled, since the installer's resources must exist by
+    then, and the compile then finds every crate already downloaded."""
 
     def __init__(self, shell: Path, template: Path) -> None:
         self._shell = shell
@@ -223,15 +229,18 @@ class ShellCrates:
     def listing(self) -> str:
         if shutil.which("cargo-about") is None:
             raise NoticesError("cargo-about is not installed: cargo install --locked --features cli cargo-about")
-        result = subprocess.run(
-            ["cargo", "about", "generate", "--frozen", "--fail", str(self._template)],
-            cwd=self._shell,
-            capture_output=True,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            raise NoticesError(f"cargo-about failed:\n{result.stderr}")
-        return result.stdout.strip()
+        # cargo-about refuses to write its listing to stdout under PowerShell.
+        with tempfile.TemporaryDirectory() as scratch:
+            listing = Path(scratch) / "crates.txt"
+            result = subprocess.run(
+                ["cargo", "about", "generate", "--locked", "--fail", "-o", str(listing), str(self._template)],
+                cwd=self._shell,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            if result.returncode != 0:
+                raise NoticesError(f"cargo-about failed:\n{result.stderr}")
+            return listing.read_text(encoding="utf-8").strip()
 
 
 def render(engine: list[Notice], panel: list[Notice], shell: str) -> str:
