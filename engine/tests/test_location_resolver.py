@@ -53,6 +53,20 @@ class TestResolveRegions:
         assert len(params.remax_regions[19]) == 10
 
 
+class TestResolveSmallerPlaces:
+    """A place smaller than any portal searches resolves to the parameters
+    of its search area."""
+
+    def test_a_town_searches_its_okres(self):
+        assert resolve(PlaceRef("obec", 553786)) == resolve(PlaceRef("okres", 3401))
+
+    def test_a_prague_street_searches_its_obvod(self):
+        assert resolve(PlaceRef("ulice", 467103)) == resolve(PlaceRef("obvod", 78))
+
+    def test_praha_searches_its_kraj(self):
+        assert resolve(PlaceRef("obec", 554782)) == resolve(PlaceRef("kraj", 19))
+
+
 class TestResolveFailure:
     """An unknown place fails loudly."""
 
@@ -60,9 +74,9 @@ class TestResolveFailure:
         with pytest.raises(PlaceNotFoundError):
             resolve(PlaceRef("okres", 999999))
 
-    def test_a_place_no_portal_searches_raises(self):
+    def test_an_unknown_place_smaller_than_a_district_raises(self):
         with pytest.raises(PlaceNotFoundError):
-            resolve(PlaceRef("obec", 553786))
+            resolve(PlaceRef("obec", 999999999))
 
     def test_every_search_place_resolves_by_its_kind_and_code(self):
         """Each kraj, okres and obvod in the gazetteer is a search place."""
