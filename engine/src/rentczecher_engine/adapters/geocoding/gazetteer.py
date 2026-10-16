@@ -201,6 +201,8 @@ class Gazetteer:
        beats a precise wrong one. The result's most specific unit says
        how coarse. Callers gate on its kind.
 
+    A part or street named like its own okres is read as the okres.
+
     A stated district (ParsedPlace.district) changes exactly one thing:
     that name may scope (pass 2) and be the answer (pass 5) but never
     resolve as the same-named town - the caller has said which of the two
@@ -233,6 +235,9 @@ class Gazetteer:
         # A stated district is context only, never the same-named town.
         rows = [r for r in rows
                 if r["name_norm"] not in stated or r["kind"] == "okres"]
+        # A name shared with the okres states the okres, never a part inside it.
+        rows = [r for r in rows
+                if r["kind"] in ("okres", "obec") or r["name_norm"] != r["okres_norm"]]
         district_names = {r["name_norm"] for r in rows if r["kind"] == "okres"}
         place_rows = [r for r in rows if r["kind"] != "okres"]
         place_rows = self._without_readings_the_text_rules_out(place_rows, place.names)
