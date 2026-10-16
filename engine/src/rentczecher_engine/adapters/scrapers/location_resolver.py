@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import cache
 
-from rentczecher_engine.adapters.geocoding.gazetteer import open_gazetteer
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer, open_gazetteer
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 from rentczecher_engine.domain.location import PlaceRef
 
@@ -16,9 +16,14 @@ class PlaceParams:
 
 
 def resolve(place: PlaceRef) -> PlaceParams:
-    """Translate a search place into per-portal search parameters from the
-    gazetteer. Raises PlaceNotFoundError for a place no portal searches."""
-    params = _index().get(place)
+    """Translate a search place into the per-portal search parameters of its
+    search area. Raises PlaceNotFoundError when the area has none."""
+    gazetteer = Gazetteer()
+    try:
+        area = gazetteer.search_area(place)
+    finally:
+        gazetteer.close()
+    params = _index().get(area)
     if params is None:
         raise PlaceNotFoundError(f"{place.kind} {place.code}")
     return params
@@ -58,7 +63,7 @@ _DISTRICTS_STMT = """
 
 @cache
 def _index() -> dict[PlaceRef, PlaceParams]:
-    """Every search place by its kind and code, read from the gazetteer's
+    """Every search area by its kind and code, read from the gazetteer's
     portal tables: the kraje, which search region-wide, and the districts,
     the okresy and Praha's obvody."""
     conn = open_gazetteer()
