@@ -123,8 +123,8 @@ names that disagree, say "Praha 6" and "Praha 7", leave that kind empty for
 the street to decide. A kind the text names is never replaced. A name that
 matches the obec or the okres never fills a smaller kind, though a street
 lying in that kind still fills it. For example, Brno has a část obce called
-"Brno-město", but when another name is the anchor, the text "Brno-město" does
-not fill it, because it is also the okres.
+"Brno-město", but the text "Brno-město" never anchors on it or fills it,
+because it is also the okres.
 
 ## 4. The property keeps its most detailed location
 
@@ -155,8 +155,8 @@ The panel shows only `location_raw_text` for now.
   written. See issue #64.
 - **A district name can land on the wrong unit when it is the anchor.** When
   "Praha 7" is the finest name in the text, the Location gets the městská část
-  Praha 7 as well as the obvod, although an address means only the obvod. Bare
-  "Brno-město" likewise lands on Brno's část obce of that name. See issue #64.
+  Praha 7 as well as the obvod, although an address means only the obvod. See
+  issue #64.
 - **A wrongly resolved location stays.** The property keeps the most detailed
   location, not the most correct one, so a later coarser but correct one cannot
   replace it.
