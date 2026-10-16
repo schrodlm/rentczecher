@@ -41,9 +41,8 @@ planned yet.
 - **The user goes back to the portal.** Every listing links prominently to its
   posting and names its source. The app never stores or shows a portal's
   description text. A portal's name and icon appear only to say where a
-  listing came from, unaltered and never in anything that promotes the app,
-  and an icon goes at its owner's first objection. The app is never presented
-  as a replacement for a portal or its paid services.
+  listing came from, and an icon goes at its owner's first objection. The app
+  is never presented as a replacement for a portal or its paid services.
 - **No money tied to features.** No paid tier, ads or gated features. A
   donation link, if there is one, is an unconditional thank-you.
 
