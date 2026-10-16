@@ -1,318 +1,121 @@
-# Architecture
+# Engine architecture
 
-This is the map for working on the code. If you only want to run rentczecher,
-[README.md](../README.md) is enough. Read this before touching the internals.
-
-## The one thing to understand first
-
-**The pipeline runs on the SQLite canonical-property model.** A run reads its
-seen state and price history from the database, decides what is new, dropped,
-or disappeared, and commits the outcome on every scan that is not a dry run.
-The schema is documented in [SCHEMA.md](SCHEMA.md): a **property**
-is the inferred real-world unit, a **listing** is one portal's posting of it
-(a global fact), and **listing_tracking** carries each profile's seen state
-for a listing.
-
-A few pieces still ship ahead of their consumer, tested but unwired: the
-geocell candidate query (for future cross-run property matching), the
-`scrape_runs` table, and field-level promotion of
-canonical property values (`services/dedup.py::promote_fields`). When you
-read a module, the first question to ask is whether it's on the live path or
-ahead of its consumer.
+The engine is the part of rentczecher that does the work. It reads the
+portals for each profile, works out which listings are the same flat, keeps
+the history in SQLite, and serves all of it through an HTTP API. It knows
+nothing about the window or the interface: the panel is one client of its API,
+and the `rentczecher` command is another. How it sits next to the shell and the
+panel is in [docs/architecture.md](../docs/architecture.md).
 
 ## Layout
 
-A single installable package with light hexagonal layering:
+One Python package, `rentczecher_engine`, in light hexagonal layers:
 
-```
-src/rentczecher_engine/
-  domain/        frozen dataclasses, pure. no I/O, no deps on adapters
-  adapters/      the edges: scrapers, storage, geocoding, HTTP API, config (data paths)
-  services/      use-cases and orchestration over the domain
-  cli/           argparse entry point. wires adapters to the pipeline
-```
+| Layer | Holds | May import |
+|---|---|---|
+| `domain/` | The model: profiles, listings, properties, places, prices. Plain frozen dataclasses, no I/O. | nothing else |
+| `services/` | What the engine does: the scan pipeline and its steps. | `domain/` |
+| `adapters/` | The edges: the portals, the database, the gazetteer, the HTTP API. | everything |
+| `cli/` | The `rentczecher` command, which wires adapters to services. | everything |
 
-- `domain/` never imports from `adapters/` or `services/`. Just types and two
-  geo functions.
-- `services/` depends on `domain/` only, never on `adapters/` or on
-  `sqlite3` or `httpx` directly. A layering guard test
-  (`tests/test_layering.py`) parses every module's imports and fails the
-  build on a violation.
-- `adapters/` and `cli/` may depend on everything. `cli/main.py` is where the
-  wiring happens.
+`services/` reaches the database, the network and the gazetteer only through
+protocols it defines, which the adapters satisfy. `tests/test_layering.py`
+parses every import and fails on a violation, so the layers cannot quietly
+erode.
 
-`pyproject.toml` defines the package, `rentczecher_engine`, and the product's
-`rentczecher` command. `uv`
-manages the lockfile and the dev environment. Lint, type, and test are ruff (a
-pinned lenient ruleset), mypy (clean, no ignore list), and pytest.
+## The model
 
-## The live pipeline
+Three ideas carry the whole engine. The [glossary](../CONTEXT.md) defines each
+precisely.
 
-`services/pipeline.py::run_profile(profile, deps, dry_run=False)` is
-the whole orchestration, called once per unpaused profile by `cli/main.py::run`.
-It returns a `ProfileRunResult` (status, per-scraper health, counts) that the
-CLI logs. `PipelineDeps` bundles everything the run needs behind protocols:
-`RunStore` (satisfied by `SqliteRunStore`), a `Gazetteer`, the
-scraper registry, an `httpx` client, and a clock. Because these are
-structural protocols, `services/` never imports the adapters that implement
-them.
+- **A listing is one portal's posting. A property is the flat itself.** The
+  same flat on two portals is one property with two listings. Listings are
+  facts shared by every profile. What a profile did with a flat, such as
+  viewing or starring it, is that profile's own tracking.
+- **Places are official RÚIAN units, resolved offline.** A profile searches a
+  place by its RÚIAN kind and code, never by a name. A listing's location text
+  is turned into the same units with the gazetteer, a SQLite file the engine
+  ships, so locating needs no network
+  ([ADR 8](../docs/adr/0008-places-are-ruian-units-resolved-offline.md)).
+- **Portal knowledge stays in its scraper.** Each portal has one scraper that
+  translates the profile's search into that portal's request, and its answer
+  back into plain listings. Nothing after the scraper knows anything about a
+  portal beyond its name.
 
-```
-profiles in the database
-   │  SqliteProfileRepository.list_profiles()          # adapters/repositories
-   ▼
-Profile: portals, Criteria, Preferences                 # typed, portal-neutral
-   │
-   ▼
-scrape_all(scrapers, criteria, client)                  # services/scrape, per scraper:
-   │      resolve(criteria.place) → per-portal ids        location_resolver
-   │      fetch → parse → list[Listing]                   fetch/parse split
-   │      (ScraperBrokenError = contract changed, isolated per scraper)
-   ▼
-apply_filters(listings, criteria)                       # accepted dispositions / size range / min land
-   ▼
-locate_listings(listings, gazetteer)                    # services/locate
-   ▼
-cross_source_dedup(listings, gazetteer)                 # services/dedup
-   ▼
-store.pending_disappeared(...)   and   classify(survivors, seen_ids, latest_prices)
-   ▼
-store.persist_outcome(...)   then   store.prune(...)
+## A scan
+
+```mermaid
+flowchart LR
+    profile["Profile"] --> scrape["Scrape<br><i>one scraper per portal</i>"]
+    scrape --> filter["Filter<br><i>the criteria</i>"]
+    filter --> locate["Locate<br><i>text to RÚIAN places</i>"]
+    locate --> dedup["Dedup<br><i>same flat, pairwise</i>"]
+    dedup --> store["Store<br><i>new, prices, missing</i>"]
+    store --> prune["Prune<br><i>forget the untracked</i>"]
+
+    classDef step fill:#7e5920,stroke:#45462a,color:#faf5ec
+    classDef start fill:#faf5ec,stroke:#7e5920,color:#343330
+    class scrape,filter,locate,dedup,store,prune step
+    class profile start
 ```
 
-Two rules are load-bearing and must be preserved:
+`services/pipeline.py::run_profile` is the whole scan. The API's run manager
+calls it when the panel asks for a scan, and the CLI calls it for every
+profile that is not paused.
 
-- **Every scan commits.** `run_profile` calls `store.persist_outcome` and then
-  `store.prune` on every scan that is not a dry run and gets past the scrape,
-  each in its own transaction. Nothing waits on a delivery: the engine sends no notifications,
-  and a notification channel is an API client that keeps its own record of
-  what it delivered.
-- **Three-miss disappearance.** A listing is disappeared only after three
-  consecutive runs without it, to ride out portal API flicker.
+1. **Scrape.** Every portal the profile uses is scraped on its own. A portal
+   that fails, or answers in a shape its scraper no longer understands, is
+   recorded as broken, and the others still run.
+2. **Filter.** Listings that miss the criteria are dropped. A listing that
+   does not state its size is not dropped for it, since the portal simply did
+   not say.
+3. **Locate.** Each listing's location text becomes RÚIAN places. A name that
+   could mean two places resolves to nothing rather than to a guess.
+4. **Dedup.** Listings from different portals are scored pair by pair on GPS
+   distance, a shared place, the layout, the price and the size. Only a
+   confident pair merges into one property. Pairs are never chained, so A
+   matching B and B matching C never makes A the same as C
+   ([ADR 6](../docs/adr/0006-dedup-matches-pairs-and-never-groups-transitively.md)).
+5. **Store.** New listings, new prices and missed listings are written in one
+   transaction. A listing counts as gone only after three scans in a row
+   without it, to ride out portals that flicker.
+6. **Prune.** Tracking not renewed for 90 days is forgotten, unless the flat is
+   starred, and properties no profile tracks any more are deleted
+   ([ADR 12](../docs/adr/0012-one-private-copy-per-person.md)).
 
-`--dry-run` runs the whole thing but skips every write, including the
-miss-count increment, so it previews against the last real run's state
-without corrupting it.
+A scan always commits. Nothing waits on a notification, since channels are
+API clients that keep their own record of what they delivered
+([ADR 10](../docs/adr/0010-notification-channels-are-api-clients.md)). A dry run
+does everything but write.
 
-### Domain types (live)
+The engine stores each profile's preferences but never scores. Scoring
+belongs to the clients
+([ADR 11](../docs/adr/0011-scoring-belongs-to-clients.md)).
 
-- `ScrapedListing` (frozen): the immutable facts of one scrape. id, source,
-  title, price, `location_raw_text` (the portal's own location text), url,
-  optional size/disposition/gps/land/charges, plus a `ParsedPlace` (the place
-  names and house numbers the scraper pulled out).
-- `ListingAnnotations` (frozen): the pipeline's conclusions.
-  `price_drop_from`, `cross_source`, and `resolved_location` (the
-  gazetteer-resolved `Location`, `None` means unlocatable, not unasked).
-- `Location` (frozen): one `Place` (RÚIAN code, name, point) per kind, with
-  kraj always set, plus the house numbers. `most_specific()` is the finest
-  unit named, whose centre point dedup uses for a listing without its own GPS.
-  `PropertyLocation` is its stored form, codes only.
-- `Listing`: wraps the two. Construct with `Listing.build(**flat_fields)` and
-  never mutate. `with_annotations(...)` returns a new `Listing` sharing the same
-  facts. Every field of both inner records is exposed as a read-only property.
-  The facts-vs-conclusions split with copy-on-write is deliberate. A re-scrape
-  replaces facts, the pipeline replaces annotations, and the two never tangle.
-- `Profile` (frozen): one saved search, read from the database. Its id (a
-  UUID), name, `paused_at` (when it was paused, `None` while scanning), its portals, its `Criteria`
-  and its `Preferences`.
-- `Criteria`: portal-neutral search intent, handed to every scraper and the
-  filter. The search place is a `PlaceRef` (RÚIAN kind and code).
-- `Preferences`: the scoring weights and their settings, stored and served
-  but never applied here. Each client scores listings itself (ADR 11), the
-  panel in `panel/src/lib/scoring/score.ts`. A weighted preference needs its
-  setting, so there are no hidden defaults.
+## The API
 
-### Scrapers
-
-Each portal is a `BaseScraper` subclass registered in `ALL_SCRAPERS`. They share
-one `httpx.Client` from `client.build_client()` (a User-Agent naming the app,
-30 s timeout, connect retries). Two design points matter:
-
-- **Fetch/parse split.** `_fetch_page` is the only code that touches the network.
-  Parsing is a pure function over the fetched bytes or JSON. That's what lets the
-  parser tests run fully offline against recorded fixtures (`tests/fixtures/`)
-  via an injected `httpx.MockTransport`, with no live calls in the default suite.
-- **`ScraperBrokenError` is not the same as empty.** A portal responding in a
-  shape the parser no longer understands (missing pagination keys, missing
-  `__NEXT_DATA__`) raises `ScraperBrokenError`, isolated to that scraper. A
-  genuinely empty result is different and is not an error. RE/MAX is the
-  exception: a cardless HTML page is indistinguishable from zero results there,
-  so it can't raise it. `services/scrape.py::scrape_all` runs every enabled
-  scraper, catches `ScraperBrokenError` and any other exception per scraper,
-  and records a `ScraperHealth` (`ok`, `zero_results`, or `broken`) instead of
-  letting one portal's failure hide the others' listings.
-
-The portals, briefly. **Sreality** speaks its JSON API
-(`/api/v1/estates/search`). **Bezrealitky** is server-side Next.js: parse the
-`__NEXT_DATA__` blob and walk the Apollo cache. **RE/MAX** is HTML parsed with
-BeautifulSoup. All three do client-side price filtering on top of the portal's
-price params, because those params aren't reliable.
-
-### Location resolution
-
-`location_resolver.resolve(place)` turns a search place, a `PlaceRef` of RÚIAN
-kind and code, into a `PlaceParams` row read from the gazetteer's portal
-tables, or raises `PlaceNotFoundError` for a place no portal searches. A search
-place is a kraj, an okres or a Praha obvod. Each scraper narrows the row to its
-own typed view (`SrealityPlace`, `BezrealitkyPlace`, `RemaxPlace`) at
-construction and keeps no other portal's data.
-
-That error fails only that profile's scan, before any listing is fetched.
-The other profiles still run.
-
-### Offline geocoder (RÚIAN gazetteer)
-
-`adapters/geocoding/gazetteer.py` resolves a listing's scraped place names to a
-`Location` (one official unit per kind the text names), **entirely
-offline**. The data is a bundled read-only SQLite file
-(`gazetteer.sqlite`, about 13 MB): one table per kind (kraje, okresy, obce,
-obvody, městské části, části obce, ulice) keyed by RÚIAN code, link tables for
-the overlaps, the portals' search ids, and a `places` view over every nameable
-place. `scripts/gazetteer` builds it from the RÚIAN state file and address dump
-plus a live harvest of the portals, and verifies it before it ships. The engine
-refuses a file built for another schema version. Resolution is deliberately
-conservative: ambiguous names resolve to `None` rather than guessing. Once a
-name has pinned the obec, the other names and dedup's shared-name tiers are
-looked up only inside it. Another town's street name can therefore never
-impersonate street-level evidence for a Prague neighbourhood. `named()` reads
-a stored location's codes back into names for the API.
-[docs/locating.md](../docs/locating.md) walks through the whole path.
-
-`services/locate.py::locate(listing, gazetteer)` sits on top and resolves the
-listing's location text. A GPS point never stands in for a place the text does
-not name.
-`locate_listings` runs as a pipeline stage before dedup, landing the result as
-the `resolved_location` annotation that dedup and everything after read
-location from. The run store keeps each property's most detailed location in
-`property_locations`.
-
-### The scored matcher
-
-`services/dedup.py::cross_source_dedup` scores every cross-source pair on five
-three-state factors (GPS distance, shared place name, disposition, price, size:
-agree positive, disagree negative, missing exactly zero), gated by an evidence
-floor. Pairs merge only above the confident-match threshold. An **uncertain
-band** below it is scored and recorded but never merges: a wrong merge hides a
-listing, a missed one only repeats it. The weights and thresholds are calibrated
-against owner-labeled real cross-portal pairs, and move only with boundary
-tests pinning current outcomes first.
-
-### Profiles and the data directory
-
-Profiles are user data in the database. Creating them from the app comes with
-the profile API and the editor screen (#16, #11). Until then a profile only
-exists through a scenario seed or the repository. `SqliteProfileRepository` stores a profile across the profile tables in
-[SCHEMA.md](SCHEMA.md) and reads it back as a typed `Profile`. The domain
-types reject bad values on construction, and the schema's constraints refuse
-them again on write.
-
-`adapters/config/paths.py` resolves the data directory, which holds the
-database and the pid lock: `RENTCZECHER_DATA_DIR` when set, else the
-repository's `engine/data/` when it already holds `rentczecher.db`, else
-`$XDG_DATA_HOME/rentczecher`.
-
-### Notification channels
-
-The engine knows nothing about email, recipients or languages. A notification
-channel is a client of the HTTP API, like the panel: it reads new listings and
-price drops through the API and its event stream, keeps its own record of what
-it delivered, retries a failed delivery itself, and owns its wording. No
-channel exists yet, so scans are quiet outside the panel. ADR 10 records the
-decision.
+`adapters/api/` is a FastAPI app, started by `rentczecher serve`. It binds to
+`127.0.0.1` only and requires the launch's token on every route. Scans run one
+at a time on a worker thread, and their progress goes out as server-sent
+events on `/v1/events`. The contract is generated into
+[docs/api/openapi.json](../docs/api/openapi.json), and a commit hook fails when
+the file and the code disagree.
 
 ## Storage
 
-### SQLite canonical-property model
+SQLite, with numbered migrations in
+`adapters/repositories/sqlite/migrations/` that apply on startup. The tables
+are described in [SCHEMA.md](SCHEMA.md). The repositories spell out every
+column and map every row by name, and the caller of a repository owns the
+transaction, so one unit of work is one commit.
 
-A relational schema where a **property** is the inferred real-world unit and a
-**listing** is one portal's posting of it. The same flat on two portals is one
-property with two listings, and cross-portal disagreements are recorded as an
-audit trail rather than destructively merged. The tables and their relationships
-are documented in [SCHEMA.md](SCHEMA.md). The numbered files under
-`migrations/` are the authoritative DDL.
+## Where to look
 
-`adapters/repositories/` holds the repository interfaces and their SQLite
-implementations (`SqliteListingRepository`, `SqlitePropertyRepository`,
-`SqliteProfileRepository`), plus `SqliteRunStore` (everything one profile run
-reads and persists, behind one object satisfying the pipeline's `RunStore`
-protocol), the connection setup, and the migration runner. Repository write
-methods never commit: `SqliteRunStore` owns the transaction boundary, committing
-once after `persist_outcome` and once after `prune`, and rolling back whatever
-either touched if a step raises. These follow the repo's static-readability
-stance to the letter: `row_factory = sqlite3.Row`, a `_to_<type>(row)` mapper
-naming every field, full column lists spelled out, no reflection. Migrations
-apply automatically at run startup. `rentczecher db migrate` applies them
-without scraping.
-
-### Geocell blocking, dormant
-
-`domain/geo.py` carries the `geocell` blocking grid (a roughly 1.2 km cell key)
-used for near-point candidate lookup. A migration adds the cell columns to
-`properties` and `find_candidates` queries a cell and its eight neighbours, but
-nothing on the live path calls either. Blocking becomes load-bearing when
-cross-run property resolution wires in.
-
-## Where the work is now
-
-The **services extraction** just landed: `services/pipeline.py::run_profile`
-is the one orchestration, called by `cli/main.py` today and, later, by the
-GUI's sidecar. `cli/main.py` only builds `PipelineDeps` and logs the result,
-it no longer knows the pipeline's steps. The matcher principles from earlier
-milestones stand: no factor ever compares a raw portal string, every input
-passes a normalizer whose contract is canonical-or-None, and `None` means the
-factor abstains rather than vetoes.
-
-One rule is permanent and predates this work: **strict pairwise matching, no
-transitive grouping.** Transitive grouping shipped once, merged unrelated
-listings in production, and was reverted. It stays reverted. Any move back to
-union-find is gated on proving it matches or beats the current precision on a
-labelled sample first.
-
-Next up is the GUI, whose decisions are tracked on the project's wayfinder
-map rather than here.
-
-### The bigger arc
-
-rentczecher is on a long road from a cron script for one household to a desktop
-app anyone searching for a home can install. The seams are being built in order:
-
-1. **Foundations**: the package, the frozen domain model, the location
-   resolver, SQLite and migrations, the scraper framework with made-up fixtures
-   in each portal's response shape, and a pipeline extracted from the CLI.
-2. **Robustness**: a real test pyramid (pure unit, fixture contract,
-   nightly live-drift, e2e), property tests, boundary pins on the tuned dedup and
-   scoring constants, CI.
-3. **Quick-glance UX**: a settled card design, notification channels as API
-   clients delivering to the owner's own endpoints, score explainability.
-4. **Desktop app** (where we are): a Tauri and SvelteKit shell over a Python
-   sidecar that imports this exact `services` layer, with a signed auto-updater
-   (scrapers rot, and fixes have to reach non-technical users on their own). The
-   package is the product, the GUI is a client.
-
-That's why the domain model and the location resolver exist well before
-anything uses them the obvious way. Each is a seam a later phase consumes. The
-binding architecture decisions are the ADRs in `docs/adr/`, and the order of
-upcoming work lives in the GitHub milestones. The summary above is enough to
-orient a contributor.
-
-## Conventions worth knowing before you send a patch
-
-- **Static readability over cleverness.** Spell things out. Prefer code a type
-  checker verifies over terse indirection. The SQLite repositories are the worked
-  example: no `dataclasses.fields()` tricks, no placeholder-string hacks, the
-  column list is the source of truth.
-- **Comments state constraints the code can't express**, like a portal quirk or a
-  deliberate trade-off. Not a paraphrase of the line below, and never a pointer to
-  a plan, milestone, or commit.
-- **Atomic, one-line commits.** Tests land in their own commit right after the
-  change they pin. Two fixes never share a commit.
-- **Tests pin accepted behavior, per module.** A regression test lives in the
-  owning module's test file, named for the behavior it pins, not in a bug- or
-  milestone-themed catch-all. Scoring thresholds are tuned-by-feel production
-  values, pin them with boundary tests before touching them. The dedup
-  matcher's weights and thresholds are calibrated against owner-labeled pairs,
-  move them only with boundary tests pinning current outcomes first.
-- **User-facing strings are English, translated through the panel's locale
-  catalogs.** Engine output, code and internal strings are English.
-
-`CLAUDE.md` has the full text of these stances.
+| To change | Start in |
+|---|---|
+| How a portal is read | `adapters/scrapers/<portal>.py`, and its notes in [docs/portals/](../docs/portals/) |
+| Which places can be searched, and how text becomes a place | `adapters/geocoding/gazetteer.py`, [docs/places.md](../docs/places.md), [docs/locating.md](../docs/locating.md) |
+| When two listings are the same flat | `services/dedup.py`. Its weights are calibrated, so move them only with boundary tests. |
+| What is stored | `adapters/repositories/sqlite/`, [SCHEMA.md](SCHEMA.md) |
+| What the API offers | `adapters/api/routes/` |
+| The order of a scan's steps | `services/pipeline.py` |
