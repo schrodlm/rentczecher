@@ -1,278 +1,163 @@
-# rentczecher
+<p align="center">
+  <img src="panel/src/lib/assets/logo.svg" width="96" alt="">
+</p>
 
-A local-first watchdog for the Czech rental and property market. It scrapes the
-major Czech portals on a schedule, folds the same property listed on several of
-them into one, scores each result against your preferences, and tracks the new
-listings and price drops.
+<h1 align="center">rentczecher</h1>
 
-It runs as a cron one-shot on your own machine. No account, no server, nothing
-hosted. Your searches and your history stay on your disk.
+<p align="center">
+  Your home search across the Czech property portals,<br>
+  in one inbox on your own computer.
+</p>
 
-> **Status:** actively developed, single-maintainer hobby project. What's below
-> is what runs today. A desktop GUI is in design on top of the same pipeline.
-> See [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md) if you want to work on the code
-> rather than just run it.
+<p align="center">
+  <a href="https://github.com/schrodlm/rentczecher/actions/workflows/ci.yml"><img src="https://github.com/schrodlm/rentczecher/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/schrodlm/rentczecher/actions/workflows/build.yml"><img src="https://github.com/schrodlm/rentczecher/actions/workflows/build.yml/badge.svg?branch=build-test" alt="Build"></a>
+  <a href="https://github.com/schrodlm/rentczecher/releases/latest"><img src="https://img.shields.io/github/v/release/schrodlm/rentczecher" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/schrodlm/rentczecher" alt="License: GPL-3.0-or-later"></a>
+</p>
+
+<p align="center">
+  <a href="https://rentczecher.cz">rentczecher.cz</a>
+</p>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="site/static/screenshots/inbox-en-dark.webp">
+  <img src="site/static/screenshots/inbox-en-light.webp" alt="The inbox: flats from several portals ranked by score, with the selected flat's score, price history and comparison with the rest">
+</picture>
 
 ## What it does
 
-- **Three portals.** Sreality.cz (JSON API), Bezrealitky.cz (server-rendered
-  Next.js data), RE/MAX Czech (HTML). Each is a separate scraper. If one breaks
-  or a site is down, the others still run.
-- **Any search, described once.** A profile says what you're looking for (offer
-  type, estate type, a place, price and size ranges, minimum land, the dispositions)
-  and which portals to ask. You never paste portal-specific URLs or region ids.
-  The place is resolved to each portal's own search parameters for you.
-- **Official Czech places.** A search place is a kraj, an okres or a Praha
-  obvod. A place no portal searches fails loudly instead of silently searching
-  the wrong one.
-- **Multiple independent profiles.** Flat rentals in Praha 7, houses for sale in
-  Domažlice. Each has its own portals, criteria and preferences, and one cron
-  entry scans them all.
-- **Cross-portal dedup.** The same flat posted on Sreality and Bezrealitky is
-  shown once, with links to its other portals, keeping whichever copy carries
-  more detail.
-- **Preference scoring.** A 0–100 score per listing from weights you set (price
-  per m², disposition, size, preferred places, land area, total price). The
-  app computes it in the panel and does not show it yet.
-- **Price drops and disappearances.** A listing whose price fell shows its old
-  price next to the new one. A listing gone for three consecutive runs counts
-  as disappeared in the scan's results. Three misses filters out portal API
-  flicker.
+- **One search, every portal.** Say once what you are looking for: rent or
+  buy, a flat, house, cottage or land, where, and for how much. rentczecher
+  asks the Czech property portals for you.
+- **Each flat once.** A flat posted on several portals shows up once, with a
+  link to each posting.
+- **New listings and price drops.** New ones stay marked until you open them,
+  and every flat keeps its price history.
+- **Ranked your way.** Tell it what matters most, such as the layout, the
+  size, the price or the area, and each listing gets a score from 0 to 100
+  with the reasons behind it.
+- **Yours alone.** No account, no cloud, no tracking. Your searches and
+  history stay on your computer.
+- **Czech or English, light or dark.**
 
-## Using the portals
+## Built around profiles
 
-rentczecher is an independent project. It is not affiliated with, endorsed by
-or connected to Sreality.cz (Seznam.cz), Bezrealitky or RE/MAX, and their
-names and logos belong to their owners.
+Everything in rentczecher hangs on a **profile**: one search of yours, saved
+and watched for you. Keep as many as you need, say flats to rent in Praha 7
+and a cottage to buy near the Šumava, and each one runs on its own.
 
-It is built for personal, non-commercial use: one person looking for their own
-home. It runs on your computer, reads the portals for your searches only, and
-never republishes what it reads. Each portal has its own terms of use, and when
-you run rentczecher you are the one using the portal, so following those terms
-is up to you. Professional use, as an agent or an investor for example, is
-outside what it is built for.
+A profile has three parts:
 
-If you run one of these portals and have a concern about how rentczecher uses
-it, please [open an issue](https://github.com/schrodlm/rentczecher/issues).
-Every such request gets a quick answer.
+- **Criteria** decide what shows up at all: rent or buy, the type of property,
+  the place, the price and size ranges, the minimum land and the layouts you
+  accept. A listing that misses one never appears.
+- **Portals** are the sites it asks. Most are on from the start. A portal that
+  asks apps not to read it stays off until you turn it on.
+- **Preferences** decide the order. Say what matters, such as a price, a size,
+  a layout or particular places, and how much each one counts. They rank what
+  the criteria let through and never hide anything.
 
-## Requirements
+Every scan runs for a profile, and each profile keeps its own inbox: every
+flat it has found, what is new since you last looked, what you opened and
+starred, and how each price has moved.
 
-- Python 3.11 or newer
-- [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- Node.js 20 or newer, and Rust via [rustup](https://rustup.rs), for the desktop app
-- On Linux, the webview development libraries the desktop app compiles against
-  (`scripts/bootstrap.py` names the missing ones and how to install them)
-- `cron` for scheduled runs, or schedule it yourself
+## Download
 
-## Install
+Installers for Windows, macOS (Apple silicon) and Linux (AppImage and .deb)
+are on the [Releases page](https://github.com/schrodlm/rentczecher/releases/latest).
 
-```bash
-python3 scripts/bootstrap.py   # checks tools, installs the environments
+The first releases are not code-signed yet, so your system warns you before
+the first start:
+
+- **Windows:** choose *More info*, then *Run anyway*.
+- **macOS:** open *System Settings*, then *Privacy & Security*, and choose
+  *Open Anyway*.
+
+Create a profile, pick the portals, and press **Run scan** whenever you want
+fresh listings.
+
+## How it uses the portals
+
+rentczecher is independent, and not affiliated with any of the portals it
+reads. It is made for your own home search. It reads the portals only for
+your searches, from your computer, names itself in every request, and never
+republishes what it reads. A portal that asks apps not to read its site stays
+off until you turn it on in a profile.
+
+[Which portals it reads, and how](docs/using-the-portals.md)
+
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="site/static/screenshots/search-en-dark.webp">
+    <img src="site/static/screenshots/search-en-light.webp" width="49%" alt="The profile editor: rent or buy, the type of property, and the place picked on a map of Czechia">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="site/static/screenshots/preferences-en-dark.webp">
+    <img src="site/static/screenshots/preferences-en-light.webp" width="49%" alt="The preferences: what matters most, split into weights by dragging">
+  </picture>
+</p>
+
+## How it works
+
+The app is three parts, all running on your computer:
+
+```mermaid
+flowchart LR
+    you(["You"])
+    portals["Czech property portals"]
+
+    subgraph computer ["Your computer"]
+        shell["<b>Shell</b><br>the desktop window<br><i>Tauri · Rust</i>"]
+        panel["<b>Panel</b><br>what you see and click<br><i>SvelteKit · TypeScript</i>"]
+        engine["<b>Engine</b><br>scans and remembers<br><i>FastAPI · Python</i>"]
+        db[("<b>Database</b><br><i>SQLite</i>")]
+    end
+
+    you --> shell
+    shell -- "starts" --> engine
+    shell -- "shows" --> panel
+    panel -- "HTTP API and live events" --> engine
+    engine -- "reads your searches" --> portals
+    engine --> db
+
+    classDef shell fill:#45462a,stroke:#343330,color:#faf5ec
+    classDef panel fill:#dc851f,stroke:#7e5920,color:#343330
+    classDef engine fill:#7e5920,stroke:#45462a,color:#faf5ec
+    classDef store fill:#faf5ec,stroke:#7e5920,color:#343330
+    classDef outside fill:#ffffff,stroke:#e8dfcf,color:#343330
+    style computer fill:transparent,stroke:#7e5920,stroke-dasharray:5 4
+    class shell shell
+    class panel panel
+    class engine engine
+    class db store
+    class you,portals outside
 ```
 
-For scheduled runs, register a cron entry yourself pointing at
-`engine/.venv/bin/rentczecher` (a packaged desktop app with its own scheduling is
-in the works).
+- The **shell** is the window you open. It starts the engine in the background
+  and shows the panel inside itself.
+- The **panel** is the interface: the inbox, the profile editor, the scores.
+  It talks to the engine and never to the portals.
+- The **engine** does the work. It searches the portals for each profile,
+  recognises the same flat on several of them, and keeps the history in a
+  database on your disk.
 
-With at least one profile in the database (see [Profiles](#profiles)), try a
-run that changes nothing:
+## Contributing
 
-```bash
-# dry run: scrape and log the counts, write no state
-engine/.venv/bin/rentczecher --dry-run
-engine/.venv/bin/rentczecher --dry-run --profile <profile id>   # just one profile
-```
+rentczecher is a Python engine, a SvelteKit panel and a Tauri desktop shell.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and how work is done here,
+[docs/architecture.md](docs/architecture.md) how the parts fit together, and
+the [glossary](CONTEXT.md) the words the code uses.
 
-## Profiles
-
-Profiles are user data in the database, created, edited and deleted through
-the engine's API (`/v1/profiles`). The app's editor screen (issue #11) will be
-built on it. Places are picked from the gazetteer through `/v1/places`, which
-finds real places by the start of their official name, so a profile only ever
-holds a place that exists. The full contract is in
-[`docs/api/openapi.json`](docs/api/openapi.json).
-
-Each profile is a self-contained search with three parts:
-
-- **Criteria** decide whether a listing is shown: rent or sale, the estate type
-  (flat, house, land or cottage), the search place, price and size ranges, a
-  minimum land area and the dispositions you accept, such as 2+kk or 3+1. An
-  unset bound is no bound, and no dispositions accept any.
-- **Portals** are the sites it scans. The location comes entirely from the
-  search place.
-- **Preferences** only score and order what is shown. Each has a weight, and
-  all but price per m² have a preferred value: a preferred price, size or
-  land area, and preferred dispositions and places. A weight is never
-  negative, and a preferred value may be empty only while its weight is 0.
-
-The criteria are fixed once a profile is created, since listings already
-tracked were found under them. Everything else can change: the name, the
-portals, the preferences and whether the profile is paused. Listings from a
-portal taken off a profile stay, and new scans just stop visiting it.
-
-A few things worth knowing:
-
-- **Scoring weights are relative.** A component only contributes when its
-  weight is set and the listing has the field it needs. No land area, and the
-  land component just doesn't fire. Weights that add up to about 100 make the
-  score read as a percentage.
-- **Preferred places match by location.** A listing matches a preferred place
-  when its resolved location is that place or lies inside it. A flat on
-  Přístavní matches a preferred obvod Praha 7. A listing with no location
-  matches none.
-
-## CLI
-
-```bash
-rentczecher                          # scan every unpaused profile (what cron calls)
-rentczecher --profile <profile id>   # scan one profile, by its UUID
-rentczecher --dry-run                # scrape and log counts, no state written
-rentczecher db migrate               # create/upgrade the SQLite schema (see note below)
-```
-
-Use `engine/.venv/bin/rentczecher` if `engine/.venv` isn't on your `PATH`. The
-command comes from the engine's Python package, `rentczecher_engine`.
-
-> **On `db migrate`:** every run applies pending schema migrations on startup,
-> so you rarely need this command. It exists to create or upgrade the database
-> without scraping (fresh installs, checking a new schema). See
-> [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md).
-
-## Where things live
-
-| | Default path |
-|---|---|
-| Data (database, pid lock) | `~/.local/share/rentczecher/` |
-| Cron log | `~/.local/share/rentczecher/cron.log` |
-
-Set `RENTCZECHER_DATA_DIR` to put the data elsewhere. A checkout whose
-`engine/data/` already holds `rentczecher.db` uses that folder instead.
-
-```bash
-tail -f ~/.local/share/rentczecher/cron.log   # watch the scheduled runs
-```
-
-## Locations
-
-Places come from the gazetteer, a SQLite file shipped with the engine
-(`engine/src/rentczecher_engine/adapters/geocoding/gazetteer.sqlite`). It holds
-every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
-code, and how each portal names the places it can search by.
-[docs/places.md](docs/places.md) describes the units, and
-[docs/locating.md](docs/locating.md) how a listing's location text becomes them.
-
-**It is built, never hand-edited.** Rebuild it when ČÚZK publishes a new
-registry dump worth picking up, or when a portal renumbers its places. The
-symptom of the latter is a place that used to return listings suddenly returning
-zero, or the `live` search-place tests failing:
-
-```bash
-(cd engine && uv run python -m scripts.gazetteer build)
-```
-
-The build downloads the registry, harvests each portal's own list of places,
-joins every portal place to its official one by name, and verifies the result.
-It takes about a minute and needs the portals reachable. Only a fully verified
-file replaces the shipped one. [engine/scripts/gazetteer/README.md](engine/scripts/gazetteer/README.md)
-has the details.
-
-## Development
-
-```bash
-python3 scripts/bootstrap.py              # one-time setup: tools, both environments, hooks
-(cd panel && npm run tauri dev)           # the app in its window: Vite, the shell and the engine
-(cd engine && uv run python scripts/freeze_sidecar.py)  # freeze the engine for the desktop app
-(cd engine && uv run pytest)              # offline test suite (fast, no network)
-(cd engine && uv run pytest -m live)      # live portal tests, hits the real sites, run deliberately
-uv run --project engine prek run --all-files  # every commit hook (the commit gate)
-```
-
-Commits are gated by the pre-commit hooks, and the offline suite must be green.
-The dedup matcher's weights and thresholds are calibrated against owner-labeled
-listing pairs. Pin current outcomes with boundary tests before moving them.
-
-The repo has three parts: `engine/` (Python), `panel/` (SvelteKit) and `shell/`
-(Tauri). [engine/ARCHITECTURE.md](engine/ARCHITECTURE.md) maps the engine's code.
-`CLAUDE.md` records the coding stances this repo holds to.
-
-### Scenarios
-
-A scenario opens the app on a known inbox instead of your real data: empty,
-fresh listings, price drops, a disappeared listing, or the same flat on two
-portals.
-
-```bash
-(cd panel && RENTCZECHER_SCENARIO=price-drops npm run tauri dev)    # Linux, macOS
-```
-```powershell
-cd panel; $env:RENTCZECHER_SCENARIO="price-drops"; npm run tauri dev  # Windows
-```
-
-Each scenario is a YAML file in `engine/tests/scenarios/` that states what
-happened: the profile's search, the listings each scan saw, then which ones you
-viewed. The debug app seeds the profile into a scratch database, replays the
-scans through the engine and runs there, so your real data is never touched.
-Tests start from the same files. To add one, write a new file next to the
-others. `fresh-scrape.yaml` shows every part.
-
-## Building the desktop app
-
-```bash
-(cd panel && npm run tauri build)                  # every installer format for this OS
-(cd panel && npm run tauri build -- --bundles deb) # only the .deb on Linux
-```
-
-One command builds the panel, freezes the engine and compiles the shell. The
-installers land in `shell/target/release/bundle/`. Each OS builds only
-its own installers, since the frozen engine cannot be cross-compiled.
-
-A release build also bundles the license and the third-party notices, which
-list every package inside the app with its license text:
-
-```bash
-cargo install --locked --features cli cargo-about   # once, lists the Rust crates
-(cd panel && npm run tauri build -- --config ../shell/tauri.release.conf.json)
-```
-
-`shell/tauri.release.conf.json` is laid over `tauri.conf.json` and replaces its
-build command and bundled files whole, so a change to either belongs in both.
-The build fails when a bundled package uses a license missing from the
-`accepted` list in `shell/about.toml`. CI builds the tagged releases this way.
-
-## Troubleshooting
-
-- **A scraper suddenly returns 0 results.** Usually the portal changed its page
-  structure or ids. `--dry-run` shows which portal. If it's a location
-  taxonomy change, rebuild the gazetteer (above).
-- **Sreality returns all 404s.** Sreality's API blanket-404s some networks
-  (datacenter and VPN egress) while its homepage serves 200 fine. This is almost
-  always your connection being blocked, not a bug. It works from ordinary
-  residential connections.
-
-## Data from ČÚZK
-
-The gazetteer and the place-picker map contain data from RÚIAN, the Czech
-registry of territorial identification, addresses and real estate:
-**ČÚZK, 2026**, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.cs)
-on [ČÚZK's terms for spatial data](https://cuzk.gov.cz/Predpisy/Podminky-poskytovani-prostor-dat-a-sitovych-sluzeb/Podminky-poskytovani-prostorovych-dat-CUZK.aspx).
-The year is that of the registry dump the shipped gazetteer was built from.
-
-Both are modified from the source. The gazetteer keeps only each place's name,
-RÚIAN code and centroid, and joins the places to the ids the portals search
-by. The map's outlines are not RÚIAN's boundaries but are traced from those
-centroids. The registry files each build used, and when it ran, are recorded in
-the gazetteer's `meta` table and at the top of `czech-map.json`. The source
-dataset is the [RÚIAN exchange format](https://cuzk.gov.cz/ruian/Poskytovani-udaju-ISUI-RUIAN-VDP/Vymenny-format-RUIAN-(VFR).aspx),
-which ČÚZK publishes with its metadata.
+Running the engine on its own, without the desktop app, is described in
+[docs/cli.md](docs/cli.md).
 
 ## License
 
-rentczecher is free software, licensed under the
-[GNU General Public License, version 3 or later](LICENSE). You may use, study,
-change and share it, also for money. Whoever distributes it, changed or not,
-must pass it on under the same license together with its full source.
+rentczecher is free software under the
+[GNU General Public License, version 3 or later](LICENSE). The license covers
+the code. The name and the logo are not part of it, so a fork is welcome under
+a name of its own.
 
-The license covers the code. The name rentczecher and its logo are not part of
-it, so a fork is welcome under a name of its own. The RÚIAN data keeps its own
-license, see [Data from ČÚZK](#data-from-čúzk).
+Place data: **ČÚZK, 2026**, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.cs),
+modified. [Details](docs/data.md)
