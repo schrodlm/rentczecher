@@ -265,7 +265,7 @@ export const en: Messages = {
 		userAgentIntro: 'It names itself in every request with this User-Agent:',
 		howItReads: [
 			"It reads only its user's saved searches, when its user starts a scan.",
-			'It reads the result pages of a search, with a pause between pages, and never opens the adverts themselves.',
+			'It reads the result pages of a search, with a pause between pages and a cap on how many pages one search reads, and never opens the adverts themselves.',
 			'It uses no proxies, no rotating identities and no CAPTCHA or firewall bypass. If a portal refuses it, it does not try to get past the refusal.',
 			'A portal whose terms or robots.txt ask automated clients to stay away is off by default.'
 		],
