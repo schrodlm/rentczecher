@@ -33,8 +33,8 @@ describe('SplitBar', () => {
 	test('puts a divider between each pair of neighbours', async () => {
 		const { getAllByRole } = await renderBar();
 		expect(getAllByRole('slider').map((divider) => divider.getAttribute('aria-label'))).toEqual([
-			'Předěl: Cena a Velikost',
-			'Předěl: Velikost a Dispozice'
+			'Hranice: Cena a Velikost',
+			'Hranice: Velikost a Dispozice'
 		]);
 	});
 
