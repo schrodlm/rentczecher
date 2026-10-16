@@ -64,6 +64,15 @@ one pool. For the example that is:
 - the městská část Praha 7 (Praha also has an obvod Praha 7, which step 3
   finds)
 
+**Before picking, the text rules out readings it contradicts.** A name can be
+several units of one obec: in Praha, "Vinohrady" is both a část obce and a
+street in Radotín. When the text names an obvod or městská část of that
+obec, only the readings with an address inside every one it names stay in the
+pool. For `Praha, Vinohrady, Praha 2` that leaves the část obce. If no reading
+fits, all of them stay. A name with only one reading in the obec is never
+dropped this way, so text that contradicts itself is still recorded as written.
+The same rule applies when step 3 fills the other names.
+
 It then picks **one** match, the anchor, by asking these questions in order:
 
 1. **Does another name vouch for it?** A match whose obec is also named in the
