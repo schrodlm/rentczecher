@@ -43,6 +43,8 @@ erDiagram
     profiles   ||--o{ preferred_places   : "prefers"
     profiles   ||--o{ listing_tracking   : "tracks"
     listings   ||--o{ listing_tracking   : "seen by profiles as"
+    profiles   ||--o{ property_tracking  : "marks"
+    properties ||--o{ property_tracking  : "marked by profiles as"
     profiles   ||--o{ scrape_runs         : "records a run of"
     properties ||--o{ listings            : "posted as"
     properties ||--o| property_locations  : "lies at"
@@ -67,7 +69,8 @@ erDiagram
 | `portals`, `offer_types`, `estate_types`, `place_kinds`, `dispositions` | The fixed vocabularies the other tables reference, seeded by the migrations. |
 | `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. Once no profile tracks a property, itself or through a listing, it is deleted with its listings, prices, places, images and dedup records. |
 | `listings` | One per-portal posting: `source:source_id`, which property, url, scraped timestamp. A fact of the posting, shared by every profile whose search sees it. No per-profile state. |
-| `listing_tracking` | Per-profile seen state for a listing: first/last seen, `miss_count`, `viewed_at`, `favourited_at`. One row per profile and listing. Pruning deletes these rows, and the properties left untracked go with them. |
+| `listing_tracking` | Per-profile seen state for a listing: first/last seen and `miss_count`. One row per profile and listing. Pruning deletes these rows, and the properties left untracked go with them. |
+| `property_tracking` | What a profile did with a flat: `viewed_at` and `favourited_at`, once per flat rather than on each of its listings. One row per profile and property. A starred flat's row is never pruned. |
 | `property_locations` | Where a property lies: the RÚIAN code of each unit, kraj to ulice, plus the house numbers as written. One row per property, the most detailed location any of its listings gave. The codes point into the shipped gazetteer, a separate file, so no foreign key checks them. |
 | `property_images` | Superset of image URLs across a property's listings. `local_path` is reserved (always null today) for an opt-in photo-archiving feature. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
