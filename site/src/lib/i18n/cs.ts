@@ -131,7 +131,7 @@ export const cs: Messages = {
 		windows: 'Instalátor .exe pro Windows 10 a 11',
 		macos: 'Instalátor .dmg pro Apple Silicon',
 		linux: 'AppImage nebo .deb',
-		macWarning: 'macOS se při prvním spuštění zeptá, jestli aplikaci věříte.',
+		firstLaunchWarning: 'Aplikace zatím není podepsaná, takže Windows i macOS při prvním spuštění varují.',
 		whatToDo: 'Co s tím?',
 		buildYourself: 'Raději si to sestavíte sami?',
 		readme: 'Návod je v README'
@@ -218,9 +218,14 @@ export const cs: Messages = {
 				]
 			},
 			{
-				question: 'Proč mě macOS varuje?',
+				question: 'Proč mě Windows a macOS varují?',
 				answer: [
-					'Pro podporované vydání aplikace na macOS je nutné zakoupit developerský program v ceně €99/rok. Za aplikaci nic nevydělávám, takže nemám důvod za to platit. Aplikaci je pořád možné spustit, i když je s tím trošku více práce. Otevřete ',
+					'Aplikace zatím není podepsaná. Ve Windows zvolte ',
+					{ uiLabel: 'Další informace' },
+					' a pak ',
+					{ uiLabel: 'Přesto spustit' },
+					'. Podepsaný instalátor pro Windows chystám. ',
+					'Na macOS je pro podepsání nutné zakoupit developerský program v ceně €99/rok. Za aplikaci nic nevydělávám, takže nemám důvod za to platit. Aplikaci je pořád možné spustit, i když je s tím trošku více práce. Otevřete ',
 					{ uiLabel: 'Nastavení systému' },
 					' → ',
 					{ uiLabel: 'Soukromí a zabezpečení' },

@@ -131,7 +131,7 @@ export const en: Messages = {
 		windows: '.exe installer for Windows 10 and 11',
 		macos: '.dmg installer for Apple Silicon',
 		linux: 'AppImage or .deb',
-		macWarning: 'macOS asks whether you trust the app on first launch.',
+		firstLaunchWarning: 'The app is not code-signed yet, so Windows and macOS warn you on first launch.',
 		whatToDo: 'What to do?',
 		buildYourself: 'Prefer to build it yourself?',
 		readme: 'See the README'
@@ -218,9 +218,14 @@ export const en: Messages = {
 				]
 			},
 			{
-				question: 'Why does macOS warn me?',
+				question: 'Why do Windows and macOS warn me?',
 				answer: [
-					"Releasing an app properly on macOS requires Apple's developer program, which costs €99 a year. I don't earn anything from the app, so I have no reason to spend that. You can still run the app, it just takes a little more work. Open ",
+					'The app is not code-signed yet. On Windows, choose ',
+					{ uiLabel: 'More info' },
+					', then ',
+					{ uiLabel: 'Run anyway' },
+					'. A signed Windows installer is on the way. ',
+					"On macOS, signing requires Apple's developer program, which costs €99 a year. I don't earn anything from the app, so I have no reason to spend that. You can still run the app, it just takes a little more work. Open ",
 					{ uiLabel: 'System Settings' },
 					' → ',
 					{ uiLabel: 'Privacy & Security' },

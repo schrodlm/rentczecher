@@ -124,7 +124,7 @@ export interface Messages {
 		windows: string;
 		macos: string;
 		linux: string;
-		macWarning: string;
+		firstLaunchWarning: string;
 		whatToDo: string;
 		buildYourself: string;
 		readme: string;
