@@ -155,7 +155,7 @@ class Gazetteer:
     The names carry no roles (see ParsedPlace): the same word can be a
     street, a town, the town's self-named part, or all of them at once.
     So every name is looked up across all tiers, everything lands in one
-    candidate pool, and four passes look for a single row the evidence
+    candidate pool, and five passes look for a single row the evidence
     agrees on. The passes run in order of how much the answer can be
     trusted, each walking tiers most specific first, and each returns a
     row only when exactly one matches - two matches is a tie, and a tie
