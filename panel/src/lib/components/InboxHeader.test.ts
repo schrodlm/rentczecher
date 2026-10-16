@@ -85,12 +85,36 @@ describe('InboxHeader', () => {
 	test('shows a failed run even with no error message, not a stale success label', async () => {
 		const { getByText, queryByText } = await renderWithTranslator(InboxHeader, {
 			health: [],
-			runState: { status: 'failed', error: null },
+			runState: { status: 'failed', error: null, noPortalAnswered: false },
 			lastFinishedAt: new Date('2026-09-19T10:00:00Z'),
 			triggerError: null,
 			onrun: () => {}
 		});
 		expect(getByText('Scan selhal')).toBeInTheDocument();
 		expect(queryByText(/^Poslední scan:/)).not.toBeInTheDocument();
+	});
+
+	test('tells the user to check the connection when no portal answered', async () => {
+		const { getByText } = await renderWithTranslator(InboxHeader, {
+			health: [],
+			runState: { status: 'failed', error: null, noPortalAnswered: true },
+			lastFinishedAt: null,
+			triggerError: null,
+			onrun: () => {}
+		});
+		expect(
+			getByText('Scan selhal: žádný portál nebyl dostupný. Zkontrolujte připojení k internetu.')
+		).toBeInTheDocument();
+	});
+
+	test('names the portals a completed run could not reach beside the time', async () => {
+		const { getByText } = await renderWithTranslator(InboxHeader, {
+			health: [],
+			runState: { status: 'done', brokenPortals: ['sreality', 'remax'] },
+			lastFinishedAt: new Date('2026-09-19T10:00:00Z'),
+			triggerError: null,
+			onrun: () => {}
+		});
+		expect(getByText(/^Poslední scan: .*, nedostupné: Sreality, RE\/MAX$/)).toBeInTheDocument();
 	});
 });
