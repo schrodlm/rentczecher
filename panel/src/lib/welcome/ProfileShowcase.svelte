@@ -3,6 +3,7 @@
 	import PropertyRow from '$lib/components/PropertyRow.svelte';
 	import ScoreRing from '$lib/components/ScoreRing.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import MapCredit from '$lib/map/MapCredit.svelte';
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { PORTALS } from '$lib/portals';
 	import { ONE_FLAT, PRAHA_7, PRICE_HISTORY, RANKED_FLATS } from './sample-flats';
@@ -20,7 +21,10 @@
 	<div class="showcase__stage">
 		{#if slide === 0}
 			<div class="showcase__visual">
-				<div class="showcase__map"><PlaceMap location={PRAHA_7} point={null} /></div>
+				<div class="showcase__map">
+					<div class="showcase__map-shape"><PlaceMap location={PRAHA_7} point={null} /></div>
+					<MapCredit />
+				</div>
 				<ul class="showcase__chips">
 					<li>{t.t('Rent')}</li>
 					<li>{t.t('Flat')}</li>
@@ -143,11 +147,21 @@
 	}
 
 	.showcase__map {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--space-1);
 		width: 18rem;
 		height: 100%;
 	}
 
-	.showcase__map :global(svg) {
+	.showcase__map-shape {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+	}
+
+	.showcase__map-shape :global(svg) {
 		width: 100%;
 		height: 100%;
 	}

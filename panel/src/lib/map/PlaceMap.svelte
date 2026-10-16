@@ -3,7 +3,6 @@
 	import type { components } from '$lib/api/types.gen';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { mapPointOf, regionOf, TOWNS } from './czech-map';
-	import MapCredit from './MapCredit.svelte';
 	import { MapNavigation } from './navigation.svelte';
 
 	type LocationModel = components['schemas']['LocationModel'];
@@ -36,42 +35,27 @@
 	$effect(() => navigation.show(area));
 </script>
 
-<div class="place-map">
-	<svg class="place-map__svg" {viewBox} role="img" aria-label={t.t('Map of where the listing lies')}>
-		{#each navigation.districts as district (`${district.kind}:${district.code}`)}
-			<path d={district.path} class="place-map__district" />
-		{/each}
-		{#each navigation.obvody as obvod (obvod.code)}
-			<path d={obvod.path} class="place-map__district" />
-		{/each}
-		{#if highlighted}
-			<path d={highlighted.path} class="place-map__area" />
-		{/if}
-		{#if pin}
-			<circle cx={pin[0]} cy={pin[1]} r={view.width / 110} class="place-map__pin" />
-		{:else if town && location.obvod === null}
-			<circle cx={town.x} cy={town.y} r={view.width / 90} class="place-map__town" />
-		{/if}
-	</svg>
-	<div class="place-map__credit"><MapCredit /></div>
-</div>
+<svg class="place-map" {viewBox} role="img" aria-label={t.t('Map of where the listing lies')}>
+	{#each navigation.districts as district (`${district.kind}:${district.code}`)}
+		<path d={district.path} class="place-map__district" />
+	{/each}
+	{#each navigation.obvody as obvod (obvod.code)}
+		<path d={obvod.path} class="place-map__district" />
+	{/each}
+	{#if highlighted}
+		<path d={highlighted.path} class="place-map__area" />
+	{/if}
+	{#if pin}
+		<circle cx={pin[0]} cy={pin[1]} r={view.width / 110} class="place-map__pin" />
+	{:else if town && location.obvod === null}
+		<circle cx={town.x} cy={town.y} r={view.width / 90} class="place-map__town" />
+	{/if}
+</svg>
 
 <style>
 	.place-map {
-		position: relative;
 		width: 100%;
 		height: 100%;
-	}
-
-	.place-map__svg {
-		width: 100%;
-		height: 100%;
-	}
-
-	.place-map__credit {
-		position: absolute;
-		right: var(--space-2);
-		bottom: var(--space-1);
 	}
 
 	.place-map__district {

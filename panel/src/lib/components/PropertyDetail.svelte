@@ -17,6 +17,7 @@
 		type PropertyEvent,
 		type Standing
 	} from '$lib/property-detail';
+	import MapCredit from '$lib/map/MapCredit.svelte';
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
@@ -244,6 +245,7 @@
 			<section class="property-detail__panel">
 				<h3>{t.t('Where')} · {listing.location_raw_text ?? listing.resolved_location.kraj.name}</h3>
 				<div class="property-detail__map"><PlaceMap location={listing.resolved_location} point={listing.point} /></div>
+				<div class="property-detail__map-credit"><MapCredit /></div>
 			</section>
 		{/if}
 
@@ -412,6 +414,11 @@
 
 	.property-detail__map {
 		height: 14rem;
+	}
+
+	.property-detail__map-credit {
+		margin-top: var(--space-1);
+		text-align: right;
 	}
 
 	.property-detail__history {
