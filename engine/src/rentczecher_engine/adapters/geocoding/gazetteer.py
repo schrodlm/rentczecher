@@ -156,10 +156,17 @@ class Gazetteer:
     street, a town, the town's self-named part, or all of them at once.
     So every name is looked up across all tiers, everything lands in one
     candidate pool, and five passes look for a single row the evidence
-    agrees on. The passes run in order of how much the answer can be
-    trusted, each walking tiers most specific first, and each returns a
-    row only when exactly one matches - two matches is a tie, and a tie
-    falls through to the next, weaker pass:
+    agrees on.
+
+    Before the passes, a name read as several units of one obec keeps only
+    the readings lying partly in every obvod and městská část the text names
+    there, unless none would remain: the other names rule readings out,
+    never in.
+
+    The passes run in order of how much the answer can be trusted, each
+    walking tiers most specific first, and each returns a row only when
+    exactly one matches - two matches is a tie, and a tie falls through to
+    the next, weaker pass:
 
     1. Municipality agreement: a second name vouches for the row's town.
        'Veletržní' exists in Praha and in Brno; 'Veletržní' + 'Praha'
@@ -228,6 +235,7 @@ class Gazetteer:
                 if r["name_norm"] not in stated or r["kind"] == "okres"]
         district_names = {r["name_norm"] for r in rows if r["kind"] == "okres"}
         place_rows = [r for r in rows if r["kind"] != "okres"]
+        place_rows = self._without_readings_the_text_rules_out(place_rows, place.names)
         vouchers = set(candidates) - stated
 
         match = (self._vouched_by_municipality(place_rows, vouchers)
@@ -240,6 +248,49 @@ class Gazetteer:
         location = self._filled_from_names_inside_obec(self._location_of(match), place.names)
         location = self._with_containing_units(location)
         return replace(location, cislo_popisne=place.cislo_popisne, cislo_orientacni=place.cislo_orientacni)
+
+    def _without_readings_the_text_rules_out(self, place_rows: list[sqlite3.Row],
+                                             names: tuple[str, ...]) -> list[sqlite3.Row]:
+        """A name read as several units of one obec, such as a street and a
+        část obce sharing it, keeps only the readings lying partly in every
+        obvod and městská část the text names there, unless that leaves none."""
+        readings: dict[tuple[int, str], list[sqlite3.Row]] = {}
+        for row in place_rows:
+            readings.setdefault((row["obec_code"], row["name_norm"]), []).append(row)
+        kept: list[sqlite3.Row] = []
+        for (obec_code, _), same_name in readings.items():
+            if len(same_name) == 1:
+                kept.extend(same_name)
+                continue
+            named_units = self._mestske_casti_and_obvody_named_inside(obec_code, names)
+            fitting = [row for row in same_name
+                       if self._lies_partly_in_every(PlaceRef(kind=row["kind"], code=row["code"]), named_units)]
+            kept.extend(fitting or same_name)
+        return kept
+
+    def _mestske_casti_and_obvody_named_inside(self, obec_code: int, names: tuple[str, ...]) -> set[PlaceRef]:
+        """A name stating an obvod is not read as a městská část as well. A
+        městská část counts even when the name is also a part inside it."""
+        obec = self._unit("obce", obec_code)
+        if obec is None:
+            return set()
+        named_units: set[PlaceRef] = set()
+        for name in names:
+            candidates = candidate_names([name])
+            obvod = self._obvod_named_inside(obec, candidates)
+            if obvod is not None:
+                named_units.add(PlaceRef(kind="obvod", code=obvod.code))
+                continue
+            mestska_cast = self._mestska_cast_named_inside(obec, candidates)
+            if mestska_cast is not None:
+                named_units.add(PlaceRef(kind="mestska_cast", code=mestska_cast.code))
+        return named_units
+
+    def _lies_partly_in_every(self, place: PlaceRef, units: set[PlaceRef]) -> bool:
+        # An obec holds every unit named inside it.
+        if not units or place.kind == "obec":
+            return True
+        return units <= self._units_touched_by(place)
 
     def _with_containing_units(self, location: Location) -> Location:
         """The location with the část obce, městská část and obvod its finer
@@ -287,7 +338,7 @@ class Gazetteer:
     def _places(self, stmt: str, code: int) -> set[Place]:
         return {_to_place(row) for row in self._conn.execute(stmt, (code,))}
 
-    def _filled_from_names_inside_obec(self, location: Location, names: Iterable[str]) -> Location:
+    def _filled_from_names_inside_obec(self, location: Location, names: tuple[str, ...]) -> Location:
         """The location with each kind the match left open filled from a name
         inside its obec. A kind two names disagree on stays open."""
         obec = location.obec
@@ -299,6 +350,7 @@ class Gazetteer:
         if location.okres is not None:
             coarser_names.add(normalize_name(location.okres.name))
 
+        named_units = self._mestske_casti_and_obvody_named_inside(obec.code, names)
         obvody: set[Place] = set()
         mestske_casti: set[Place] = set()
         casti_obce: set[Place] = set()
@@ -312,7 +364,7 @@ class Gazetteer:
                 obvody.add(obvod)
                 continue
             part_candidates = [c for c in candidates if c not in coarser_names]
-            part = self._part_named_inside(obec, part_candidates)
+            part = self._part_named_inside(obec, part_candidates, named_units)
             if part is None:
                 continue
             kind, unit = part
@@ -343,9 +395,11 @@ class Gazetteer:
                 return _to_place(row)
         return None
 
-    def _part_named_inside(self, obec: Place, candidates: list[str]) -> tuple[str, Place] | None:
+    def _part_named_inside(self, obec: Place, candidates: list[str],
+                           named_units: set[PlaceRef]) -> tuple[str, Place] | None:
         """The one městská část, část obce or street of the obec the
-        candidates name, with its kind."""
+        candidates name, with its kind. Of several, only those lying partly
+        in every named unit count, unless none does."""
         stmt = """
             SELECT kind, code, name, lat, lon FROM places
             WHERE obec_code = ? AND kind IN ('mestska_cast', 'cast_obce', 'ulice') AND name_norm = ?
@@ -353,7 +407,16 @@ class Gazetteer:
         parts = {(row["kind"], _to_place(row))
                  for candidate in candidates
                  for row in self._conn.execute(stmt, (obec.code, candidate))}
-        return _only(parts)
+        fitting = {(kind, part) for kind, part in parts
+                   if self._lies_partly_in_every(PlaceRef(kind=kind, code=part.code), named_units)}
+        return _only(fitting or parts)
+
+    def _mestska_cast_named_inside(self, obec: Place, candidates: list[str]) -> Place | None:
+        stmt = "SELECT code, name, lat, lon FROM mestske_casti WHERE obec_code = ? AND name_norm = ?"
+        mestske_casti = {_to_place(row)
+                         for candidate in candidates
+                         for row in self._conn.execute(stmt, (obec.code, candidate))}
+        return _only(mestske_casti)
 
     def named(self, stored: PropertyLocation) -> Location | None:
         """Turns a stored location, which holds only codes, back into one
@@ -413,16 +476,21 @@ class Gazetteer:
         return PlaceRef(kind="kraj", code=obec["kraj_code"])
 
     def _obvody_touched_by(self, place: PlaceRef) -> set[PlaceRef]:
+        if place.kind == "obec":
+            return set()
+        return {unit for unit in self._units_touched_by(place) if unit.kind == "obvod"}
+
+    def _units_touched_by(self, place: PlaceRef) -> set[PlaceRef]:
+        """The městské části and obvody, and for a street the části obce,
+        the place shares an address point with."""
         if place.kind == "mestska_cast":
             stmt = "SELECT code AS mestska_cast_code, obvod_code FROM mestske_casti WHERE code = ?"
-            touched = self._mestske_casti_and_obvody(stmt, place.code)
-        elif place.kind == "cast_obce":
-            touched = self._units_touched_by_cast_obce(place.code)
-        elif place.kind == "ulice":
-            touched = self._units_touched_by_ulice(place.code)
-        else:
-            return set()
-        return {unit for unit in touched if unit.kind == "obvod"}
+            return self._mestske_casti_and_obvody(stmt, place.code)
+        if place.kind == "cast_obce":
+            return self._units_touched_by_cast_obce(place.code)
+        if place.kind == "ulice":
+            return self._units_touched_by_ulice(place.code)
+        raise ValueError(f"no touched units for kind {place.kind!r}")
 
     def search_places(self, query: str, within: PlaceRef | None = None,
                       kinds: tuple[PlaceKind, ...] | None = None) -> list[PlaceMatch]:
