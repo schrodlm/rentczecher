@@ -203,7 +203,7 @@ msgid "{area} of land"
 msgstr "{area} pozemku"
 
 msgid "Between {left} and {right}"
-msgstr "Předěl: {left} a {right}"
+msgstr "Hranice: {left} a {right}"
 
 msgid "Every listing scores 0 until a preference counts."
 msgstr "Dokud se nepočítá žádná preference, má každý inzerát 0 bodů."
@@ -236,7 +236,7 @@ msgid "Price"
 msgstr "Cena"
 
 msgid "Scoring only orders the listings you see, best first, and never hides any. Drag the dividers: the wider a preference, the more it decides."
-msgstr "Skóre jen řadí inzeráty, nejlepší první, a žádný neskryje. Táhněte předěly: čím širší preference, tím víc rozhoduje."
+msgstr "Skóre jen určuje pořadí inzerátů, žádný neschová. Tažením hranic mezi obdélníky nastavíte, na čem vám záleží víc. Odvíjí se od toho hodnocení inzerátů."
 
 msgid "Set your preferred land first."
 msgstr "Nejdřív nastavte preferovaný pozemek."
