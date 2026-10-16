@@ -185,6 +185,12 @@ The desktop program the user launches. It owns the window showing the GUI
 and the sidecar's lifetime.
 _Avoid_: wrapper, launcher, frontend
 
+**Site**:
+The public website at rentczecher.cz, built from `site/`. It presents the
+product and links to its downloads, but runs none of it and is not part of the
+desktop app.
+_Avoid_: landing page, homepage, web panel
+
 **Background watching**:
 The engine keeps running scheduled scans after the window is closed, shown by
 an icon in the system tray. On by default, and off whenever no tray exists.
