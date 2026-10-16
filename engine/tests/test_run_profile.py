@@ -147,12 +147,38 @@ class TestCountsAndHealth:
 
         assert result.status == "ok"
 
-    def test_a_broken_scraper_is_status_partial(self):
-        deps = _deps(scrapers={"sreality": _scraper(error=ScraperBrokenError("boom"))})
+    def test_a_broken_scraper_beside_a_working_one_is_status_partial(self):
+        deps = _deps(scrapers={
+            "sreality": _scraper([_listing("1", "sreality")]),
+            "bezrealitky": _scraper(error=ScraperBrokenError("boom")),
+        })
 
-        result = run_profile(_profile(), deps)
+        result = run_profile(_profile(portals=("sreality", "bezrealitky")), deps)
 
         assert result.status == "partial"
+
+    def test_every_scraper_broken_fails_the_run_and_persists_nothing(self):
+        store = FakeRunStore()
+        deps = _deps(store=store, scrapers={
+            "sreality": _scraper(error=ConnectionError("offline")),
+            "bezrealitky": _scraper(error=ConnectionError("offline")),
+        })
+
+        result = run_profile(_profile(portals=("sreality", "bezrealitky")), deps)
+
+        assert result.status == "failed"
+        assert set(result.scraper_health) == {"sreality", "bezrealitky"}
+        assert store.persist_calls == []
+        assert store.prune_calls == []
+
+    def test_a_profile_with_no_enabled_portal_fails_the_run_and_persists_nothing(self):
+        store = FakeRunStore()
+        deps = _deps(store=store)
+
+        result = run_profile(_profile(portals=()), deps)
+
+        assert result.status == "failed"
+        assert store.persist_calls == []
 
     def test_an_unresolvable_place_aborts_the_profile_as_failed(self, caplog):
         class UnresolvablePlaceScraper:
