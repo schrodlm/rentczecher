@@ -335,6 +335,40 @@ class TestResolveContainingUnits:
         assert location.obvod.name == "Praha 7"
 
 
+class TestResolveRulesOutReadings:
+    """A name read as several units of one obec keeps the readings lying in
+    every obvod and městská část the text names there, unless none does."""
+
+    def test_a_named_obvod_picks_the_cast_obce_over_a_same_named_street_outside_it(self, gazetteer):
+        # Praha has a street Vinohrady in Radotín, far from the část obce.
+        location = gazetteer.resolve(ParsedPlace(names=("Praha", "Vinohrady", "Praha 2")))
+        assert location.cast_obce.name == "Vinohrady"
+        assert location.ulice is None
+        assert location.obvod.name == "Praha 2"
+
+    def test_the_named_cast_obce_fills_beside_a_street_anchor(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Vozová", "Praha", "Vinohrady", "Praha 2")))
+        assert location.ulice.name == "Vozová"
+        assert location.cast_obce.name == "Vinohrady"
+
+    def test_the_street_reading_stays_when_the_text_names_its_districts(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Vinohrady", "Praha", "Radotín", "Praha 5")))
+        assert location.ulice.name == "Vinohrady"
+        assert location.cast_obce.name == "Radotín"
+
+    def test_a_named_mestska_cast_rules_out_a_street_outside_it(self, gazetteer):
+        # The street Trnitá lies only in Brno-střed.
+        location = gazetteer.resolve(ParsedPlace(names=("Trnitá", "Brno", "Brno-jih")))
+        assert location.ulice is None
+        assert location.cast_obce.name == "Trnitá"
+        assert location.mestska_cast.name == "Brno-jih"
+
+    def test_a_name_with_one_reading_is_kept_against_the_named_obvod(self, gazetteer):
+        location = gazetteer.resolve(ParsedPlace(names=("Veletržní", "Praha 8")))
+        assert location.ulice.name == "Veletržní"
+        assert location.obvod.name == "Praha 8"
+
+
 class TestResolveHouseNumbers:
     def test_the_house_numbers_ride_along_as_written(self, gazetteer):
         place = ParsedPlace(names=("U Vody", "Praha"), cislo_popisne="1401", cislo_orientacni="5a")
