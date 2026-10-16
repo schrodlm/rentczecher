@@ -36,7 +36,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 
 ## Working here
 
-- Layout: `engine/` is the Python engine, its own uv project (package `rentczecher_engine`, which provides the product's `rentczecher` command). `panel/` is the SvelteKit panel. `shell/` is the Tauri shell, driven from the panel with `npm run tauri`.
+- Layout: `engine/` is the Python engine, its own uv project (package `rentczecher_engine`, which provides the product's `rentczecher` command). `panel/` is the SvelteKit panel. `shell/` is the Tauri shell, driven from the panel with `npm run tauri`. `site/` is the public website at rentczecher.cz, a static SvelteKit build that `.github/workflows/site.yml` publishes to GitHub Pages from main. Its screenshots come from scenarios, never from real listings.
 - Dev setup: `python3 scripts/bootstrap.py` — checks tools, installs the engine and panel environments, and installs the commit hooks. Idempotent, rerun anytime. Commits are gated by pre-commit hooks (ruff, offline pytest, file hygiene, panel locale coverage — see `.pre-commit-config.yaml`); run them manually with `uv run --project engine prek run --all-files`.
 - Scenarios (`engine/tests/scenarios/*.yaml`) state what happened, scans then user actions, and replay through the engine's own pipeline. Reproduce a UI state or a bug as a scenario, and open the app on it with `RENTCZECHER_SCENARIO=<name> npm run tauri dev` in `panel/`, never against the real database. Tests start from the same scenarios.
 - Offline tests: `uv run pytest` inside `engine/` (live portal tests are excluded by default via the `live` marker). Run live tests deliberately: `uv run pytest -m live`.
@@ -45,7 +45,7 @@ Standard clean open-source development practices are the baseline everywhere; th
 - SQLite repositories apply the static-readability stance concretely: set `conn.row_factory = sqlite3.Row` and index columns by name; give each row-to-domain conversion a `_to_<type>(row)` mapper that names every field; assign each SQL statement to a `stmt` local (triple-quoted for multi-line); and spell out column lists in full. No `dataclasses.fields()` reflection, no `"?" * len(...)` placeholder tricks — the column list is the source of truth and drift should fail loudly. Write methods never call `conn.commit()` themselves; the caller owns the transaction boundary with one explicit commit per unit of work.
 - Scoring thresholds are tuned-by-feel production behavior. Never retune or restructure them without boundary tests pinning current behavior first.
 - The dedup matcher's weights and thresholds are calibrated against owner-labeled listing pairs. Move them only with boundary tests pinning current outcomes first, never by feel.
-- User-facing strings are written in English and translated through the panel's locale catalogs. Engine output, identifiers and internal strings are English.
+- The app's user-facing strings are written in English and translated through the panel's locale catalogs. The site writes its copy per language, in typed message files under `site/src/lib/i18n/`. Engine output, identifiers and internal strings are English.
 
 ## Agent skills
 
