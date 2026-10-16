@@ -30,4 +30,6 @@ Two rules hold for every scan, whichever interface starts it.
   committing sends the same listings again on the next scan.
 - A partly broken scan is still a scan. Its run reports which portals failed,
   which is what the panel's portal health shows.
+- A scan in which no portal answered commits nothing and reports failed, so an
+  outage never counts toward a listing's disappearance.
 - A dry run neither notifies nor commits, so it is safe against real data.
