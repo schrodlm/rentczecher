@@ -88,17 +88,10 @@
 		color: inherit;
 		text-align: left;
 		cursor: pointer;
-		opacity: 0.55;
-		filter: grayscale(1);
-		transition:
-			opacity 120ms,
-			filter 120ms,
-			border-color 120ms;
+		transition: border-color 120ms;
 	}
 
 	.portal-tiles__tile--on {
-		opacity: 1;
-		filter: none;
 		border-color: var(--color-olive);
 		box-shadow: inset 0 0 0 1px var(--color-olive);
 	}
@@ -108,6 +101,12 @@
 		width: 2.5rem;
 		height: 2.5rem;
 		object-fit: contain;
+		filter: grayscale(1) opacity(0.45);
+		transition: filter 120ms;
+	}
+
+	.portal-tiles__tile--on .portal-tiles__logo {
+		filter: none;
 	}
 
 	.portal-tiles__name {
