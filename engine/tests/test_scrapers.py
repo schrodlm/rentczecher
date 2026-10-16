@@ -438,6 +438,48 @@ class TestBezrealitkyParsing:
             BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
 
 
+class TestBezrealitkyPagination:
+    """Paging stops on the portal's own end, a page served again, or the page
+    cap, judging repeats by the adverts a page carries before filtering."""
+
+    def test_stops_at_the_page_cap_and_says_so(self, monkeypatch, caplog):
+        pages = {page: _bez_page([_bez_advert(page)], total_count=10_000) for page in range(1, 60)}
+        client, calls = _serve_bez_pages(monkeypatch, pages)
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
+        assert len(calls) == bezrealitky.MAX_PAGES
+        assert len(listings) == bezrealitky.MAX_PAGES
+        assert "pagination cap" in caplog.text
+
+    def test_stops_when_the_portal_serves_the_same_page_again(self, monkeypatch):
+        same = _bez_page([_bez_advert(1), _bez_advert(2)], total_count=10_000)
+        client, calls = _serve_bez_pages(monkeypatch, {page: same for page in range(1, 60)})
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["bezrealitky:1", "bezrealitky:2"]
+        assert len(calls) == 2
+
+    def test_reads_on_past_a_page_whose_adverts_are_all_filtered_out(self, monkeypatch):
+        client, calls = _serve_bez_pages(monkeypatch, {
+            1: _bez_page([_bez_advert(1)], total_count=45),
+            2: _bez_page([_bez_advert(2, currency="EUR")], total_count=45),
+            3: _bez_page([_bez_advert(3)], total_count=45),
+        })
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["bezrealitky:1", "bezrealitky:3"]
+        assert len(calls) == 3
+
+    def test_reads_on_when_an_advert_shifts_onto_the_next_page(self, monkeypatch):
+        # A new advert posted between two pages pushes page 1's last advert
+        # onto page 2, where the rest is filtered out.
+        client, calls = _serve_bez_pages(monkeypatch, {
+            1: _bez_page([_bez_advert(1)], total_count=45),
+            2: _bez_page([_bez_advert(1), _bez_advert(2, currency="EUR")], total_count=45),
+            3: _bez_page([_bez_advert(3)], total_count=45),
+        })
+        listings = BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["bezrealitky:1", "bezrealitky:3"]
+        assert len(calls) == 3
+
+
 class TestBezrealitkyLocationParsing:
     """The comma-separated address splits into names on both commas and
     'Praha - Bubeneč' style dash pairs. An 'okres X' segment states the
@@ -723,6 +765,46 @@ class TestRemaxParsing:
         client, _ = _serve_remax_pages(monkeypatch, {1: _remax_page([_remax_card(1, price=99000000)])})
         listings = RemaxScraper(criteria, client).scrape()
         assert [l.id for l in listings] == ["remax:1"]
+
+
+class TestRemaxPagination:
+    """Paging stops on the last page, a page served again, or the page cap,
+    judging repeats by the cards a page carries before filtering."""
+
+    def test_stops_at_the_page_cap_and_says_so(self, monkeypatch, caplog):
+        pages = {page: _remax_page([_remax_card(page)], has_next=True) for page in range(1, 60)}
+        client, calls = _serve_remax_pages(monkeypatch, pages)
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert len(calls) == remax.MAX_PAGES
+        assert len(listings) == remax.MAX_PAGES
+        assert "pagination cap" in caplog.text
+
+    def test_stops_when_the_portal_serves_the_same_page_again(self, monkeypatch):
+        same = _remax_page([_remax_card(1), _remax_card(2)], has_next=True)
+        client, calls = _serve_remax_pages(monkeypatch, {page: same for page in range(1, 60)})
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["remax:1", "remax:2"]
+        assert len(calls) == 2
+
+    def test_reads_on_past_a_page_whose_cards_are_all_filtered_out(self, monkeypatch):
+        client, calls = _serve_remax_pages(monkeypatch, {
+            1: _remax_page([_remax_card(1)], has_next=True),
+            2: _remax_page([_remax_card(2, price=9000000)], has_next=True),
+            3: _remax_page([_remax_card(3)]),
+        })
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["remax:1", "remax:3"]
+        assert len(calls) == 3
+
+    def test_reads_on_when_a_card_shifts_onto_the_next_page(self, monkeypatch):
+        client, calls = _serve_remax_pages(monkeypatch, {
+            1: _remax_page([_remax_card(1)], has_next=True),
+            2: _remax_page([_remax_card(1), _remax_card(2, price=9000000)], has_next=True),
+            3: _remax_page([_remax_card(3)]),
+        })
+        listings = RemaxScraper(REMAX_CRITERIA, client).scrape()
+        assert sorted(l.id for l in listings) == ["remax:1", "remax:3"]
+        assert len(calls) == 3
 
 
 class TestRemaxPlaceBasedUrl:
