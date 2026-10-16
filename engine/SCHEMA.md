@@ -13,8 +13,7 @@ this document explains the model behind them.
 - A **listing** is one portal's posting of a property, a thin pointer. The same
   flat on Sreality and Bezrealitky is one property with two listings.
 - The property **owns the canonical facts** (title, location text, size, disposition text,
-  GPS, land) and the **superset of images**. The first listing to create a
-  property seeds those facts.
+  GPS, land). The first listing to create a property seeds those facts.
 - When a later listing is judged the same property but its facts *differ*, the
   difference is recorded in **dedup_records**, not on the property, so the
   cross-portal disagreement ("Sreality says 55 m², Bezrealitky says 56 m²") is
@@ -72,7 +71,7 @@ erDiagram
 | `listing_tracking` | Per-profile seen state for a listing: first/last seen and `miss_count`. One row per profile and listing. Pruning deletes these rows, and the properties left untracked go with them. |
 | `property_tracking` | What a profile did with a flat: `viewed_at` and `favourited_at`, once per flat rather than on each of its listings. One row per profile and property. A starred flat's row is never pruned. |
 | `property_locations` | Where a property lies: the RÚIAN code of each unit, kraj to ulice, plus the house numbers as written. One row per property, the most detailed location any of its listings gave. The codes point into the shipped gazetteer, a separate file, so no foreign key checks them. |
-| `property_images` | Superset of image URLs across a property's listings. `local_path` is reserved (always null today) for an opt-in photo-archiving feature. |
+| `property_images` | Image URLs of a property. Nothing writes it yet. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
 | `dedup_records` | Audit trail of every dedup match: why two were judged the same (`match_reason`) and how the listing's facts diverged from canonical (`differences`, JSON). |
-| `scrape_runs` | One row per profile per run: timings, status, counts. Data staleness = the latest non-failed run's `started_at`. |
+| `scrape_runs` | One row per profile per run: timings, status, counts. Nothing writes it yet, see [#41](https://github.com/schrodlm/rentczecher/issues/41), so `price_observations.observed_in_run_id` is always null. |
