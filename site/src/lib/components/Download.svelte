@@ -27,7 +27,7 @@
 		{/each}
 	</div>
 	<div class="notes muted">
-		<p>{t.download.macWarning} <a href="#faq">{t.download.whatToDo}</a></p>
+		<p>{t.download.firstLaunchWarning} <a href="#faq">{t.download.whatToDo}</a></p>
 		<p>{t.download.buildYourself} <a href={REPO_URL}>{t.download.readme}</a></p>
 	</div>
 </section>
