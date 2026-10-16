@@ -171,7 +171,7 @@ export const cs: Messages = {
 				},
 				{
 					title: 'Další realitní portály',
-					body: 'Jako první přibude Reality.iDNES.cz, druhý největší český portál.'
+					body: 'U každého nejdřív prověřím, co od aplikací žádá.'
 				},
 				{
 					title: 'Na jiném počítači',
@@ -198,7 +198,7 @@ export const cs: Messages = {
 			{
 				question: 'Které portály hlídá?',
 				answer: [
-					'RE/MAX, Bezrealitky a Sreality. RE/MAX je zapnutý od začátku. Sreality a Bezrealitky jsou ve výchozím stavu vypnuté a zapnete si je sami v profilu, až uvidíte, co daný portál žádá. Další portály přibudou, jako první plánuji iDNES. rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
+					'RE/MAX, Bezrealitky a Sreality. RE/MAX je zapnutý od začátku. Sreality a Bezrealitky jsou ve výchozím stavu vypnuté a zapnete si je sami v profilu, až uvidíte, co daný portál žádá. Další portály přibudou, u každého nejdřív prověřím, co od aplikací žádá. rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
 				]
 			},
 			{

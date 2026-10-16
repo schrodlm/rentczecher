@@ -170,8 +170,8 @@ export const en: Messages = {
 					body: 'Set up email and your first profile in the app, without editing config files.'
 				},
 				{
-					title: 'More real-estate portals',
-					body: 'Reality.iDNES.cz comes first, the second largest Czech portal.'
+					title: 'More portals',
+					body: 'Each one checked first for what it asks of apps.'
 				},
 				{
 					title: 'On another computer',
@@ -198,7 +198,7 @@ export const en: Messages = {
 			{
 				question: 'Which portals does it watch?',
 				answer: [
-					'RE/MAX, Bezrealitky and Sreality. RE/MAX is on from the start. Sreality and Bezrealitky are off by default, and you turn them on yourself in a profile after seeing what the portal asks. More portals will follow, with iDNES planned first. rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
+					'RE/MAX, Bezrealitky and Sreality. RE/MAX is on from the start. Sreality and Bezrealitky are off by default, and you turn them on yourself in a profile after seeing what the portal asks. More portals will follow, each one checked first for what it asks of apps. rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
 				]
 			},
 			{
