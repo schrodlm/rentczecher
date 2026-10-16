@@ -505,6 +505,40 @@ class TestSearchPlaces:
             gazetteer.search_places("na", within=PlaceRef(kind, CANCELLED_CODE))
 
 
+class TestSearchArea:
+    """The smallest kraj, okres or Praha obvod holding all of a place."""
+
+    @pytest.mark.parametrize("place", [PlaceRef("kraj", 43), PlaceRef("okres", 3401), PlaceRef("obvod", 78)])
+    def test_a_place_the_portals_search_is_its_own_area(self, gazetteer, place):
+        assert gazetteer.search_area(place) == place
+
+    @pytest.mark.parametrize(("place", "area"), [
+        (PlaceRef("obec", 553786), PlaceRef("okres", 3401)),
+        (PlaceRef("mestska_cast", 550973), PlaceRef("okres", 3702)),
+    ])
+    def test_a_place_outside_praha_is_searched_by_its_okres(self, gazetteer, place, area):
+        assert gazetteer.search_area(place) == area
+
+    @pytest.mark.parametrize(("place", "area"), [
+        (PlaceRef("mestska_cast", 539694), PlaceRef("obvod", 51)),
+        (PlaceRef("cast_obce", 400301), PlaceRef("obvod", 51)),
+        (PlaceRef("ulice", 467103), PlaceRef("obvod", 78)),
+    ])
+    def test_a_prague_place_inside_one_obvod_is_searched_by_it(self, gazetteer, place, area):
+        assert gazetteer.search_area(place) == area
+
+    def test_a_prague_place_crossing_obvody_is_searched_across_praha(self, gazetteer):
+        assert gazetteer.search_area(PlaceRef("cast_obce", 490067)) == PlaceRef("kraj", 19)
+
+    def test_praha_itself_is_searched_by_its_kraj(self, gazetteer):
+        assert gazetteer.search_area(PlaceRef("obec", 554782)) == PlaceRef("kraj", 19)
+
+    @pytest.mark.parametrize("kind", KINDS_COARSEST_FIRST)
+    def test_an_unknown_place_raises(self, gazetteer, kind):
+        with pytest.raises(PlaceNotFoundError):
+            gazetteer.search_area(PlaceRef(kind, CANCELLED_CODE))
+
+
 class TestNameTiers:
     def test_ambiguous_street_name_still_reports_street_tier(self, gazetteer):
         assert "ulice" in gazetteer.name_tiers("Veletržní")

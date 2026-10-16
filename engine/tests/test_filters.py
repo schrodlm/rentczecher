@@ -3,10 +3,13 @@
 Run: python3 -m pytest tests/test_filters.py -v
 """
 
+import pytest
+
+from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.listing import Listing
-from rentczecher_engine.domain.location import PlaceRef
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.domain.profile import Criteria
-from rentczecher_engine.services.filters import apply_filters
+from rentczecher_engine.services.filters import apply_filters, listings_inside
 from tests.profiles import criteria, layouts
 
 CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78))
@@ -100,3 +103,36 @@ def test_filters_combine():
                            criteria(min_size_m2=40, min_land_m2=200, dispositions=layouts("2+kk", "2+1")))
 
     assert [l.id for l in result] == ["keeper"]
+
+
+KDYNE = PlaceRef("obec", 553786)
+
+
+@pytest.fixture(scope="module")
+def gazetteer():
+    return Gazetteer()
+
+
+def _located(gazetteer: Gazetteer, id: str, *names: str, district: str | None = None) -> Listing:
+    parsed_place = ParsedPlace(names=names, district=district)
+    return _make_listing(id=id, parsed_place=parsed_place).with_annotations(
+        resolved_location=gazetteer.resolve(parsed_place))
+
+
+class TestListingsInside:
+    def test_a_listing_located_inside_the_place_is_kept(self, gazetteer):
+        inside = _located(gazetteer, "sreality:1", "Kdyně")
+        assert listings_inside([inside], KDYNE) == [inside]
+
+    def test_a_listing_located_elsewhere_is_left_out(self, gazetteer):
+        assert listings_inside([_located(gazetteer, "sreality:1", "Poběžovice")], KDYNE) == []
+
+    def test_a_listing_located_only_to_the_okres_is_left_out(self, gazetteer):
+        coarse = _located(gazetteer, "sreality:1", "Domažlice", district="Domažlice")
+        assert coarse.resolved_location.obec is None
+        assert listings_inside([coarse], KDYNE) == []
+
+    def test_a_listing_with_no_location_is_left_out(self, gazetteer):
+        unknown = _located(gazetteer, "sreality:1", "Nová Ves")
+        assert unknown.resolved_location is None
+        assert listings_inside([unknown], KDYNE) == []

@@ -12,8 +12,9 @@ from datetime import datetime, timezone
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ScraperBrokenError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import ParsedPlace, PlaceRef
 from rentczecher_engine.services.pipeline import PipelineDeps, RunCounts, run_profile
-from tests.profiles import profile
+from tests.profiles import criteria, profile
 
 BASE = datetime(2026, 9, 19, 8, 0, 0, tzinfo=timezone.utc)
 GAZETTEER = Gazetteer()
@@ -192,3 +193,43 @@ class TestCountsAndHealth:
         assert result.started_at == BASE
         assert result.finished_at == BASE
         assert result.profile_id == "praha7-byty"
+
+
+class TestSearchPlaceSmallerThanTheArea:
+    def test_only_listings_inside_the_place_are_kept(self):
+        listings = [
+            _listing("1", "sreality", parsed_place=ParsedPlace(names=("Kdyně",))),
+            _listing("2", "sreality", parsed_place=ParsedPlace(names=("Poběžovice",))),
+            _listing("3", "sreality", parsed_place=ParsedPlace(names=("Nová Ves",))),
+        ]
+        store = FakeRunStore()
+        deps = _deps(store=store, scrapers={"sreality": _scraper(listings)})
+
+        result = run_profile(profile(criteria=criteria(place=PlaceRef("obec", 553786))), deps)
+
+        assert result.counts.total == 1
+        (_, outcome, _, current_ids), = store.persist_calls
+        assert [listing.id for listing in outcome.survivors] == ["sreality:1"]
+        assert current_ids == {"sreality:1"}
+
+    def test_a_listing_with_no_location_is_kept_when_the_portals_search_the_place_itself(self):
+        unknown = _listing("1", "sreality", parsed_place=ParsedPlace(names=("Nová Ves",)))
+        deps = _deps(scrapers={"sreality": _scraper([unknown])})
+
+        result = run_profile(_profile(), deps)
+
+        assert result.counts.total == 1
+
+    def test_an_unknown_place_fails_the_run_before_any_scraper_is_built(self):
+        built: list[object] = []
+
+        class RecordingScraper:
+            def __init__(self, criteria, client):
+                built.append(self)
+
+        deps = _deps(scrapers={"sreality": RecordingScraper})
+
+        result = run_profile(profile(criteria=criteria(place=PlaceRef("obec", 999_999_999))), deps)
+
+        assert result.status == "failed"
+        assert built == []
