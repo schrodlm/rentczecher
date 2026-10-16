@@ -132,18 +132,28 @@ class TestDelete:
         repo, conn = _repo(tmp_path)
         doomed = repo.add("Doomed", ("sreality",), FULL_CRITERIA, FULL_PREFERENCES)
         kept = repo.add("Kept", (), criteria(), preferences())
-        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (BASE.isoformat(),))
-        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
-                     "VALUES ('sreality:1', 'x', 'sreality', 'u', ?)", (BASE.isoformat(),))
-        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
-                     "VALUES (?, 'sreality:1', ?, ?)", (doomed.id, BASE.isoformat(), BASE.isoformat()))
         assert repo.delete(doomed.id) is True
         assert repo.list_profiles() == [kept]
         for table in ("profile_criteria", "profile_portals", "profile_preferences",
                       "preferred_dispositions", "preferred_places", "listing_tracking"):
             stmt = f"SELECT count(*) FROM {table} WHERE profile_id = ?"
             assert conn.execute(stmt, (doomed.id,)).fetchone()[0] == 0, table
-        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
+
+    def test_a_deleted_profile_takes_the_listings_only_it_tracked(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        doomed = repo.add("Doomed", ("sreality",), FULL_CRITERIA, FULL_PREFERENCES)
+        kept = repo.add("Kept", (), criteria(), preferences())
+        for property_id, listing_id, profile_id in (("only-doomed", "sreality:1", doomed.id),
+                                                    ("shared", "sreality:2", doomed.id),
+                                                    ("shared", "sreality:2", kept.id)):
+            conn.execute("INSERT OR IGNORE INTO properties (id, created_at) VALUES (?, ?)",
+                         (property_id, BASE.isoformat()))
+            conn.execute("INSERT OR IGNORE INTO listings (id, property_id, source, url, scraped_at) "
+                         "VALUES (?, ?, 'sreality', 'u', ?)", (listing_id, property_id, BASE.isoformat()))
+            conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
+                         "VALUES (?, ?, ?, ?)", (profile_id, listing_id, BASE.isoformat(), BASE.isoformat()))
+        repo.delete(doomed.id)
+        assert [row["id"] for row in conn.execute("SELECT id FROM listings")] == ["sreality:2"]
 
     def test_an_unknown_id_deletes_nothing(self, tmp_path):
         repo, _ = _repo(tmp_path)
