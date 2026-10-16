@@ -14,6 +14,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 ENGINE = REPO / "engine"
 PANEL = REPO / "panel"
+SIDECAR = REPO / "shell" / "sidecar"
 
 
 def run(*command: str, cwd: Path) -> None:
@@ -78,6 +79,10 @@ def main() -> None:
     # The generated catalog and API types are gitignored, so a fresh clone
     # needs one codegen pass before the editor sees a consistent tree.
     run("npm", "run", "codegen", cwd=PANEL)
+    # The shell bundles the frozen engine from this gitignored folder, and its
+    # build fails when the folder is missing, even in dev, which runs the
+    # engine from source and never reads it.
+    SIDECAR.mkdir(exist_ok=True)
 
     print("\nbootstrap: ready.")
 
