@@ -52,8 +52,14 @@ msgstr "Scan selhal: {error}"
 msgid "Scan failed"
 msgstr "Scan selhal"
 
+msgid "Scan failed: no portal could be reached. Check your internet connection."
+msgstr "Scan selhal: žádný portál nebyl dostupný. Zkontrolujte připojení k internetu."
+
 msgid "Last scan: {time}"
 msgstr "Poslední scan: {time}"
+
+msgid "Last scan: {time}, unreachable: {portals}"
+msgstr "Poslední scan: {time}, nedostupné: {portals}"
 
 msgid "No scan yet"
 msgstr "Ještě nespuštěno"
