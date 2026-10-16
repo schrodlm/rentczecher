@@ -30,12 +30,6 @@ const IN_KDYNE = {
 };
 
 describe('PlaceMap', () => {
-	test('credits ČÚZK for the data it draws', async () => {
-		const { getByRole } = await renderWithTranslator(PlaceMap, { location: IN_PRAHA_7, point: null });
-		expect(getByRole('link', { name: 'ČÚZK, 2026' })).toBeInTheDocument();
-		expect(getByRole('link', { name: 'CC BY 4.0' })).toBeInTheDocument();
-	});
-
 	test('highlights the Praha district a listing lies in', async () => {
 		const { container } = await renderWithTranslator(PlaceMap, { location: IN_PRAHA_7, point: null });
 		const praha7 = OBVODY.find((obvod) => obvod.code === 78);

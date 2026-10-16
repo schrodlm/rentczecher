@@ -58,6 +58,25 @@ async function renderDetail(
 }
 
 describe('PropertyDetail', () => {
+	test('credits ČÚZK under the map of where the listing lies', async () => {
+		const located = trackedProperty('bezrealitky:3', {
+			resolved_location: {
+				kraj: { code: 19, name: 'Hlavní město Praha' },
+				okres: null,
+				obec: { code: 554782, name: 'Praha' },
+				obvod: { code: 78, name: 'Praha 7' },
+				mestska_cast: null,
+				cast_obce: null,
+				ulice: null,
+				cislo_popisne: null,
+				cislo_orientacni: null
+			}
+		});
+		const { getByRole } = await renderDetail(located);
+		expect(getByRole('link', { name: 'ČÚZK, 2026' })).toBeInTheDocument();
+		expect(getByRole('link', { name: 'CC BY 4.0' })).toBeInTheDocument();
+	});
+
 	test('links to every portal carrying the listing', async () => {
 		const { getByRole } = await renderDetail();
 		expect(getByRole('link', { name: 'Otevřít na Bezrealitky ↗' })).toBeInTheDocument();
