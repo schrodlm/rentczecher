@@ -3,7 +3,6 @@
 Run: python3 -m pytest tests/test_migrate.py -v
 """
 
-import shutil
 import sqlite3
 from typing import get_args
 
@@ -22,19 +21,6 @@ EXPECTED_TABLES = {
     "profile_criteria", "profile_portals", "profile_preferences",
     "preferred_dispositions", "preferred_places",
 }
-
-
-def _db_at_version(tmp_path, version):
-    partial = tmp_path / "migrations"
-    partial.mkdir()
-    for path in migrate.MIGRATIONS_DIR.glob("*.sql"):
-        if int(path.name.split("_")[0]) <= version:
-            shutil.copy(path, partial / path.name)
-    with pytest.MonkeyPatch.context() as patch:
-        patch.setattr(migrate, "MIGRATIONS_DIR", partial)
-        conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn)[-1] == version
-    return conn
 
 
 class TestConnectionSetup:
@@ -58,12 +44,12 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 16
+        assert migrate.apply_pending(conn) == [1]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
-    def test_fresh_db_reaches_version_2_with_geocell_columns(self, tmp_path):
+    def test_properties_carry_their_geocell_columns(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
         migrate.apply_pending(conn)
         columns = {r[1] for r in conn.execute("PRAGMA table_info(properties)")}
@@ -141,23 +127,8 @@ class TestMigrate:
         assert "a" in tables
 
 
-class TestDispositionsMigration:
-    """The dispositions table holds the parser's vocabulary, and existing
-    properties gain the code their raw text names."""
-
-    def test_backfill_maps_raw_texts_to_disposition_codes(self, tmp_path):
-        conn = _db_at_version(tmp_path, 9)
-        raw_texts = {"layout": "2+KK", "studio": "Garsoniéra", "atypical": "Atypický",
-                     "building": "Rodinný", "missing": None}
-        for property_id, raw_text in raw_texts.items():
-            conn.execute(
-                "INSERT INTO properties (id, created_at, disposition_raw_text) VALUES (?, ?, ?)",
-                (property_id, "2026-08-02T00:00:00+00:00", raw_text))
-        conn.commit()
-        assert migrate.apply_pending(conn)[0] == 10
-        codes = dict(conn.execute("SELECT id, disposition_code FROM properties").fetchall())
-        assert codes == {"layout": "2+kk", "studio": "1+kk", "atypical": "atypicky",
-                         "building": None, "missing": None}
+class TestDispositions:
+    """The dispositions table holds the parser's vocabulary."""
 
     def test_seeded_codes_are_exactly_the_parseable_dispositions(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
@@ -172,10 +143,9 @@ class TestDispositionsMigration:
         assert seeded == parseable
 
 
-class TestProfilesMigration:
-    """Profiles gain their criteria and preferences tables, earlier profile
-    rows go with their tracking, and the lookups hold the engine's
-    vocabularies."""
+class TestProfileTables:
+    """The profile tables accept only valid profiles, and the lookups hold
+    the engine's vocabularies."""
 
     NOW = "2026-10-04T00:00:00+00:00"
 
@@ -217,21 +187,6 @@ class TestProfilesMigration:
         assert {row[0] for row in conn.execute("SELECT name FROM offer_types")} == set(get_args(OfferType))
         assert {row[0] for row in conn.execute("SELECT name FROM estate_types")} == set(get_args(EstateType))
         assert {row[0] for row in conn.execute("SELECT name FROM place_kinds")} == set(get_args(PlaceKind))
-
-    def test_earlier_profiles_go_with_their_tracking_and_listings_stay(self, tmp_path):
-        conn = _db_at_version(tmp_path, 10)
-        conn.execute("INSERT INTO profiles (id, name, active, created_at) VALUES ('old', 'Old', 1, ?)",
-                     (self.NOW,))
-        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (self.NOW,))
-        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
-                     "VALUES ('sreality:1', 'x', 'sreality', 'u', ?)", (self.NOW,))
-        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
-                     "VALUES ('old', 'sreality:1', ?, ?)", (self.NOW, self.NOW))
-        conn.commit()
-        assert migrate.apply_pending(conn) == [11, 12, 13, 14, 15, 16]
-        assert conn.execute("SELECT count(*) FROM profiles").fetchone()[0] == 0
-        assert conn.execute("SELECT count(*) FROM listing_tracking").fetchone()[0] == 0
-        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
 
     def test_a_full_valid_profile_is_accepted(self, tmp_path):
         conn = self._migrated_with_profile(tmp_path)
@@ -318,48 +273,11 @@ class TestProfilesMigration:
             conn.execute(stmt)
 
 
-class TestAcceptedDispositionsMigration:
-    """A profile's room range and kitchen kind become the dispositions they
-    covered, and no range none, which accepts any."""
+class TestAcceptedDispositions:
+    """A profile accepts only dispositions the dispositions table holds, and
+    they go with the profile."""
 
     NOW = "2026-10-07T00:00:00+00:00"
-
-    def _accepted_after_migrating(self, tmp_path, min_rooms, max_rooms, kitchen):
-        conn = _db_at_version(tmp_path, 12)
-        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
-        conn.execute(
-            "INSERT INTO profile_criteria (profile_id, offer_type, estate_type, place_kind, place_code, "
-            "min_rooms, max_rooms, kitchen) VALUES ('p', 'rent', 'flat', 'obvod', 78, ?, ?, ?)",
-            (min_rooms, max_rooms, kitchen))
-        conn.commit()
-        assert migrate.apply_pending(conn) == [13, 14, 15, 16]
-        stmt = "SELECT disposition FROM accepted_dispositions WHERE profile_id = 'p' ORDER BY disposition"
-        return [row[0] for row in conn.execute(stmt)]
-
-    def test_a_range_with_a_kitchen_becomes_the_dispositions_it_covered(self, tmp_path):
-        assert self._accepted_after_migrating(tmp_path, 2, 3, "kitchenette") == ["2+kk", "3+kk"]
-
-    def test_a_range_without_a_kitchen_covers_both_kinds(self, tmp_path):
-        assert self._accepted_after_migrating(tmp_path, 8, None, None) == ["8+1", "8+kk", "9+1", "9+kk"]
-
-    def test_a_kitchen_alone_covers_every_room_count(self, tmp_path):
-        assert self._accepted_after_migrating(tmp_path, None, None, "separate") == [
-            "1+1", "2+1", "3+1", "4+1", "5+1", "6+1", "7+1", "8+1", "9+1"]
-
-    def test_no_range_accepts_any_disposition(self, tmp_path):
-        assert self._accepted_after_migrating(tmp_path, None, None, None) == []
-
-    def test_the_search_keeps_its_other_bounds(self, tmp_path):
-        conn = _db_at_version(tmp_path, 12)
-        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
-        conn.execute(
-            "INSERT INTO profile_criteria (profile_id, offer_type, estate_type, place_kind, place_code, "
-            "min_price, max_price, min_size_m2, max_size_m2, min_land_m2, min_rooms) "
-            "VALUES ('p', 'sale', 'house', 'okres', 3401, 1, 2, 3, 4, 5, 2)")
-        conn.commit()
-        migrate.apply_pending(conn)
-        row = conn.execute("SELECT * FROM profile_criteria").fetchone()
-        assert tuple(row) == ("p", "sale", "house", "okres", 3401, 1, 2, 3, 4, 5)
 
     def test_an_unknown_disposition_is_refused(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
@@ -375,84 +293,6 @@ class TestAcceptedDispositionsMigration:
         conn.execute("INSERT INTO accepted_dispositions (profile_id, disposition) VALUES ('p', '2+kk')")
         conn.execute("DELETE FROM profiles WHERE id = 'p'")
         assert conn.execute("SELECT count(*) FROM accepted_dispositions").fetchone()[0] == 0
-
-
-
-class TestPreferredSettingsMigration:
-    """Each preference's setting keeps its value under its preferred name, and
-    still needs to be positive once its preference is weighted."""
-
-    NOW = "2026-10-09T00:00:00+00:00"
-
-    def _migrated_from_13(self, tmp_path):
-        conn = _db_at_version(tmp_path, 13)
-        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
-        conn.execute(
-            "INSERT INTO profile_preferences (profile_id, price_per_m2_weight, disposition_weight, "
-            "size_weight, ideal_size_m2, place_weight, land_weight, ideal_land_m2, price_weight, max_good_price) "
-            "VALUES ('p', 0, 0, 20, 70, 0, 30, 800, 50, 22000)")
-        conn.commit()
-        assert migrate.apply_pending(conn) == [14, 15, 16]
-        return conn
-
-    def test_a_stored_setting_keeps_its_value(self, tmp_path):
-        conn = self._migrated_from_13(tmp_path)
-        stmt = "SELECT preferred_size_m2, preferred_land_m2, preferred_price FROM profile_preferences"
-        assert tuple(conn.execute(stmt).fetchone()) == (70, 800, 22000)
-
-    @pytest.mark.parametrize("setting", ["preferred_size_m2", "preferred_land_m2", "preferred_price"])
-    def test_a_weighted_setting_still_needs_to_be_positive(self, tmp_path, setting):
-        conn = self._migrated_from_13(tmp_path)
-        with pytest.raises(sqlite3.IntegrityError):
-            conn.execute(f"UPDATE profile_preferences SET {setting} = 0")
-
-
-class TestPropertyTrackingMigration:
-    """A profile's viewed and starred state moves from each listing onto its
-    flat, as of the first of its listings."""
-
-    NOW = "2026-10-11T00:00:00+00:00"
-
-    def _migrated_from_14(self, tmp_path, tracking):
-        conn = _db_at_version(tmp_path, 14)
-        for profile_id in ("a", "b"):
-            conn.execute("INSERT INTO profiles (id, name, created_at) VALUES (?, 'P', ?)", (profile_id, self.NOW))
-        for property_id in ("flat", "other"):
-            conn.execute("INSERT INTO properties (id, created_at) VALUES (?, ?)", (property_id, self.NOW))
-        for listing_id, property_id in (("sreality:1", "flat"), ("bezrealitky:1", "flat"), ("remax:1", "other")):
-            conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) VALUES (?, ?, ?, 'u', ?)",
-                         (listing_id, property_id, listing_id.split(":")[0], self.NOW))
-        for profile_id, listing_id, viewed_at, favourited_at in tracking:
-            conn.execute(
-                "INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at, "
-                "viewed_at, favourited_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (profile_id, listing_id, self.NOW, self.NOW, viewed_at, favourited_at))
-        conn.commit()
-        assert migrate.apply_pending(conn) == [15, 16]
-        return conn
-
-    def _tracking(self, conn):
-        stmt = "SELECT profile_id, property_id, viewed_at, favourited_at FROM property_tracking ORDER BY 1, 2"
-        return [tuple(row) for row in conn.execute(stmt)]
-
-    def test_a_flat_keeps_the_first_of_its_listings_views_and_stars(self, tmp_path):
-        conn = self._migrated_from_14(tmp_path, [
-            ("a", "sreality:1", "2026-10-03", None),
-            ("a", "bezrealitky:1", "2026-10-01", "2026-10-02"),
-        ])
-        assert self._tracking(conn) == [("a", "flat", "2026-10-01", "2026-10-02")]
-
-    def test_each_profile_keeps_its_own_row(self, tmp_path):
-        conn = self._migrated_from_14(tmp_path, [
-            ("a", "sreality:1", "2026-10-01", None),
-            ("b", "sreality:1", None, None),
-            ("b", "remax:1", None, "2026-10-05"),
-        ])
-        assert self._tracking(conn) == [
-            ("a", "flat", "2026-10-01", None),
-            ("b", "flat", None, None),
-            ("b", "other", None, "2026-10-05"),
-        ]
 
 
 class TestConcurrentWriters:
