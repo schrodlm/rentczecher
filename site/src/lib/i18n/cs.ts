@@ -11,6 +11,7 @@ export const cs: Messages = {
 	nav: {
 		label: 'Hlavní',
 		features: 'Co umí',
+		how: 'Jak to funguje',
 		roadmap: 'Co chystám',
 		devlog: 'Devlog',
 		faq: 'Otázky'
@@ -78,6 +79,29 @@ export const cs: Messages = {
 			free: {
 				title: 'Zdarma',
 				body: 'Bez předplatného a bez placené verze.'
+			}
+		}
+	},
+	how: {
+		heading: 'Jak to funguje',
+		stepsLabel: 'Kroky',
+		previous: 'Předchozí krok',
+		next: 'Další krok',
+		steps: {
+			search: {
+				title: 'Řekněte, co hledáte',
+				body: 'Pronájem nebo koupě. Byt, dům, chata nebo pozemek. Místo na mapě, cena, velikost a dispozice. Klidně několik hledání najednou.',
+				screenshotAlt: 'Nový profil v aplikaci: typ nabídky, mapa Česka pro výběr místa, rozpětí ceny a velikosti a dispozice'
+			},
+			preferences: {
+				title: 'Vyberte, co preferujete',
+				body: 'Cena, velikost nebo dispozice, podle toho, na čem vám záleží nejvíc. Hned vidíte, jak by nabídky bodovaly. A vyberete portály, které má hlídat.',
+				screenshotAlt: 'Preference v aplikaci: zapnuté portály, váha ceny, velikosti a dispozice a ukázka, jak by inzeráty bodovaly'
+			},
+			inbox: {
+				title: 'Projdete jen novinky',
+				body: 'Pravidelně projde zapnuté portály a ukáže nové nabídky a zlevnění, seřazené podle toho, jak dobře vám sedí.',
+				screenshotAlt: 'Schránka v aplikaci: nové nabídky seřazené podle skóre a rozpis skóre vybrané nabídky'
 			}
 		}
 	},

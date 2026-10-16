@@ -6,6 +6,7 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Hero from '$lib/components/Hero.svelte';
+	import HowItWorks from '$lib/components/HowItWorks.svelte';
 	import OpenSource from '$lib/components/OpenSource.svelte';
 	import Portals from '$lib/components/Portals.svelte';
 	import PrivacyBand from '$lib/components/PrivacyBand.svelte';
@@ -38,6 +39,7 @@
 	<Hero {t} appVersion={data.appVersion} />
 	<Portals {t} />
 	<Features {t} />
+	<HowItWorks {t} {lang} />
 	<PrivacyBand {t} />
 	<OpenSource {t} appVersion={data.appVersion} />
 	<Download {t} appVersion={data.appVersion} />

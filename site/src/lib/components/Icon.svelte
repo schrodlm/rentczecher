@@ -8,7 +8,9 @@
 		| 'book'
 		| 'heart'
 		| 'sun'
-		| 'moon';
+		| 'moon'
+		| 'chevron-left'
+		| 'chevron-right';
 
 	let { name, size = 20 }: { name: IconName; size?: number } = $props();
 </script>
@@ -45,5 +47,9 @@
 		<path d="M20 12h2" /><path d="m4.9 19.1 1.4-1.4" /><path d="m17.7 6.3 1.4-1.4" />
 	{:else if name === 'moon'}
 		<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+	{:else if name === 'chevron-left'}
+		<path d="m15 5-7 7 7 7" />
+	{:else if name === 'chevron-right'}
+		<path d="m9 5 7 7-7 7" />
 	{/if}
 </svg>
