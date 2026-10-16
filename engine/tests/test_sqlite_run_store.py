@@ -3,13 +3,14 @@
 Pins that persist_outcome writes the listing upserts and the miss-count
 increments in one transaction: nothing lands if any step raises, so a
 failed persist can never advance a miss counter on its own. Also pins
-that a property keeps the most detailed location its postings gave.
+that a property keeps the most detailed location its postings gave, and
+that a prune deletes the properties it leaves untracked.
 
 Run: python3 -m pytest tests/test_sqlite_run_store.py -v
 """
 
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -91,6 +92,18 @@ class TestPersistOutcomeCommitsTogether:
 def _property_of(conn, listing_id):
     (property_id,) = conn.execute("SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
     return property_id
+
+
+class TestPrune:
+    def test_deletes_the_properties_the_prune_leaves_untracked(self, tmp_path):
+        store, conn = _store(tmp_path)
+        profile_id = stored_profile(conn).id
+        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"})
+        conn.execute("UPDATE listing_tracking SET last_seen_at = ?", ((BASE - timedelta(days=91)).isoformat(),))
+        conn.commit()
+        store.prune(profile_id)
+        assert conn.execute("SELECT count(*) FROM properties").fetchone()[0] == 0
+        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 0
 
 
 class TestMarkViewed:

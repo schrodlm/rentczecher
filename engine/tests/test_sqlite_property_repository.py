@@ -203,6 +203,68 @@ class TestCascade:
         conn.commit()
         assert conn.execute("SELECT count(*) FROM dedup_records").fetchone()[0] == 0
 
+def _untrack_listings(conn):
+    conn.execute("DELETE FROM listing_tracking")
+
+
+def _remaining_properties(conn):
+    return {row["id"] for row in conn.execute("SELECT id FROM properties")}
+
+
+class TestForgetUntracked:
+    def test_deletes_an_untracked_property_with_everything_read_about_it(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property("prop-1"))
+        _seed_listing(conn)
+        repo.save_location("prop-1", _location())
+        repo.record_dedup("prop-1", "sreality:1", "gps<200m")
+        conn.execute("INSERT INTO price_observations (listing_id, price, observed_at) VALUES ('sreality:1', 20000, ?)",
+                     (CREATED,))
+        conn.execute("INSERT INTO property_images (property_id, url) VALUES ('prop-1', 'https://img.example/1.jpg')")
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at) VALUES ('p', 'prop-1', ?)",
+                     (CREATED,))
+        _untrack_listings(conn)
+        repo.forget_untracked()
+        for table in ("properties", "listings", "price_observations", "property_locations",
+                      "property_images", "dedup_records", "property_tracking"):
+            assert conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0, table
+
+    def test_keeps_a_property_whose_listing_a_profile_tracks(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property("prop-1"))
+        _seed_listing(conn)
+        repo.forget_untracked()
+        assert _remaining_properties(conn) == {"prop-1"}
+
+    def test_keeps_a_starred_property_none_of_whose_listings_is_tracked(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property("prop-1"))
+        _seed_listing(conn)
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, favourited_at) VALUES ('p', 'prop-1', ?)",
+                     (CREATED,))
+        _untrack_listings(conn)
+        repo.forget_untracked()
+        assert _remaining_properties(conn) == {"prop-1"}
+        assert conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
+
+    def test_deletes_a_folded_pair_nobody_tracks(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property("prop-winner"))
+        repo.create(_property("prop-loser"))
+        repo.fold_into("prop-loser", "prop-winner")
+        repo.forget_untracked()
+        assert _remaining_properties(conn) == set()
+
+    def test_keeps_the_winner_while_its_folded_loser_is_tracked(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property("prop-winner"))
+        repo.create(_property("prop-loser"))
+        _seed_listing(conn, property_id="prop-loser")
+        repo.fold_into("prop-loser", "prop-winner")
+        repo.forget_untracked()
+        assert _remaining_properties(conn) == {"prop-winner", "prop-loser"}
+
+
 class TestFoldInto:
     def test_marks_the_loser_as_merged_into_the_winner(self, tmp_path):
         repo, conn = _repo(tmp_path)

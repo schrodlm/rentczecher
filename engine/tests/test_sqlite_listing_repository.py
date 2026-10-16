@@ -607,8 +607,8 @@ class TestPrune:
         assert repo.prune(PROFILE) == 0
 
     def test_listing_facts_and_price_history_survive_pruning(self, tmp_path):
-        """Pruning forgets that the profile saw the listing. The posting
-        itself and its price history stay as global history."""
+        """Pruning forgets only that the profile saw the listing. Deleting
+        the posting and its price history is left to the property sweep."""
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:old"))
         conn.execute("UPDATE listing_tracking SET last_seen_at = ? "
