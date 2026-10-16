@@ -1,16 +1,22 @@
+import logging
 import re
 import time
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from rentczecher_engine.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher_engine.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
 from rentczecher_engine.domain.location import ParsedPlace
 
+log = logging.getLogger("rentczecher")
+
 SEARCH_BASE_URL = "https://www.remax-czech.cz/reality/vyhledavani/"
+# Hard bound on one search's pages, so no pagination quirk can keep a scan
+# reading the portal.
+MAX_PAGES = 50
 
 # Checkbox ids from the search form's types tree.
 ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
@@ -19,6 +25,8 @@ ESTATE_TYPE_IDS = {"flat": (4,), "house": (6,), "cottage": (10,), "land": (3,)}
 # list the cards are read from.
 SALE_VALUE = {"sale": 1, "rent": 2}
 LIST_VIEW = 1
+
+DETAIL_PATH = re.compile(r"/reality/detail/(\d+)")
 
 
 _HOUSE_NUMBERS = re.compile(r"(\d+[a-zA-Z]?)\s*/\s*(\d+[a-zA-Z]?)$")
@@ -113,6 +121,25 @@ class RemaxPlace:
         return cls(region_id=region_id, district_ids=district_ids)
 
 
+@dataclass(frozen=True, slots=True)
+class DetailLink:
+    element: Tag
+    href: str
+    listing_id: str
+
+
+def _detail_link(card: Tag) -> DetailLink | None:
+    """None for a card without a detail link."""
+    element = card.find("a", href=DETAIL_PATH)
+    if not isinstance(element, Tag):
+        return None
+    href = str(element.get("href", ""))
+    match = DETAIL_PATH.search(href)
+    if match is None:
+        return None
+    return DetailLink(element=element, href=href, listing_id=match.group(1))
+
+
 class RemaxScraper(BaseScraper):
     name = "remax"
 
@@ -133,17 +160,24 @@ class RemaxScraper(BaseScraper):
         return SEARCH_BASE_URL + "?" + urlencode(query)
 
     def scrape(self) -> list[Listing]:
-        listings: list[Listing] = []
-        page = 1
-        while True:
-            page_listings, has_next = self._parse_page(self._fetch_page(page))
-            listings.extend(page_listings)
-            if not page_listings or not has_next:
+        listings: dict[str, Listing] = {}
+        seen_card_ids: set[str] = set()
+        for page in range(1, MAX_PAGES + 1):
+            page_listings, has_next, page_card_ids = self._parse_page(self._fetch_page(page))
+            for listing in page_listings:
+                listings.setdefault(listing.id, listing)
+            # A page of cards already read means the portal is serving the
+            # same page again, not that the search goes on. The cards count
+            # before filtering, since a page can carry cards but no listing.
+            repeated = page_card_ids <= seen_card_ids
+            seen_card_ids |= page_card_ids
+            if not page_card_ids or not has_next or repeated:
                 break
-            page += 1
             time.sleep(1.5)
+        else:
+            log.warning("remax: pagination cap of %d pages reached - results may be incomplete", MAX_PAGES)
 
-        return listings
+        return list(listings.values())
 
     def _fetch_page(self, page: int) -> str:
         url = self._build_url()
@@ -153,37 +187,34 @@ class RemaxScraper(BaseScraper):
         resp.raise_for_status()
         return resp.text
 
-    def _parse_page(self, html: str) -> tuple[list[Listing], bool]:
-        """Return (listings, whether a next-page link exists). A page without
-        cards is indistinguishable from a genuinely empty search result, so it
-        ends the crawl instead of raising."""
+    def _parse_page(self, html: str) -> tuple[list[Listing], bool, set[str]]:
+        """Return (listings, whether a next-page link exists, the detail ids
+        of every card with a detail link, before filtering). A page without cards is
+        indistinguishable from a genuinely empty search result, so it ends the
+        paging instead of raising."""
         soup = BeautifulSoup(html, "lxml")
 
         cards: list = soup.select("div.pl-items__item")
         if not cards:
-            return [], False
+            return [], False, set()
 
         listings = []
+        card_ids: set[str] = set()
         for card in cards:
-            listing = self._parse_card(card)
+            detail = _detail_link(card)
+            if detail is None:
+                continue
+            card_ids.add(detail.listing_id)
+            listing = self._parse_card(card, detail)
             if listing:
                 listings.append(listing)
 
         has_next = soup.select_one('a[rel="next"], a.pagination__next, li.next a') is not None
-        return listings, has_next
+        return listings, has_next, card_ids
 
-    def _parse_card(self, card) -> Listing | None:
-        link = card.find("a", href=re.compile(r"/reality/detail/\d+"))
-        if not link:
-            return None
-
-        href = link.get("href", "")
+    def _parse_card(self, card, detail: DetailLink) -> Listing | None:
+        href = detail.href
         detail_url = href if href.startswith("http") else f"https://www.remax-czech.cz{href}"
-
-        id_match = re.search(r"/detail/(\d+)", href)
-        if not id_match:
-            return None
-        listing_id = id_match.group(1)
 
         # Prefer data-* attributes
         data_price = card.get("data-price")
@@ -195,7 +226,7 @@ class RemaxScraper(BaseScraper):
         if data_title:
             title = data_title
         else:
-            title_el = card.find(["h2", "h3", "h4"]) or link
+            title_el = card.find(["h2", "h3", "h4"]) or detail.element
             if title_el:
                 title = title_el.get_text(strip=True)
             title = re.sub(r"\s*\(ID\s+[^)]+\)\s*$", "", title)
@@ -238,7 +269,7 @@ class RemaxScraper(BaseScraper):
             disposition = disp_match.group(1)
 
         return Listing.build(
-            id=f"remax:{listing_id}",
+            id=f"remax:{detail.listing_id}",
             source="remax",
             title=title or f"RE/MAX - {disposition or ''} {location}".strip(),
             price=price,

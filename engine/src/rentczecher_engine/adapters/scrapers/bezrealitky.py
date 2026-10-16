@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import time
 
@@ -9,7 +10,14 @@ from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, 
 from rentczecher_engine.domain.errors import ScraperBrokenError
 from rentczecher_engine.domain.location import ParsedPlace
 
+log = logging.getLogger("rentczecher")
+
 BASE_SEARCH_URL = "https://www.bezrealitky.cz/vyhledat"
+# Hard bound on one search's pages, so no pagination quirk can keep a scan
+# reading the portal.
+MAX_PAGES = 50
+# The search serves 15 adverts a page.
+PER_PAGE = 15
 
 ESTATE_TYPE_PARAM = {"flat": "BYT", "house": "DUM", "land": "POZEMEK", "cottage": "REKREACNI_OBJEKT"}
 OFFER_TYPE_PARAM = {"sale": "PRODEJ", "rent": "PRONAJEM"}
@@ -92,17 +100,24 @@ class BezrealitkyScraper(BaseScraper):
         return BASE_SEARCH_URL + "?" + "&".join(params)
 
     def scrape(self) -> list[Listing]:
-        listings: list[Listing] = []
-        page = 1
-        while True:
-            page_listings, total_count, page_had_adverts = self._parse_page(self._fetch_page(page))
-            listings.extend(page_listings)
-            if not page_had_adverts or page * 15 >= total_count:
+        listings: dict[str, Listing] = {}
+        seen_adverts: set[str] = set()
+        for page in range(1, MAX_PAGES + 1):
+            page_listings, total_count, page_adverts = self._parse_page(self._fetch_page(page))
+            for listing in page_listings:
+                listings.setdefault(listing.id, listing)
+            # A page of adverts already read means the portal is serving the
+            # same page again, not that the search goes on. The adverts count
+            # before filtering, since a page can carry adverts but no listing.
+            repeated = page_adverts <= seen_adverts
+            seen_adverts |= page_adverts
+            if not page_adverts or page * PER_PAGE >= total_count or repeated:
                 break
-            page += 1
             time.sleep(1.5)
+        else:
+            log.warning("bezrealitky: pagination cap of %d pages reached - results may be incomplete", MAX_PAGES)
 
-        return listings
+        return list(listings.values())
 
     def _fetch_page(self, page: int) -> str:
         url = self._build_url()
@@ -112,9 +127,9 @@ class BezrealitkyScraper(BaseScraper):
         resp.raise_for_status()
         return resp.text
 
-    def _parse_page(self, html: str) -> tuple[list[Listing], int, bool]:
-        """Return (listings, reported total count, whether the page carried any
-        adverts before filtering)."""
+    def _parse_page(self, html: str) -> tuple[list[Listing], int, set[str]]:
+        """Return (listings, reported total count, the cache keys of every
+        advert the page carried before filtering)."""
         match = NEXT_DATA_RE.search(html)
         if not match:
             # Even an empty-result search page carries the Next.js hydration
@@ -124,7 +139,7 @@ class BezrealitkyScraper(BaseScraper):
         next_data = json.loads(match.group(1))
         cache = next_data.get("props", {}).get("pageProps", {}).get("apolloCache", {})
         if not cache:
-            return [], 0, False
+            return [], 0, set()
 
         # Find the listAdverts result
         advert_list = None
@@ -145,21 +160,21 @@ class BezrealitkyScraper(BaseScraper):
                     break
 
         if not advert_list:
-            return [], 0, False
+            return [], 0, set()
 
         listings = []
-        page_had_adverts = False
+        page_adverts: set[str] = set()
         for ref in advert_list.get("list", []):
             ref_key = ref.get("__ref", "") if isinstance(ref, dict) else ""
             advert = cache.get(ref_key, {})
             if not advert:
                 continue
-            page_had_adverts = True
+            page_adverts.add(ref_key)
             listing = self._parse_advert(advert, cache)
             if listing is not None:
                 listings.append(listing)
 
-        return listings, total_count, page_had_adverts
+        return listings, total_count, page_adverts
 
     def _parse_advert(self, advert: dict, cache: dict) -> Listing | None:
         advert_id = advert.get("id", "")
