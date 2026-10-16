@@ -100,7 +100,7 @@ export const cs: Messages = {
 			},
 			inbox: {
 				title: 'Projdete jen novinky',
-				body: 'Pravidelně projde zapnuté portály a ukáže nové nabídky a zlevnění, seřazené podle toho, jak dobře vám sedí.',
+				body: 'Stisknete Spustit scan a projde zapnuté portály, pak ukáže nové nabídky a zlevnění, seřazené podle toho, jak dobře vám sedí.',
 				screenshotAlt: 'Schránka v aplikaci: nové nabídky seřazené podle skóre a rozpis skóre vybrané nabídky'
 			}
 		}
@@ -204,7 +204,7 @@ export const cs: Messages = {
 			{
 				question: 'Hlídá, i když mám počítač vypnutý?',
 				answer: [
-					'Ne, hlídá, dokud aplikace běží, podle nastavené periody. Po zapnutí dožene, co se mezitím objevilo.'
+					'Ne. Portály projde, když stisknete Spustit scan, se zapnutým počítačem a otevřenou aplikací. Kontroly na pozadí chystám. Co se mezitím objevilo, uvidíte při dalším scanu.'
 				]
 			},
 			{

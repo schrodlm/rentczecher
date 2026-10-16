@@ -100,7 +100,7 @@ export const en: Messages = {
 			},
 			inbox: {
 				title: "Go through only what's new",
-				body: 'It regularly checks the portals you turned on and shows new listings and price drops, sorted by how well they fit you.',
+				body: 'Press Run scan and it checks the portals you turned on, then shows new listings and price drops, sorted by how well they fit you.',
 				screenshotAlt: "The app's inbox: new listings sorted by score, with the selected listing's score breakdown"
 			}
 		}
@@ -204,7 +204,7 @@ export const en: Messages = {
 			{
 				question: 'Does it watch while my computer is off?',
 				answer: [
-					'No, it watches while the app is running, at the interval you set. Once you start it again, it catches up on what appeared in the meantime.'
+					'No. It checks the portals when you press Run scan, with your computer on and the app open. Scans in the background are on the way. Whatever appeared in the meantime shows up on your next scan.'
 				]
 			},
 			{
