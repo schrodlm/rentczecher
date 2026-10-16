@@ -72,9 +72,11 @@ class SqliteRunStore:
             self._conn.commit()
 
     def prune(self, profile_id: str) -> None:
-        """Forgets the profile's stale tracking rows, its own unit of work."""
+        """Forgets the profile's stale tracking rows, then every property no
+        profile tracks any more, as one unit of work."""
         try:
             self._listings.prune(profile_id)
+            self._properties.forget_untracked()
         except BaseException:
             self._conn.rollback()
             raise

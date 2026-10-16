@@ -332,8 +332,7 @@ class SqliteListingRepository(ListingRepository):
     def prune(self, profile_id: str, max_age_days: int = 90) -> int:
         """Forgets the profile's stale tracking of listings, then of the
         properties none of its listings is tracked under any more. A favourite
-        property and its listings are kept. Listing facts, price history, and
-        properties survive as global history. Returns how many listings were
+        property and its listings are kept. Returns how many listings were
         forgotten."""
         cutoff = (self._now() - timedelta(days=max_age_days)).isoformat()
         stmt = """

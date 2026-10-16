@@ -31,6 +31,10 @@ class PropertyRepository(ABC):
         """Replace the property's location with this one."""
 
     @abstractmethod
+    def forget_untracked(self) -> None:
+        ...
+
+    @abstractmethod
     def attach_listing(self, property_id: str, listing_id: str) -> None:
         """Point a listing at its property (a bare FK write; matching policy
         is the caller's)."""
