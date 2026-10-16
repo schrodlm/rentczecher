@@ -38,11 +38,13 @@ type CzechMap = {
 // so the shape cannot be checked here. The map's tests pin it.
 const czechMap = data as unknown as CzechMap;
 
-// ČÚZK licenses RÚIAN on the condition that every view of it credits them
-// with the year of the dataset used and links their terms of use.
+// ČÚZK licenses RÚIAN under CC BY 4.0, on the condition that every view of
+// it credits them with the year of the dataset used, links their terms and
+// the license, and says the data was changed.
 export const MAP_CREDIT = `ČÚZK, ${czechMap.gazetteer.source.slice(0, 4)}`;
 export const MAP_CREDIT_TERMS =
 	'https://cuzk.gov.cz/Predpisy/Podminky-poskytovani-prostor-dat-a-sitovych-sluzeb/Podminky-poskytovani-prostorovych-dat-CUZK.aspx';
+export const MAP_CREDIT_LICENSE = 'https://creativecommons.org/licenses/by/4.0/';
 
 export const MAP_WIDTH = czechMap.width;
 export const MAP_HEIGHT = czechMap.height;
