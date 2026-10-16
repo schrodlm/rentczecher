@@ -259,10 +259,9 @@ export const cs: Messages = {
 		howHeading: 'Jak čte váš web',
 		userAgentIntro: 'V každém požadavku se představí touto hlavičkou User-Agent:',
 		howItReads: [
-			'Čte jen uložená hledání svého uživatele.',
-			'Mezi stránkami dělá pauzy a počet stránek, které na jedno hledání přečte, je omezený.',
-			'Mezi dvěma kontrolami dodržuje minimální odstup.',
-			'Nepoužívá proxy, nemění identitu a neobchází CAPTCHA ani firewall. Když ho portál odmítne, nechá ho být.',
+			'Čte jen uložená hledání svého uživatele, a to když uživatel spustí kontrolu.',
+			'Čte stránky s výsledky hledání, mezi stránkami dělá pauzy a samotné inzeráty nikdy neotevírá.',
+			'Nepoužívá proxy, nemění identitu a neobchází CAPTCHA ani firewall. Když ho portál odmítne, nesnaží se odmítnutí obejít.',
 			'Portál, který ve svých podmínkách nebo v robots.txt automatické nástroje odmítá, je ve výchozím stavu vypnutý.'
 		],
 		contactHeading: 'Kontakt',
