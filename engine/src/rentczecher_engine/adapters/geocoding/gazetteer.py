@@ -395,6 +395,35 @@ class Gazetteer:
             return None
         return _to_place_match(row, self._location_of(row))
 
+    def search_area(self, place: PlaceRef) -> PlaceRef:
+        """The smallest kraj, okres or Praha obvod holding all of the place.
+        A place crossing Praha's obvody is searched across all of Praha."""
+        if self._unit(_TABLE_OF_KIND[place.kind], place.code) is None:
+            raise PlaceNotFoundError(f"{place.kind} {place.code}")
+        if place.kind in ("kraj", "okres", "obvod"):
+            return place
+        obec_code = place.code if place.kind == "obec" else self._obec_code_of(place)
+        stmt = "SELECT okres_code, kraj_code FROM obce WHERE code = ?"
+        obec = self._conn.execute(stmt, (obec_code,)).fetchone()
+        if obec["okres_code"] is not None:
+            return PlaceRef(kind="okres", code=obec["okres_code"])
+        obvod = _only(self._obvody_touched_by(place))
+        if obvod is not None:
+            return obvod
+        return PlaceRef(kind="kraj", code=obec["kraj_code"])
+
+    def _obvody_touched_by(self, place: PlaceRef) -> set[PlaceRef]:
+        if place.kind == "mestska_cast":
+            stmt = "SELECT code AS mestska_cast_code, obvod_code FROM mestske_casti WHERE code = ?"
+            touched = self._mestske_casti_and_obvody(stmt, place.code)
+        elif place.kind == "cast_obce":
+            touched = self._units_touched_by_cast_obce(place.code)
+        elif place.kind == "ulice":
+            touched = self._units_touched_by_ulice(place.code)
+        else:
+            return set()
+        return {unit for unit in touched if unit.kind == "obvod"}
+
     def search_places(self, query: str, within: PlaceRef | None = None,
                       kinds: tuple[PlaceKind, ...] | None = None) -> list[PlaceMatch]:
         """Places whose name starts with the query, coarsest kind first, then

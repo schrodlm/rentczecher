@@ -16,11 +16,12 @@ from uuid import uuid4
 from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.errors import PlaceNotFoundError
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria, Profile
 from rentczecher_engine.domain.scrape import ScraperHealth
 from rentczecher_engine.services.dedup import NameTierLookup, cross_source_dedup
 from rentczecher_engine.services.diff import classify
-from rentczecher_engine.services.filters import apply_filters
+from rentczecher_engine.services.filters import apply_filters, listings_inside
 from rentczecher_engine.services.locate import PlaceResolver, locate_listings
 from rentczecher_engine.services.scrape import Scraper, scrape_all
 
@@ -47,9 +48,12 @@ class RunStore(Protocol):
 
 
 class Gazetteer(PlaceResolver, NameTierLookup, Protocol):
-    """The offline-geocoding surface the pipeline drives: resolving a
-    listing's text for locate_listings, name-tier lookup for
-    cross_source_dedup."""
+    """The offline-geocoding surface the pipeline drives: a search place's
+    search area, resolving a listing's text for locate_listings, name-tier
+    lookup for cross_source_dedup."""
+
+    def search_area(self, place: PlaceRef) -> PlaceRef:
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,14 +108,21 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
 
     enabled: Mapping[str, Callable[[Criteria, object], Scraper]] = {
         name: cls for name, cls in deps.scrapers.items() if name in profile.portals}
+    place = profile.criteria.place
     try:
+        searched_area = deps.gazetteer.search_area(place)
         scraped, scraper_health = scrape_all(enabled, profile.criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
         log.error("Profile %s: %s - fix its search place", profile_id, error)
         return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
 
     filtered = apply_filters(scraped, profile.criteria)
-    located = locate_listings(filtered, deps.gazetteer, profile.criteria.place)
+    located = locate_listings(filtered, deps.gazetteer, searched_area)
+    if searched_area != place:
+        inside = listings_inside(located, place)
+        log.info("Profile %s: %d of %d listings lie inside the search place",
+                 profile_id, len(inside), len(located))
+        located = inside
 
     located_by_id = {listing.id: listing for listing in located}
     outcome = cross_source_dedup(located, deps.gazetteer)
