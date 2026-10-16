@@ -144,8 +144,8 @@ export const en: Messages = {
 			label: 'In progress',
 			items: [
 				{
-					title: 'Profiles inside the app',
-					body: 'Create, edit and delete your profiles in the app, and set your favourite listings aside.'
+					title: 'The first release',
+					body: 'Installers for Windows, macOS and Linux, then a signed Windows installer so it opens without a warning.'
 				}
 			]
 		},
@@ -166,8 +166,8 @@ export const en: Messages = {
 			label: 'Later',
 			items: [
 				{
-					title: 'An easy first start',
-					body: 'Set up email and your first profile in the app, without editing config files.'
+					title: 'Notifications',
+					body: 'A notice on your computer when something new turns up, and if you like, an email to your own inbox.'
 				},
 				{
 					title: 'More portals',

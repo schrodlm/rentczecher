@@ -144,8 +144,8 @@ export const cs: Messages = {
 			label: 'Právě dělám',
 			items: [
 				{
-					title: 'Profily přímo v aplikaci',
-					body: 'Profily vytvoříte, upravíte i smažete v aplikaci. A oblíbené nabídky si odložíte stranou.'
+					title: 'První vydání',
+					body: 'Instalátory pro Windows, macOS a Linux. Potom podepsaný instalátor pro Windows, který se otevře bez varování.'
 				}
 			]
 		},
@@ -166,8 +166,8 @@ export const cs: Messages = {
 			label: 'Později',
 			items: [
 				{
-					title: 'Snadný první start',
-					body: 'E-mail i první profil nastavíte v aplikaci, bez úprav konfiguračních souborů.'
+					title: 'Upozornění',
+					body: 'Upozornění v počítači, když se objeví něco nového, a pokud chcete, i e-mail do vlastní schránky.'
 				},
 				{
 					title: 'Další realitní portály',
