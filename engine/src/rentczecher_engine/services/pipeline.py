@@ -91,11 +91,12 @@ def _status_for(scraper_health: dict[str, ScraperHealth]) -> Literal["ok", "part
     return "ok"
 
 
-def _failed_result(profile_id: str, run_id: str, started_at: datetime,
-                   finished_at: datetime, error: str) -> ProfileRunResult:
+def _failed_result(profile_id: str, run_id: str, started_at: datetime, finished_at: datetime, *,
+                   scraper_health: dict[str, ScraperHealth], error: str) -> ProfileRunResult:
     return ProfileRunResult(
         profile_id=profile_id, run_id=run_id, started_at=started_at, finished_at=finished_at,
-        status="failed", scraper_health={}, counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
+        status="failed", scraper_health=scraper_health,
+        counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
         error=error,
     )
 
@@ -114,7 +115,13 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
         scraped, scraper_health = scrape_all(enabled, profile.criteria, deps.client, on_scraper_done)
     except PlaceNotFoundError as error:
         log.error("Profile %s: %s - fix its search place", profile_id, error)
-        return _failed_result(profile_id, run_id, started_at, deps.clock(), str(error))
+        return _failed_result(profile_id, run_id, started_at, deps.clock(),
+                              scraper_health={}, error=str(error))
+    # Nothing was scanned: persisting would count every tracked listing as missed.
+    if not any(health.status != "broken" for health in scraper_health.values()):
+        log.error("Profile %s: no portal could be scanned", profile_id)
+        return _failed_result(profile_id, run_id, started_at, deps.clock(),
+                              scraper_health=scraper_health, error="no portal could be scanned")
 
     filtered = apply_filters(scraped, profile.criteria)
     located = locate_listings(filtered, deps.gazetteer, searched_area)
