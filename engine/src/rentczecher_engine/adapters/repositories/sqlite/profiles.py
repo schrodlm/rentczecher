@@ -5,6 +5,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.domain.disposition import Disposition, parse_disposition
 from rentczecher_engine.domain.location import PlaceRef
 from rentczecher_engine.domain.profile import Criteria, Portal, Preferences, Profile
@@ -18,6 +19,7 @@ class SqliteProfileRepository:
         self._conn = conn
         self._conn.row_factory = sqlite3.Row
         self._now = now
+        self._properties = SqlitePropertyRepository(conn, now=now)
 
     def add(self, name: str, portals: tuple[Portal, ...], criteria: Criteria, preferences: Preferences) -> Profile:
         """Stores a new, unpaused profile and returns it as it reads back:
@@ -73,9 +75,12 @@ class SqliteProfileRepository:
         return profile
 
     def delete(self, profile_id: str) -> bool:
-        """Whether the profile existed. Its listings stay."""
+        """Whether the profile existed. The properties only it tracked go
+        with it."""
         stmt = "DELETE FROM profiles WHERE id = ?"
-        return self._conn.execute(stmt, (profile_id,)).rowcount == 1
+        existed = self._conn.execute(stmt, (profile_id,)).rowcount == 1
+        self._properties.forget_untracked()
+        return existed
 
     def get(self, profile_id: str) -> Profile | None:
         stmt = """

@@ -108,11 +108,11 @@ class SqlitePropertyRepository(PropertyRepository):
 
     def fold_into(self, loser_id: str, winner_id: str) -> None:
         """Marks the loser as merged into the winner. A folded property is a
-        tombstone: it stays for its history but is never a merge target. Each
-        profile's tracking of the loser is copied onto the winner, where the
-        flat stays viewed and starred since the first of the two was. The
-        loser keeps its own, since a listing the merge did not move stays on
-        it and still shows there."""
+        tombstone: it stays while a profile tracks it or another property is
+        folded into it, but is never a merge target. Each profile's tracking of
+        the loser is copied onto the winner, where the flat stays viewed and
+        starred since the first of the two was. The loser keeps its own, since
+        a listing the merge did not move stays on it and still shows there."""
         stmt = "UPDATE properties SET merged_into = ? WHERE id = ?"
         self._conn.execute(stmt, (winner_id, loser_id))
         stmt = """
@@ -131,6 +131,24 @@ class SqlitePropertyRepository(PropertyRepository):
                 END
         """
         self._conn.execute(stmt, (winner_id, loser_id))
+
+    def forget_untracked(self) -> None:
+        """Deletes every property no profile has starred or tracks through a
+        listing any more, and with it everything read about it. A property
+        another one is folded into goes only after that one, so each pass
+        removes the outermost folds."""
+        stmt = """
+            DELETE FROM properties
+            WHERE id NOT IN (SELECT property_id FROM property_tracking WHERE favourited_at IS NOT NULL)
+              AND id NOT IN (
+                  SELECT listings.property_id FROM listing_tracking
+                  JOIN listings ON listings.id = listing_tracking.listing_id
+              )
+              AND id NOT IN (SELECT merged_into FROM properties WHERE merged_into IS NOT NULL)
+        """
+        deleted = self._conn.execute(stmt).rowcount
+        while deleted > 0:
+            deleted = self._conn.execute(stmt).rowcount
 
     def attach_listing(self, property_id: str, listing_id: str) -> None:
         stmt = "UPDATE listings SET property_id = ? WHERE id = ?"

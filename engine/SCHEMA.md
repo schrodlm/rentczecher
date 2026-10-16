@@ -65,9 +65,9 @@ erDiagram
 | `profile_preferences` | A profile's scoring weights and their settings, one row per profile. A setting may be null only while its weight is 0. |
 | `preferred_dispositions`, `preferred_places` | A profile's preferred dispositions and places, ranked, rank 1 the most preferred. |
 | `portals`, `offer_types`, `estate_types`, `place_kinds`, `dispositions` | The fixed vocabularies the other tables reference, seeded by the migrations. |
-| `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. |
+| `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. Once no profile tracks a property, itself or through a listing, it is deleted with its listings, prices, places, images and dedup records. |
 | `listings` | One per-portal posting: `source:source_id`, which property, url, scraped timestamp. A fact of the posting, shared by every profile whose search sees it. No per-profile state. |
-| `listing_tracking` | Per-profile seen state for a listing: first/last seen, `miss_count`, `viewed_at`, `favourited_at`. One row per profile and listing. Pruning deletes only these rows, never the facts. |
+| `listing_tracking` | Per-profile seen state for a listing: first/last seen, `miss_count`, `viewed_at`, `favourited_at`. One row per profile and listing. Pruning deletes these rows, and the properties left untracked go with them. |
 | `property_locations` | Where a property lies: the RÚIAN code of each unit, kraj to ulice, plus the house numbers as written. One row per property, the most detailed location any of its listings gave. The codes point into the shipped gazetteer, a separate file, so no foreign key checks them. |
 | `property_images` | Superset of image URLs across a property's listings. `local_path` is reserved (always null today) for an opt-in photo-archiving feature. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
