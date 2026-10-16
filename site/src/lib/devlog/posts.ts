@@ -8,6 +8,27 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'ready-for-a-first-release',
+		title: 'Ready for a first release',
+		date: '2026-10-16',
+		summary:
+			'Search any place down to a street, a cap on how many pages a search reads, releases built from a tag, and one clean database schema. Version 0.1.0 is out as a beta.'
+	},
+	{
+		slug: 'a-front-door-for-the-project',
+		title: 'A front door for the project',
+		date: '2026-10-16',
+		summary:
+			'A website, a README you can read in two minutes, the technical docs on pages of their own, and everything checked against what the app really does.'
+	},
+	{
+		slug: 'honest-about-how-it-reads-the-portals',
+		title: 'Honest about how it reads the portals',
+		date: '2026-10-15',
+		summary:
+			'The app stopped pretending to be Firefox, keeps Sreality and Bezrealitky off until you turn them on, and forgets what no profile has seen for 90 days.'
+	},
+	{
 		slug: 'is-it-legal-to-release-this',
 		title: 'Is it legal to release this?',
 		date: '2026-10-14',
