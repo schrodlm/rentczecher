@@ -11,6 +11,12 @@ export interface FeatureCard {
 	body: string;
 }
 
+export interface HowStep {
+	title: string;
+	body: string;
+	screenshotAlt: string;
+}
+
 export interface RoadmapItem {
 	title: string;
 	body: string;
@@ -30,6 +36,7 @@ export interface Messages {
 	nav: {
 		label: string;
 		features: string;
+		how: string;
 		roadmap: string;
 		devlog: string;
 		faq: string;
@@ -79,6 +86,17 @@ export interface Messages {
 			backToPortal: FeatureCard;
 			privacy: FeatureCard;
 			free: FeatureCard;
+		};
+	};
+	how: {
+		heading: string;
+		stepsLabel: string;
+		previous: string;
+		next: string;
+		steps: {
+			search: HowStep;
+			preferences: HowStep;
+			inbox: HowStep;
 		};
 	};
 	privacy: {

@@ -11,6 +11,7 @@ export const en: Messages = {
 	nav: {
 		label: 'Main',
 		features: 'Features',
+		how: 'How it works',
 		roadmap: 'Roadmap',
 		devlog: 'Devlog',
 		faq: 'FAQ'
@@ -78,6 +79,29 @@ export const en: Messages = {
 			free: {
 				title: 'Free',
 				body: 'No subscription and no paid version.'
+			}
+		}
+	},
+	how: {
+		heading: 'How it works',
+		stepsLabel: 'Steps',
+		previous: 'Previous step',
+		next: 'Next step',
+		steps: {
+			search: {
+				title: "Tell it what you're after",
+				body: 'Rent or buy. A flat, house, cottage or plot. A spot on the map, price, size and layout. Several searches at once, if you like.',
+				screenshotAlt: 'A new profile in the app: the kind of offer, a map of Czechia to pick the place, price and size ranges and layouts'
+			},
+			preferences: {
+				title: 'Pick what you prefer',
+				body: 'Price, size or layout, whichever matters most to you. You see right away how listings would score. And you choose which portals it watches.',
+				screenshotAlt: 'Preferences in the app: the portals turned on, the weight of price, size and layout and a preview of how listings would score'
+			},
+			inbox: {
+				title: "Go through only what's new",
+				body: 'It regularly checks the portals you turned on and shows new listings and price drops, sorted by how well they fit you.',
+				screenshotAlt: "The app's inbox: new listings sorted by score, with the selected listing's score breakdown"
 			}
 		}
 	},

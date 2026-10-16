@@ -21,6 +21,7 @@
 	</a>
 	<nav aria-label={t.nav.label}>
 		<a href="{homePath(lang)}#features">{t.nav.features}</a>
+		<a href="{homePath(lang)}#how">{t.nav.how}</a>
 		<a href="{homePath(lang)}#roadmap">{t.nav.roadmap}</a>
 		<a href="{homePath(lang)}#devlog">{t.nav.devlog}</a>
 		<a href="{homePath(lang)}#faq">{t.nav.faq}</a>
