@@ -1,13 +1,35 @@
 <script lang="ts">
 	import type { Messages } from '$lib/i18n/messages';
-	import { RELEASES_URL, REPO_URL } from '$lib/links';
+	import {
+		LINUX_APPIMAGE_URL,
+		LINUX_DEB_URL,
+		MACOS_INSTALLER_URL,
+		RELEASES_URL,
+		REPO_URL,
+		WINDOWS_INSTALLER_URL
+	} from '$lib/links';
 
 	let { t, appVersion }: { t: Messages; appVersion: string } = $props();
 
 	const platforms = $derived([
-		{ name: 'Windows', detail: t.download.windows },
-		{ name: 'macOS', detail: t.download.macos },
-		{ name: 'Linux', detail: t.download.linux }
+		{
+			name: 'Windows',
+			detail: t.download.windows,
+			downloads: [{ label: t.download.button, href: WINDOWS_INSTALLER_URL }]
+		},
+		{
+			name: 'macOS',
+			detail: t.download.macos,
+			downloads: [{ label: t.download.button, href: MACOS_INSTALLER_URL }]
+		},
+		{
+			name: 'Linux',
+			detail: t.download.linux,
+			downloads: [
+				{ label: 'AppImage', href: LINUX_APPIMAGE_URL },
+				{ label: '.deb', href: LINUX_DEB_URL }
+			]
+		}
 	]);
 </script>
 
@@ -22,7 +44,11 @@
 			<div class="card platform">
 				<h3>{platform.name}</h3>
 				<p class="muted">{platform.detail}</p>
-				<a class="btn btn-amber" href={RELEASES_URL}>{t.download.button}</a>
+				<div class="downloads">
+					{#each platform.downloads as download (download.href)}
+						<a class="btn btn-amber" href={download.href}>{download.label}</a>
+					{/each}
+				</div>
 			</div>
 		{/each}
 	</div>
@@ -66,6 +92,12 @@
 
 	.platform p {
 		font-size: 15px;
+	}
+
+	.downloads {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
 	}
 
 	.platform .btn {
