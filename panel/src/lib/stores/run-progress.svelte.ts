@@ -3,8 +3,8 @@ import type { RunFinishedEvent, RunProgressEvent, RunStartedEvent } from '$lib/a
 export type RunState =
 	| { status: 'idle' }
 	| { status: 'running'; scrapersDone: RunProgressEvent[] }
-	| { status: 'done' }
-	| { status: 'failed'; error: string | null };
+	| { status: 'done'; brokenPortals: string[] }
+	| { status: 'failed'; error: string | null; noPortalAnswered: boolean };
 
 /* Tracks one profile's run lifecycle from the SSE stream and exposes the
 timestamp of the last completed run - the closest truthful stand-in for
@@ -35,16 +35,20 @@ export class RunProgressStore {
 		this.source.addEventListener('run_finished', (event: MessageEvent<string>) => {
 			const data: RunFinishedEvent = JSON.parse(event.data);
 			if (data.profile_id !== profileId) return;
+			const scrapersDone = this.state.status === 'running' ? this.state.scrapersDone : [];
+			const brokenPortals = scrapersDone
+				.filter((done) => done.status === 'broken')
+				.map((done) => done.scraper);
 			if (data.error !== null && data.error !== undefined) {
-				this.state = { status: 'failed', error: data.error };
-				return;
+				this.state = { status: 'failed', error: data.error, noPortalAnswered: false };
+			} else if (data.status === 'failed') {
+				const noPortalAnswered =
+					scrapersDone.length > 0 && brokenPortals.length === scrapersDone.length;
+				this.state = { status: 'failed', error: null, noPortalAnswered };
+			} else {
+				this.lastFinishedAt = new Date();
+				this.state = { status: 'done', brokenPortals };
 			}
-			if (data.status === 'failed') {
-				this.state = { status: 'failed', error: null };
-				return;
-			}
-			this.lastFinishedAt = new Date();
-			this.state = { status: 'done' };
 			onfinished?.();
 		});
 	}

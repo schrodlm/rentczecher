@@ -3,6 +3,7 @@
 	import PortalHealthDot from './PortalHealthDot.svelte';
 	import type { PortalHealthModel } from '$lib/api/client';
 	import type { RunState } from '$lib/stores/run-progress.svelte';
+	import { shownPortal } from '$lib/portals';
 
 	let {
 		health,
@@ -31,11 +32,23 @@
 			return t.tn('{count} portal done', '{count} portals done', runState.scrapersDone.length);
 		}
 		if (runState.status === 'failed') {
-			return runState.error !== null
-				? t.t('Scan failed: {error}', { error: runState.error })
+			if (runState.error !== null) {
+				return t.t('Scan failed: {error}', { error: runState.error });
+			}
+			return runState.noPortalAnswered
+				? t.t('Scan failed: no portal could be reached. Check your internet connection.')
 				: t.t('Scan failed');
 		}
 		if (lastFinishedAt !== null) {
+			if (runState.status === 'done' && runState.brokenPortals.length > 0) {
+				const portals = runState.brokenPortals
+					.map((portal) => shownPortal(portal)?.name ?? portal)
+					.join(', ');
+				return t.t('Last scan: {time}, unreachable: {portals}', {
+					time: t.time(lastFinishedAt),
+					portals
+				});
+			}
 			return t.t('Last scan: {time}', { time: t.time(lastFinishedAt) });
 		}
 		return t.t('No scan yet');
