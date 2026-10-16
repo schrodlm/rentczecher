@@ -80,7 +80,8 @@ describe('RunProgressStore', () => {
 		});
 		expect(store.state).toEqual({
 			status: 'failed',
-			error: 'scraper exploded'
+			error: 'scraper exploded',
+			noPortalAnswered: false
 		});
 	});
 
@@ -97,11 +98,65 @@ describe('RunProgressStore', () => {
 		});
 		expect(store.state).toEqual({
 			status: 'failed',
-			error: null
+			error: null,
+			noPortalAnswered: false
 		});
 	});
 
-	test('calls onfinished only for a completed run of the watched profile', () => {
+	test('reports that no portal answered when every portal of a failed run broke', () => {
+		const store = new RunProgressStore();
+		store.connect('http://x/events', 'praha7-byty');
+		const source = FakeEventSource.instances[0];
+
+		source.emit('run_started', { run_id: 'r1', profile_id: 'praha7-byty' });
+		for (const scraper of ['sreality', 'bezrealitky']) {
+			source.emit('run_progress', {
+				run_id: 'r1',
+				profile_id: 'praha7-byty',
+				scraper,
+				status: 'broken',
+				listing_count: 0
+			});
+		}
+		source.emit('run_finished', {
+			run_id: 'r1',
+			profile_id: 'praha7-byty',
+			status: 'failed',
+			counts: { total: 0, new: 0, price_drops: 0, disappeared: 0 }
+		});
+		expect(store.state).toEqual({ status: 'failed', error: null, noPortalAnswered: true });
+	});
+
+	test('lists the portals that broke in a run that otherwise completed', () => {
+		const store = new RunProgressStore();
+		store.connect('http://x/events', 'praha7-byty');
+		const source = FakeEventSource.instances[0];
+
+		source.emit('run_started', { run_id: 'r1', profile_id: 'praha7-byty' });
+		source.emit('run_progress', {
+			run_id: 'r1',
+			profile_id: 'praha7-byty',
+			scraper: 'sreality',
+			status: 'ok',
+			listing_count: 4
+		});
+		source.emit('run_progress', {
+			run_id: 'r1',
+			profile_id: 'praha7-byty',
+			scraper: 'remax',
+			status: 'broken',
+			listing_count: 0
+		});
+		source.emit('run_finished', {
+			run_id: 'r1',
+			profile_id: 'praha7-byty',
+			status: 'partial',
+			counts: { total: 4, new: 0, price_drops: 0, disappeared: 0 }
+		});
+		expect(store.state).toEqual({ status: 'done', brokenPortals: ['remax'] });
+	});
+
+	test('calls onfinished for every finished run of the watched profile, failed ones too', () => {
 		const onfinished = vi.fn();
 		const store = new RunProgressStore();
 		store.connect('http://x/events', 'praha7-byty', onfinished);
@@ -122,6 +177,14 @@ describe('RunProgressStore', () => {
 			counts: { total: 0, new: 0, price_drops: 0, disappeared: 0 }
 		});
 		expect(onfinished).toHaveBeenCalledOnce();
+
+		source.emit('run_finished', {
+			run_id: 'r3',
+			profile_id: 'praha7-byty',
+			status: 'failed',
+			counts: { total: 0, new: 0, price_drops: 0, disappeared: 0 }
+		});
+		expect(onfinished).toHaveBeenCalledTimes(2);
 	});
 
 	test('closes the previous connection when connecting again', () => {
