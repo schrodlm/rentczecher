@@ -48,7 +48,7 @@ export const en: Messages = {
 	portals: {
 		label: 'Supported portals',
 		heading: 'Portals',
-		defaults: 'RE/MAX is watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a search, after seeing what their terms say about automated reading.',
+		defaults: 'RE/MAX is watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a profile, after seeing what their terms say about automated reading.',
 		more: '+ more soon',
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
 	},
@@ -90,7 +90,7 @@ export const en: Messages = {
 		steps: {
 			search: {
 				title: "Tell it what you're after",
-				body: 'Rent or buy. A flat, house, cottage or plot. A spot on the map, price, size and layout. Several searches at once, if you like.',
+				body: 'Rent or buy. A flat, house, cottage or plot. A spot on the map, price, size and layout. Several profiles at once, if you like.',
 				screenshotAlt: 'A new profile in the app: the kind of offer, a map of Czechia to pick the place, price and size ranges and layouts'
 			},
 			preferences: {
@@ -107,7 +107,7 @@ export const en: Messages = {
 	},
 	privacy: {
 		heading: 'Everything stays with you.',
-		body: 'rentczecher has no server. Your searches, saved listings and price history live only on your computer. No account, no tracking. And because the code is open, you can check that yourself.'
+		body: 'rentczecher has no server. Your profiles, saved listings and price history live only on your computer. No account, no tracking. And because the code is open, you can check that yourself.'
 	},
 	openSource: {
 		chip: 'Open source',
@@ -144,8 +144,8 @@ export const en: Messages = {
 			label: 'In progress',
 			items: [
 				{
-					title: 'Searches inside the app',
-					body: 'Create, edit and delete your searches in the app, and set your favourite listings aside.'
+					title: 'Profiles inside the app',
+					body: 'Create, edit and delete your profiles in the app, and set your favourite listings aside.'
 				}
 			]
 		},
@@ -167,7 +167,7 @@ export const en: Messages = {
 			items: [
 				{
 					title: 'An easy first start',
-					body: 'Set up email and your first search in the app, without editing config files.'
+					body: 'Set up email and your first profile in the app, without editing config files.'
 				},
 				{
 					title: 'More real-estate portals',

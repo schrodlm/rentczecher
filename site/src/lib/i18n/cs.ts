@@ -48,7 +48,7 @@ export const cs: Messages = {
 	portals: {
 		label: 'Podporované portály',
 		heading: 'Portály',
-		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX. Sreality a Bezrealitky si zapnete sami při nastavení hledání, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
+		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX. Sreality a Bezrealitky si zapnete sami při nastavení profilu, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
 		more: '+ další brzy',
 		notAffiliated: 'rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
 	},
@@ -90,7 +90,7 @@ export const cs: Messages = {
 		steps: {
 			search: {
 				title: 'Řekněte, co hledáte',
-				body: 'Pronájem nebo koupě. Byt, dům, chata nebo pozemek. Místo na mapě, cena, velikost a dispozice. Klidně několik hledání najednou.',
+				body: 'Pronájem nebo koupě. Byt, dům, chata nebo pozemek. Místo na mapě, cena, velikost a dispozice. Klidně několik profilů najednou.',
 				screenshotAlt: 'Nový profil v aplikaci: typ nabídky, mapa Česka pro výběr místa, rozpětí ceny a velikosti a dispozice'
 			},
 			preferences: {
@@ -107,7 +107,7 @@ export const cs: Messages = {
 	},
 	privacy: {
 		heading: 'Všechno zůstává u vás.',
-		body: 'rentczecher nemá žádný server. Vaše hledání, oblíbené nabídky i historie cen jsou uložené jen ve vašem počítači. Žádný účet, žádné sledování. A protože je kód otevřený, můžete si to sami ověřit.'
+		body: 'rentczecher nemá žádný server. Vaše profily, oblíbené nabídky i historie cen jsou uložené jen ve vašem počítači. Žádný účet, žádné sledování. A protože je kód otevřený, můžete si to sami ověřit.'
 	},
 	openSource: {
 		chip: 'Open source',
@@ -144,8 +144,8 @@ export const cs: Messages = {
 			label: 'Právě dělám',
 			items: [
 				{
-					title: 'Hledání přímo v aplikaci',
-					body: 'Hledání vytvoříte, upravíte i smažete v aplikaci. A oblíbené nabídky si odložíte stranou.'
+					title: 'Profily přímo v aplikaci',
+					body: 'Profily vytvoříte, upravíte i smažete v aplikaci. A oblíbené nabídky si odložíte stranou.'
 				}
 			]
 		},
@@ -167,7 +167,7 @@ export const cs: Messages = {
 			items: [
 				{
 					title: 'Snadný první start',
-					body: 'E-mail i první hledání nastavíte v aplikaci, bez úprav konfiguračních souborů.'
+					body: 'E-mail i první profil nastavíte v aplikaci, bez úprav konfiguračních souborů.'
 				},
 				{
 					title: 'Další realitní portály',
