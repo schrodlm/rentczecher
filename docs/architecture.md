@@ -146,3 +146,4 @@ working on it is in [CONTRIBUTING.md](../CONTRIBUTING.md#running-the-app).
 | [10](adr/0010-notification-channels-are-api-clients.md) | Notification channels are API clients |
 | [11](adr/0011-scoring-belongs-to-clients.md) | Scoring belongs to the clients |
 | [12](adr/0012-one-private-copy-per-person.md) | One private copy per person |
+| [13](adr/0013-photos-are-fetched-as-a-person-looks.md) | Photos are fetched as a person looks |
