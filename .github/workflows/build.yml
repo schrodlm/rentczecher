@@ -70,6 +70,13 @@ jobs:
       - run: uv run pytest -m smoke -v
         working-directory: engine
 
+      # macOS refuses to open a downloaded app whose signature is missing or
+      # broken, and tells the user the app is damaged. So a bad signature
+      # fails the build instead of reaching a release.
+      - name: Check the app's signature
+        if: runner.os == 'macOS'
+        run: codesign --verify --deep --strict --verbose=2 shell/target/release/bundle/macos/rentczecher.app
+
       - uses: actions/upload-artifact@v4
         with:
           name: rentczecher-${{ runner.os }}
