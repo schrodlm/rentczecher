@@ -23,6 +23,10 @@ API_HEADERS = {
     "Accept": "application/json",
 }
 
+# The image server answers a bare photo URL with 401 and any preset its own
+# pages do not use with 400. This is one of theirs, 1200 px as JPEG.
+PHOTO_PRESET = "?fl=res,1200,1200,1|shr,,20|jpg,80"
+
 OFFER_SEO = {1: "prodej", 2: "pronajem"}
 CATEGORY_SEO = {1: "byt", 2: "dum", 3: "pozemek", 4: "komercni", 5: "ostatni"}
 
@@ -54,6 +58,16 @@ def _parse_location(locality: dict) -> ParsedPlace:
 def _text(locality: dict, key: str) -> str | None:
     """A locality field as text, or None when null or empty."""
     return str(locality.get(key) or "").strip() or None
+
+
+def _photo_urls(estate: dict) -> tuple[str, ...]:
+    """advert_images_all is the whole gallery, advert_images only its first three."""
+    urls: list[str] = []
+    for image in estate.get("advert_images_all") or []:
+        url = image.get("advert_image_sdn_url")
+        if url:
+            urls.append(f"https:{url}{PHOTO_PRESET}")
+    return tuple(urls)
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,13 +181,6 @@ class SrealityScraper(BaseScraper):
         lat = locality.get("gps_lat")
         lon = locality.get("gps_lon")
 
-        images = estate.get("advert_images") or []
-        main_photo_url = None
-        if images:
-            main_photo_url = images[0]
-            if main_photo_url.startswith("//"):
-                main_photo_url = f"https:{main_photo_url}"
-
         return Listing.build(
             id=f"sreality:{hash_id}",
             source="sreality",
@@ -182,7 +189,7 @@ class SrealityScraper(BaseScraper):
             location_raw_text=location,
             parsed_place=_parse_location(locality),
             url=self._build_detail_url(estate, hash_id, disposition, locality),
-            photo_urls=(main_photo_url,) if main_photo_url else (),
+            photo_urls=_photo_urls(estate),
             size_m2=size,
             disposition_raw_text=disposition,
             lat=lat,
