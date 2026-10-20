@@ -3,6 +3,7 @@ from typing import cast
 
 import httpx
 
+from rentczecher_engine.adapters.scrapers import bezrealitky, remax
 from rentczecher_engine.adapters.scrapers.base import BaseScraper
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
@@ -14,6 +15,14 @@ ALL_SCRAPERS: dict[Portal, Callable[[Criteria, httpx.Client], BaseScraper]] = {
     "sreality": SrealityScraper,
     "bezrealitky": BezrealitkyScraper,
     "remax": RemaxScraper,
+}
+
+
+# The portals whose search results give one photo, each with the parser that
+# reads the whole gallery from an advert's own page.
+ADVERT_GALLERY_PARSERS: dict[str, Callable[[str], tuple[str, ...]]] = {
+    "bezrealitky": bezrealitky.gallery_from_advert_page,
+    "remax": remax.gallery_from_advert_page,
 }
 
 
