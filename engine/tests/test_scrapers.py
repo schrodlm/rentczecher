@@ -627,6 +627,44 @@ def _serve_remax_pages(monkeypatch, pages):
     return build_client(transport=httpx.MockTransport(handler)), calls
 
 
+def _remax_advert_page(hrefs):
+    main = (f'<a id="mainImage" class="gallery__main-img-inner" data-fancybox="images" href="{hrefs[0]}"></a>'
+            if hrefs else "")
+    items = "".join(f'<a class="gallery__item" data-fancybox="images" href="{href}"><img src="{href}_th350"></a>'
+                    for href in hrefs[1:])
+    return (f'<html><body><div class="gallery">{main}'
+            f'<div class="gallery__items">{items}</div></div></body></html>')
+
+
+class TestRemaxAdvertGallery:
+    """The whole gallery from the links of the advert page's gallery."""
+
+    def test_lists_every_full_size_photo_in_the_pages_order(self):
+        page = _remax_advert_page(["https://mlsf.remax-czech.cz/data/1/a.png", "https://mlsf.remax-czech.cz/data/1/b.jpg"])
+        assert remax.gallery_from_advert_page(page) == (
+            "https://mlsf.remax-czech.cz/data/1/a.png", "https://mlsf.remax-czech.cz/data/1/b.jpg")
+
+    def test_lists_the_main_photo_first_and_once(self):
+        page = _remax_advert_page(["https://mlsf.remax-czech.cz/data/1/a.png"] * 2)
+        assert remax.gallery_from_advert_page(page) == ("https://mlsf.remax-czech.cz/data/1/a.png",)
+
+    def test_resolves_a_relative_link(self):
+        page = _remax_advert_page(["/data/1/a.png"])
+        assert remax.gallery_from_advert_page(page) == ("https://www.remax-czech.cz/data/1/a.png",)
+
+    def test_a_gallery_without_links_has_no_photos(self):
+        assert remax.gallery_from_advert_page(_remax_advert_page([])) == ()
+
+    def test_leaves_out_links_outside_the_gallery(self):
+        page = _remax_advert_page(["https://mlsf.remax-czech.cz/data/1/a.png"]).replace(
+            "</body>", '<a data-fancybox="images" href="https://mlsf.remax-czech.cz/data/2/similar.png"></a></body>')
+        assert remax.gallery_from_advert_page(page) == ("https://mlsf.remax-czech.cz/data/1/a.png",)
+
+    def test_a_page_without_a_gallery_is_broken(self):
+        with pytest.raises(ScraperBrokenError):
+            remax.gallery_from_advert_page("<html><body>no gallery</body></html>")
+
+
 class TestRemaxLocationParsing:
     """The card's address string splits into names and the okres it states
     (the bare-name slot before the kraj holds a district, never a town);
