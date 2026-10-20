@@ -277,6 +277,7 @@ class RemaxScraper(BaseScraper):
             parsed_place=parsed_place,
             url=detail_url,
             photo_urls=(main_photo_url,) if main_photo_url else (),
+            gallery_on_advert_page=True,
             size_m2=size,
             disposition_raw_text=disposition,
             land_m2=land,
