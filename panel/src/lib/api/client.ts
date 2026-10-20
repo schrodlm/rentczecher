@@ -11,6 +11,7 @@ export type PostingPricesModel = components['schemas']['PostingPricesModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
 export type GalleryModel = components['schemas']['GalleryModel'];
+type PhotoModel = components['schemas']['PhotoModel'];
 type NewOrAll = NonNullable<
 	paths['/v1/profiles/{profile_id}/properties']['get']['parameters']['query']
 >['filter'];
@@ -87,11 +88,15 @@ export class SidecarClient {
 		return this.require(data, response, error);
 	}
 
+	/* Each main photo's link made absolute, like a gallery's. */
 	async listTrackedProperties(profileId: string, filter: NewOrAll = 'new'): Promise<TrackedPropertyModel[]> {
 		const { data, response, error } = await this.api.GET('/v1/profiles/{profile_id}/properties', {
 			params: { path: { profile_id: profileId }, query: { filter } }
 		});
-		return this.require(data, response, error);
+		return this.require(data, response, error).map((tracked) => ({
+			...tracked,
+			main_photo: tracked.main_photo === null ? null : this.photo(tracked.main_photo)
+		}));
 	}
 
 	/* The prices of the flat's listings the profile tracks, by portal. */
@@ -103,15 +108,14 @@ export class SidecarClient {
 		return this.require(data, response, error);
 	}
 
-	/* The flat's stored photos, each link made absolute, since the engine
-	gives them relative to its own address. */
+	/* The flat's stored photos, each link made absolute. */
 	async gallery(profileId: string, propertyId: string): Promise<GalleryModel> {
 		const { data, response, error } = await this.api.GET(
 			'/v1/profiles/{profile_id}/properties/{property_id}/gallery',
 			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		const gallery = this.require(data, response, error);
-		return { ...gallery, photos: gallery.photos.map((photo) => ({ url: this.baseUrl + photo.url })) };
+		return { ...gallery, photos: gallery.photos.map((photo) => this.photo(photo)) };
 	}
 
 	/* Asks the engine for the flat's whole gallery, beyond its main photo. */
@@ -175,6 +179,11 @@ export class SidecarClient {
 			throw this.httpError(response, error);
 		}
 		return data;
+	}
+
+	/* The engine gives a photo's link relative to its own address. */
+	private photo(photo: PhotoModel): PhotoModel {
+		return { url: this.baseUrl + photo.url };
 	}
 
 	private httpError(response: Response, error: unknown): ApiError {
