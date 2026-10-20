@@ -7,6 +7,7 @@ import {
 	type PostingPricesModel,
 	type ProfileUpdateBody
 } from './client';
+import { trackedProperty } from '$lib/test-support/tracked-property';
 
 const BASE_URL = 'http://127.0.0.1:8765';
 const TOKEN = 'secret';
@@ -184,6 +185,23 @@ describe('priceHistory', () => {
 	test('throws for a flat the profile does not track', async () => {
 		answerWith(404, { detail: 'profile p1 does not track property prop-1' });
 		await expect(new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'prop-1')).rejects.toThrow('404');
+	});
+});
+
+describe('listTrackedProperties', () => {
+	test('gets the tracked flats with links to the engine for their main photos', async () => {
+		answerWith(200, [
+			trackedProperty('prop-1', { main_photo: { url: '/v1/photos/a.jpg?sig=s' } }),
+			trackedProperty('prop-2', { main_photo: null })
+		]);
+		const answered = await new SidecarClient(BASE_URL, TOKEN).listTrackedProperties('p1', 'all');
+
+		const [request] = requests;
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties?filter=all`);
+		expect(answered.map((tracked) => tracked.main_photo)).toEqual([
+			{ url: `${BASE_URL}/v1/photos/a.jpg?sig=s` },
+			null
+		]);
 	});
 });
 
