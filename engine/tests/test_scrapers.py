@@ -117,6 +117,7 @@ class TestSrealityParsing:
         assert l.parsed_place.district is None
         assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/910000001"
         assert l.photo_urls[0].startswith("https://")
+        assert not l.gallery_on_advert_page
 
     def test_a_listing_carries_its_whole_gallery_in_the_portals_order(self, monkeypatch):
         listings, _, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
@@ -387,6 +388,7 @@ class TestBezrealitkyParsing:
         assert l.parsed_place.district is None
         assert l.url == "https://www.bezrealitky.cz/nemovitosti-byty-domy/byt-1"
         assert l.photo_urls == ("https://img.bezrealitky.cz/1.jpg",)
+        assert l.gallery_on_advert_page
         assert l.size_m2 == 55
         assert l.disposition_raw_text == "2+kk"
         assert l.charges == 3500
@@ -704,6 +706,7 @@ class TestRemaxParsing:
         assert l.parsed_place.names == ("Týnské Předměstí",)
         assert l.url == "https://www.remax-czech.cz/reality/detail/12345/prodej-domu"
         assert l.photo_urls == ("https://www.remax-czech.cz/img/12345.jpg",)
+        assert l.gallery_on_advert_page
         assert l.size_m2 == 120
         assert l.land_m2 == 800
         assert l.disposition_raw_text == "4+kk"
