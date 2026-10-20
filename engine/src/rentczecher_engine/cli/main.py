@@ -14,6 +14,7 @@ from rentczecher_engine.adapters.api.app import create_app
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.config import paths
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.photos.advert_galleries import HttpAdvertGalleryReader
 from rentczecher_engine.adapters.photos.fetcher import HttpPhotoFetcher
 from rentczecher_engine.adapters.photos.store import FilePhotoStore
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
@@ -187,7 +188,7 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
 
             if not dry_run:
                 downloader = PhotoDownloader(SqlitePhotoRecords(conn), FilePhotoStore(paths.photos_dir()),
-                                             HttpPhotoFetcher(client))
+                                             HttpPhotoFetcher(client), HttpAdvertGalleryReader(client))
                 downloader.run_pass()
     finally:
         conn.close()
