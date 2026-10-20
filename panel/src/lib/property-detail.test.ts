@@ -1,8 +1,19 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import type { PostingPricesModel } from '$lib/api/client';
+import type { PostingPricesModel, TrackedPropertyModel } from '$lib/api/client';
 import { Translator } from '$lib/i18n/translator';
 import { trackedProperty } from '$lib/test-support/tracked-property';
-import { factsOf, historyOf, isHighest, isLowest, percentAbove, percentBelow, percentFromMiddle, pricePerM2, standingOf } from './property-detail';
+import {
+	factsOf,
+	historyOf,
+	isHighest,
+	isLowest,
+	percentAbove,
+	percentBelow,
+	percentFromMiddle,
+	placeOf,
+	pricePerM2,
+	standingOf
+} from './property-detail';
 
 const CHEAP = trackedProperty('a', { price: 18000, size_m2: 40 });
 const MIDDLE = trackedProperty('b', { price: 22000, size_m2: 55 });
@@ -66,14 +77,58 @@ describe('factsOf', () => {
 		t = await Translator.load('cs');
 	});
 
-	test('joins the layout, the formatted size and the place', () => {
+	test('joins the layout and the formatted size, leaving the place to the name', () => {
 		const flat = trackedProperty('a', { disposition: '2+kk', size_m2: 1200, location_raw_text: 'Praha 7' });
-		expect(factsOf(flat, t).replace(/\s/g, ' ')).toBe('2+kk · 1 200 m² · Praha 7');
+		expect(factsOf(flat, t).replace(/\s/g, ' ')).toBe('2+kk · 1 200 m²');
 	});
 
 	test('names an atypical layout and leaves out what the listing lacks', () => {
 		const flat = trackedProperty('a', { disposition: 'atypicky', size_m2: null, location_raw_text: null });
 		expect(factsOf(flat, t)).toBe('atypická dispozice');
+	});
+});
+
+function located(places: Partial<NonNullable<TrackedPropertyModel['resolved_location']>>) {
+	return trackedProperty('a', {
+		resolved_location: {
+			kraj: { code: 19, name: 'Hlavní město Praha' },
+			okres: null,
+			obec: null,
+			obvod: null,
+			mestska_cast: null,
+			cast_obce: null,
+			ulice: null,
+			cislo_popisne: null,
+			cislo_orientacni: null,
+			...places
+		}
+	});
+}
+
+describe('placeOf', () => {
+	test('names the street and the part of town', () => {
+		const flat = located({ ulice: { code: 1, name: 'Přístavní' }, cast_obce: { code: 2, name: 'Holešovice' } });
+		expect(placeOf(flat)).toBe('Přístavní, Holešovice');
+	});
+
+	test('names the part of town and the district without a street', () => {
+		const flat = located({ cast_obce: { code: 2, name: 'Holešovice' }, obvod: { code: 78, name: 'Praha 7' } });
+		expect(placeOf(flat)).toBe('Holešovice, Praha 7');
+	});
+
+	test('names a place once when its part of town shares its name', () => {
+		const flat = located({
+			cast_obce: { code: 3, name: 'Nekvasovy' },
+			obec: { code: 4, name: 'Nekvasovy' },
+			okres: { code: 5, name: 'Plzeň-jih' }
+		});
+		expect(placeOf(flat)).toBe('Nekvasovy, Plzeň-jih');
+	});
+
+	test("falls back to the portal's own words while the place is not known", () => {
+		expect(placeOf(trackedProperty('a', { resolved_location: null, location_raw_text: 'Praha 7, Holešovice' }))).toBe(
+			'Praha 7, Holešovice'
+		);
 	});
 });
 
