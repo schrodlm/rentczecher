@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
+	import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { activeFacets, noFilter, passes, type PropertyFilter } from '$lib/property-filter';
 	import { naturalOrder, SORT_FIELDS, sortProperties, type PropertyOrder } from '$lib/property-order';
@@ -28,6 +28,7 @@
 		onfavourite,
 		onmarkallviewed,
 		loadPriceHistory,
+		gallery,
 		selectedId = $bindable(null)
 	}: {
 		listings: readonly TrackedPropertyModel[];
@@ -36,6 +37,7 @@
 		onfavourite: (propertyId: string, favourite: boolean) => void;
 		onmarkallviewed: (propertyIds: string[]) => void;
 		loadPriceHistory: (propertyId: string) => Promise<PostingPricesModel[]>;
+		gallery: GalleryModel | null;
 		selectedId?: string | null;
 	} = $props();
 
@@ -230,6 +232,7 @@
 					{listings}
 					{preferences}
 					{priceHistory}
+					{gallery}
 					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
 				/>
 			{:else if listings.length === 0}
