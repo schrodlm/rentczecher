@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
+	import { foldedSections, keepFoldedSections, SECTIONS, type Section } from '$lib/folded-sections';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { activeFacets, noFilter, passes, type PropertyFilter } from '$lib/property-filter';
 	import { naturalOrder, SORT_FIELDS, sortProperties, type PropertyOrder } from '$lib/property-order';
@@ -10,8 +11,6 @@
 	import PropertyDetail from './PropertyDetail.svelte';
 	import PropertyRow from './PropertyRow.svelte';
 	import SortMenu from './SortMenu.svelte';
-
-	type Section = 'new' | 'favourite' | 'viewed';
 
 	/* Where a listing sits in the list: its section, and the date the section
 	orders it by. */
@@ -48,6 +47,7 @@
 	let filter = $state<PropertyFilter>(noFilter());
 	let priceHistory = $state<PostingPricesModel[] | null>(null);
 	let detailOpen = $state(false);
+	let folded = $state(foldedSections());
 	let detail = $state<HTMLElement>();
 	let rows = $state<HTMLElement>();
 
@@ -73,7 +73,9 @@
 			);
 		return { new: inSection('new'), favourite: inSection('favourite'), viewed: inSection('viewed') };
 	});
-	const ordered = $derived([...sections.new, ...sections.favourite, ...sections.viewed]);
+	const ordered = $derived(
+		SECTIONS.flatMap((section) => (folded.includes(section) ? [] : sections[section]))
+	);
 	const selectedIndex = $derived(ordered.findIndex((listing) => listing.id === selectedId));
 	const selected = $derived(ordered[selectedIndex] ?? null);
 	const selectedRowId = $derived(selected === null ? null : rowId(selected));
@@ -114,6 +116,11 @@
 
 	function scoreOf(listing: TrackedPropertyModel): number | null {
 		return preferences === null ? null : scoreProperty(listing, preferences);
+	}
+
+	function toggleSection(section: Section): void {
+		folded = folded.includes(section) ? folded.filter((each) => each !== section) : [...folded, section];
+		keepFoldedSections(folded);
 	}
 
 	function rowId(listing: TrackedPropertyModel): string {
@@ -167,18 +174,27 @@
 
 <svelte:window {onkeydown} />
 
-{#snippet section(title: string, sectionListings: TrackedPropertyModel[])}
+{#snippet section(key: Section, title: string, sectionListings: TrackedPropertyModel[])}
+	{@const open = !folded.includes(key)}
 	<div class="inbox__section" role="group" aria-label={title}>
-		<h2 class="inbox__heading">{title}</h2>
-		{#each sectionListings as listing (listing.id)}
-			<PropertyRow
-				{listing}
-				id={rowId(listing)}
-				score={scoreOf(listing)}
-				selected={selected?.id === listing.id}
-				onselect={() => select(listing, true)}
-			/>
-		{/each}
+		<h2 class="inbox__heading">
+			<button type="button" class="inbox__fold" aria-expanded={open} onclick={() => toggleSection(key)}>
+				<span class="inbox__fold-arrow" class:inbox__fold-arrow--open={open} aria-hidden="true">▸</span>
+				{title}
+				<span class="inbox__fold-count">{sectionListings.length}</span>
+			</button>
+		</h2>
+		{#if open}
+			{#each sectionListings as listing (listing.id)}
+				<PropertyRow
+					{listing}
+					id={rowId(listing)}
+					score={scoreOf(listing)}
+					selected={selected?.id === listing.id}
+					onselect={() => select(listing, true)}
+				/>
+			{/each}
+		{/if}
 	</div>
 {/snippet}
 
@@ -209,15 +225,15 @@
 					</button>
 				</div>
 			{:else}
-				{@render section(t.t('New'), sections.new)}
-				{#if sections.new.length === 0}
+				{@render section('new', t.t('New'), sections.new)}
+				{#if sections.new.length === 0 && !folded.includes('new')}
 					<p class="inbox__empty">{t.t('No new listings')}</p>
 				{/if}
 				{#if sections.favourite.length > 0}
-					{@render section(t.t('Favourites'), sections.favourite)}
+					{@render section('favourite', t.t('Favourites'), sections.favourite)}
 				{/if}
 				{#if sections.viewed.length > 0}
-					{@render section(t.t('Viewed'), sections.viewed)}
+					{@render section('viewed', t.t('Viewed'), sections.viewed)}
 				{/if}
 			{/if}
 		</div>
@@ -316,11 +332,50 @@
 	}
 
 	.inbox__heading {
-		margin: var(--space-4) var(--space-2) var(--space-1);
-		color: var(--color-bronze);
+		margin: var(--space-4) 0 var(--space-1);
 		font-size: 0.75rem;
+	}
+
+	.inbox__fold {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		padding: var(--space-1) var(--space-2);
+		border: none;
+		border-radius: var(--radius-sm);
+		background: none;
+		color: var(--color-bronze);
+		font: inherit;
+		font-weight: 700;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+		cursor: pointer;
+	}
+
+	.inbox__fold:hover {
+		background: var(--color-card);
+		color: var(--color-ink);
+	}
+
+	.inbox__fold-arrow {
+		transition: transform 0.15s ease;
+	}
+
+	.inbox__fold-arrow--open {
+		transform: rotate(90deg);
+	}
+
+	.inbox__fold-count {
+		margin-left: auto;
+		font-weight: 600;
+		letter-spacing: 0;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.inbox__fold-arrow {
+			transition: none;
+		}
 	}
 
 	.inbox__unmatched {
