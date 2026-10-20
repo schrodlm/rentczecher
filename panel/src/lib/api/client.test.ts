@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { ApiError, SidecarClient, type NewProfileBody, type PostingPricesModel, type ProfileUpdateBody } from './client';
+import {
+	ApiError,
+	SidecarClient,
+	type GalleryModel,
+	type NewProfileBody,
+	type PostingPricesModel,
+	type ProfileUpdateBody
+} from './client';
 
 const BASE_URL = 'http://127.0.0.1:8765';
 const TOKEN = 'secret';
@@ -177,6 +184,46 @@ describe('priceHistory', () => {
 	test('throws for a flat the profile does not track', async () => {
 		answerWith(404, { detail: 'profile p1 does not track property prop-1' });
 		await expect(new SidecarClient(BASE_URL, TOKEN).priceHistory('p1', 'prop-1')).rejects.toThrow('404');
+	});
+});
+
+describe('gallery', () => {
+	test('gets the flat\'s stored photos with links to the engine', async () => {
+		const gallery: GalleryModel = {
+			status: 'stored',
+			source: 'sreality',
+			posting_url: 'https://sreality.cz/detail/1',
+			photo_count: 3,
+			photos: [{ url: '/v1/photos/a.jpg?sig=s' }]
+		};
+		answerWith(200, gallery);
+		const answered = await new SidecarClient(BASE_URL, TOKEN).gallery('p1', 'prop-1');
+
+		const [request] = requests;
+		expect(request.method).toBe('GET');
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties/prop-1/gallery`);
+		expect(answered).toEqual({ ...gallery, photos: [{ url: `${BASE_URL}/v1/photos/a.jpg?sig=s` }] });
+	});
+
+	test('throws for a flat the profile does not track', async () => {
+		answerWith(404, { detail: 'profile p1 does not track property prop-1' });
+		await expect(new SidecarClient(BASE_URL, TOKEN).gallery('p1', 'prop-1')).rejects.toThrow('404');
+	});
+});
+
+describe('requestGallery', () => {
+	test('asks for the flat\'s whole gallery', async () => {
+		answerWith(204);
+		await new SidecarClient(BASE_URL, TOKEN).requestGallery('p1', 'prop-1');
+
+		const [request] = requests;
+		expect(request.method).toBe('PUT');
+		expect(request.url).toBe(`${BASE_URL}/v1/profiles/p1/properties/prop-1/gallery-request`);
+	});
+
+	test('throws for a flat the profile does not track', async () => {
+		answerWith(404, { detail: 'profile p1 does not track property prop-1' });
+		await expect(new SidecarClient(BASE_URL, TOKEN).requestGallery('p1', 'prop-1')).rejects.toThrow('404');
 	});
 });
 
