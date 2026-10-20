@@ -24,6 +24,8 @@
 	import StreetMapCredit from '$lib/map/StreetMapCredit.svelte';
 	import StreetMapWindow from '$lib/map/StreetMapWindow.svelte';
 	import { googleMapsUrl, mapyUrl } from '$lib/map/map-links';
+	import NearbyBox from '$lib/nearby/NearbyBox.svelte';
+	import type { NearbyStore } from '$lib/nearby/nearby-store.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
 	import PhotoCollage from './PhotoCollage.svelte';
@@ -41,6 +43,7 @@
 		preferences,
 		priceHistory,
 		gallery,
+		nearby,
 		onfavourite
 	}: {
 		listing: TrackedPropertyModel;
@@ -48,6 +51,7 @@
 		preferences: ScoringPreferences | null;
 		priceHistory: PostingPricesModel[] | null;
 		gallery: GalleryModel | null;
+		nearby: NearbyStore;
 		onfavourite: (favourite: boolean) => void;
 	} = $props();
 
@@ -286,6 +290,11 @@
 				</div>
 			</section>
 		{/if}
+
+		<section class="property-detail__panel">
+			<h3>{t.t('Nearby')}</h3>
+			<NearbyBox {nearby} point={listing.point} />
+		</section>
 
 		<section class="property-detail__panel">
 			<h3>{t.t('History')}</h3>

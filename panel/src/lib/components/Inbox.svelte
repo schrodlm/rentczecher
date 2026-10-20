@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { foldedSections, keepFoldedSections, SECTIONS, type Section } from '$lib/folded-sections';
+	import type { NearbyStore } from '$lib/nearby/nearby-store.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { activeFacets, noFilter, passes, type PropertyFilter } from '$lib/property-filter';
 	import { naturalOrder, SORT_FIELDS, sortProperties, type PropertyOrder } from '$lib/property-order';
@@ -28,6 +29,7 @@
 		onmarkallviewed,
 		loadPriceHistory,
 		gallery,
+		nearby,
 		selectedId = $bindable(null)
 	}: {
 		listings: readonly TrackedPropertyModel[];
@@ -37,6 +39,7 @@
 		onmarkallviewed: (propertyIds: string[]) => void;
 		loadPriceHistory: (propertyId: string) => Promise<PostingPricesModel[]>;
 		gallery: GalleryModel | null;
+		nearby: NearbyStore;
 		selectedId?: string | null;
 	} = $props();
 
@@ -249,6 +252,7 @@
 					{preferences}
 					{priceHistory}
 					{gallery}
+					{nearby}
 					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
 				/>
 			{:else if listings.length === 0}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import logo from '$lib/assets/logo.svg';
 	import { SidecarClient } from '$lib/api/client';
 	import { sidecarConnection } from '$lib/api/connection';
@@ -14,6 +14,8 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { keepSelection, takeKeptSelection } from '$lib/kept-selection';
+	import { NearbyStore } from '$lib/nearby/nearby-store.svelte';
+	import { OverpassClient } from '$lib/nearby/overpass';
 	import { GalleryStore } from '$lib/stores/gallery.svelte';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { applyTheme } from '$lib/theme';
@@ -36,6 +38,7 @@
 
 	const runProgress = new RunProgressStore();
 	let galleries = $state<GalleryStore | null>(null);
+	const nearby = new NearbyStore(new OverpassClient());
 
 	let profiles = $state<ProfileModel[] | null>(null);
 	let profilesError = $state<string | null>(null);
@@ -259,6 +262,13 @@
 		);
 	});
 
+	// The places near the open profile's flats follow the profile and its flats.
+	$effect(() => {
+		const profileId = selectedProfileId;
+		const points = (listings ?? []).flatMap((listing) => (listing.point === null ? [] : [listing.point]));
+		if (profileId !== null) untrack(() => nearby.show(profileId, points));
+	});
+
 	onMount(() => {
 		const stopListening = onEngineStopped(() => (engineStopped = true));
 		// Taken before anything can fail, so it never outlives the reload it was
@@ -378,6 +388,7 @@
 					onmarkallviewed={handleMarkAllViewed}
 					{loadPriceHistory}
 					gallery={galleries?.gallery ?? null}
+					{nearby}
 					bind:selectedId={selectedPropertyId}
 				/>
 			{/key}
