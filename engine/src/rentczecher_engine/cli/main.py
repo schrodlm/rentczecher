@@ -14,12 +14,16 @@ from rentczecher_engine.adapters.api.app import create_app
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.config import paths
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.photos.fetcher import HttpPhotoFetcher
+from rentczecher_engine.adapters.photos.store import FilePhotoStore
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.repositories.sqlite.photo_records import SqlitePhotoRecords
 from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers import scraper_registry
 from rentczecher_engine.adapters.scrapers.client import build_client
+from rentczecher_engine.services.photos import PhotoDownloader
 from rentczecher_engine.services.pipeline import PipelineDeps, ProfileRunResult, run_profile
 
 logging.basicConfig(
@@ -180,6 +184,11 @@ def run(dry_run: bool = False, profile_filter: str | None = None):
                     log.exception("Profile %s failed", profile.id)
                     continue
                 _log_run_result(profile.id, result)
+
+            if not dry_run:
+                downloader = PhotoDownloader(SqlitePhotoRecords(conn), FilePhotoStore(paths.photos_dir()),
+                                             HttpPhotoFetcher(client))
+                downloader.run_pass()
     finally:
         conn.close()
         _release_pidlock()
