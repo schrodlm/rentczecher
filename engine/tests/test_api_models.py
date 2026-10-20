@@ -1,4 +1,4 @@
-from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PortalHealthModel, ProfileModel
+from rentczecher_engine.adapters.api.models import PhotoModel, PortalHealthModel, ProfileModel, TrackedPropertyModel
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition
 from rentczecher_engine.domain.geo import GeoPoint
@@ -38,7 +38,8 @@ class TestTrackedPropertyModel:
             price_drop_from=27000,
             sibling_sources=(SiblingSource(source="bezrealitky", url="https://example.com/b"),),
         )
-        assert TrackedPropertyModel.from_tracked_property(card, None).model_dump() == {
+        main_photo = PhotoModel(url="/v1/photos/" + "a" * 32 + ".jpg?sig=s")
+        assert TrackedPropertyModel.from_tracked_property(card, None, main_photo).model_dump() == {
             "id": "prop-1",
             "listing_id": "sreality:1",
             "source": "sreality",
@@ -57,6 +58,7 @@ class TestTrackedPropertyModel:
             "price": 25000,
             "price_drop_from": 27000,
             "sibling_sources": [{"source": "bezrealitky", "url": "https://example.com/b"}],
+            "main_photo": {"url": "/v1/photos/" + "a" * 32 + ".jpg?sig=s"},
         }
 
     def test_from_tracked_property_sends_no_disposition_when_the_raw_text_names_none(self):
@@ -81,7 +83,7 @@ class TestTrackedPropertyModel:
             price_drop_from=None,
             sibling_sources=(),
         )
-        assert TrackedPropertyModel.from_tracked_property(card, None).disposition is None
+        assert TrackedPropertyModel.from_tracked_property(card, None, None).disposition is None
 
 
 class TestPortalHealthModel:

@@ -492,6 +492,17 @@ class TestGallery:
         (photo,) = gallery["photos"]
         assert client.get(photo["url"]).content == b"jpeg"
 
+    def test_the_inbox_shows_each_flats_stored_main_photo(self, tmp_path, praha7):
+        client, _ = self._with_photos(tmp_path, praha7.id)
+        (card,) = client.get(f"/v1/profiles/{praha7.id}/properties", headers=_auth()).json()
+        assert client.get(card["main_photo"]["url"]).content == b"jpeg"
+
+    def test_the_inbox_shows_no_main_photo_before_it_is_stored(self, tmp_path, praha7):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps, praha7.id)
+        (card,) = _client(tmp_path).get(f"/v1/profiles/{praha7.id}/properties", headers=_auth()).json()
+        assert card["main_photo"] is None
+
     def test_an_untracked_flat_has_no_gallery(self, tmp_path, praha7):
         response = _client(tmp_path).get(f"/v1/profiles/{praha7.id}/properties/prop-unknown/gallery",
                                           headers=_auth())
