@@ -313,23 +313,30 @@
 						<span class="tabs__status">{t.t('No profiles yet')}</span>
 					{/if}
 					{#each profiles as profile (profile.id)}
-						<button
-							class="tab"
-							class:tab--selected={profile.id === selectedProfileId}
-							onclick={() => selectProfile(profile.id)}
-						>
-							{profile.name}
-							{#if newCounts[profile.id]}
-								<span class="tab__count">{newCounts[profile.id]}</span>
+						{@const selected = profile.id === selectedProfileId}
+						<div class="tab" class:tab--selected={selected}>
+							<button class="tab__select" onclick={() => selectProfile(profile.id)}>
+								{profile.name}
+								{#if newCounts[profile.id]}
+									<span class="tab__count">{newCounts[profile.id]}</span>
+								{/if}
+							</button>
+							{#if selected}
+								<button
+									class="tab__edit"
+									aria-label={t.t('Edit profile {name}', { name: profile.name })}
+									title={t.t('Edit profile {name}', { name: profile.name })}
+									onclick={() => openStoredProfile(profile)}
+								>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path
+											fill-rule="evenodd"
+											d="M9.91 4.69 L10.36 1.63 L13.64 1.63 L14.09 4.69 L15.68 5.35 L18.17 3.51 L20.49 5.83 L18.65 8.32 L19.31 9.91 L22.37 10.36 L22.37 13.64 L19.31 14.09 L18.65 15.68 L20.49 18.17 L18.17 20.49 L15.68 18.65 L14.09 19.31 L13.64 22.37 L10.36 22.37 L9.91 19.31 L8.32 18.65 L5.83 20.49 L3.51 18.17 L5.35 15.68 L4.69 14.09 L1.63 13.64 L1.63 10.36 L4.69 9.91 L5.35 8.32 L3.51 5.83 L5.83 3.51 L8.32 5.35 Z M15 12a3 3 0 1 0-6 0 3 3 0 1 0 6 0Z"
+										/>
+									</svg>
+								</button>
 							{/if}
-						</button>
-						{#if profile.id === selectedProfileId}
-							<button
-								class="tab__edit"
-								aria-label={t.t('Edit profile {name}', { name: profile.name })}
-								onclick={() => openStoredProfile(profile)}>✎</button
-							>
-						{/if}
+						</div>
 					{/each}
 					<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
 				{/if}
@@ -466,27 +473,32 @@
 		background: var(--color-line);
 	}
 
+	/* The tabs stand on the bar's bottom edge, a pixel over its border, so
+	the selected one covers the line and joins the inbox below. */
 	.tabs {
 		display: flex;
+		align-self: flex-end;
 		align-items: flex-end;
 		gap: var(--space-1);
 		min-width: 0;
+		margin-bottom: -1px;
 		overflow-x: auto;
 	}
 
 	.tab {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
-		background: none;
 		border: 1px solid transparent;
 		border-bottom: none;
 		border-radius: var(--radius-md) var(--radius-md) 0 0;
-		padding: var(--space-2) var(--space-3);
+		background: none;
 		color: var(--color-ink);
-		font-size: 0.875rem;
+		font-size: 0.9375rem;
 		white-space: nowrap;
-		cursor: pointer;
+	}
+
+	.tab:hover:not(.tab--selected) {
+		background: color-mix(in srgb, var(--color-ground) 60%, var(--color-card));
 	}
 
 	.tab--selected {
@@ -495,19 +507,52 @@
 		font-weight: 600;
 	}
 
+	.tab__select {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: 0.625rem var(--space-4);
+		border: none;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.tab--selected .tab__select {
+		padding-right: var(--space-2);
+	}
+
 	.tab--add {
+		padding: 0.5rem 0.875rem;
+		font-size: 1.125rem;
 		font-weight: 700;
-		padding: var(--space-2);
+		cursor: pointer;
 	}
 
 	.tab__edit {
-		align-self: center;
-		padding: var(--space-1);
-		border: none;
-		background: none;
+		display: grid;
+		place-items: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		margin-right: var(--space-2);
+		padding: 0;
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-sm);
+		background: var(--color-card);
 		color: var(--color-bronze);
-		font-size: 0.875rem;
 		cursor: pointer;
+	}
+
+	.tab__edit:hover {
+		border-color: var(--color-amber);
+		color: var(--color-amber);
+	}
+
+	.tab__edit svg {
+		width: 1.125rem;
+		height: 1.125rem;
+		fill: currentColor;
 	}
 
 	.tab__count {
