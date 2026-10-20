@@ -44,7 +44,8 @@ function sampleFlat(
 		favourited_at: null,
 		price,
 		price_drop_from: null,
-		sibling_sources: []
+		sibling_sources: [],
+		main_photo: null
 	};
 }
 
