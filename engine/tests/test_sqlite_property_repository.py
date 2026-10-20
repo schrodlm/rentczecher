@@ -220,13 +220,14 @@ class TestForgetUntracked:
         repo.record_dedup("prop-1", "sreality:1", "gps<200m")
         conn.execute("INSERT INTO price_observations (listing_id, price, observed_at) VALUES ('sreality:1', 20000, ?)",
                      (CREATED,))
-        conn.execute("INSERT INTO property_images (property_id, url) VALUES ('prop-1', 'https://img.example/1.jpg')")
+        conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) "
+                     "VALUES ('sreality:1', 0, 'https://img.example/1.jpg')")
         conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at) VALUES ('p', 'prop-1', ?)",
                      (CREATED,))
         _untrack_listings(conn)
         repo.forget_untracked()
         for table in ("properties", "listings", "price_observations", "property_locations",
-                      "property_images", "dedup_records", "property_tracking"):
+                      "listing_photos", "dedup_records", "property_tracking"):
             assert conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0, table
 
     def test_keeps_a_property_whose_listing_a_profile_tracks(self, tmp_path):
