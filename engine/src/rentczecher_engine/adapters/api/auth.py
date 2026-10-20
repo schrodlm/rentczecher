@@ -5,6 +5,8 @@ import logging
 
 from fastapi import Header, HTTPException
 
+from rentczecher_engine.adapters.api.photo_links import PhotoLinks
+
 log = logging.getLogger("rentczecher.api")
 
 
@@ -47,3 +49,15 @@ class BearerOrQueryTokenAuth(BearerAuth):
 
         if presented != self._token:
             raise HTTPException(status_code=401, detail="invalid bearer token")
+
+
+class PhotoLinkAuth:
+    """The photo route's check: the link's signature in place of the token,
+    since an image request cannot set headers."""
+
+    def __init__(self, links: PhotoLinks):
+        self._links = links
+
+    def __call__(self, file_key: str, sig: str | None = None) -> None:
+        if sig is None or not self._links.is_valid(file_key, sig):
+            raise HTTPException(status_code=403, detail="invalid photo link")

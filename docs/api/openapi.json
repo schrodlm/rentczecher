@@ -1508,6 +1508,59 @@
         "summary": "Health"
       }
     },
+    "/v1/photos/{file_key}": {
+      "get": {
+        "operationId": "photo_v1_photos__file_key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_key",
+            "required": true,
+            "schema": {
+              "title": "File Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sig",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sig"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Photo"
+      }
+    },
     "/v1/places": {
       "get": {
         "description": "Places whose name starts with q, optionally only those at least\npartly inside within, given as <kind>:<code>, and only of the given\nkinds.",

@@ -4,22 +4,25 @@ run manager, and every route onto one app instance.
 Every route requires the bearer token from day one, since binding to
 loopback does not itself make the port trusted. The token is enforced as a
 router-wide dependency rather than per-route so a new route can never ship
-unauthenticated by omission. FastAPI's own docs/schema routes are generated
-outside that per-router loop, so they are disabled outright rather than left
-reachable without the token.
+unauthenticated by omission. The photo route alone takes a signed link
+instead, since an image request cannot carry the token. FastAPI's own
+docs/schema routes are generated outside that per-router loop, so they are
+disabled outright rather than left reachable without the token.
 """
 
+import secrets
 from collections.abc import Callable
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
+from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth, PhotoLinkAuth
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker
+from rentczecher_engine.adapters.api.photo_links import PhotoLinks
 from rentczecher_engine.adapters.api.photo_worker import PhotoWorker
-from rentczecher_engine.adapters.api.routes import events, health, places, profiles, properties, runs, shutdown
+from rentczecher_engine.adapters.api.routes import events, health, photos, places, profiles, properties, runs, shutdown
 from rentczecher_engine.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ProfileNotFoundError
 from rentczecher_engine.services.pipeline import run_profile as default_run_profile
@@ -58,6 +61,7 @@ def create_app(
     auth = BearerAuth(token)
     events_auth = BearerOrQueryTokenAuth(token)
     app.state.api_deps = api_deps
+    app.state.photo_links = PhotoLinks(secrets.token_bytes(32))
     app.state.event_broker = EventBroker()
     app.state.photo_worker = PhotoWorker(api_deps.build_photo_downloader, app.state.event_broker)
     app.state.run_manager = RunManager(
@@ -67,6 +71,7 @@ def create_app(
     for router in (profiles.router, places.router, properties.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])
     app.include_router(events.router, dependencies=[Depends(events_auth)])
+    app.include_router(photos.router, dependencies=[Depends(PhotoLinkAuth(app.state.photo_links))])
 
     # Only a spawner that can actually stop the process gets a shutdown route.
     if request_shutdown is not None:
