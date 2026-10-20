@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import Inbox from '$lib/components/Inbox.svelte';
+	import { quietNearby } from '$lib/test-support/nearby';
 	import type { ScoringPreferences } from '$lib/scoring/score';
 
 	/* Holds listings the way the inbox page does: viewing and starring change
@@ -58,6 +59,7 @@
 	onmarkallviewed={markAllViewedAndReload}
 	{loadPriceHistory}
 	gallery={null}
+	nearby={quietNearby()}
 	bind:selectedId={selected}
 />
 <output data-testid="selected">{selected}</output>
