@@ -8,13 +8,16 @@ import sys
 import time
 from contextlib import closing
 
+import httpx
 import pytest
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.adapters.scrapers.client import build_client
 from rentczecher_engine.cli import main as main_module
+from rentczecher_engine.services import photos
 from rentczecher_engine.services.pipeline import PipelineDeps, run_profile
 from tests.profiles import profile, stored_profile
 
@@ -34,6 +37,36 @@ class TestEmptyPortalList:
             main_module.run(dry_run=True)
 
         assert any("scans no portals" in r.getMessage() for r in caplog.records)
+
+
+class TestRunDownloadsPhotos:
+    """A run downloads the main photos of what it found, a dry run none."""
+
+    def _run(self, tmp_path, monkeypatch, *, dry_run):
+        db_path = tmp_path / "rentczecher.db"
+        with closing(connection.connect(db_path)) as conn:
+            migrate.apply_pending(conn)
+            stored_profile(conn, name="Photos", portals=("sreality",))
+        monkeypatch.setattr(main_module.paths, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(main_module, "PID_PATH", str(tmp_path / "watchdog.pid"))
+        listing = _make_listing(photo_urls=("https://img.example/0.jpg", "https://img.example/1.jpg"))
+        monkeypatch.setattr(main_module, "scraper_registry", lambda portals: {"sreality": _scraper(listing)})
+
+        def image_server(request):
+            return httpx.Response(200, content=b"jpeg", headers={"content-type": "image/jpeg"})
+
+        monkeypatch.setattr(main_module, "build_client",
+                            lambda: build_client(transport=httpx.MockTransport(image_server)))
+        monkeypatch.setattr(photos.time, "sleep", lambda _: None)
+        main_module.run(dry_run=dry_run)
+        photos_dir = tmp_path / "photos"
+        return sorted(path.suffix for path in photos_dir.iterdir()) if photos_dir.is_dir() else []
+
+    def test_a_run_stores_the_main_photo_only(self, tmp_path, monkeypatch):
+        assert self._run(tmp_path, monkeypatch, dry_run=False) == [".jpg"]
+
+    def test_a_dry_run_downloads_nothing(self, tmp_path, monkeypatch):
+        assert self._run(tmp_path, monkeypatch, dry_run=True) == []
 
 
 class TestDbMigrate:
