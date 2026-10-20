@@ -53,6 +53,18 @@ m² carries `price_czk` 17 200 and `price_summary_czk` 11 369 200.
 An advert whose price is on request serves 0 in both, or a token 1 Kč, with
 `price_note` such as "Info u realitního specialisty". The scraper skips it.
 
+## Photos
+
+Each result carries its whole gallery in `advert_images_all`, each photo's
+`advert_image_sdn_url` without a scheme. `advert_images` holds only the first
+three. So the gallery costs no request beyond the search.
+
+The image server answers a bare photo URL with 401, and a resize preset its
+own pages do not use with 400. The scraper adds one of the site's presets,
+`?fl=res,1200,1200,1|shr,,20|jpg,80`, which serves a JPEG fitting 1200 px.
+If photos start failing, the presets the site uses today are in the image
+URLs of any search page, in a browser's developer tools.
+
 ## Worth knowing
 
 Search results carry `poi_*_distance` fields (metro, bus, school, shop). They
