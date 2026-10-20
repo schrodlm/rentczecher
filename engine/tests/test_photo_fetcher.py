@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from rentczecher_engine.adapters.photos import fetcher
-from rentczecher_engine.adapters.photos.fetcher import HttpPhotoFetcher
+from rentczecher_engine.adapters.photos.fetcher import HttpAdvertPageFetcher, HttpPhotoFetcher
 from rentczecher_engine.adapters.scrapers.client import IDENTITY_HEADERS, build_client
 from rentczecher_engine.domain.errors import PhotoFetchError, PhotoGoneError, PhotoRefusedError
 
@@ -80,3 +80,47 @@ class TestFetch:
         photos, _ = _fetcher(unreachable)
         with pytest.raises(PhotoFetchError):
             photos.fetch(URL)
+
+
+def _page_fetcher(handler):
+    requests = []
+
+    def recording(request):
+        requests.append(request)
+        return handler(request)
+
+    return HttpAdvertPageFetcher(build_client(transport=httpx.MockTransport(recording))), requests
+
+
+PAGE_URL = "https://portal.example/advert/1"
+
+
+class TestFetchAdvertPage:
+    def test_returns_the_page(self):
+        pages, requests = _page_fetcher(lambda request: httpx.Response(200, text="<html>galerie č. 1</html>"))
+        assert pages.fetch(PAGE_URL) == "<html>galerie č. 1</html>"
+        assert requests[0].headers["User-Agent"] == IDENTITY_HEADERS["User-Agent"]
+
+    @pytest.mark.parametrize("status, error", [
+        (403, PhotoRefusedError), (429, PhotoRefusedError),
+        (404, PhotoGoneError), (410, PhotoGoneError),
+        (500, PhotoFetchError),
+    ])
+    def test_an_answer_other_than_the_page_is_its_error(self, status, error):
+        pages, _ = _page_fetcher(lambda request: httpx.Response(status))
+        with pytest.raises(error):
+            pages.fetch(PAGE_URL)
+
+    def test_refuses_a_page_over_the_size_limit(self, monkeypatch):
+        monkeypatch.setattr(fetcher, "MAX_PAGE_BYTES", 4)
+        pages, _ = _page_fetcher(lambda request: httpx.Response(200, text="<html>too large</html>"))
+        with pytest.raises(PhotoFetchError):
+            pages.fetch(PAGE_URL)
+
+    def test_a_connection_failure_fails(self):
+        def unreachable(request):
+            raise httpx.ConnectError("down")
+
+        pages, _ = _page_fetcher(unreachable)
+        with pytest.raises(PhotoFetchError):
+            pages.fetch(PAGE_URL)
