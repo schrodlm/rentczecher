@@ -52,7 +52,7 @@ build scripts run it first.
 | `lib/components/` | The inbox and its rows, the header with the scan button, sort and filter menus, the property detail, the photo collage and the full-window photo viewer, the price chart, the score ring, the theme and language switches |
 | `lib/editor/` | The profile editor and `ProfileDraft`, the editor's state, which turns a stored profile into editable form and back into an API body |
 | `lib/forms/` | Inputs the editor is built from: portal tiles, layout chips, range and value sliders, preferred places |
-| `lib/map/` | The map of Czechia, built from the gazetteer by `scripts/czech_map.py`, the search-place picker and the small place map in the detail |
+| `lib/map/` | The map of Czechia, built from the gazetteer by `scripts/czech_map.py`, the search-place picker, the small place map in the detail, and the street map, which also opens over the whole window, with its links to Mapy.cz and Google Maps |
 | `lib/scoring/` | Scoring: the score itself, the preferences, and the editor section where weights are split by dragging |
 | `lib/welcome/` | The first-run wizard: language, theme, and a short tour |
 | `lib/i18n/` | Translation |
@@ -80,6 +80,14 @@ flat that stays selected for a moment has its whole gallery asked for, so
 stepping through the list asks for none of the flats passed over. While the
 engine downloads, the gallery store loads the gallery again on every
 `gallery_changed` for that flat.
+
+## Maps
+
+The place map is drawn from the gazetteer and needs no network. A flat with
+exact coordinates also gets a street map, Leaflet over OpenStreetMap's tiles.
+The window's content policy lets images load from their tile server, which
+sees the area of each flat shown. Mapy.cz and Google Maps are only links,
+opened in the browser.
 
 ## Translation
 
