@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-EventKind = Literal["run_started", "run_progress", "run_finished", "listings_arrived"]
+EventKind = Literal["run_started", "run_progress", "run_finished", "listings_arrived", "gallery_changed"]
 
 
 class RunStartedEvent(BaseModel):
@@ -48,6 +48,14 @@ class ListingsArrivedEvent(BaseModel):
     new: int
 
 
+class GalleryChangedEvent(BaseModel):
+    """A photo pass finished with the property's photos, stored or not. It
+    names no profile, since every profile tracking the property shows the
+    same gallery."""
+
+    property_id: str
+
+
 # What each event kind carries as its data payload. OpenAPI cannot express
 # this linkage (SSE payloads never appear on a route), so the schema export
 # folds these models into the document and the GUI states the pairing at
@@ -57,6 +65,7 @@ EVENT_PAYLOADS: dict[EventKind, type[BaseModel]] = {
     "run_progress": RunProgressEvent,
     "run_finished": RunFinishedEvent,
     "listings_arrived": ListingsArrivedEvent,
+    "gallery_changed": GalleryChangedEvent,
 }
 
 

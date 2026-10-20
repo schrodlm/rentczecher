@@ -62,6 +62,8 @@ def delete_profile(request: Request, profile: Profile = Depends(resolve_profile)
     deps: ApiDeps = request.app.state.api_deps
     with deps.edit_profiles() as profiles:
         profiles.delete(profile.id)
+    # Sweeps the photo files of the flats only this profile held.
+    request.app.state.photo_worker.request_pass()
 
 
 @contextmanager

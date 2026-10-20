@@ -70,9 +70,11 @@ class RunManager:
         broker: EventBroker,
         *,
         run_profile: PipelineRunner,
+        after_run: Callable[[], None],
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ):
         self._profile_deps_for = profile_deps_for
+        self._after_run = after_run
         self._broker = broker
         self._run_profile = run_profile
         self._clock = clock
@@ -103,6 +105,7 @@ class RunManager:
         while True:
             request = self._queue.get()
             self._run_one(request)
+            self._after_run()
 
     def _run_one(self, request: _RunRequest) -> None:
         self._broker.publish(RunEvent(

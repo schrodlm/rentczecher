@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 from rentczecher_engine.adapters.api.auth import BearerAuth, BearerOrQueryTokenAuth
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker
+from rentczecher_engine.adapters.api.photo_worker import PhotoWorker
 from rentczecher_engine.adapters.api.routes import events, health, places, profiles, properties, runs, shutdown
 from rentczecher_engine.adapters.api.run_manager import PipelineRunner, RunManager
 from rentczecher_engine.domain.errors import PlaceNotFoundError, ProfileNotFoundError
@@ -58,8 +59,10 @@ def create_app(
     events_auth = BearerOrQueryTokenAuth(token)
     app.state.api_deps = api_deps
     app.state.event_broker = EventBroker()
+    app.state.photo_worker = PhotoWorker(api_deps.build_photo_downloader, app.state.event_broker)
     app.state.run_manager = RunManager(
-        api_deps.build_pipeline_deps, app.state.event_broker, run_profile=run_profile)
+        api_deps.build_pipeline_deps, app.state.event_broker, run_profile=run_profile,
+        after_run=app.state.photo_worker.request_pass)
 
     for router in (profiles.router, places.router, properties.router, runs.router, health.router):
         app.include_router(router, dependencies=[Depends(auth)])

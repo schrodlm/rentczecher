@@ -244,6 +244,20 @@
         "title": "CriteriaModel",
         "type": "object"
       },
+      "GalleryChangedEvent": {
+        "description": "A photo pass finished with the property's photos, stored or not. It\nnames no profile, since every profile tracking the property shows the\nsame gallery.",
+        "properties": {
+          "property_id": {
+            "title": "Property Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "property_id"
+        ],
+        "title": "GalleryChangedEvent",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {

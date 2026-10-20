@@ -1,7 +1,8 @@
-"""The long-lived facts every part of the server needs: the database path
-and the scraper registry. Everything stateful, such as a connection or an
-HTTP client, is deliberately not held here but opened fresh on demand by
-the factory methods. Profiles are read from the database on every request.
+"""The long-lived facts every part of the server needs: the database path,
+the photos folder and the scraper registry. Everything stateful, such as a
+connection or an HTTP client, is deliberately not held here but opened
+fresh on demand by the factory methods. Profiles are read from the database
+on every request.
 
 A fresh sqlite3.Connection, Gazetteer, and httpx.Client are opened per run
 rather than shared, because the run executes on the worker thread and
@@ -17,13 +18,17 @@ from pathlib import Path
 from fastapi import Request
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.photos.fetcher import HttpPhotoFetcher
+from rentczecher_engine.adapters.photos.store import FilePhotoStore
 from rentczecher_engine.adapters.repositories.sqlite import connection
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
+from rentczecher_engine.adapters.repositories.sqlite.photo_records import SqlitePhotoRecords
 from rentczecher_engine.adapters.repositories.sqlite.profiles import SqliteProfileRepository
 from rentczecher_engine.adapters.repositories.sqlite.store import SqliteRunStore
 from rentczecher_engine.adapters.scrapers.client import build_client
 from rentczecher_engine.domain.errors import ProfileNotFoundError
 from rentczecher_engine.domain.profile import Criteria, Profile
+from rentczecher_engine.services.photos import PhotoDownloader
 from rentczecher_engine.services.pipeline import PipelineDeps
 from rentczecher_engine.services.scrape import Scraper
 
@@ -31,6 +36,7 @@ from rentczecher_engine.services.scrape import Scraper
 @dataclass(frozen=True, slots=True)
 class ApiDeps:
     db_path: Path
+    photos_dir: Path
     scrapers: dict[str, Callable[[Criteria, object], Scraper]]
     gazetteer_db_path: Path | None = None
 
@@ -86,6 +92,20 @@ class ApiDeps:
                     scrapers=self.scrapers,
                     gazetteer=gazetteer,
                 )
+        finally:
+            conn.close()
+
+    def photo_store(self) -> FilePhotoStore:
+        return FilePhotoStore(self.photos_dir)
+
+    @contextmanager
+    def build_photo_downloader(self) -> Iterator[PhotoDownloader]:
+        """A photo pass's own connection and HTTP client, never shared with
+        request handlers and closed when the pass finishes."""
+        conn = connection.connect(self.db_path)
+        try:
+            with build_client() as client:
+                yield PhotoDownloader(SqlitePhotoRecords(conn), self.photo_store(), HttpPhotoFetcher(client))
         finally:
             conn.close()
 
