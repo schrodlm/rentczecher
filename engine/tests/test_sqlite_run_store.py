@@ -94,6 +94,17 @@ def _property_of(conn, listing_id):
     return property_id
 
 
+class TestPersistOutcomeRecordsGalleries:
+    def test_records_a_new_listings_gallery(self, tmp_path):
+        store, conn = _store(tmp_path)
+        profile_id = stored_profile(conn).id
+        listing = _listing(id="sreality:1", photo_urls=("https://img.example/a.jpg", "https://img.example/b.jpg"))
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"sreality:1"})
+        stmt = "SELECT position, source_url FROM listing_photos ORDER BY position"
+        assert [tuple(row) for row in conn.execute(stmt)] == [
+            (0, "https://img.example/a.jpg"), (1, "https://img.example/b.jpg")]
+
+
 class TestPrune:
     def test_deletes_the_properties_the_prune_leaves_untracked(self, tmp_path):
         store, conn = _store(tmp_path)
