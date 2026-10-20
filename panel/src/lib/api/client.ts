@@ -10,6 +10,7 @@ export type TrackedPropertyModel = components['schemas']['TrackedPropertyModel']
 export type PostingPricesModel = components['schemas']['PostingPricesModel'];
 export type PortalHealthModel = components['schemas']['PortalHealthModel'];
 export type RunTriggeredModel = components['schemas']['RunTriggeredModel'];
+export type GalleryModel = components['schemas']['GalleryModel'];
 type NewOrAll = NonNullable<
 	paths['/v1/profiles/{profile_id}/properties']['get']['parameters']['query']
 >['filter'];
@@ -100,6 +101,28 @@ export class SidecarClient {
 			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
 		);
 		return this.require(data, response, error);
+	}
+
+	/* The flat's stored photos, each link made absolute, since the engine
+	gives them relative to its own address. */
+	async gallery(profileId: string, propertyId: string): Promise<GalleryModel> {
+		const { data, response, error } = await this.api.GET(
+			'/v1/profiles/{profile_id}/properties/{property_id}/gallery',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
+		);
+		const gallery = this.require(data, response, error);
+		return { ...gallery, photos: gallery.photos.map((photo) => ({ url: this.baseUrl + photo.url })) };
+	}
+
+	/* Asks the engine for the flat's whole gallery, beyond its main photo. */
+	async requestGallery(profileId: string, propertyId: string): Promise<void> {
+		const { response, error } = await this.api.PUT(
+			'/v1/profiles/{profile_id}/properties/{property_id}/gallery-request',
+			{ params: { path: { profile_id: profileId, property_id: propertyId } } }
+		);
+		if (!response.ok) {
+			throw this.httpError(response, error);
+		}
 	}
 
 	async markViewed(profileId: string, propertyId: string): Promise<void> {
