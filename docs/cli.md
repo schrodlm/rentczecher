@@ -45,6 +45,7 @@ A run that finds another one still going exits straight away.
 |---|---|
 | The database | `~/.local/share/rentczecher/rentczecher.db` |
 | The run lock | `~/.local/share/rentczecher/watchdog.pid` |
+| The photos | `~/.local/share/rentczecher/photos/` |
 
 `XDG_DATA_HOME` moves the folder as usual, and `RENTCZECHER_DATA_DIR` puts it
 anywhere. A checkout whose `engine/data/` already holds `rentczecher.db` uses

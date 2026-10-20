@@ -48,8 +48,14 @@ is yours.
 
 rentczecher keeps a listing for as long as one of your profiles still follows
 it. A listing no profile has seen for 90 days is deleted, with its price
-history and everything else read about it, unless you starred it. Deleting a
-profile deletes what only that profile held.
+history, its photos and everything else read about it, unless you starred it.
+Deleting a profile deletes what only that profile held.
+
+Photos are fetched the way you would look at them. After each scan, each new
+flat gets its main photo, the one the portal's search results show anyway.
+A flat's other photos are fetched only when you open or star it in the app.
+The photos stay on your computer and are shown only inside the app, with the
+portal they came from.
 
 ## For portal operators
 

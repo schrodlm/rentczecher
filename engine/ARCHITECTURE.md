@@ -101,6 +101,30 @@ events on `/v1/events`. The contract is generated into
 [docs/api/openapi.json](../docs/api/openapi.json), and a commit hook fails when
 the file and the code disagree.
 
+## Photos
+
+A scan records each new listing's gallery, the portal's URL of every photo,
+but downloads nothing ([ADR 13](../docs/adr/0013-photos-are-fetched-as-a-person-looks.md)).
+The downloading runs in passes on a worker thread of its own, so it never
+holds up a scan: after every scan, when the engine starts, and when a user
+opens or stars a flat. A pass first downloads the whole gallery of each flat
+a user asked for, then each other flat's main photo, within a budget per
+portal, one photo at a time with a pause between them. A pass asked for
+while main photos download cuts them short, so a gallery never waits behind
+them. A portal that refuses a photo is asked nothing more in that pass, and a
+photo that keeps failing is given up.
+
+The files sit in the data folder's `photos/`, named by a random key, and the
+database maps each photo to its key. When the retention sweep deletes a
+flat, the cascade deletes its photos' rows, and the next pass deletes every
+file no row refers to any more, sparing files a few minutes old that another
+engine process may not have recorded yet. The panel loads a photo through a
+link signed with a secret made for each run of the engine, since an image
+request cannot carry the API's token.
+
+`services/photos.py` holds the pass, `adapters/photos/` the files and the
+fetching, and `adapters/api/photo_worker.py` the thread.
+
 ## Storage
 
 SQLite, with numbered migrations in
