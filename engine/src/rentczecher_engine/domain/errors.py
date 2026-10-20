@@ -18,12 +18,12 @@ class AmbiguousPlaceError(Exception):
 
 
 class PhotoRefusedError(Exception):
-    """The image server refused the app."""
+    """The portal's server refused the app a photo or an advert page."""
 
 
 class PhotoGoneError(Exception):
-    """The image server no longer has the photo."""
+    """The photo or the advert page is gone, or its URL is malformed."""
 
 
 class PhotoFetchError(Exception):
-    """The photo could not be fetched this time."""
+    """The photo or the advert page could not be fetched this time."""
