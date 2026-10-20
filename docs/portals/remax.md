@@ -31,3 +31,12 @@ its unit in a `<small>` after the currency:
 The card's text around the field holds other numbers, such as the district
 in "Plzeň 3", so the price is read from the field alone, never from the
 card's text.
+
+## Photos
+
+A search card shows one photo, a thumbnail ending in `_th350`. The advert's
+own page links its whole gallery in `div.gallery`, each photo an
+`a[data-fancybox="images"]`, the main one first as `a#mainImage`. The links
+lead to the full-size uploads on `mlsf.remax-czech.cz`, often a few megabytes
+each as PNG. The app reads that page once, when the user opens or stars the
+flat.
