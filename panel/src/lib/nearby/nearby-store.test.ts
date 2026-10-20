@@ -79,6 +79,19 @@ describe('NearbyStore', () => {
 		store.toggle('metro');
 		expect(store.chosen).toEqual([]);
 	});
+
+	test('gives the distances to the first kinds it has answers for', async () => {
+		const overpass = new FakeOverpass();
+		const store = new NearbyStore(overpass);
+		store.show('p1', [FLAT]);
+		store.toggle('metro');
+		store.toggle('tram');
+		store.toggle('park');
+		overpass.answers[0]([VLTAVSKA]);
+		overpass.answers[2]([VLTAVSKA]);
+		await vi.waitFor(() => expect(store.distancesFrom(FLAT, 2).map((each) => each.kind)).toEqual(['metro']));
+	});
+
 	test('loads a kind for a profile shown while the last one was still asking for it', async () => {
 		const overpass = new FakeOverpass();
 		const store = new NearbyStore(overpass);
