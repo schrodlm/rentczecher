@@ -29,3 +29,13 @@ if (!window.PointerEvent) {
 	}
 	window.PointerEvent = StandInPointerEvent as typeof PointerEvent;
 }
+
+// jsdom has no ResizeObserver, which the street map watches its box with. A
+// stand-in that never reports a resize lets the map render.
+if (!window.ResizeObserver) {
+	window.ResizeObserver = class {
+		observe(): void {}
+		unobserve(): void {}
+		disconnect(): void {}
+	};
+}
