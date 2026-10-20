@@ -33,7 +33,14 @@
 - **Each flat once.** A flat posted on several portals shows up once, with a
   link to each posting.
 - **New listings and price drops.** New ones stay marked until you open them,
-  and every flat keeps its price history.
+  and every flat keeps its price history. Each flat gets its own number in
+  the profile, easy to remember and mention.
+- **Photos and maps.** A flat's photos lead its details, and a street map
+  shows where it lies. The photos are kept on your computer, and a flat's
+  whole gallery is fetched when you open it.
+- **What is nearby.** Choose what matters near home, such as the metro, a
+  tram stop or a school, and every flat in the profile shows how far the
+  nearest one is. It comes from OpenStreetMap, asked for live.
 - **Ranked your way.** Tell it what matters most, such as the layout, the
   size, the price or the area, and each listing gets a score from 0 to 100
   with the reasons behind it.
