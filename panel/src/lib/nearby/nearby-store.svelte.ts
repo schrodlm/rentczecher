@@ -10,6 +10,7 @@ const RETRY_MS = 60_000;
 const KEY_PREFIX = 'rentczecher.nearbyKinds.';
 
 type Found = { box: Box; places: NearbyPlace[] };
+export type KindDistance = { kind: NearbyKind; distanceM: number };
 
 /* The kinds of place a profile shows near its flats, kept on this machine,
 and the places of each, asked of Overpass for the area around the
@@ -46,6 +47,15 @@ export class NearbyStore {
 		this.chosen = NEARBY_KIND_ORDER.filter((each) => chosen.includes(each));
 		keepChosenKinds(this.profileId, this.chosen);
 		if (this.chosen.includes(kind)) void this.load(kind);
+	}
+
+	/* How far the nearest place of each of the first kinds lies, leaving out
+	the kinds not answered yet. */
+	distancesFrom(point: Point, most: number): KindDistance[] {
+		return this.chosen.slice(0, most).flatMap((kind) => {
+			const found = this.nearestTo(point, kind);
+			return found === null ? [] : [{ kind, distanceM: found.distanceM }];
+		});
 	}
 
 	nearestTo(point: Point, kind: NearbyKind): Nearest | null {

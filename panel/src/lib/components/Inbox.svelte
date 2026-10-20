@@ -17,6 +17,9 @@
 	orders it by. */
 	type Placement = { section: Section; date: string };
 
+	// A row has room for the distances of three kinds.
+	const ROW_NEARBY_KINDS = 3;
+
 	/* A profile's listings as a list beside the selected one's details. The
 	keys work wherever the focus is outside a text field or a dialog: the
 	arrows move and view, Enter opens the listing on its portal, F stars it.
@@ -193,6 +196,7 @@
 					{listing}
 					id={rowId(listing)}
 					score={scoreOf(listing)}
+					nearby={listing.point === null ? [] : nearby.distancesFrom(listing.point, ROW_NEARBY_KINDS)}
 					selected={selected?.id === listing.id}
 					onselect={() => select(listing, true)}
 				/>
