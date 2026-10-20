@@ -732,3 +732,9 @@ msgstr "Inzerát nemá fotky"
 
 msgid "The photos could not be downloaded yet"
 msgstr "Fotky se zatím nepodařilo stáhnout"
+
+msgid "OpenStreetMap contributors"
+msgstr "přispěvatelé OpenStreetMap"
+
+msgid "Map"
+msgstr "Mapa"
