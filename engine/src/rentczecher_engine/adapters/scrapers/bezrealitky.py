@@ -42,6 +42,25 @@ DISPOSITIONS = {
 DETAIL_BASE = "https://www.bezrealitky.cz/nemovitosti-byty-domy"
 
 
+def gallery_from_advert_page(html: str) -> tuple[str, ...]:
+    """The photos the advert page lists, in its order."""
+    match = NEXT_DATA_RE.search(html)
+    if not match:
+        raise ScraperBrokenError("bezrealitky: __NEXT_DATA__ payload missing from advert page")
+    try:
+        next_data = json.loads(match.group(1))
+    except json.JSONDecodeError as error:
+        raise ScraperBrokenError(f"bezrealitky: advert page's __NEXT_DATA__ is not JSON: {error}") from error
+    props = next_data.get("props") if isinstance(next_data, dict) else None
+    page_props = props.get("pageProps") if isinstance(props, dict) else None
+    advert = page_props.get("origAdvert") if isinstance(page_props, dict) else None
+    images = advert.get("publicImages") if isinstance(advert, dict) else None
+    if not isinstance(images, list):
+        raise ScraperBrokenError("bezrealitky: advert page carries no publicImages")
+    urls = [image.get("url") for image in images if isinstance(image, dict)]
+    return tuple(dict.fromkeys(url for url in urls if isinstance(url, str) and url))
+
+
 def _parse_location(address: str) -> ParsedPlace:
     """The portal's address string is comma-separated, with 'Praha - Bubeneč'
     style dash pairs inside a segment. An 'okres Domažlice' segment states
