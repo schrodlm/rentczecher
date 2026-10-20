@@ -44,6 +44,7 @@
 	}
 
 	.score-ring__svg {
+		display: block;
 		width: 100%;
 		height: 100%;
 		transform: rotate(-90deg);
@@ -72,6 +73,7 @@
 		color: var(--color-ink);
 		font-size: 30cqi;
 		font-weight: 800;
+		line-height: 1;
 		font-variant-numeric: tabular-nums;
 	}
 </style>
