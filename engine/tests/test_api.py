@@ -418,6 +418,11 @@ class TestListListings:
         assert [card["listing_id"] for card in every.json()] == ["sreality:1"]
         assert every.json()[0]["viewed_at"] is not None
 
+    def test_a_listing_carries_its_index_in_the_profile(self, tmp_path, praha7):
+        _persist_listing(_api_deps(tmp_path), praha7.id)
+        (card,) = _client(tmp_path).get(f"/v1/profiles/{praha7.id}/properties", headers=_auth()).json()
+        assert card["index"] == 1
+
     def test_a_listing_carries_its_named_resolved_location(self, tmp_path, praha7):
         deps = _api_deps(tmp_path)
         place = ParsedPlace(names=("Přístavní", "Praha", "Holešovice", "Praha 7"), cislo_popisne="1401")

@@ -20,6 +20,7 @@ class TestTrackedPropertyModel:
         siblings included."""
         card = TrackedProperty(
             id="prop-1",
+            index=7,
             listing_id="sreality:1",
             source="sreality",
             url="https://example.com/1",
@@ -41,6 +42,7 @@ class TestTrackedPropertyModel:
         main_photo = PhotoModel(url="/v1/photos/" + "a" * 32 + ".jpg?sig=s")
         assert TrackedPropertyModel.from_tracked_property(card, None, main_photo).model_dump() == {
             "id": "prop-1",
+            "index": 7,
             "listing_id": "sreality:1",
             "source": "sreality",
             "url": "https://example.com/1",
@@ -65,6 +67,7 @@ class TestTrackedPropertyModel:
         """A raw text naming no layout maps to a null disposition."""
         card = TrackedProperty(
             id="prop-1",
+            index=7,
             listing_id="sreality:1",
             source="sreality",
             url="https://example.com/1",
