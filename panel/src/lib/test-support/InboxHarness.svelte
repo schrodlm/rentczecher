@@ -57,6 +57,7 @@
 	onfavourite={favourite}
 	onmarkallviewed={markAllViewedAndReload}
 	{loadPriceHistory}
+	gallery={null}
 	bind:selectedId={selected}
 />
 <output data-testid="selected">{selected}</output>

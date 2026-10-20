@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
-import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
+import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
 import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
@@ -52,12 +52,39 @@ async function renderDetail(
 		listings: [FLAT, DEARER],
 		preferences,
 		priceHistory,
+		gallery: null,
 		onfavourite
 	});
 	return { onfavourite, ...rendered };
 }
 
 describe('PropertyDetail', () => {
+	test('leads with the photos of its gallery', async () => {
+		const gallery: GalleryModel = {
+			status: 'stored',
+			source: 'bezrealitky',
+			posting_url: 'https://bezrealitky.cz/1',
+			photo_count: 2,
+			photos: [{ url: 'http://127.0.0.1:1/a.jpg' }, { url: 'http://127.0.0.1:1/b.jpg' }]
+		};
+		const { container } = await renderWithTranslator(PropertyDetail, {
+			listing: FLAT,
+			listings: [FLAT, DEARER],
+			preferences: PREFERENCES,
+			priceHistory: FLAT_PRICES,
+			gallery,
+			onfavourite: vi.fn()
+		});
+		const first = container.querySelector('.property-detail')?.firstElementChild;
+		expect(first).toHaveClass('photo-collage');
+		expect(first?.querySelectorAll('img')).toHaveLength(2);
+	});
+
+	test('shows no photos before its gallery loads', async () => {
+		const { container } = await renderDetail();
+		expect(container.querySelector('.photo-collage, .photo-collage__empty')).toBeNull();
+	});
+
 	test('credits ČÚZK under the map of where the listing lies', async () => {
 		const located = trackedProperty('bezrealitky:3', {
 			resolved_location: {
