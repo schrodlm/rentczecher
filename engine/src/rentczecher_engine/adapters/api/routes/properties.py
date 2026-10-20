@@ -64,6 +64,7 @@ def mark_favourite(
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         store.mark_favourite(profile.id, property_id)
+    request.app.state.photo_worker.request_pass()
 
 
 @router.delete("/v1/profiles/{profile_id}/properties/{property_id}/favourite", status_code=204)

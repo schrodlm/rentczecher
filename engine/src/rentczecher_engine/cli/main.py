@@ -59,13 +59,15 @@ def serve(port: int, allowed_origins: list[str], exit_with_parent: bool = False)
     db_file = paths.db_path()
     migrate.apply_pending_at(db_file)
 
-    api_deps = ApiDeps(db_path=db_file, scrapers=scraper_registry())
+    api_deps = ApiDeps(db_path=db_file, photos_dir=paths.photos_dir(), scrapers=scraper_registry())
     # Called from a shutdown request, long after the server below exists.
     def request_shutdown() -> None:
         server.should_exit = True
 
     app = create_app(token, api_deps, allowed_origins=allowed_origins,
                      request_shutdown=request_shutdown)
+    # Picks up the photos the last run of the engine left unfinished.
+    app.state.photo_worker.request_pass()
 
     # Binding before announcing makes the announced port a promise: the
     # socket already holds it, so nothing else can take it in between.
