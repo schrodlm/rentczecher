@@ -774,3 +774,24 @@ msgstr "Divadlo"
 
 msgid "Cinema"
 msgstr "Kino"
+
+msgid "Without an exact location, nothing can be measured."
+msgstr "Bez přesné polohy nelze nic změřit."
+
+msgid "unnamed"
+msgstr "bez názvu"
+
+msgid "Shown for every flat in this profile."
+msgstr "Zobrazí se u všech bytů tohoto profilu."
+
+msgid "Done"
+msgstr "Hotovo"
+
+msgid "Choose what to measure nearby"
+msgstr "Vybrat, co v okolí měřit"
+
+msgid "Change what is measured nearby"
+msgstr "Změnit, co se v okolí měří"
+
+msgid "Data from OpenStreetMap, asked for live. When its servers are busy, nothing shows for a while."
+msgstr "Data z OpenStreetMap, zjišťovaná živě. Když jsou servery přetížené, chvíli se nic neukáže."
