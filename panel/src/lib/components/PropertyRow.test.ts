@@ -17,6 +17,17 @@ async function renderRow(overrides = {}, score: number | null = 78, selected = f
 }
 
 describe('PropertyRow', () => {
+	test('names the flat by its index and place before its price', async () => {
+		const { container } = await renderRow({ index: 124, resolved_location: null, location_raw_text: 'Praha 7' });
+		expect(container.querySelector('.property-row__name')).toHaveTextContent('#124 Praha 7');
+		expect(container.querySelector('.property-row__price')).toHaveTextContent('21 500 Kč');
+	});
+
+	test('pictures the flat by its main photo', async () => {
+		const { container } = await renderRow({ main_photo: { url: 'http://127.0.0.1:1/a.jpg?sig=s' } });
+		expect(container.querySelector('.property-picture__photo')).toHaveAttribute('src', 'http://127.0.0.1:1/a.jpg?sig=s');
+	});
+
 	test('shows the price, the facts and the score', async () => {
 		const { getByRole } = await renderRow();
 		const row = getByRole('option');
