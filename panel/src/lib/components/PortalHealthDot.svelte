@@ -22,8 +22,8 @@
 <style>
 	.dot {
 		display: inline-block;
-		width: 0.625rem;
-		height: 0.625rem;
+		width: 0.75rem;
+		height: 0.75rem;
 		border-radius: var(--radius-full);
 		box-sizing: border-box;
 	}

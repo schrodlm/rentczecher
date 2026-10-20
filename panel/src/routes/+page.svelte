@@ -450,10 +450,13 @@
 		background: var(--color-card);
 	}
 
+	/* The bar pads only its top, seating the tabs on its bottom border, so the
+	end pads its bottom as much to sit in the middle of the bar. */
 	.topbar__end {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		padding-bottom: var(--space-2);
 	}
 
 	.topbar__divider {
