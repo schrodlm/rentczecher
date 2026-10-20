@@ -47,6 +47,9 @@ class SqliteRunStore:
     def gallery(self, profile_id: str, property_id: str) -> Gallery | None:
         return self._photos.gallery(profile_id, property_id)
 
+    def main_photo_keys(self, profile_id: str) -> dict[str, str]:
+        return self._photos.main_photo_keys(profile_id)
+
     def request_gallery(self, profile_id: str, property_id: str) -> bool:
         """Asks for the property's whole gallery, as its own unit of work.
         False when the profile does not track the property."""
