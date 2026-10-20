@@ -741,3 +741,36 @@ msgstr "Mapa"
 
 msgid "Open the map over the whole window"
 msgstr "Otevřít mapu přes celé okno"
+
+msgid "Metro"
+msgstr "Metro"
+
+msgid "Tram"
+msgstr "Tramvaj"
+
+msgid "Train"
+msgstr "Vlak"
+
+msgid "Bus"
+msgstr "Autobus"
+
+msgid "Supermarket"
+msgstr "Supermarket"
+
+msgid "School"
+msgstr "Škola"
+
+msgid "Kindergarten"
+msgstr "Školka"
+
+msgid "Pharmacy"
+msgstr "Lékárna"
+
+msgid "Park"
+msgstr "Park"
+
+msgid "Theatre"
+msgstr "Divadlo"
+
+msgid "Cinema"
+msgstr "Kino"
