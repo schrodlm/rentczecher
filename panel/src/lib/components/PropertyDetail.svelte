@@ -454,6 +454,7 @@
 
 	.property-detail__street {
 		position: relative;
+		isolation: isolate;
 	}
 
 	/* Above Leaflet's own panes and controls. */
