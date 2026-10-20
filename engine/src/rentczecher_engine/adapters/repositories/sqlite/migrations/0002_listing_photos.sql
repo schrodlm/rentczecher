@@ -17,4 +17,13 @@ CREATE TABLE gallery_requests (
     requested_at TEXT NOT NULL
 );
 
+-- The listings whose whole gallery only their advert's own page lists. The
+-- page is read once, when the gallery is wanted, and a failed read counts an
+-- attempt.
+CREATE TABLE advert_page_reads (
+    listing_id TEXT PRIMARY KEY REFERENCES listings(id) ON DELETE CASCADE,
+    read_at    TEXT,
+    attempts   INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0)
+);
+
 DROP TABLE property_images;

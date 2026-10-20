@@ -51,6 +51,7 @@ erDiagram
     properties |o--o{ properties          : "merged into"
     listings   ||--o{ price_observations  : "priced over time"
     listings   ||--o{ listing_photos      : "pictured by"
+    listings   ||--o| advert_page_reads   : "gallery read from"
     properties ||--o| gallery_requests    : "wanted whole as"
     listings   ||--o{ dedup_records       : "diverged in"
     scrape_runs |o--o{ price_observations : "observed in"
@@ -73,6 +74,7 @@ erDiagram
 | `property_tracking` | What a profile did with a flat: `viewed_at` and `favourited_at`, once per flat rather than on each of its listings. One row per profile and property. A starred flat's row is never pruned. |
 | `property_locations` | Where a property lies: the RÚIAN code of each unit, kraj to ulice, plus the house numbers as written. One row per property, the most detailed location any of its listings gave. The codes point into the shipped gazetteer, a separate file, so no foreign key checks them. |
 | `listing_photos` | A listing's gallery, one row per photo in the portal's order: the portal's URL, the stored file's key once downloaded, and the failed attempts. The files live in the data directory's `photos/` folder. |
+| `advert_page_reads` | The listings whose whole gallery only their advert's own page lists, the search results giving one photo. The page is read once, when the gallery is wanted: `read_at` once it was, and the failed attempts. |
 | `gallery_requests` | The properties whose whole gallery a user asked for, by opening or starring one. Every other listing keeps only its main photo. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
 | `dedup_records` | Audit trail of every dedup match: why two were judged the same (`match_reason`) and how the listing's facts diverged from canonical (`differences`, JSON). |

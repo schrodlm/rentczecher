@@ -40,9 +40,12 @@ class SqlitePhotoRepository:
             source=row["source"],
         )
 
-    def record_gallery(self, listing_id: str, photo_urls: tuple[str, ...]) -> None:
+    def record_gallery(self, listing_id: str, photo_urls: tuple[str, ...], *, on_advert_page: bool = False) -> None:
         """Records a listing's gallery the first time a scan sees it. A
         gallery already recorded stays as it is."""
+        if on_advert_page:
+            stmt = "INSERT INTO advert_page_reads (listing_id) VALUES (?) ON CONFLICT (listing_id) DO NOTHING"
+            self._conn.execute(stmt, (listing_id,))
         stmt = "SELECT 1 FROM listing_photos WHERE listing_id = ? LIMIT 1"
         if self._conn.execute(stmt, (listing_id,)).fetchone() is not None:
             return
