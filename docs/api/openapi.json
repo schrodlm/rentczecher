@@ -1256,6 +1256,10 @@
             "title": "Id",
             "type": "string"
           },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
           "land_m2": {
             "anyOf": [
               {
@@ -1385,6 +1389,7 @@
         },
         "required": [
           "id",
+          "index",
           "listing_id",
           "source",
           "url",

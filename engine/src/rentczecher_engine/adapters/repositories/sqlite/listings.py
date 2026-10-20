@@ -240,6 +240,7 @@ class SqliteListingRepository(ListingRepository):
                    property_locations.cislo_popisne AS cislo_popisne,
                    property_locations.cislo_orientacni AS cislo_orientacni,
                    listing_tracking.first_seen_at AS first_seen_at,
+                   property_tracking.profile_index AS profile_index,
                    property_tracking.viewed_at AS viewed_at,
                    property_tracking.favourited_at AS favourited_at,
                    latest_price.price AS price,
@@ -290,6 +291,7 @@ class SqliteListingRepository(ListingRepository):
         )
         return TrackedProperty(
             id=row["property_id"],
+            index=row["profile_index"],
             listing_id=row["id"],
             source=row["source"],
             url=row["url"],

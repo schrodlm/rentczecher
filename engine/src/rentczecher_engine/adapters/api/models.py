@@ -270,6 +270,7 @@ class PhotoModel(BaseModel):
 
 class TrackedPropertyModel(BaseModel):
     id: str
+    index: int
     listing_id: str
     source: str
     url: str
@@ -294,6 +295,7 @@ class TrackedPropertyModel(BaseModel):
                               main_photo: PhotoModel | None) -> "TrackedPropertyModel":
         return cls(
             id=tracked.id,
+            index=tracked.index,
             listing_id=tracked.listing_id,
             source=tracked.source,
             url=tracked.url,
