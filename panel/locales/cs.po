@@ -717,3 +717,18 @@ msgstr "Foto: {portal}"
 
 msgid "Downloading more photos…"
 msgstr "Stahuji další fotky…"
+
+msgid "Photo {number}"
+msgstr "Fotka {number}"
+
+msgid "+{count} photo"
+msgid_plural "+{count} photos"
+msgstr[0] "+{count} fotka"
+msgstr[1] "+{count} fotky"
+msgstr[2] "+{count} fotek"
+
+msgid "This listing has no photos"
+msgstr "Inzerát nemá fotky"
+
+msgid "The photos could not be downloaded yet"
+msgstr "Fotky se zatím nepodařilo stáhnout"
