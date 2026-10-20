@@ -3,6 +3,7 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { factsOf, placeOf } from '$lib/property-detail';
 	import PropertyPicture from './PropertyPicture.svelte';
+	import ScoreRing from './ScoreRing.svelte';
 
 	/* One listing in the inbox's list: enough to tell it apart and judge it at
 	a glance. The list around it takes the keys, the row reports a click. */
@@ -54,7 +55,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		<span class="property-row__star" aria-label={t.t('Favourite')}>★</span>
 	{/if}
 	{#if score !== null}
-		<span class="property-row__score">{score}</span>
+		<span class="property-row__score"><ScoreRing {score} coloured={false} /></span>
 	{/if}
 </div>
 
@@ -154,9 +155,6 @@ a row focuses the list and a screen reader follows the selection from there. -->
 	}
 
 	.property-row__score {
-		min-width: 2rem;
-		font-weight: 800;
-		font-variant-numeric: tabular-nums;
-		text-align: right;
+		width: 2.375rem;
 	}
 </style>
