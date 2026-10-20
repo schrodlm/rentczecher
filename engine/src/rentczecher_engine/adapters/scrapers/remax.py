@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup, Tag
 from rentczecher_engine.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher_engine.adapters.scrapers.parsing import parse_land_m2, parse_size_m2
+from rentczecher_engine.domain.errors import ScraperBrokenError
 from rentczecher_engine.domain.location import ParsedPlace
 
 log = logging.getLogger("rentczecher")
@@ -31,6 +32,19 @@ DETAIL_PATH = re.compile(r"/reality/detail/(\d+)")
 
 def _absolute_url(href: str) -> str:
     return href if href.startswith("http") else f"https://www.remax-czech.cz{href}"
+
+
+def gallery_from_advert_page(html: str) -> tuple[str, ...]:
+    """The full-size photos the advert page's gallery links to, in its order."""
+    gallery = BeautifulSoup(html, "html.parser").select_one("div.gallery")
+    if gallery is None:
+        raise ScraperBrokenError("remax: advert page carries no gallery")
+    urls = []
+    for link in gallery.select('a[data-fancybox="images"]'):
+        href = link.get("href")
+        if isinstance(href, str) and href:
+            urls.append(_absolute_url(href))
+    return tuple(dict.fromkeys(urls))
 
 
 _HOUSE_NUMBERS = re.compile(r"(\d+[a-zA-Z]?)\s*/\s*(\d+[a-zA-Z]?)$")
