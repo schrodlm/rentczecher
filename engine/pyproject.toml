@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rentczecher_engine"
-version = "0.1.0"
+version = "0.2.0"
 description = "Multi-portal Czech real-estate watchdog: scrape, dedup, score, notify"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
