@@ -15,3 +15,15 @@ class ProfileNotFoundError(Exception):
 class AmbiguousPlaceError(Exception):
     def __init__(self, place: str):
         super().__init__(f"several places are called {place!r}")
+
+
+class PhotoRefusedError(Exception):
+    """The image server refused the app."""
+
+
+class PhotoGoneError(Exception):
+    """The image server no longer has the photo."""
+
+
+class PhotoFetchError(Exception):
+    """The photo could not be fetched this time."""
