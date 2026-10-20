@@ -112,7 +112,8 @@ class SqlitePropertyRepository(PropertyRepository):
         folded into it, but is never a merge target. Each profile's tracking of
         the loser is copied onto the winner, where the flat stays viewed and
         starred since the first of the two was. The loser keeps its own, since
-        a listing the merge did not move stays on it and still shows there."""
+        a listing the merge did not move stays on it and still shows there.
+        A request for the loser's whole gallery carries over to the winner."""
         stmt = "UPDATE properties SET merged_into = ? WHERE id = ?"
         self._conn.execute(stmt, (winner_id, loser_id))
         stmt = """
@@ -129,6 +130,12 @@ class SqlitePropertyRepository(PropertyRepository):
                     WHEN excluded.favourited_at IS NULL THEN property_tracking.favourited_at
                     ELSE min(property_tracking.favourited_at, excluded.favourited_at)
                 END
+        """
+        self._conn.execute(stmt, (winner_id, loser_id))
+        stmt = """
+            INSERT INTO gallery_requests (property_id, requested_at)
+            SELECT ?, requested_at FROM gallery_requests WHERE property_id = ?
+            ON CONFLICT (property_id) DO NOTHING
         """
         self._conn.execute(stmt, (winner_id, loser_id))
 
