@@ -147,6 +147,96 @@ class TestRequestedPhotos:
         assert repo.requested_photos() == []
 
 
+def _unread_advert(repo, listing_id="sreality:1", photo_count=1):
+    repo.record_gallery(listing_id, _urls(photo_count, listing_id), on_advert_page=True)
+
+
+class TestRequestedAdvertPages:
+    def test_wants_the_advert_page_of_a_requested_gallery(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.request_gallery("p", "prop-1", CREATED)
+        (page,) = repo.requested_advert_pages()
+        assert (page.property_id, page.listing_id, page.source, page.url) == (
+            "prop-1", "sreality:1", "sreality", "https://portal.example/sreality:1")
+
+    def test_leaves_out_an_unrequested_flat(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        assert repo.requested_advert_pages() == []
+
+    def test_leaves_out_a_page_already_read_or_given_up(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-2", "sreality:2")
+        _unread_advert(repo)
+        _unread_advert(repo, "sreality:2")
+        repo.request_gallery("p", "prop-1", CREATED)
+        repo.request_gallery("p", "prop-2", CREATED)
+        repo.record_advert_gallery("sreality:1", _urls(3), CREATED)
+        repo.count_advert_failure("sreality:2", give_up=True)
+        assert repo.requested_advert_pages() == []
+
+    def test_leaves_out_a_flat_whose_gallery_comes_from_another_listing(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-1", "sreality:2")
+        _unread_advert(repo)
+        repo.record_gallery("sreality:2", _urls(5, "sreality:2"))
+        repo.request_gallery("p", "prop-1", CREATED)
+        assert repo.requested_advert_pages() == []
+
+    def test_a_page_failing_too_often_is_no_longer_wanted(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.request_gallery("p", "prop-1", CREATED)
+        for _ in range(MAX_ATTEMPTS):
+            repo.count_advert_failure("sreality:1", give_up=False)
+        assert repo.requested_advert_pages() == []
+
+
+class TestRecordAdvertGallery:
+    def test_replaces_the_gallery_with_the_pages(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        page_urls = ("https://img.example/big/0.jpg", "https://img.example/big/1.jpg")
+        repo.record_advert_gallery("sreality:1", page_urls, CREATED)
+        assert _gallery(conn) == [(0, page_urls[0]), (1, page_urls[1])]
+
+    def test_a_photo_listed_again_keeps_its_file(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+        repo.record_advert_gallery("sreality:1", ("https://img.example/other.jpg", _urls(1)[0]), CREATED)
+        assert repo.file_keys() == {FILE_KEY}
+        stmt = "SELECT file_key FROM listing_photos WHERE position = 1"
+        assert conn.execute(stmt).fetchone()[0] == FILE_KEY
+
+    def test_keeps_only_the_first_photos_up_to_the_limit(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.record_advert_gallery("sreality:1", _urls(GALLERY_LIMIT + 5), CREATED)
+        assert len(_gallery(conn)) == GALLERY_LIMIT
+
+    def test_a_page_listing_no_photos_leaves_the_searchs_in_place(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.record_advert_gallery("sreality:1", (), CREATED)
+        assert _gallery(conn) == [(0, _urls(1)[0])]
+        assert conn.execute("SELECT read_at FROM advert_page_reads").fetchone()[0] == CREATED
+
+    def test_a_listing_deleted_meanwhile_is_left_alone(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        conn.execute("DELETE FROM listings")
+        repo.record_advert_gallery("sreality:1", _urls(2), CREATED)
+        assert conn.execute("SELECT count(*) FROM listing_photos").fetchone()[0] == 0
+
+    def test_marks_the_page_read(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.record_advert_gallery("sreality:1", _urls(2), CREATED)
+        assert conn.execute("SELECT read_at FROM advert_page_reads").fetchone()[0] == CREATED
+
+
 class TestStorePhoto:
     def test_records_the_stored_file(self, tmp_path):
         repo, _ = _repo(tmp_path)
@@ -213,6 +303,18 @@ class TestGallery:
         repo.record_gallery("sreality:1", _urls(1))
         repo.count_failure("sreality:1", 0, give_up=True)
         assert repo.gallery("p", "prop-1").status == "failed"
+
+    def test_downloading_while_a_requested_gallerys_advert_page_is_unread(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo, photo_count=0)
+        repo.request_gallery("p", "prop-1", CREATED)
+        assert repo.gallery("p", "prop-1").status == "downloading"
+
+    def test_an_unread_advert_page_of_an_unrequested_flat_waits(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo)
+        repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+        assert repo.gallery("p", "prop-1").status == "stored"
 
     def test_shows_the_listing_with_the_most_photos(self, tmp_path):
         repo, conn = _repo(tmp_path)
