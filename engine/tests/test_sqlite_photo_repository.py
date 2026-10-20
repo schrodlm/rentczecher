@@ -153,6 +153,23 @@ class TestStorePhoto:
         assert not repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
 
 
+class TestMainPhotoKeys:
+    def test_maps_each_tracked_flat_to_its_stored_main_photo(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-2", "sreality:2")
+        repo.record_gallery("sreality:1", _urls(2))
+        repo.record_gallery("sreality:2", _urls(1, "sreality:2"))
+        repo.store_photo("sreality:1", 0, _urls(2)[0], FILE_KEY)
+        assert repo.main_photo_keys("p") == {"prop-1": FILE_KEY}
+
+    def test_leaves_out_other_profiles_flats(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('q', 'Q', ?)", (CREATED,))
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+        assert repo.main_photo_keys("q") == {}
+
+
 class TestGallery:
     def test_none_for_a_flat_the_profile_does_not_track(self, tmp_path):
         repo, _ = _repo(tmp_path)
