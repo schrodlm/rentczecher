@@ -47,10 +47,11 @@ erDiagram
     profiles   ||--o{ scrape_runs         : "records a run of"
     properties ||--o{ listings            : "posted as"
     properties ||--o| property_locations  : "lies at"
-    properties ||--o{ property_images     : "owns"
     properties ||--o{ dedup_records       : "matched by"
     properties |o--o{ properties          : "merged into"
     listings   ||--o{ price_observations  : "priced over time"
+    listings   ||--o{ listing_photos      : "pictured by"
+    properties ||--o| gallery_requests    : "wanted whole as"
     listings   ||--o{ dedup_records       : "diverged in"
     scrape_runs |o--o{ price_observations : "observed in"
 ```
@@ -66,12 +67,13 @@ erDiagram
 | `profile_preferences` | A profile's scoring weights and their settings, one row per profile. A setting may be null only while its weight is 0. |
 | `preferred_dispositions`, `preferred_places` | A profile's preferred dispositions and places, ranked, rank 1 the most preferred. |
 | `portals`, `offer_types`, `estate_types`, `place_kinds`, `dispositions` | The fixed vocabularies the other tables reference, seeded by the migrations. |
-| `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. Once no profile tracks a property, itself or through a listing, it is deleted with its listings, prices, places, images and dedup records. |
+| `properties` | The canonical real-world unit. Global (not per-profile). `merged_into` tombstones a property that dedup folded into another. Once no profile tracks a property, itself or through a listing, it is deleted with its listings, prices, places, photos and dedup records. |
 | `listings` | One per-portal posting: `source:source_id`, which property, url, scraped timestamp. A fact of the posting, shared by every profile whose search sees it. No per-profile state. |
 | `listing_tracking` | Per-profile seen state for a listing: first/last seen and `miss_count`. One row per profile and listing. Pruning deletes these rows, and the properties left untracked go with them. |
 | `property_tracking` | What a profile did with a flat: `viewed_at` and `favourited_at`, once per flat rather than on each of its listings. One row per profile and property. A starred flat's row is never pruned. |
 | `property_locations` | Where a property lies: the RÚIAN code of each unit, kraj to ulice, plus the house numbers as written. One row per property, the most detailed location any of its listings gave. The codes point into the shipped gazetteer, a separate file, so no foreign key checks them. |
-| `property_images` | Image URLs of a property. Nothing writes it yet. |
+| `listing_photos` | A listing's gallery, one row per photo in the portal's order: the portal's URL, the stored file's key once downloaded, and the failed attempts. The files live in the data directory's `photos/` folder. |
+| `gallery_requests` | The properties whose whole gallery a user asked for, by opening or starring one. Every other listing keeps only its main photo. |
 | `price_observations` | Append-only price (+charges) time series, one stream per listing. Never updated. A property's price history is the union over its listings. |
 | `dedup_records` | Audit trail of every dedup match: why two were judged the same (`match_reason`) and how the listing's facts diverged from canonical (`differences`, JSON). |
 | `scrape_runs` | One row per profile per run: timings, status, counts. Nothing writes it yet, see [#41](https://github.com/schrodlm/rentczecher/issues/41), so `price_observations.observed_in_run_id` is always null. |
