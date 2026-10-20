@@ -9,7 +9,7 @@ what's new for the panel and notification channels to show.
 **Listing**:
 One portal's posting, identified as `source:source_id`. The unit scrapers
 produce.
-_Avoid_: advert, offer, item
+_Avoid_: advert (for the listing itself, see Advert page), offer, item
 
 **Property**:
 The inferred real-world housing unit behind one or more listings. The same
@@ -36,8 +36,15 @@ _Avoid_: image, picture
 A listing's photos in the portal's order, at most twenty. A tracked property
 shows the gallery of its listing with the most photos. Its first is the main
 photo, the one fetched for every flat. The rest are fetched once a user opens
-or stars the flat.
+or stars the flat. Where a portal's search results give only the main photo,
+the gallery is read from the advert page first.
 _Avoid_: album, photos (for the set)
+
+**Advert page**:
+A portal's own web page for one listing, the page a user reads the listing on.
+The app reads it only for the gallery, once, when the search results left
+the gallery out.
+_Avoid_: detail page
 
 **Inbox**:
 The panel's view of one profile's tracked properties, a list beside the

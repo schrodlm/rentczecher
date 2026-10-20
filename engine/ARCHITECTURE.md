@@ -105,14 +105,17 @@ the file and the code disagree.
 
 A scan records each new listing's gallery, the portal's URL of every photo,
 but downloads nothing ([ADR 13](../docs/adr/0013-photos-are-fetched-as-a-person-looks.md)).
-The downloading runs in passes on a worker thread of its own, so it never
-holds up a scan: after every scan, when the engine starts, and when a user
-opens or stars a flat. A pass first downloads the whole gallery of each flat
-a user asked for, then each other flat's main photo, within a budget per
-portal, one photo at a time with a pause between them. A pass asked for
-while main photos download cuts them short, so a gallery never waits behind
-them. A portal that refuses a photo is asked nothing more in that pass, and a
-photo that keeps failing is given up.
+Some portals' search results give only the main photo, and their scraper
+marks the listing so the rest is read from its advert page later. The
+downloading runs in passes on a worker thread of its own, so it never holds
+up a scan: after every scan, when the engine starts, and when a user opens
+or stars a flat. A pass first reads the advert page of each flat a user
+asked for whose gallery only that page lists, then downloads the whole
+gallery of each flat a user asked for, then each other flat's main photo
+within a budget per portal. It sends one request at a time with a pause
+between them. A pass asked for while main photos download cuts them short,
+so a gallery never waits behind them. A portal that refuses a request is asked nothing more in that pass, and
+a photo or advert page that keeps failing is given up.
 
 The files sit in the data folder's `photos/`, named by a random key, and the
 database maps each photo to its key. When the retention sweep deletes a
@@ -123,7 +126,8 @@ link signed with a secret made for each run of the engine, since an image
 request cannot carry the API's token.
 
 `services/photos.py` holds the pass, `adapters/photos/` the files and the
-fetching, and `adapters/api/photo_worker.py` the thread.
+fetching, each portal's adapter the parsing of its advert page, and
+`adapters/api/photo_worker.py` the thread.
 
 ## Storage
 

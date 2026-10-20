@@ -32,8 +32,10 @@ for.
   `rentczecher/<version> (+https://rentczecher.cz)`, so a portal can always
   tell rentczecher apart from a browser.
 - **It reads what a search needs.** A scan asks each portal for the profile's
-  search and reads the result pages, with a pause between pages. It does not
-  open the adverts themselves and does not store their descriptions.
+  search and reads the result pages, with a pause between pages. It opens an
+  advert's own page only when you open or star that flat in the app and the
+  search results left out its photos, once, for the photos alone. It does not
+  store advert descriptions.
 - **It does not get around a refusal.** No proxies, no rotating identities, no
   ways past a block. A portal that refuses rentczecher is left alone.
 
