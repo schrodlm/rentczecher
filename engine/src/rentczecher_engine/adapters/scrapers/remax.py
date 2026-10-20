@@ -29,6 +29,10 @@ LIST_VIEW = 1
 DETAIL_PATH = re.compile(r"/reality/detail/(\d+)")
 
 
+def _absolute_url(href: str) -> str:
+    return href if href.startswith("http") else f"https://www.remax-czech.cz{href}"
+
+
 _HOUSE_NUMBERS = re.compile(r"(\d+[a-zA-Z]?)\s*/\s*(\d+[a-zA-Z]?)$")
 
 
@@ -214,7 +218,7 @@ class RemaxScraper(BaseScraper):
 
     def _parse_card(self, card, detail: DetailLink) -> Listing | None:
         href = detail.href
-        detail_url = href if href.startswith("http") else f"https://www.remax-czech.cz{href}"
+        detail_url = _absolute_url(href)
 
         # Prefer data-* attributes
         data_price = card.get("data-price")
@@ -258,9 +262,9 @@ class RemaxScraper(BaseScraper):
         main_photo_url = None
         img = card.find("img")
         if img:
-            main_photo_url = img.get("src") or img.get("data-src")
-            if main_photo_url and not main_photo_url.startswith("http"):
-                main_photo_url = f"https://www.remax-czech.cz{main_photo_url}"
+            src = img.get("src") or img.get("data-src")
+            if src:
+                main_photo_url = _absolute_url(src)
 
         # Disposition
         disposition = None
