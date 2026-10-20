@@ -44,9 +44,21 @@ October 2026. Now and then an advert still comes back with `currency`
 scraper skips any advert not in CZK. `originalPrice` is the price before the
 advert's last change, not a crown equivalent.
 
+## Photos
+
+The search page's Apollo cache gives each advert its `mainImage` alone, as a
+`RECORD_THUMB` URL. The advert's own page lists the whole gallery in its
+`__NEXT_DATA__`, at `props.pageProps.origAdvert.publicImages`, each photo's
+`url` the `RECORD_MAIN` size, about 1200 px tall. Tours and videos sit in
+fields of their own, so `publicImages` holds only photos. The app reads that
+page once, when the user opens or stars the flat.
+
+The photos are served from `api.bezrealitky.cz`.
+
 ## robots.txt
 
 The portal's `robots.txt` asks crawlers to stay off `/vyhledat*` and
 `/search*` on the www host, the search page the scraper reads, and off the
-whole API host. The portal is therefore off in new profiles, and the user
+whole API host, which serves the photos. An advert's own page is not among
+the paths it lists. The portal is therefore off in new profiles, and the user
 turns it on after a note that says so.
