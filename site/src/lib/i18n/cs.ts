@@ -265,7 +265,8 @@ export const cs: Messages = {
 		userAgentIntro: 'V každém požadavku se představí touto hlavičkou User-Agent:',
 		howItReads: [
 			'Čte jen uložená hledání svého uživatele, a to když uživatel spustí kontrolu.',
-			'Čte stránky s výsledky hledání, mezi stránkami dělá pauzy, na jedno hledání přečte jen omezený počet stránek a samotné inzeráty nikdy neotevírá.',
+			'Čte stránky s výsledky hledání, mezi stránkami dělá pauzy a na jedno hledání přečte jen omezený počet stránek.',
+			'Po kontrole stáhne u každé nové nabídky hlavní fotku. Samotný inzerát otevře a další fotky nabídky stáhne, jen když ji uživatel v aplikaci otevře nebo označí hvězdičkou, a to jen jednou.',
 			'Nepoužívá proxy, nemění identitu a neobchází CAPTCHA ani firewall. Když ho portál odmítne, nesnaží se odmítnutí obejít.',
 			'Portál, který ve svých podmínkách nebo v robots.txt automatické nástroje odmítá, je ve výchozím stavu vypnutý.'
 		],
