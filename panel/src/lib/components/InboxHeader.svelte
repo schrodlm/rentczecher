@@ -71,36 +71,64 @@
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+		gap: var(--space-4);
 	}
 
 	.actions__health {
 		display: inline-flex;
-		gap: var(--space-1);
+		gap: var(--space-2);
 	}
 
 	.actions__status {
-		font-size: 0.8125rem;
+		font-size: 0.875rem;
 		color: var(--color-bronze);
 		white-space: nowrap;
 	}
 
+	/* The app's main action, so it stands up off the bar in a glow of its
+	own colour. */
 	.actions__run {
 		background: var(--color-amber);
 		color: var(--color-on-amber);
 		border: none;
 		border-radius: var(--radius-md);
-		padding: var(--space-2) var(--space-4);
-		font-weight: 600;
+		padding: 0.625rem 1.25rem;
+		font-size: 0.9375rem;
+		font-weight: 700;
+		box-shadow:
+			0 4px 14px color-mix(in srgb, var(--color-amber) 45%, transparent),
+			0 1px 2px rgb(0 0 0 / 20%);
 		cursor: pointer;
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease,
+			background 0.15s ease;
 	}
 
 	.actions__run:hover:enabled {
 		background: var(--color-amber-bright);
+		box-shadow:
+			0 6px 20px color-mix(in srgb, var(--color-amber) 55%, transparent),
+			0 2px 4px rgb(0 0 0 / 20%);
+		transform: translateY(-1px);
+	}
+
+	.actions__run:active:enabled {
+		box-shadow:
+			0 2px 8px color-mix(in srgb, var(--color-amber) 40%, transparent),
+			0 1px 2px rgb(0 0 0 / 20%);
+		transform: translateY(0);
 	}
 
 	.actions__run:disabled {
 		opacity: 0.6;
+		box-shadow: none;
 		cursor: default;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.actions__run {
+			transition: none;
+		}
 	}
 </style>
