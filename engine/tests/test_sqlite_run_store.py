@@ -104,6 +104,15 @@ class TestPersistOutcomeRecordsGalleries:
         stmt = "SELECT position, source_url FROM listing_photos ORDER BY position"
         assert [tuple(row) for row in conn.execute(stmt)] == [
             (0, "https://img.example/a.jpg"), (1, "https://img.example/b.jpg")]
+        assert conn.execute("SELECT count(*) FROM advert_page_reads").fetchone()[0] == 0
+
+    def test_records_that_a_listings_advert_page_holds_its_gallery(self, tmp_path):
+        store, conn = _store(tmp_path)
+        profile_id = stored_profile(conn).id
+        listing = _listing(id="remax:1", photo_urls=("https://img.example/a.jpg",), gallery_on_advert_page=True)
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"remax:1"})
+        stmt = "SELECT listing_id, read_at, attempts FROM advert_page_reads"
+        assert [tuple(row) for row in conn.execute(stmt)] == [("remax:1", None, 0)]
 
 
 class TestGalleryRequests:

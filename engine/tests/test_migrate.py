@@ -335,6 +335,12 @@ class TestListingPhotos:
         conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
         assert conn.execute("SELECT count(*) FROM listing_photos").fetchone()[0] == 0
 
+    def test_an_advert_page_read_goes_with_its_listing(self, tmp_path):
+        conn = self._with_listing(tmp_path)
+        conn.execute("INSERT INTO advert_page_reads (listing_id) VALUES ('sreality:1')")
+        conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
+        assert conn.execute("SELECT count(*) FROM advert_page_reads").fetchone()[0] == 0
+
 
 class TestConcurrentWriters:
     """busy_timeout, not luck, lets a second writer wait out a held write lock."""

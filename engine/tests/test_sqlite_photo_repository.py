@@ -60,6 +60,14 @@ class TestRecordGallery:
         repo.record_gallery("sreality:1", ("https://img.example/other.jpg", "https://img.example/more.jpg"))
         assert _gallery(conn) == [(0, "https://img.example/a.jpg")]
 
+    def test_marks_a_gallery_on_the_advert_page_as_unread_once(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(1), on_advert_page=True)
+        conn.execute("UPDATE advert_page_reads SET read_at = ?", (CREATED,))
+        repo.record_gallery("sreality:1", _urls(1), on_advert_page=True)
+        stmt = "SELECT listing_id, read_at FROM advert_page_reads"
+        assert [tuple(row) for row in conn.execute(stmt)] == [("sreality:1", CREATED)]
+
     def test_a_listing_without_photos_records_none(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.record_gallery("sreality:1", ())
