@@ -53,6 +53,7 @@ build scripts run it first.
 | `lib/editor/` | The profile editor and `ProfileDraft`, the editor's state, which turns a stored profile into editable form and back into an API body |
 | `lib/forms/` | Inputs the editor is built from: portal tiles, layout chips, range and value sliders, preferred places |
 | `lib/map/` | The map of Czechia, built from the gazetteer by `scripts/czech_map.py`, the search-place picker, the small place map in the detail, and the street map, which also opens over the whole window, with its links to Mapy.cz and Google Maps |
+| `lib/nearby/` | The places near a flat: the kinds a profile shows, asking Overpass for them and the nearest of each |
 | `lib/scoring/` | Scoring: the score itself, the preferences, and the editor section where weights are split by dragging |
 | `lib/welcome/` | The first-run wizard: language, theme, and a short tour |
 | `lib/i18n/` | Translation |
@@ -88,6 +89,13 @@ exact coordinates also gets a street map, Leaflet over OpenStreetMap's tiles.
 The window's content policy lets images load from their tile server, which
 sees the area of each flat shown. Mapy.cz and Google Maps are only links,
 opened in the browser.
+
+The places near a flat, such as the nearest metro or school, come from
+OpenStreetMap's Overpass, asked live by the panel (`lib/nearby/`). For each
+kind a profile shows, one request covers the area around the profile's flats,
+and the answers live in memory only while the app runs. The servers are run
+by volunteers and are often busy, so each gets a few seconds before the next
+is asked, and a kind none answers simply shows nothing.
 
 ## Translation
 
