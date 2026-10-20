@@ -60,6 +60,24 @@ async function renderDetail(
 }
 
 describe('PropertyDetail', () => {
+	test('heads the details with the index, the place and the price, and its picture', async () => {
+		const { container } = await renderDetail(trackedProperty('sreality:7', {
+			index: 124,
+			resolved_location: null,
+			location_raw_text: 'Praha 7',
+			price: 23000,
+			main_photo: { url: 'http://127.0.0.1:1/a.jpg?sig=s' }
+		}));
+		const title = container.querySelector('.property-detail__title');
+		expect(title?.querySelector('.property-detail__index')).toHaveTextContent('#124');
+		expect(title).toHaveTextContent('Praha 7');
+		expect(title?.querySelector('.property-detail__price')?.textContent?.replace(/\s/g, ' ')).toBe('23 000 Kč');
+		expect(container.querySelector('.property-detail__picture .property-picture__photo')).toHaveAttribute(
+			'src',
+			'http://127.0.0.1:1/a.jpg?sig=s'
+		);
+	});
+
 	test('leads with the photos of its gallery', async () => {
 		const gallery: GalleryModel = {
 			status: 'stored',
