@@ -1,9 +1,8 @@
 <script lang="ts">
 	import type { TrackedPropertyModel } from '$lib/api/client';
-	import { sourceInitial } from '$lib/format';
 	import { getTranslatorContext } from '$lib/i18n/context';
-	import { factsOf } from '$lib/property-detail';
-	import { shownPortal } from '$lib/portals';
+	import { factsOf, placeOf } from '$lib/property-detail';
+	import PropertyPicture from './PropertyPicture.svelte';
 
 	/* One listing in the inbox's list: enough to tell it apart and judge it at
 	a glance. The list around it takes the keys, the row reports a click. */
@@ -23,7 +22,6 @@
 
 	const t = getTranslatorContext();
 
-	const portal = $derived(shownPortal(listing.source));
 	const favourite = $derived(listing.favourited_at !== null);
 	const facts = $derived(factsOf(listing, t));
 </script>
@@ -42,15 +40,14 @@ a row focuses the list and a screen reader follows the selection from there. -->
 	aria-selected={selected}
 	onclick={onselect}
 >
-	<span class="property-row__thumb">
-		{#if portal}
-			<img class="property-row__logo" src={portal.logo} alt="" />
-		{:else}
-			{sourceInitial(listing.source)}
-		{/if}
-	</span>
+	<span class="property-row__picture"><PropertyPicture {listing} /></span>
 	<span class="property-row__text">
-		<span class="property-row__price">{listing.price === null ? '–' : t.price(listing.price)}</span>
+		<span class="property-row__headline">
+			<span class="property-row__name"
+				><span class="property-row__index">#{listing.index}</span> {placeOf(listing) ?? ''}</span
+			>
+			<span class="property-row__price">{listing.price === null ? '–' : t.price(listing.price)}</span>
+		</span>
 		<span class="property-row__facts">{facts}</span>
 	</span>
 	{#if favourite}
@@ -104,22 +101,11 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		opacity: 0.6;
 	}
 
-	.property-row__thumb {
-		display: grid;
-		place-items: center;
+	.property-row__picture {
 		width: 2.5rem;
 		height: 2.5rem;
-		border-radius: var(--radius-sm);
-		background: var(--color-ground);
-		color: var(--color-bronze);
-		font-weight: 700;
 	}
 
-	.property-row__logo {
-		width: 1.75rem;
-		height: 1.75rem;
-		object-fit: contain;
-	}
 
 	.property-row__text {
 		display: flex;
@@ -127,8 +113,31 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		min-width: 0;
 	}
 
-	.property-row__price {
+	/* A long place gives way before the price does. */
+	.property-row__headline {
+		display: flex;
+		gap: 0.3em;
+		min-width: 0;
 		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	.property-row__name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.property-row__index {
+		color: var(--color-bronze);
+		font-weight: 600;
+	}
+
+	.property-row__price {
+		flex: none;
+	}
+
+	.property-row__price::before {
+		content: '· ';
 	}
 
 	.property-row__facts {
