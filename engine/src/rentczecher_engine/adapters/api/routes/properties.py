@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from rentczecher_engine.adapters.api.deps import resolve_profile
-from rentczecher_engine.adapters.api.models import TrackedPropertyModel, PostingPricesModel
+from rentczecher_engine.adapters.api.models import GalleryModel, PostingPricesModel, TrackedPropertyModel
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.property import TrackedProperty
 from rentczecher_engine.domain.location import Location
@@ -27,6 +27,10 @@ def list_tracked_properties(
         ]
 
 
+def _not_tracked(profile: Profile, property_id: str) -> HTTPException:
+    return HTTPException(status_code=404, detail=f"profile {profile.id} does not track property {property_id}")
+
+
 def _resolved_location(tracked: TrackedProperty, gazetteer: Gazetteer) -> Location | None:
     if tracked.property_location is None:
         return None
@@ -44,8 +48,32 @@ def price_history(
     with deps.open_run_store() as store:
         postings = store.price_histories(profile.id, property_id)
     if postings is None:
-        raise HTTPException(status_code=404, detail=f"profile {profile.id} does not track property {property_id}")
+        raise _not_tracked(profile, property_id)
     return [PostingPricesModel.from_posting(posting) for posting in postings]
+
+
+@router.get("/v1/profiles/{profile_id}/properties/{property_id}/gallery", response_model=GalleryModel)
+def gallery(
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+) -> GalleryModel:
+    deps = request.app.state.api_deps
+    with deps.open_run_store() as store:
+        found = store.gallery(profile.id, property_id)
+    if found is None:
+        raise _not_tracked(profile, property_id)
+    return GalleryModel.from_gallery(found, request.app.state.photo_links)
+
+
+@router.put("/v1/profiles/{profile_id}/properties/{property_id}/gallery-request", status_code=204)
+def request_gallery(
+    property_id: str, request: Request, profile: Profile = Depends(resolve_profile),
+) -> None:
+    deps = request.app.state.api_deps
+    with deps.open_run_store() as store:
+        requested = store.request_gallery(profile.id, property_id)
+    if not requested:
+        raise _not_tracked(profile, property_id)
+    request.app.state.photo_worker.request_pass()
 
 
 @router.patch("/v1/profiles/{profile_id}/properties/{property_id}/viewed", status_code=204)
@@ -64,7 +92,9 @@ def mark_favourite(
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         store.mark_favourite(profile.id, property_id)
-    request.app.state.photo_worker.request_pass()
+        requested = store.request_gallery(profile.id, property_id)
+    if requested:
+        request.app.state.photo_worker.request_pass()
 
 
 @router.delete("/v1/profiles/{profile_id}/properties/{property_id}/favourite", status_code=204)

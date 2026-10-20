@@ -13,9 +13,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from rentczecher_engine.adapters.api.photo_links import PhotoLinks
 from rentczecher_engine.adapters.api.run_manager import PortalHealthEntry
 from rentczecher_engine.domain.disposition import Disposition, DispositionCode, parse_disposition
 from rentczecher_engine.domain.geo import GeoPoint
+from rentczecher_engine.domain.photo import Gallery, GalleryStatus
 from rentczecher_engine.domain.property import TrackedProperty
 from rentczecher_engine.domain.location import Location, Place, PlaceKind, PlaceMatch, PlaceRef
 from rentczecher_engine.domain.price import PostingPrices, PriceChange
@@ -262,6 +264,10 @@ class PointModel(BaseModel):
         return cls(lat=point.lat, lon=point.lon)
 
 
+class PhotoModel(BaseModel):
+    url: str = Field(description="A signed link valid while the engine runs, relative to its address.")
+
+
 class TrackedPropertyModel(BaseModel):
     id: str
     listing_id: str
@@ -338,6 +344,27 @@ class PostingPricesModel(BaseModel):
             source=posting.source,
             url=posting.url,
             changes=[PriceChangeModel.from_change(change) for change in posting.changes],
+        )
+
+
+class GalleryModel(BaseModel):
+    """A tracked property's photos: those of its listing with the most
+    photos, which may be another portal's than the one it is shown by."""
+
+    status: GalleryStatus
+    source: str
+    posting_url: str
+    photo_count: int = Field(description="How many photos the portal published, stored or not.")
+    photos: list[PhotoModel] = Field(description="The stored photos, in the portal's order.")
+
+    @classmethod
+    def from_gallery(cls, gallery: Gallery, links: PhotoLinks) -> "GalleryModel":
+        return cls(
+            status=gallery.status,
+            source=gallery.source,
+            posting_url=gallery.url,
+            photo_count=gallery.photo_count,
+            photos=[PhotoModel(url=links.link(file_key)) for file_key in gallery.file_keys],
         )
 
 
