@@ -453,6 +453,45 @@ class TestBezrealitkyParsing:
             BezrealitkyScraper(BEZ_CRITERIA, client).scrape()
 
 
+def _bez_advert_page(public_images):
+    next_data = json.dumps({"props": {"pageProps": {"origAdvert": {"id": "1", "publicImages": public_images}}}})
+    return (f'<html><body><script id="__NEXT_DATA__" type="application/json">'
+            f'{next_data}</script></body></html>')
+
+
+class TestBezrealitkyAdvertGallery:
+    """The whole gallery from the advert page's __NEXT_DATA__."""
+
+    def test_lists_every_photo_in_the_pages_order(self):
+        page = _bez_advert_page([{"url": "https://img.bezrealitky.cz/a.jpg"}, {"url": "https://img.bezrealitky.cz/b.jpg"}])
+        assert bezrealitky.gallery_from_advert_page(page) == (
+            "https://img.bezrealitky.cz/a.jpg", "https://img.bezrealitky.cz/b.jpg")
+
+    def test_lists_a_photo_once_and_skips_one_without_a_url(self):
+        page = _bez_advert_page([{"url": "https://img.bezrealitky.cz/a.jpg"}, {"url": None},
+                                 {"url": "https://img.bezrealitky.cz/a.jpg"}])
+        assert bezrealitky.gallery_from_advert_page(page) == ("https://img.bezrealitky.cz/a.jpg",)
+
+    def test_an_advert_without_photos_has_none(self):
+        assert bezrealitky.gallery_from_advert_page(_bez_advert_page([])) == ()
+
+    def test_skips_a_photo_whose_url_is_not_text(self):
+        page = _bez_advert_page([{"url": {"src": "x"}}, {"url": "https://img.bezrealitky.cz/a.jpg"}])
+        assert bezrealitky.gallery_from_advert_page(page) == ("https://img.bezrealitky.cz/a.jpg",)
+
+    @pytest.mark.parametrize("page", [
+        "<html><body>no hydration blob</body></html>",
+        '<script id="__NEXT_DATA__" type="application/json">{"props": {"pageProps": {}}}</script>',
+        '<script id="__NEXT_DATA__" type="application/json">{"props": null}</script>',
+        '<script id="__NEXT_DATA__" type="application/json">{"props": {"pageProps": null}}</script>',
+        '<script id="__NEXT_DATA__" type="application/json">[1, 2]</script>',
+        '<script id="__NEXT_DATA__" type="application/json">{not json</script>',
+    ])
+    def test_a_page_of_another_shape_is_broken(self, page):
+        with pytest.raises(ScraperBrokenError):
+            bezrealitky.gallery_from_advert_page(page)
+
+
 class TestBezrealitkyPagination:
     """Paging stops on the portal's own end, a page served again, or the page
     cap, judging repeats by the adverts a page carries before filtering."""
