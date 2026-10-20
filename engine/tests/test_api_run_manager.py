@@ -1,4 +1,5 @@
 import queue
+import threading
 from contextlib import nullcontext
 from datetime import datetime, timezone
 
@@ -39,11 +40,12 @@ def _stub_runner(outcomes: list):
     return run_profile
 
 
-def _manager(broker: EventBroker, run_profile) -> RunManager:
+def _manager(broker: EventBroker, run_profile, after_run=lambda: None) -> RunManager:
     return RunManager(
         lambda: nullcontext(None),
         broker,
         run_profile=run_profile,
+        after_run=after_run,
         clock=lambda: BASE,
     )
 
@@ -60,6 +62,18 @@ class TestRunManager:
         kinds = [event.kind for event in collected]
         assert kinds == ["run_started", "run_progress", "run_finished", "listings_arrived"]
         assert all(event.data["run_id"] == run_id for event in collected)
+
+    def test_asks_for_the_after_run_step_once_each_run_is_done(self):
+        """after_run follows every run, a failed one included."""
+        done = threading.Semaphore(0)
+
+        def failing(profile, deps, *, dry_run=False, on_scraper_done=None):
+            raise RuntimeError("portal exploded")
+
+        manager = _manager(EventBroker(), failing, after_run=done.release)
+        manager.trigger(MATEJ)
+        manager.trigger(MATEJ)
+        assert done.acquire(timeout=2) and done.acquire(timeout=2)
 
     def test_a_run_executes_the_triggered_profile_under_its_id(self):
         """The runner receives the profile that was triggered, and every
