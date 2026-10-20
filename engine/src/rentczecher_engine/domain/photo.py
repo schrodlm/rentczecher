@@ -26,6 +26,16 @@ class PendingPhoto:
     source: str
 
 
+@dataclass(frozen=True, slots=True)
+class PendingAdvertPage:
+    """An advert page to read for the whole gallery it lists."""
+
+    property_id: str
+    listing_id: str
+    source: str
+    url: str
+
+
 GalleryStatus = Literal["none", "downloading", "stored", "failed"]
 
 
@@ -41,7 +51,9 @@ class Gallery:
     status: GalleryStatus
 
 
-def gallery_status(photo_count: int, stored: int, pending: int) -> GalleryStatus:
+def gallery_status(photo_count: int, stored: int, pending: int, reading_advert_page: bool) -> GalleryStatus:
+    if reading_advert_page:
+        return "downloading"
     if photo_count == 0:
         return "none"
     if pending > 0:

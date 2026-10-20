@@ -357,7 +357,8 @@ class GalleryModel(BaseModel):
     status: GalleryStatus
     source: str
     posting_url: str
-    photo_count: int = Field(description="How many photos the portal published, stored or not.")
+    photo_count: int = Field(description="How many photos are known, stored or not, the count growing once "
+                                         "the advert's own page is read.")
     photos: list[PhotoModel] = Field(description="The stored photos, in the portal's order.")
 
     @classmethod

@@ -1,6 +1,13 @@
 import sqlite3
 
-from rentczecher_engine.domain.photo import GALLERY_LIMIT, MAX_ATTEMPTS, Gallery, PendingPhoto, gallery_status
+from rentczecher_engine.domain.photo import (
+    GALLERY_LIMIT,
+    MAX_ATTEMPTS,
+    Gallery,
+    PendingAdvertPage,
+    PendingPhoto,
+    gallery_status,
+)
 
 # Each property's gallery listing: the one of its listings with the most
 # photos, the lowest id among equals.
@@ -40,6 +47,14 @@ class SqlitePhotoRepository:
             source=row["source"],
         )
 
+    def _to_pending_advert_page(self, row: sqlite3.Row) -> PendingAdvertPage:
+        return PendingAdvertPage(
+            property_id=row["property_id"],
+            listing_id=row["listing_id"],
+            source=row["source"],
+            url=row["url"],
+        )
+
     def record_gallery(self, listing_id: str, photo_urls: tuple[str, ...], *, on_advert_page: bool = False) -> None:
         """Records a listing's gallery the first time a scan sees it. A
         gallery already recorded stays as it is."""
@@ -64,6 +79,54 @@ class SqlitePhotoRepository:
         """
         self._conn.execute(stmt, (property_id, requested_at))
         return True
+
+    def requested_advert_pages(self) -> list[PendingAdvertPage]:
+        """The unread advert page of every requested gallery that only its
+        advert's page lists in whole, the latest request first."""
+        stmt = _GALLERY_LISTINGS + """
+            SELECT listings.property_id AS property_id, listings.id AS listing_id,
+                   listings.source AS source, listings.url AS url
+            FROM gallery_listings
+            JOIN listings ON listings.id = gallery_listings.listing_id
+            JOIN gallery_requests ON gallery_requests.property_id = listings.property_id
+            JOIN advert_page_reads ON advert_page_reads.listing_id = listings.id
+            WHERE advert_page_reads.read_at IS NULL AND advert_page_reads.attempts < ?
+            ORDER BY gallery_requests.requested_at DESC, listings.id
+        """
+        rows = self._conn.execute(stmt, (MAX_ATTEMPTS,))
+        return [self._to_pending_advert_page(row) for row in rows]
+
+    def record_advert_gallery(self, listing_id: str, photo_urls: tuple[str, ...], read_at: str) -> None:
+        """Replaces the listing's gallery with the one its advert page lists.
+        A photo the page lists again keeps its stored file and its attempts,
+        and a page listing none leaves the search's photos in place. A listing
+        deleted while its page was read is left alone."""
+        stmt = "UPDATE advert_page_reads SET read_at = ? WHERE listing_id = ?"
+        if self._conn.execute(stmt, (read_at, listing_id)).rowcount == 0 or not photo_urls:
+            return
+        stmt = "SELECT source_url, file_key, attempts FROM listing_photos WHERE listing_id = ?"
+        previous_by_url = {row["source_url"]: row for row in self._conn.execute(stmt, (listing_id,)).fetchall()}
+        stmt = "DELETE FROM listing_photos WHERE listing_id = ?"
+        self._conn.execute(stmt, (listing_id,))
+        stmt = """
+            INSERT INTO listing_photos (listing_id, position, source_url, file_key, attempts)
+            VALUES (?, ?, ?, ?, ?)
+        """
+        for position, source_url in enumerate(photo_urls[:GALLERY_LIMIT]):
+            previous = previous_by_url.pop(source_url, None)
+            file_key = previous["file_key"] if previous is not None else None
+            attempts = previous["attempts"] if previous is not None else 0
+            self._conn.execute(stmt, (listing_id, position, source_url, file_key, attempts))
+
+    def count_advert_failure(self, listing_id: str, give_up: bool) -> None:
+        """Counts a failed read of the advert page, or gives the page up at
+        once, the listing keeping the photos its search result gave."""
+        if give_up:
+            stmt = "UPDATE advert_page_reads SET attempts = ? WHERE listing_id = ?"
+            self._conn.execute(stmt, (MAX_ATTEMPTS, listing_id))
+        else:
+            stmt = "UPDATE advert_page_reads SET attempts = attempts + 1 WHERE listing_id = ?"
+            self._conn.execute(stmt, (listing_id,))
 
     def requested_photos(self) -> list[PendingPhoto]:
         """The unstored photos of every requested gallery, the latest request
@@ -144,12 +207,16 @@ class SqlitePhotoRepository:
             return None
         stmt = _GALLERY_LISTINGS + """
             SELECT listings.id AS listing_id, listings.source AS source, listings.url AS url,
-                   EXISTS (SELECT 1 FROM gallery_requests WHERE property_id = listings.property_id) AS requested
+                   EXISTS (SELECT 1 FROM gallery_requests WHERE property_id = listings.property_id) AS requested,
+                   EXISTS (
+                       SELECT 1 FROM advert_page_reads
+                       WHERE listing_id = listings.id AND read_at IS NULL AND attempts < ?
+                   ) AS advert_page_unread
             FROM gallery_listings
             JOIN listings ON listings.id = gallery_listings.listing_id
             WHERE gallery_listings.property_id = ?
         """
-        listing = self._conn.execute(stmt, (property_id,)).fetchone()
+        listing = self._conn.execute(stmt, (MAX_ATTEMPTS, property_id)).fetchone()
         if listing is None:
             return None
         stmt = """
@@ -168,7 +235,8 @@ class SqlitePhotoRepository:
             url=listing["url"],
             photo_count=len(photos),
             file_keys=file_keys,
-            status=gallery_status(len(photos), len(file_keys), pending),
+            status=gallery_status(len(photos), len(file_keys), pending,
+                                  reading_advert_page=bool(listing["requested"] and listing["advert_page_unread"])),
         )
 
     def _tracks(self, profile_id: str, property_id: str) -> bool:

@@ -262,7 +262,7 @@
         "description": "A tracked property's photos: those of its listing with the most\nphotos, which may be another portal's than the one it is shown by.",
         "properties": {
           "photo_count": {
-            "description": "How many photos the portal published, stored or not.",
+            "description": "How many photos are known, stored or not, the count growing once the advert's own page is read.",
             "title": "Photo Count",
             "type": "integer"
           },
