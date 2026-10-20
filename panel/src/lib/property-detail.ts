@@ -7,11 +7,33 @@ export function layoutOf(listing: TrackedPropertyModel, t: Translator): string |
 	return listing.disposition ?? listing.disposition_raw_text;
 }
 
-/* The listing's layout, size and place in one line, leaving out what it lacks. */
+/* The listing's layout and size in one line, leaving out what it lacks. */
 export function factsOf(listing: TrackedPropertyModel, t: Translator): string {
-	return [layoutOf(listing, t), listing.size_m2 === null ? null : t.area(listing.size_m2), listing.location_raw_text]
+	return [layoutOf(listing, t), listing.size_m2 === null ? null : t.area(listing.size_m2)]
 		.filter((fact) => fact !== null)
 		.join(' · ');
+}
+
+/* Where the listing lies, as the two finest different names of its place,
+such as its street and part of town. The portal's own words stand in while
+the place is not known. */
+export function placeOf(listing: TrackedPropertyModel): string | null {
+	const location = listing.resolved_location;
+	if (location === null) return listing.location_raw_text;
+	const finestFirst = [
+		location.ulice,
+		location.cast_obce,
+		location.mestska_cast,
+		location.obvod,
+		location.obec,
+		location.okres,
+		location.kraj
+	];
+	const names: string[] = [];
+	for (const place of finestFirst) {
+		if (place !== null && !names.includes(place.name)) names.push(place.name);
+	}
+	return names.slice(0, 2).join(', ');
 }
 
 /* Where one fact of a listing, such as its price, sits among the same fact
