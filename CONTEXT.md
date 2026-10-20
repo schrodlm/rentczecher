@@ -34,7 +34,9 @@ _Avoid_: image, picture
 
 **Gallery**:
 A listing's photos in the portal's order, at most twenty. A tracked property
-shows the gallery of its listing with the most photos.
+shows the gallery of its listing with the most photos. Its first is the main
+photo, the one fetched for every flat. The rest are fetched once a user opens
+or stars the flat.
 _Avoid_: album, photos (for the set)
 
 **Inbox**:
