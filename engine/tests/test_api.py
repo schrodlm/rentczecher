@@ -23,6 +23,7 @@ from rentczecher_engine.adapters.api.auth import BearerOrQueryTokenAuth
 from rentczecher_engine.adapters.api.deps import ApiDeps
 from rentczecher_engine.adapters.api.events import EventBroker, RunEvent
 from rentczecher_engine.adapters.api.routes.events import iter_sse_events
+from rentczecher_engine.adapters.photos.store import FilePhotoStore
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.dedup import DedupOutcome
@@ -467,6 +468,63 @@ class TestMarkViewed:
         listings = client.get(
             f"/v1/profiles/{praha7.id}/properties", headers=_auth(), params={"filter": "all"}).json()
         assert listings[0]["viewed_at"] is not None
+
+
+class TestGallery:
+    def _with_photos(self, tmp_path, profile_id):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps, profile_id)
+        file_key = FilePhotoStore(deps.photos_dir).put(b"jpeg", "image/jpeg")
+        with closing(connection.connect(deps.db_path)) as conn:
+            conn.execute("INSERT INTO listing_photos (listing_id, position, source_url, file_key) "
+                         "VALUES ('sreality:1', 0, 'https://img.example/0.jpg', ?)", (file_key,))
+            conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) "
+                         "VALUES ('sreality:1', 1, 'https://img.example/1.jpg')")
+            conn.commit()
+        client = _client(tmp_path)
+        return client, _tracked_property_id(client, profile_id)
+
+    def test_serves_the_stored_photos_as_signed_links(self, tmp_path, praha7):
+        client, property_id = self._with_photos(tmp_path, praha7.id)
+        gallery = client.get(f"/v1/profiles/{praha7.id}/properties/{property_id}/gallery", headers=_auth()).json()
+        assert (gallery["status"], gallery["source"], gallery["posting_url"], gallery["photo_count"]) == (
+            "stored", "sreality", "https://example.com/1", 2)
+        (photo,) = gallery["photos"]
+        assert client.get(photo["url"]).content == b"jpeg"
+
+    def test_an_untracked_flat_has_no_gallery(self, tmp_path, praha7):
+        response = _client(tmp_path).get(f"/v1/profiles/{praha7.id}/properties/prop-unknown/gallery",
+                                          headers=_auth())
+        assert response.status_code == 404
+
+    def test_asking_for_the_whole_gallery_downloads_the_rest(self, tmp_path, praha7):
+        client, property_id = self._with_photos(tmp_path, praha7.id)
+        client.app.state.photo_worker = _PassRecorder()
+        path = f"/v1/profiles/{praha7.id}/properties/{property_id}"
+        assert client.put(f"{path}/gallery-request", headers=_auth()).status_code == 204
+        assert client.get(f"{path}/gallery", headers=_auth()).json()["status"] == "downloading"
+        assert client.app.state.photo_worker.passes == 1
+
+    def test_asking_for_an_untracked_flats_gallery_is_not_found(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        client.app.state.photo_worker = _PassRecorder()
+        response = client.put(f"/v1/profiles/{praha7.id}/properties/prop-unknown/gallery-request", headers=_auth())
+        assert response.status_code == 404
+        assert client.app.state.photo_worker.passes == 0
+
+    def test_starring_asks_for_the_whole_gallery(self, tmp_path, praha7):
+        client, property_id = self._with_photos(tmp_path, praha7.id)
+        client.app.state.photo_worker = _PassRecorder()
+        path = f"/v1/profiles/{praha7.id}/properties/{property_id}"
+        client.put(f"{path}/favourite", headers=_auth())
+        assert client.get(f"{path}/gallery", headers=_auth()).json()["status"] == "downloading"
+
+    def test_starring_an_untracked_flat_asks_for_nothing(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        client.app.state.photo_worker = _PassRecorder()
+        response = client.put(f"/v1/profiles/{praha7.id}/properties/prop-unknown/favourite", headers=_auth())
+        assert response.status_code == 204
+        assert client.app.state.photo_worker.passes == 0
 
 
 class TestFavourite:
