@@ -19,6 +19,9 @@
 	} from '$lib/property-detail';
 	import MapCredit from '$lib/map/MapCredit.svelte';
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
+	import StreetMap from '$lib/map/StreetMap.svelte';
+	import StreetMapCredit from '$lib/map/StreetMapCredit.svelte';
+	import StreetMapWindow from '$lib/map/StreetMapWindow.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
 	import PhotoCollage from './PhotoCollage.svelte';
@@ -46,6 +49,8 @@
 	} = $props();
 
 	const t = getTranslatorContext();
+
+	let streetMapOpen = $state(false);
 
 	const portal = $derived(shownPortal(listing.source));
 	const favourite = $derived(listing.favourited_at !== null);
@@ -253,6 +258,24 @@
 			</section>
 		{/if}
 
+		{#if listing.point !== null}
+			{@const point = listing.point}
+			<section class="property-detail__panel">
+				<h3>{t.t('Map')}</h3>
+				<div class="property-detail__map property-detail__street">
+					<StreetMap {point} wholeWindow={false} />
+					<button
+						type="button"
+						class="property-detail__expand"
+						aria-label={t.t('Open the map over the whole window')}
+						onclick={() => (streetMapOpen = true)}>⤢</button
+					>
+				</div>
+				{#if streetMapOpen}<StreetMapWindow {point} onclose={() => (streetMapOpen = false)} />{/if}
+				<div class="property-detail__map-credit"><StreetMapCredit /></div>
+			</section>
+		{/if}
+
 		<section class="property-detail__panel">
 			<h3>{t.t('History')}</h3>
 			<ol class="property-detail__history">
@@ -418,6 +441,30 @@
 
 	.property-detail__map {
 		height: 14rem;
+	}
+
+	.property-detail__street {
+		position: relative;
+	}
+
+	/* Above Leaflet's own panes and controls. */
+	.property-detail__expand {
+		position: absolute;
+		top: var(--space-2);
+		right: var(--space-2);
+		z-index: 1000;
+		width: 1.875rem;
+		height: 1.875rem;
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-sm);
+		background: var(--color-card);
+		color: var(--color-ink);
+		font-size: 1rem;
+		cursor: zoom-in;
+	}
+
+	.property-detail__expand:hover {
+		color: var(--color-amber);
 	}
 
 	.property-detail__map-credit {
