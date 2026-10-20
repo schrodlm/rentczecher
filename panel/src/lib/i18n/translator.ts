@@ -107,6 +107,15 @@ export class Translator {
 		return `${this.number(m2)}${NBSP}m²`;
 	}
 
+	/* Metres to the nearest ten under a kilometre, kilometres to a tenth from
+	there. */
+	distance(metres: number): string {
+		const rounded = Math.round(metres / 10) * 10;
+		if (rounded < 1000) return `${this.number(rounded)}${NBSP}m`;
+		const kilometres = (rounded / 1000).toLocaleString(this.locale, { maximumFractionDigits: 1 });
+		return `${kilometres}${NBSP}km`;
+	}
+
 	/* A number as a slider's box shows it, and an empty box for no number.
 	parseTypedNumber reads it back. */
 	typedNumber(value: number | null): string {
