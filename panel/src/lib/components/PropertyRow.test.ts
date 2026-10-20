@@ -1,15 +1,22 @@
 import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
+import type { NearbyKind } from '$lib/nearby/kinds';
 import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 import PropertyRow from './PropertyRow.svelte';
 
-async function renderRow(overrides = {}, score: number | null = 78, selected = false) {
+async function renderRow(
+	overrides = {},
+	score: number | null = 78,
+	selected = false,
+	nearby: { kind: NearbyKind; distanceM: number }[] = []
+) {
 	const onselect = vi.fn();
 	const rendered = await renderWithTranslator(PropertyRow, {
 		listing: trackedProperty('sreality:1', { price: 21500, size_m2: 54, location_raw_text: 'Praha 7', ...overrides }),
 		id: 'row-sreality:1',
 		score,
+		nearby,
 		selected,
 		onselect
 	});
@@ -34,6 +41,21 @@ describe('PropertyRow', () => {
 		expect(row).toHaveTextContent('21 500 Kč');
 		expect(row).toHaveTextContent('2+kk · 54 m²');
 		expect(row).toHaveTextContent('78');
+	});
+
+	test('shows how far the nearest of what its profile tracks lies', async () => {
+		const { container } = await renderRow({}, 78, false, [
+			{ kind: 'metro', distanceM: 447 },
+			{ kind: 'tram', distanceM: 120 }
+		]);
+		expect(container.querySelector('.property-row__nearby')?.textContent?.replace(/\s/g, ' ').trim()).toBe(
+			'Metro 450 m · Tramvaj 120 m'
+		);
+	});
+
+	test('leaves the nearby line out when there is nothing to show', async () => {
+		const { container } = await renderRow();
+		expect(container.querySelector('.property-row__nearby')).toBeNull();
 	});
 
 	test('reports a click as wanting to be selected', async () => {
