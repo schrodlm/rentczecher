@@ -161,3 +161,5 @@ a name of its own.
 
 Place data: **ČÚZK, 2026**, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.cs),
 modified. [Details](docs/data.md)
+
+Street maps: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
