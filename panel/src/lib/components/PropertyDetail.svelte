@@ -12,6 +12,7 @@
 		percentAbove,
 		percentBelow,
 		percentFromMiddle,
+		placeOf,
 		pricePerM2,
 		standingOf,
 		type PropertyEvent,
@@ -26,6 +27,7 @@
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
 	import PhotoCollage from './PhotoCollage.svelte';
+	import PropertyPicture from './PropertyPicture.svelte';
 	import PriceChart from './PriceChart.svelte';
 	import ScoreRing from './ScoreRing.svelte';
 	import StandingStrip from './StandingStrip.svelte';
@@ -143,12 +145,12 @@
 <article class="property-detail">
 	{#if gallery !== null}<PhotoCollage {gallery} />{/if}
 	<header class="property-detail__head">
-		<span class="property-detail__logo">
-			{#if portal}<img src={portal.logo} alt="" />{/if}
-		</span>
+		<span class="property-detail__picture"><PropertyPicture {listing} /></span>
 		<div class="property-detail__headline">
-			<div class="property-detail__price">
-				{listing.price === null ? '–' : t.price(listing.price)}
+			<div class="property-detail__title">
+				<span class="property-detail__index">#{listing.index}</span>
+				{placeOf(listing) ?? ''}
+				<span class="property-detail__price">{listing.price === null ? '–' : t.price(listing.price)}</span>
 				{#if listing.price !== null && listing.size_m2 !== null}
 					<small>{t.pricePerM2(listing.price, listing.size_m2)}</small>
 				{/if}
@@ -310,27 +312,26 @@
 		gap: var(--space-4);
 	}
 
-	.property-detail__logo {
-		display: grid;
-		place-items: center;
+	.property-detail__picture {
 		width: 4.5rem;
 		height: 4.5rem;
-		border-radius: var(--radius-md);
-		background: var(--color-card);
 	}
 
-	.property-detail__logo img {
-		width: 3rem;
-		height: 3rem;
-		object-fit: contain;
-	}
-
-	.property-detail__price {
+	.property-detail__title {
 		font-size: 1.75rem;
 		font-weight: 800;
 	}
 
-	.property-detail__price small {
+	.property-detail__index {
+		color: var(--color-bronze);
+		font-weight: 600;
+	}
+
+	.property-detail__price::before {
+		content: '· ';
+	}
+
+	.property-detail__title small {
 		margin-left: var(--space-2);
 		color: var(--color-bronze);
 		font-size: 0.9375rem;
