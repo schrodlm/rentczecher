@@ -21,7 +21,7 @@ describe('PropertyRow', () => {
 		const { getByRole } = await renderRow();
 		const row = getByRole('option');
 		expect(row).toHaveTextContent('21 500 Kč');
-		expect(row).toHaveTextContent('2+kk · 54 m² · Praha 7');
+		expect(row).toHaveTextContent('2+kk · 54 m²');
 		expect(row).toHaveTextContent('78');
 	});
 
