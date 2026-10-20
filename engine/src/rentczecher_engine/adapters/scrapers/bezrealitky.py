@@ -248,6 +248,7 @@ class BezrealitkyScraper(BaseScraper):
             parsed_place=_parse_location(address),
             url=f"{DETAIL_BASE}/{uri}",
             photo_urls=(main_photo_url,) if main_photo_url else (),
+            gallery_on_advert_page=True,
             size_m2=int(float(surface)) if surface else None,
             disposition_raw_text=disposition if disposition else None,
             lat=lat,

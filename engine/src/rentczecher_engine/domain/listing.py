@@ -21,6 +21,9 @@ class ScrapedListing:
     url: str
     # The listing's gallery as each photo's portal URL, the main one first.
     photo_urls: tuple[str, ...] = ()
+    # Set when only the advert's own page lists the whole gallery, so
+    # photo_urls holds just what the search results show.
+    gallery_on_advert_page: bool = False
     size_m2: int | None = None
     disposition_raw_text: str | None = None
     lat: float | None = None
@@ -89,6 +92,10 @@ class Listing:
     @property
     def photo_urls(self) -> tuple[str, ...]:
         return self.scraped.photo_urls
+
+    @property
+    def gallery_on_advert_page(self) -> bool:
+        return self.scraped.gallery_on_advert_page
 
     @property
     def size_m2(self) -> int | None:
