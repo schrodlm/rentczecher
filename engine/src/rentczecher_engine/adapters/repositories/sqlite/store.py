@@ -132,7 +132,8 @@ class SqliteRunStore:
                 for listing in members:
                     self._listings.upsert(
                         profile_id, property_by_keeper[keeper_id], listing)
-                    self._photos.record_gallery(listing.id, listing.photo_urls)
+                    self._photos.record_gallery(listing.id, listing.photo_urls,
+                                               on_advert_page=listing.gallery_on_advert_page)
 
             for merge in outcome.merges:
                 self._properties.record_dedup(
