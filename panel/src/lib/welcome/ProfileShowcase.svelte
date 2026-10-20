@@ -48,7 +48,14 @@
 				</div>
 				<span class="showcase__arrow" aria-hidden="true">→</span>
 				<div class="showcase__rows">
-					<PropertyRow listing={ONE_FLAT} id="showcase-one" score={null} selected={false} onselect={() => {}} />
+					<PropertyRow
+						listing={ONE_FLAT}
+						id="showcase-one"
+						score={null}
+						nearby={[]}
+						selected={false}
+						onselect={() => {}}
+					/>
 				</div>
 			</div>
 			<h3>{t.t('It watches the portals for you')}</h3>
@@ -66,6 +73,7 @@
 							listing={ranked.flat}
 							id="showcase-{ranked.flat.id}"
 							score={ranked.score}
+							nearby={[]}
 							selected={ranked.flat === ONE_FLAT}
 							onselect={() => {}}
 						/>

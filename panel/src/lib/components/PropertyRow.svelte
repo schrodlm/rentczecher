@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { TrackedPropertyModel } from '$lib/api/client';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { kindName } from '$lib/nearby/kinds';
+	import type { KindDistance } from '$lib/nearby/nearby-store.svelte';
 	import { factsOf, placeOf } from '$lib/property-detail';
 	import PropertyPicture from './PropertyPicture.svelte';
 	import ScoreRing from './ScoreRing.svelte';
@@ -11,12 +13,14 @@
 		listing,
 		id,
 		score,
+		nearby,
 		selected,
 		onselect
 	}: {
 		listing: TrackedPropertyModel;
 		id: string;
 		score: number | null;
+		nearby: readonly KindDistance[];
 		selected: boolean;
 		onselect: () => void;
 	} = $props();
@@ -50,6 +54,11 @@ a row focuses the list and a screen reader follows the selection from there. -->
 			<span class="property-row__price">{listing.price === null ? '–' : t.price(listing.price)}</span>
 		</span>
 		<span class="property-row__facts">{facts}</span>
+		{#if nearby.length > 0}
+			<span class="property-row__nearby">
+				{nearby.map((each) => `${kindName(each.kind, t)} ${t.distance(each.distanceM)}`).join(' · ')}
+			</span>
+		{/if}
 	</span>
 	{#if favourite}
 		<span class="property-row__star" aria-label={t.t('Favourite')}>★</span>
@@ -103,10 +112,8 @@ a row focuses the list and a screen reader follows the selection from there. -->
 	}
 
 	.property-row__picture {
-		width: 2.875rem;
 		height: 2.875rem;
 	}
-
 
 	.property-row__text {
 		display: flex;
@@ -140,6 +147,14 @@ a row focuses the list and a screen reader follows the selection from there. -->
 
 	.property-row__price::before {
 		content: '· ';
+	}
+
+	.property-row__nearby {
+		overflow: hidden;
+		color: var(--color-bronze);
+		font-size: 0.8125rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.property-row__facts {
