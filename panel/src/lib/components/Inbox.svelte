@@ -281,7 +281,7 @@
 <style>
 	.inbox {
 		display: grid;
-		grid-template-columns: minmax(20rem, 26rem) 1fr;
+		grid-template-columns: minmax(24rem, 34rem) 1fr;
 		flex: 1;
 		min-height: 0;
 	}

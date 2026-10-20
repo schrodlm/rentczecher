@@ -61,10 +61,10 @@ a row focuses the list and a screen reader follows the selection from there. -->
 <style>
 	.property-row {
 		display: grid;
-		grid-template-columns: 2.5rem 1fr auto auto;
+		grid-template-columns: 2.875rem 1fr auto auto;
 		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2);
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-3);
 		border: 1px solid transparent;
 		border-left: 3px solid transparent;
 		border-radius: var(--radius-md);
@@ -102,8 +102,8 @@ a row focuses the list and a screen reader follows the selection from there. -->
 	}
 
 	.property-row__picture {
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.875rem;
+		height: 2.875rem;
 	}
 
 
@@ -118,6 +118,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		display: flex;
 		gap: 0.3em;
 		min-width: 0;
+		font-size: 1rem;
 		font-weight: 700;
 		white-space: nowrap;
 	}
@@ -143,7 +144,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 	.property-row__facts {
 		overflow: hidden;
 		color: var(--color-bronze);
-		font-size: 0.8125rem;
+		font-size: 0.875rem;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
