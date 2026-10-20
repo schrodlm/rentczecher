@@ -111,15 +111,17 @@ class SqlitePropertyRepository(PropertyRepository):
         tombstone: it stays while a profile tracks it or another property is
         folded into it, but is never a merge target. Each profile's tracking of
         the loser is copied onto the winner, where the flat stays viewed and
-        starred since the first of the two was. The loser keeps its own, since
-        a listing the merge did not move stays on it and still shows there.
-        A request for the loser's whole gallery carries over to the winner."""
+        starred since the first of the two was, and keeps the earlier of the
+        two indexes. The loser keeps its own, since a listing the merge did not
+        move stays on it and still shows there. A request for the loser's
+        whole gallery carries over to the winner."""
         stmt = "UPDATE properties SET merged_into = ? WHERE id = ?"
         self._conn.execute(stmt, (winner_id, loser_id))
         stmt = """
-            INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at)
-            SELECT profile_id, ?, viewed_at, favourited_at FROM property_tracking WHERE property_id = ?
+            INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at, profile_index)
+            SELECT profile_id, ?, viewed_at, favourited_at, profile_index FROM property_tracking WHERE property_id = ?
             ON CONFLICT (profile_id, property_id) DO UPDATE SET
+                profile_index = min(property_tracking.profile_index, excluded.profile_index),
                 viewed_at = CASE
                     WHEN property_tracking.viewed_at IS NULL THEN excluded.viewed_at
                     WHEN excluded.viewed_at IS NULL THEN property_tracking.viewed_at

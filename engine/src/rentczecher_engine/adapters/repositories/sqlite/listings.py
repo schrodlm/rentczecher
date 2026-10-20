@@ -69,14 +69,22 @@ class SqliteListingRepository(ListingRepository):
                 WHERE profile_id = ? AND listing_id = ?
             """
             self._conn.execute(update, (now, profile_id, listing.id))
-        insert = """
-            INSERT INTO property_tracking (profile_id, property_id) VALUES (?, ?)
-            ON CONFLICT (profile_id, property_id) DO NOTHING
-        """
-        self._conn.execute(insert, (profile_id, property_id))
+        self._track_property(profile_id, property_id)
         self.record_price_observation(PriceObservation(
             listing_id=listing.id, price=listing.price,
             charges=listing.charges, observed_at=now))
+
+    def _track_property(self, profile_id: str, property_id: str) -> None:
+        """Tracks the property for the profile, indexed next in the order
+        the profile found its flats, unless it already does."""
+        stmt = "SELECT 1 FROM property_tracking WHERE profile_id = ? AND property_id = ?"
+        if self._conn.execute(stmt, (profile_id, property_id)).fetchone() is not None:
+            return
+        stmt = """
+            INSERT INTO property_tracking (profile_id, property_id, profile_index)
+            SELECT ?, ?, coalesce(max(profile_index), 0) + 1 FROM property_tracking WHERE profile_id = ?
+        """
+        self._conn.execute(stmt, (profile_id, property_id, profile_id))
 
     def mark_viewed(self, profile_id: str, property_id: str) -> None:
         """Records the property as viewed by the profile, without
