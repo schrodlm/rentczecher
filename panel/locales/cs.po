@@ -702,3 +702,18 @@ msgstr "Krok {n} z {count}"
 
 msgid "RÚIAN place data, modified: names and centre points kept, outlines traced from the centre points"
 msgstr "Data míst z RÚIAN, upravená: zachovaná jména a středy míst, obrysy dopočtené ze středů"
+
+msgid "Photos"
+msgstr "Fotky"
+
+msgid "Previous photo"
+msgstr "Předchozí fotka"
+
+msgid "Next photo"
+msgstr "Další fotka"
+
+msgid "Photos: {portal}"
+msgstr "Foto: {portal}"
+
+msgid "Downloading more photos…"
+msgstr "Stahuji další fotky…"
