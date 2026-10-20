@@ -20,6 +20,7 @@ export function trackedProperty(id: string, overrides: Partial<TrackedPropertyMo
 		price: 21000,
 		price_drop_from: null,
 		sibling_sources: [],
+		main_photo: null,
 		...overrides
 	};
 }
