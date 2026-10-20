@@ -258,6 +258,51 @@
         "title": "GalleryChangedEvent",
         "type": "object"
       },
+      "GalleryModel": {
+        "description": "A tracked property's photos: those of its listing with the most\nphotos, which may be another portal's than the one it is shown by.",
+        "properties": {
+          "photo_count": {
+            "description": "How many photos the portal published, stored or not.",
+            "title": "Photo Count",
+            "type": "integer"
+          },
+          "photos": {
+            "description": "The stored photos, in the portal's order.",
+            "items": {
+              "$ref": "#/components/schemas/PhotoModel"
+            },
+            "title": "Photos",
+            "type": "array"
+          },
+          "posting_url": {
+            "title": "Posting Url",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "none",
+              "downloading",
+              "stored",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "source",
+          "posting_url",
+          "photo_count",
+          "photos"
+        ],
+        "title": "GalleryModel",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -493,6 +538,20 @@
           "preferences"
         ],
         "title": "NewProfileBody",
+        "type": "object"
+      },
+      "PhotoModel": {
+        "properties": {
+          "url": {
+            "description": "A signed link valid while the engine runs, relative to its address.",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "PhotoModel",
         "type": "object"
       },
       "PlaceModel": {
@@ -2116,6 +2175,127 @@
           }
         },
         "summary": "Mark Favourite"
+      }
+    },
+    "/v1/profiles/{profile_id}/properties/{property_id}/gallery": {
+      "get": {
+        "operationId": "gallery_v1_profiles__profile_id__properties__property_id__gallery_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gallery"
+      }
+    },
+    "/v1/profiles/{profile_id}/properties/{property_id}/gallery-request": {
+      "put": {
+        "operationId": "request_gallery_v1_profiles__profile_id__properties__property_id__gallery_request_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "title": "Property Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Gallery"
       }
     },
     "/v1/profiles/{profile_id}/properties/{property_id}/price-history": {
