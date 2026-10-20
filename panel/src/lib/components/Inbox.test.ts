@@ -75,6 +75,7 @@ async function renderWithFavourites() {
 
 beforeEach(() => {
 	Element.prototype.scrollIntoView = vi.fn();
+	localStorage.clear();
 });
 
 describe('Inbox', () => {
@@ -272,6 +273,32 @@ describe('Inbox', () => {
 			onfavourite: () => {}
 		});
 		expect(getByText('Zatím žádné inzeráty. Najde je scan.')).toBeInTheDocument();
+	});
+});
+
+describe('Inbox sections', () => {
+	test('folds a section away and back', async () => {
+		const { getByRole, section } = await renderInbox();
+		const fold = getByRole('button', { name: /^Nové/ });
+		await fireEvent.click(fold);
+		expect(fold).toHaveAttribute('aria-expanded', 'false');
+		expect(within(section('Nové')).queryAllByRole('option')).toHaveLength(0);
+		await fireEvent.click(fold);
+		expect(within(section('Nové')).getAllByRole('option')).toHaveLength(2);
+	});
+
+	test('leaves a folded section out of stepping, the selection moving to what is shown', async () => {
+		const { getByRole } = await renderInbox();
+		await fireEvent.click(getByRole('button', { name: /^Nové/ }));
+		expect(getByRole('option', { selected: true })).toHaveTextContent('30 000 Kč');
+	});
+
+	test('keeps a section folded when the inbox opens again', async () => {
+		const first = await renderInbox();
+		await fireEvent.click(first.getByRole('button', { name: /^Nové/ }));
+		first.unmount();
+		const { getByRole } = await renderInbox();
+		expect(getByRole('button', { name: /^Nové/ })).toHaveAttribute('aria-expanded', 'false');
 	});
 });
 
