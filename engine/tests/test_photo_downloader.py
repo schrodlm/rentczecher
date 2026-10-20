@@ -4,8 +4,10 @@ database, the files and the image servers.
 Run: python3 -m pytest tests/test_photo_downloader.py -v
 """
 
-from rentczecher_engine.domain.errors import PhotoFetchError, PhotoGoneError, PhotoRefusedError
-from rentczecher_engine.domain.photo import FetchedPhoto, PendingPhoto
+import pytest
+
+from rentczecher_engine.domain.errors import PhotoFetchError, PhotoGoneError, PhotoRefusedError, ScraperBrokenError
+from rentczecher_engine.domain.photo import FetchedPhoto, PendingAdvertPage, PendingPhoto
 from rentczecher_engine.services import photos
 from rentczecher_engine.services.photos import PhotoDownloader
 
@@ -16,14 +18,31 @@ def _photo(property_id, position=0, source="sreality"):
                         source_url=f"https://img.example/{listing_id}/{position}.jpg", source=source)
 
 
+def _advert_page(property_id, source="bezrealitky"):
+    return PendingAdvertPage(property_id=property_id, listing_id=f"{source}:{property_id}", source=source,
+                             url=f"https://portal.example/{source}/{property_id}")
+
+
 class FakeRecords:
-    def __init__(self, requested=(), main=(), file_keys=(), vanished=()):
+    def __init__(self, requested=(), main=(), file_keys=(), vanished=(), advert_pages=()):
+        self.advert_pages = list(advert_pages)
+        self.advert_galleries: list[tuple[str, tuple[str, ...]]] = []
+        self.advert_failures: list[tuple[str, bool]] = []
         self.requested = list(requested)
         self.main = list(main)
         self.stored_file_keys = set(file_keys)
         self.vanished = set(vanished)
         self.stored: list[tuple[str, int, str]] = []
         self.failures: list[tuple[str, int, bool]] = []
+
+    def requested_advert_pages(self):
+        return self.advert_pages
+
+    def record_advert_gallery(self, page, photo_urls):
+        self.advert_galleries.append((page.listing_id, photo_urls))
+
+    def count_advert_failure(self, page, give_up):
+        self.advert_failures.append((page.listing_id, give_up))
 
     def requested_photos(self):
         return self.requested
@@ -69,9 +88,9 @@ class FakePhotoStore:
 
 
 class FakeFetcher:
-    def __init__(self, errors=None):
+    def __init__(self, errors=None, requests=None):
         self.errors = errors or {}
-        self.fetched: list[str] = []
+        self.fetched = requests if requests is not None else []
 
     def fetch(self, url):
         self.fetched.append(url)
@@ -80,9 +99,22 @@ class FakeFetcher:
         return FetchedPhoto(content=b"jpeg", media_type="image/jpeg")
 
 
-def _downloader(records, store=None, fetcher=None):
+class FakeAdvertGalleries:
+    def __init__(self, errors=None, requests=None):
+        self.errors = errors or {}
+        self.requests = requests if requests is not None else []
+
+    def read(self, source, url):
+        self.requests.append(url)
+        if url in self.errors:
+            raise self.errors[url]
+        return (f"{url}/0.jpg", f"{url}/1.jpg")
+
+
+def _downloader(records, store=None, fetcher=None, advert_galleries=None):
     pauses: list[float] = []
-    downloader = PhotoDownloader(records, store or FakePhotoStore(), fetcher or FakeFetcher(), pause=pauses.append)
+    downloader = PhotoDownloader(records, store or FakePhotoStore(), fetcher or FakeFetcher(),
+                                 advert_galleries or FakeAdvertGalleries(), pause=pauses.append)
     return downloader, pauses
 
 
@@ -152,6 +184,53 @@ class TestDownloads:
         downloader, _ = _downloader(records)
         downloader.run_pass(should_yield=lambda: len(records.stored) >= 1)
         assert [listing_id for listing_id, _, _ in records.stored] == ["sreality:a", "sreality:a"]
+
+
+class TestAdvertPages:
+    def test_records_the_gallery_a_requested_advert_page_lists(self):
+        page = _advert_page("a")
+        records = FakeRecords(advert_pages=[page])
+        downloader, _ = _downloader(records)
+        downloader.run_pass()
+        assert records.advert_galleries == [(page.listing_id, (f"{page.url}/0.jpg", f"{page.url}/1.jpg"))]
+
+    def test_reads_advert_pages_before_downloading_photos(self):
+        page = _advert_page("a")
+        photo = _photo("b")
+        requests: list[str] = []
+        records = FakeRecords(advert_pages=[page], requested=[photo])
+        downloader, _ = _downloader(records, fetcher=FakeFetcher(requests=requests),
+                                    advert_galleries=FakeAdvertGalleries(requests=requests))
+        downloader.run_pass()
+        assert requests == [page.url, photo.source_url]
+
+    def test_a_refused_page_stops_its_portal_for_the_pass(self):
+        refused = _advert_page("a")
+        records = FakeRecords(advert_pages=[refused, _advert_page("b")], main=[_photo("c", source="bezrealitky")])
+        fetcher = FakeFetcher()
+        advert_galleries = FakeAdvertGalleries(errors={refused.url: PhotoRefusedError("403")})
+        downloader, _ = _downloader(records, fetcher=fetcher, advert_galleries=advert_galleries)
+        downloader.run_pass()
+        assert advert_galleries.requests == [refused.url]
+        assert fetcher.fetched == []
+        assert records.advert_failures == []
+
+    @pytest.mark.parametrize("error, give_up", [
+        (PhotoGoneError("404"), True), (PhotoFetchError("500"), False), (ScraperBrokenError("shape"), False),
+    ])
+    def test_a_failed_read_counts_against_the_page(self, error, give_up):
+        page = _advert_page("a")
+        records = FakeRecords(advert_pages=[page])
+        downloader, _ = _downloader(records, advert_galleries=FakeAdvertGalleries(errors={page.url: error}))
+        downloader.run_pass()
+        assert records.advert_failures == [(page.listing_id, give_up)]
+
+    def test_reports_the_property_whose_page_it_read(self):
+        records = FakeRecords(advert_pages=[_advert_page("a")])
+        downloader, _ = _downloader(records)
+        done: list[str] = []
+        downloader.run_pass(on_property_done=done.append)
+        assert done == ["a"]
 
 
 class TestSweep:
