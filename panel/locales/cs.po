@@ -795,3 +795,6 @@ msgstr "Změnit, co se v okolí měří"
 
 msgid "Data from OpenStreetMap, asked for live. When its servers are busy, nothing shows for a while."
 msgstr "Data z OpenStreetMap, zjišťovaná živě. Když jsou servery přetížené, chvíli se nic neukáže."
+
+msgid "Nearby"
+msgstr "Okolí"
