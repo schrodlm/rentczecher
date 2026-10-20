@@ -52,6 +52,36 @@ def _listing(id="sreality:1", price=20000, **kw):
                          location_raw_text="l", url="u", **kw)
 
 
+def _index(conn, profile_id, property_id):
+    stmt = "SELECT profile_index FROM property_tracking WHERE profile_id = ? AND property_id = ?"
+    return conn.execute(stmt, (profile_id, property_id)).fetchone()["profile_index"]
+
+
+class TestPropertyIndexes:
+    def test_indexes_the_flats_in_the_order_the_profile_found_them(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-2', ?)", (BASE.isoformat(),))
+        repo.upsert(PROFILE, PROPERTY, _listing("sreality:1"))
+        repo.upsert(PROFILE, "prop-2", _listing("sreality:2"))
+        assert (_index(conn, PROFILE, PROPERTY), _index(conn, PROFILE, "prop-2")) == (1, 2)
+
+    def test_a_flat_found_again_keeps_its_index(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-2', ?)", (BASE.isoformat(),))
+        repo.upsert(PROFILE, PROPERTY, _listing("sreality:1"))
+        repo.upsert(PROFILE, PROPERTY, _listing("bezrealitky:1"))
+        repo.upsert(PROFILE, "prop-2", _listing("sreality:2"))
+        assert (_index(conn, PROFILE, PROPERTY), _index(conn, PROFILE, "prop-2")) == (1, 2)
+
+    def test_each_profile_counts_its_own_flats(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-2', ?)", (BASE.isoformat(),))
+        repo.upsert(PROFILE, PROPERTY, _listing("sreality:1"))
+        repo.upsert(PROFILE, "prop-2", _listing("sreality:2"))
+        repo.upsert(OTHER_PROFILE, "prop-2", _listing("sreality:2"))
+        assert _index(conn, OTHER_PROFILE, "prop-2") == 1
+
+
 class TestUpsert:
     def test_first_observation_inserts_fact_tracking_and_price(self, tmp_path):
         repo, conn = _repo(tmp_path)

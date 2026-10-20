@@ -127,6 +127,33 @@ class TestMigrate:
         assert "a" in tables
 
 
+class TestPropertyIndexes:
+    """Flats tracked before indexing get indexes in the order each profile
+    found them."""
+
+    def test_indexes_the_flats_already_tracked_in_the_order_found(self, tmp_path, monkeypatch):
+        first_only = tmp_path / "first"
+        first_only.mkdir()
+        (first_only / "0001_init.sql").write_text((migrate.MIGRATIONS_DIR / "0001_init.sql").read_text())
+        real = migrate.MIGRATIONS_DIR
+        monkeypatch.setattr(migrate, "MIGRATIONS_DIR", first_only)
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        for profile_id in ("p", "q"):
+            conn.execute("INSERT INTO profiles (id, name, created_at) VALUES (?, 'P', 't')", (profile_id,))
+        for property_id in ("prop-c", "prop-a", "prop-b"):
+            conn.execute("INSERT INTO properties (id, created_at) VALUES (?, 't')", (property_id,))
+        for profile_id, property_id in (("p", "prop-c"), ("q", "prop-b"), ("p", "prop-a"), ("p", "prop-b")):
+            conn.execute("INSERT INTO property_tracking (profile_id, property_id) VALUES (?, ?)",
+                         (profile_id, property_id))
+        conn.commit()
+        monkeypatch.setattr(migrate, "MIGRATIONS_DIR", real)
+        migrate.apply_pending(conn)
+        stmt = "SELECT profile_id, property_id, profile_index FROM property_tracking ORDER BY profile_id, profile_index"
+        assert [tuple(row) for row in conn.execute(stmt)] == [
+            ("p", "prop-c", 1), ("p", "prop-a", 2), ("p", "prop-b", 3), ("q", "prop-b", 1)]
+
+
 class TestDispositions:
     """The dispositions table holds the parser's vocabulary."""
 

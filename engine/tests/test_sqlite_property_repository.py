@@ -286,30 +286,33 @@ class TestFoldInto:
 
     @staticmethod
     def _tracking(conn):
-        stmt = "SELECT profile_id, property_id, viewed_at, favourited_at FROM property_tracking ORDER BY 1, 2"
+        stmt = "SELECT profile_id, property_id, viewed_at, favourited_at, profile_index FROM property_tracking ORDER BY 1, 2"
         return [tuple(row) for row in conn.execute(stmt)]
 
     def test_copies_a_profiles_tracking_of_the_loser_onto_the_winner(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.create(_property(id="prop-winner"))
         repo.create(_property(id="prop-loser"))
-        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-loser', '2026-10-01', NULL)")
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at, profile_index) "
+                     "VALUES ('p', 'prop-loser', '2026-10-01', NULL, 3)")
         repo.fold_into("prop-loser", "prop-winner")
         assert self._tracking(conn) == [
-            ("p", "prop-loser", "2026-10-01", None),
-            ("p", "prop-winner", "2026-10-01", None),
+            ("p", "prop-loser", "2026-10-01", None, 3),
+            ("p", "prop-winner", "2026-10-01", None, 3),
         ]
 
     def test_merges_tracking_of_both_keeping_the_first_view_and_star(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.create(_property(id="prop-winner"))
         repo.create(_property(id="prop-loser"))
-        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-loser', '2026-10-01', '2026-10-06')")
-        conn.execute("INSERT INTO property_tracking VALUES ('p', 'prop-winner', '2026-10-03', NULL)")
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at, profile_index) "
+                     "VALUES ('p', 'prop-loser', '2026-10-01', '2026-10-06', 3)")
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at, favourited_at, profile_index) "
+                     "VALUES ('p', 'prop-winner', '2026-10-03', NULL, 7)")
         repo.fold_into("prop-loser", "prop-winner")
         assert self._tracking(conn) == [
-            ("p", "prop-loser", "2026-10-01", "2026-10-06"),
-            ("p", "prop-winner", "2026-10-01", "2026-10-06"),
+            ("p", "prop-loser", "2026-10-01", "2026-10-06", 3),
+            ("p", "prop-winner", "2026-10-01", "2026-10-06", 3),
         ]
 
 
