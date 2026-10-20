@@ -38,6 +38,7 @@ The page then asks the shell for the engine's address and token
 | `lib/api/client.ts` | The API client, `openapi-fetch` over those types, with the token on every request. A refused request becomes an `ApiError` carrying the engine's reason. |
 | `lib/api/connection.ts` | Where the engine listens and its token, from the shell's `sidecar_connection` command. |
 | `lib/api/events.ts`, `lib/stores/run-progress.svelte.ts` | The server-sent event stream, and a profile's scan as it runs: started, each portal done, finished. |
+| `lib/stores/gallery.svelte.ts` | The selected flat's gallery, loaded again when the engine says its photos changed. |
 | `lib/api/engine.ts` | Notice from the shell that the engine stopped. |
 
 Because the types are generated, an API change the panel has not followed
@@ -48,7 +49,7 @@ build scripts run it first.
 
 | Folder | What is in it |
 |---|---|
-| `lib/components/` | The inbox and its rows, the header with the scan button, sort and filter menus, the property detail, the price chart, the score ring, the theme and language switches |
+| `lib/components/` | The inbox and its rows, the header with the scan button, sort and filter menus, the property detail, the photo collage and the full-window photo viewer, the price chart, the score ring, the theme and language switches |
 | `lib/editor/` | The profile editor and `ProfileDraft`, the editor's state, which turns a stored profile into editable form and back into an API body |
 | `lib/forms/` | Inputs the editor is built from: portal tiles, layout chips, range and value sliders, preferred places |
 | `lib/map/` | The map of Czechia, built from the gazetteer by `scripts/czech_map.py`, the search-place picker and the small place map in the detail |
@@ -69,6 +70,16 @@ preference with a weight gives the listing points out of that weight, and the
 editor keeps the weights adding up to 100. The detail shows the points each
 preference gave. Scores pinned in `recorded-scores.json` keep the formula
 from drifting.
+
+## Photos
+
+The engine downloads the photos and serves them through links signed for its
+run, so the window's content policy lets images load from the loopback
+address. The detail leads with the selected flat's gallery as a collage. A
+flat that stays selected for a moment has its whole gallery asked for, so
+stepping through the list asks for none of the flats passed over. While the
+engine downloads, the gallery store loads the gallery again on every
+`gallery_changed` for that flat.
 
 ## Translation
 
