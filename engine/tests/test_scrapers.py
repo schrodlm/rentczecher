@@ -118,6 +118,19 @@ class TestSrealityParsing:
         assert l.url == "https://www.sreality.cz/detail/pronajem/byt/2+kk/praha-holesovice-u-vody/910000001"
         assert l.photo_urls[0].startswith("https://")
 
+    def test_a_listing_carries_its_whole_gallery_in_the_portals_order(self, monkeypatch):
+        listings, _, payload = self._scrape_fixture(monkeypatch, "search_flats_praha7.json", FLATS_CRITERIA)
+        gallery = payload["results"][0]["advert_images_all"]
+        assert listings[0].photo_urls == tuple(
+            f"https:{image['advert_image_sdn_url']}{sreality.PHOTO_PRESET}" for image in gallery)
+
+    def test_a_listing_without_a_gallery_carries_no_photos(self, monkeypatch):
+        payload = json.loads((FIXTURES / "search_flats_praha7.json").read_text())
+        del payload["results"][0]["advert_images_all"]
+        client, _ = _serve_pages(monkeypatch, {0: payload})
+        listings = SrealityScraper(FLATS_CRITERIA, client).scrape()
+        assert listings[0].photo_urls == ()
+
     def test_houses_fixture_parses_land_and_district(self, monkeypatch):
         # One of the three fixture houses exceeds the 5M price cap.
         listings, _, _ = self._scrape_fixture(monkeypatch, "search_houses_domazlice.json", HOUSES_CRITERIA)
