@@ -27,3 +27,14 @@ CREATE TABLE advert_page_reads (
 );
 
 DROP TABLE property_images;
+
+-- Each profile indexes the flats it finds, in the order it found them.
+ALTER TABLE property_tracking ADD COLUMN profile_index INTEGER NOT NULL DEFAULT 0;
+
+-- The flats already tracked are indexed in the order their rows were
+-- written, which is the order the profile found them.
+UPDATE property_tracking SET profile_index = (
+    SELECT count(*) FROM property_tracking AS earlier
+    WHERE earlier.profile_id = property_tracking.profile_id
+      AND earlier.rowid <= property_tracking.rowid
+);
