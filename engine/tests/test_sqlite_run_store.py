@@ -9,6 +9,7 @@ that a prune deletes the properties it leaves untracked.
 Run: python3 -m pytest tests/test_sqlite_run_store.py -v
 """
 
+from contextlib import closing
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
@@ -103,6 +104,29 @@ class TestPersistOutcomeRecordsGalleries:
         stmt = "SELECT position, source_url FROM listing_photos ORDER BY position"
         assert [tuple(row) for row in conn.execute(stmt)] == [
             (0, "https://img.example/a.jpg"), (1, "https://img.example/b.jpg")]
+
+
+class TestGalleryRequests:
+    def _with_property(self, tmp_path):
+        store, conn = _store(tmp_path)
+        profile_id = stored_profile(conn).id
+        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"})
+        property_id = conn.execute("SELECT property_id FROM listings").fetchone()[0]
+        return store, conn, profile_id, property_id
+
+    def _requested(self, conn):
+        return [row[0] for row in conn.execute("SELECT property_id FROM gallery_requests")]
+
+    def test_a_request_is_committed(self, tmp_path):
+        store, _, profile_id, property_id = self._with_property(tmp_path)
+        assert store.request_gallery(profile_id, property_id)
+        with closing(connection.connect(tmp_path / "t.db")) as other:
+            assert self._requested(other) == [property_id]
+
+    def test_a_flat_the_profile_does_not_track_is_refused(self, tmp_path):
+        store, conn, profile_id, _ = self._with_property(tmp_path)
+        assert not store.request_gallery(profile_id, "prop-unknown")
+        assert self._requested(conn) == []
 
 
 class TestPrune:
