@@ -14,3 +14,7 @@ counts. A completed run carries counts with null error, even when its own
 status is "failed". The two paths are told apart by which field is set,
 never by the status string. */
 export type RunFinishedEvent = components['schemas']['RunFinishedEvent'];
+
+/* The photos of the property changed: one was stored, or its advert page
+was read. */
+export type GalleryChangedEvent = components['schemas']['GalleryChangedEvent'];
