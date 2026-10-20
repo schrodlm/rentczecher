@@ -236,7 +236,7 @@ class SqlitePhotoRepository:
             photo_count=len(photos),
             file_keys=file_keys,
             status=gallery_status(len(photos), len(file_keys), pending,
-                                  reading_advert_page=bool(listing["requested"] and listing["advert_page_unread"])),
+                                  reading_advert_page=bool(listing["advert_page_unread"])),
         )
 
     def _tracks(self, profile_id: str, property_id: str) -> bool:
