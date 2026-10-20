@@ -18,7 +18,7 @@ def _db(tmp_path: Path) -> Path:
 
 
 def _deps(tmp_path: Path) -> ApiDeps:
-    return ApiDeps(db_path=_db(tmp_path), scrapers={})
+    return ApiDeps(db_path=_db(tmp_path), photos_dir=tmp_path / "photos", scrapers={})
 
 
 @pytest.fixture

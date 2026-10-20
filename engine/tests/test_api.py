@@ -44,7 +44,7 @@ def _db(tmp_path: Path) -> Path:
 
 
 def _api_deps(tmp_path: Path) -> ApiDeps:
-    return ApiDeps(db_path=_db(tmp_path), scrapers={})
+    return ApiDeps(db_path=_db(tmp_path), photos_dir=tmp_path / "photos", scrapers={})
 
 
 @pytest.fixture
@@ -53,6 +53,16 @@ def praha7(tmp_path) -> Profile:
     deps and client read."""
     with closing(connection.connect(_db(tmp_path))) as conn:
         return stored_profile(conn, name="Praha 7 byty")
+
+
+class _PassRecorder:
+    """Stands in for the photo worker, counting the passes asked for."""
+
+    def __init__(self):
+        self.passes = 0
+
+    def request_pass(self):
+        self.passes += 1
 
 
 def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exception | None = None):
@@ -333,6 +343,12 @@ class TestDeleteProfile:
         response = _client(tmp_path).delete("/v1/profiles/nope", headers=_auth())
         assert response.status_code == 404
 
+    def test_asks_for_a_photo_pass_to_delete_what_only_it_held(self, tmp_path, praha7):
+        client = _client(tmp_path)
+        client.app.state.photo_worker = _PassRecorder()
+        client.delete(f"/v1/profiles/{praha7.id}", headers=_auth())
+        assert client.app.state.photo_worker.passes == 1
+
 
 class TestSearchPlaces:
     def test_finds_places_by_the_start_of_their_name_with_their_obec_and_okres(self, tmp_path):
@@ -476,6 +492,15 @@ class TestFavourite:
         assert client.delete(path, headers=_auth()).status_code == 204
         assert listing()["favourited_at"] is None
         assert listing()["viewed_at"] is not None
+
+    def test_starring_asks_for_a_photo_pass(self, tmp_path, praha7):
+        deps = _api_deps(tmp_path)
+        _persist_listing(deps, praha7.id)
+        client = _client(tmp_path)
+        client.app.state.photo_worker = _PassRecorder()
+        property_id = _tracked_property_id(client, praha7.id)
+        client.put(f"/v1/profiles/{praha7.id}/properties/{property_id}/favourite", headers=_auth())
+        assert client.app.state.photo_worker.passes == 1
 
 
 class TestPriceHistory:
