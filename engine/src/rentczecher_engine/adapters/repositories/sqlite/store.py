@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from rentczecher_engine.adapters.repositories.sqlite.clock import utc_now
 from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListingRepository
+from rentczecher_engine.adapters.repositories.sqlite.photos import SqlitePhotoRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
 from rentczecher_engine.domain.price import PostingPrices
@@ -24,6 +25,7 @@ class SqliteRunStore:
         self._conn = conn
         self._listings = SqliteListingRepository(conn, now=now)
         self._properties = SqlitePropertyRepository(conn, now=now)
+        self._photos = SqlitePhotoRepository(conn)
         self._now = now
 
     def seen_ids(self, profile_id: str) -> set[str]:
@@ -87,9 +89,10 @@ class SqliteRunStore:
                         located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
         """Writes the run's facts in one transaction: one property per
         real-world unit, a listing row per portal posting
-        (absorbed ones included, under their keeper's property), the dedup
-        audit trail, and the miss-count increments for listings absent this
-        run. Nothing commits if any step raises."""
+        (absorbed ones included, under their keeper's property), each new
+        listing's gallery, the dedup audit trail, and the miss-count
+        increments for listings absent this run. Nothing commits if any step
+        raises."""
         try:
             now = self._now().isoformat()
             keeper_ids = outcome.final_keeper_ids()
@@ -110,6 +113,7 @@ class SqliteRunStore:
                 for listing in members:
                     self._listings.upsert(
                         profile_id, property_by_keeper[keeper_id], listing)
+                    self._photos.record_gallery(listing.id, listing.photo_urls)
 
             for merge in outcome.merges:
                 self._properties.record_dedup(
