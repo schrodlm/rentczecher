@@ -5,18 +5,35 @@ Run: python3 -m pytest tests/test_sqlite_photo_repository.py -v
 
 from rentczecher_engine.adapters.repositories.sqlite import connection, migrate
 from rentczecher_engine.adapters.repositories.sqlite.photos import SqlitePhotoRepository
-from rentczecher_engine.domain.photo import GALLERY_LIMIT
+from rentczecher_engine.domain.photo import GALLERY_LIMIT, MAX_ATTEMPTS
 
 CREATED = "2026-10-20T06:00:00+00:00"
+FILE_KEY = "a" * 32 + ".jpg"
 
 
 def _repo(tmp_path):
     conn = connection.connect(tmp_path / "t.db")
     migrate.apply_pending(conn)
-    conn.execute("INSERT INTO properties (id, created_at) VALUES ('prop-1', ?)", (CREATED,))
-    conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
-                 "VALUES ('sreality:1', 'prop-1', 'sreality', 'u', ?)", (CREATED,))
+    conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (CREATED,))
+    _add_listing(conn, "prop-1", "sreality:1")
     return SqlitePhotoRepository(conn), conn
+
+
+def _add_listing(conn, property_id, listing_id, first_seen_at=CREATED):
+    conn.execute("INSERT OR IGNORE INTO properties (id, created_at) VALUES (?, ?)", (property_id, CREATED))
+    conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) VALUES (?, ?, ?, ?, ?)",
+                 (listing_id, property_id, listing_id.split(":")[0], f"https://portal.example/{listing_id}", CREATED))
+    conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
+                 "VALUES ('p', ?, ?, ?)", (listing_id, first_seen_at, first_seen_at))
+    conn.execute("INSERT OR IGNORE INTO property_tracking (profile_id, property_id) VALUES ('p', ?)", (property_id,))
+
+
+def _urls(count, listing_id="sreality:1"):
+    return tuple(f"https://img.example/{listing_id}/{n}.jpg" for n in range(count))
+
+
+def _wanted(photos):
+    return [(photo.listing_id, photo.position) for photo in photos]
 
 
 def _gallery(conn, listing_id="sreality:1"):
@@ -47,3 +64,136 @@ class TestRecordGallery:
         repo, conn = _repo(tmp_path)
         repo.record_gallery("sreality:1", ())
         assert _gallery(conn) == []
+
+
+class TestMainPhotos:
+    def test_wants_each_flats_main_photo_only(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        assert _wanted(repo.main_photos()) == [("sreality:1", 0)]
+
+    def test_takes_the_main_photo_of_the_listing_with_the_most_photos(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-1", "bezrealitky:1")
+        repo.record_gallery("sreality:1", _urls(2))
+        repo.record_gallery("bezrealitky:1", _urls(5, "bezrealitky:1"))
+        assert _wanted(repo.main_photos()) == [("bezrealitky:1", 0)]
+
+    def test_wants_the_flat_seen_last_first(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-2", "sreality:2", first_seen_at="2026-10-21T06:00:00+00:00")
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.record_gallery("sreality:2", _urls(1, "sreality:2"))
+        assert _wanted(repo.main_photos()) == [("sreality:2", 0), ("sreality:1", 0)]
+
+    def test_leaves_out_a_requested_flat(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        repo.request_gallery("p", "prop-1", CREATED)
+        assert repo.main_photos() == []
+
+    def test_leaves_out_a_stored_or_given_up_photo(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-2", "sreality:2")
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.record_gallery("sreality:2", _urls(1, "sreality:2"))
+        repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+        repo.count_failure("sreality:2", 0, give_up=True)
+        assert repo.main_photos() == []
+
+
+class TestRequestGallery:
+    def test_records_a_request_for_a_tracked_flat(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        assert repo.request_gallery("p", "prop-1", CREATED)
+        assert [row["property_id"] for row in conn.execute("SELECT property_id FROM gallery_requests")] == ["prop-1"]
+
+    def test_refuses_a_flat_the_profile_does_not_track(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        assert not repo.request_gallery("p", "prop-unknown", CREATED)
+        assert conn.execute("SELECT count(*) FROM gallery_requests").fetchone()[0] == 0
+
+
+class TestRequestedPhotos:
+    def test_wants_the_whole_gallery_of_a_requested_flat(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        repo.request_gallery("p", "prop-1", CREATED)
+        assert _wanted(repo.requested_photos()) == [("sreality:1", 0), ("sreality:1", 1), ("sreality:1", 2)]
+
+    def test_wants_the_latest_request_first(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-2", "sreality:2")
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.record_gallery("sreality:2", _urls(1, "sreality:2"))
+        repo.request_gallery("p", "prop-1", "2026-10-20T07:00:00+00:00")
+        repo.request_gallery("p", "prop-2", "2026-10-20T08:00:00+00:00")
+        assert _wanted(repo.requested_photos()) == [("sreality:2", 0), ("sreality:1", 0)]
+
+    def test_a_photo_failing_too_often_is_no_longer_wanted(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.request_gallery("p", "prop-1", CREATED)
+        for _ in range(MAX_ATTEMPTS):
+            repo.count_failure("sreality:1", 0, give_up=False)
+        assert repo.requested_photos() == []
+
+
+class TestStorePhoto:
+    def test_records_the_stored_file(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(1))
+        assert repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+        assert repo.file_keys() == {FILE_KEY}
+
+    def test_says_when_the_photo_is_gone(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(1))
+        conn.execute("DELETE FROM listings")
+        assert not repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
+
+
+class TestGallery:
+    def test_none_for_a_flat_the_profile_does_not_track(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        assert repo.gallery("p", "prop-unknown") is None
+
+    def test_a_flat_without_photos_has_none(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        gallery = repo.gallery("p", "prop-1")
+        assert (gallery.photo_count, gallery.status) == (0, "none")
+
+    def test_downloading_while_its_main_photo_is_not_stored(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        gallery = repo.gallery("p", "prop-1")
+        assert (gallery.photo_count, gallery.file_keys, gallery.status) == (3, (), "downloading")
+
+    def test_stored_once_its_main_photo_is_for_a_flat_never_requested(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        repo.store_photo("sreality:1", 0, _urls(3)[0], FILE_KEY)
+        gallery = repo.gallery("p", "prop-1")
+        assert (gallery.file_keys, gallery.status) == ((FILE_KEY,), "stored")
+
+    def test_downloading_while_a_requested_gallery_is_incomplete(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(3))
+        repo.store_photo("sreality:1", 0, _urls(3)[0], FILE_KEY)
+        repo.request_gallery("p", "prop-1", CREATED)
+        assert repo.gallery("p", "prop-1").status == "downloading"
+
+    def test_failed_when_every_photo_is_given_up(self, tmp_path):
+        repo, _ = _repo(tmp_path)
+        repo.record_gallery("sreality:1", _urls(1))
+        repo.count_failure("sreality:1", 0, give_up=True)
+        assert repo.gallery("p", "prop-1").status == "failed"
+
+    def test_shows_the_listing_with_the_most_photos(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _add_listing(conn, "prop-1", "bezrealitky:1")
+        repo.record_gallery("sreality:1", _urls(2))
+        repo.record_gallery("bezrealitky:1", _urls(5, "bezrealitky:1"))
+        gallery = repo.gallery("p", "prop-1")
+        assert (gallery.source, gallery.url, gallery.photo_count) == (
+            "bezrealitky", "https://portal.example/bezrealitky:1", 5)

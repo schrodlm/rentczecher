@@ -275,6 +275,15 @@ class TestFoldInto:
         assert repo.get("prop-loser").merged_into == "prop-winner"
         assert repo.get("prop-winner").merged_into is None
 
+    def test_carries_a_gallery_request_over_to_the_winner(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(id="prop-winner"))
+        repo.create(_property(id="prop-loser"))
+        conn.execute("INSERT INTO gallery_requests (property_id, requested_at) VALUES ('prop-loser', ?)", (CREATED,))
+        repo.fold_into("prop-loser", "prop-winner")
+        stmt = "SELECT property_id FROM gallery_requests ORDER BY property_id"
+        assert [row[0] for row in conn.execute(stmt)] == ["prop-loser", "prop-winner"]
+
     @staticmethod
     def _tracking(conn):
         stmt = "SELECT profile_id, property_id, viewed_at, favourited_at FROM property_tracking ORDER BY 1, 2"
