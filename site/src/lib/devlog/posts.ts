@@ -8,6 +8,20 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'finding-your-way-around-a-flat',
+		title: 'Finding your way around a flat',
+		date: '2026-10-20',
+		summary:
+			'A number, a name and a picture for every flat, a street map from OpenStreetMap, the distance to the nearest metro or school, and a clearer top bar and inbox.'
+	},
+	{
+		slug: 'every-flat-gets-its-photos',
+		title: 'Every flat gets its photos',
+		date: '2026-10-20',
+		summary:
+			'The main photo of every new flat after a scan, the whole gallery once you open or star it, and a collage leading the details.'
+	},
+	{
 		slug: 'ready-for-a-first-release',
 		title: 'Ready for a first release',
 		date: '2026-10-16',
