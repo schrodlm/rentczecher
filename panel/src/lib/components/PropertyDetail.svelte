@@ -22,6 +22,7 @@
 	import StreetMap from '$lib/map/StreetMap.svelte';
 	import StreetMapCredit from '$lib/map/StreetMapCredit.svelte';
 	import StreetMapWindow from '$lib/map/StreetMapWindow.svelte';
+	import { googleMapsUrl, mapyUrl } from '$lib/map/map-links';
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
 	import PhotoCollage from './PhotoCollage.svelte';
@@ -272,7 +273,15 @@
 					>
 				</div>
 				{#if streetMapOpen}<StreetMapWindow {point} onclose={() => (streetMapOpen = false)} />{/if}
-				<div class="property-detail__map-credit"><StreetMapCredit /></div>
+				<div class="property-detail__map-foot">
+					<span class="property-detail__map-links">
+						<a href={mapyUrl(point)} target="_blank" rel="noopener noreferrer" use:opensInBrowser>Mapy.cz ↗</a>
+						<a href={googleMapsUrl(point)} target="_blank" rel="noopener noreferrer" use:opensInBrowser
+							>Google Maps ↗</a
+						>
+					</span>
+					<span class="property-detail__map-credit"><StreetMapCredit /></span>
+				</div>
 			</section>
 		{/if}
 
@@ -467,9 +476,35 @@
 		color: var(--color-amber);
 	}
 
-	.property-detail__map-credit {
+	.property-detail__map-foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-3);
 		margin-top: var(--space-1);
-		text-align: right;
+	}
+
+	.property-detail__map-links {
+		display: flex;
+		gap: var(--space-4);
+	}
+
+	.property-detail__map-links a {
+		color: var(--color-bronze);
+		font-size: 0.8125rem;
+		text-decoration: none;
+	}
+
+	.property-detail__map-links a:hover {
+		color: var(--color-amber);
+	}
+
+	.property-detail__map-credit {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-3);
+		margin-top: var(--space-1);
+		margin-left: auto;
 	}
 
 	.property-detail__history {
