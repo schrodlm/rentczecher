@@ -8,6 +8,7 @@ from rentczecher_engine.adapters.repositories.sqlite.listings import SqliteListi
 from rentczecher_engine.adapters.repositories.sqlite.photos import SqlitePhotoRepository
 from rentczecher_engine.adapters.repositories.sqlite.properties import SqlitePropertyRepository
 from rentczecher_engine.adapters.scrapers.base import Listing
+from rentczecher_engine.domain.photo import Gallery
 from rentczecher_engine.domain.price import PostingPrices
 from rentczecher_engine.domain.property import PropertyLocation, TrackedProperty
 from rentczecher_engine.services.assemble import assemble_location, assemble_property
@@ -42,6 +43,21 @@ class SqliteRunStore:
 
     def price_histories(self, profile_id: str, property_id: str) -> list[PostingPrices] | None:
         return self._listings.price_histories(profile_id, property_id)
+
+    def gallery(self, profile_id: str, property_id: str) -> Gallery | None:
+        return self._photos.gallery(profile_id, property_id)
+
+    def request_gallery(self, profile_id: str, property_id: str) -> bool:
+        """Asks for the property's whole gallery, as its own unit of work.
+        False when the profile does not track the property."""
+        try:
+            requested = self._photos.request_gallery(profile_id, property_id, self._now().isoformat())
+        except BaseException:
+            self._conn.rollback()
+            raise
+        else:
+            self._conn.commit()
+        return requested
 
     def mark_viewed(self, profile_id: str, property_id: str) -> None:
         """Records the view as its own unit of work."""
