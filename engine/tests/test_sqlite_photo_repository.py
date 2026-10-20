@@ -310,11 +310,16 @@ class TestGallery:
         repo.request_gallery("p", "prop-1", CREATED)
         assert repo.gallery("p", "prop-1").status == "downloading"
 
-    def test_an_unread_advert_page_of_an_unrequested_flat_waits(self, tmp_path):
+    def test_downloading_while_an_advert_page_is_unread_before_any_request(self, tmp_path):
         repo, conn = _repo(tmp_path)
-        _unread_advert(repo)
-        repo.store_photo("sreality:1", 0, _urls(1)[0], FILE_KEY)
-        assert repo.gallery("p", "prop-1").status == "stored"
+        _unread_advert(repo, photo_count=0)
+        assert repo.gallery("p", "prop-1").status == "downloading"
+
+    def test_settles_once_the_advert_page_is_read(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        _unread_advert(repo, photo_count=0)
+        repo.record_advert_gallery("sreality:1", (), CREATED)
+        assert repo.gallery("p", "prop-1").status == "none"
 
     def test_shows_the_listing_with_the_most_photos(self, tmp_path):
         repo, conn = _repo(tmp_path)
