@@ -20,6 +20,7 @@ export const PRAHA_7: LocationModel = {
 
 function sampleFlat(
 	id: string,
+	index: number,
 	source: string,
 	price: number,
 	sizeM2: number,
@@ -28,6 +29,7 @@ function sampleFlat(
 ): TrackedPropertyModel {
 	return {
 		id,
+		index,
 		listing_id: `${source}:${id}`,
 		source,
 		url: `https://example.invalid/${id}`,
@@ -49,12 +51,12 @@ function sampleFlat(
 	};
 }
 
-export const ONE_FLAT = sampleFlat('holesovice', 'sreality', 22900, 58, '2+kk', 'Praha 7, Holešovice');
+export const ONE_FLAT = sampleFlat('holesovice', 1, 'sreality', 22900, 58, '2+kk', 'Praha 7, Holešovice');
 
 export const RANKED_FLATS: readonly { flat: TrackedPropertyModel; score: number }[] = [
 	{ flat: ONE_FLAT, score: 87 },
-	{ flat: sampleFlat('letna', 'bezrealitky', 24500, 61, '3+kk', 'Praha 7, Letná'), score: 62 },
-	{ flat: sampleFlat('troja', 'remax', 19800, 41, '2+kk', 'Praha 7, Troja'), score: 35 }
+	{ flat: sampleFlat('letna', 2, 'bezrealitky', 24500, 61, '3+kk', 'Praha 7, Letná'), score: 62 },
+	{ flat: sampleFlat('troja', 3, 'remax', 19800, 41, '2+kk', 'Praha 7, Troja'), score: 35 }
 ];
 
 const day = (offset: number) => new Date(Date.UTC(2026, 8, 1 + offset, 8)).toISOString();

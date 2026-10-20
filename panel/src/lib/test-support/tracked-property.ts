@@ -3,6 +3,7 @@ import type { TrackedPropertyModel } from '$lib/api/client';
 export function trackedProperty(id: string, overrides: Partial<TrackedPropertyModel> = {}): TrackedPropertyModel {
 	return {
 		id,
+		index: 1,
 		listing_id: id,
 		source: 'sreality',
 		url: `https://sreality.cz/detail/${id}`,
