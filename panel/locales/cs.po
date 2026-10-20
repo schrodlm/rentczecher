@@ -738,3 +738,6 @@ msgstr "přispěvatelé OpenStreetMap"
 
 msgid "Map"
 msgstr "Mapa"
+
+msgid "Open the map over the whole window"
+msgstr "Otevřít mapu přes celé okno"
