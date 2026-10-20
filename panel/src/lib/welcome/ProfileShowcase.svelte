@@ -59,7 +59,7 @@
 			</p>
 		{:else if slide === 2}
 			<div class="showcase__visual">
-				<div class="showcase__ring"><ScoreRing score={RANKED_FLATS[0].score} /></div>
+				<div class="showcase__ring"><ScoreRing score={RANKED_FLATS[0].score} coloured={true} /></div>
 				<div class="showcase__rows">
 					{#each RANKED_FLATS as ranked (ranked.flat.id)}
 						<PropertyRow

@@ -1,21 +1,24 @@
 <script lang="ts">
 	import { getTranslatorContext } from '$lib/i18n/context';
 
-	/* A listing's score out of 100 as a ring filled that far, its colour
-	running from bronze through amber to olive as the score rises. It fills
-	the width it is given, its number growing with it. */
-	let { score }: { score: number } = $props();
+	/* A listing's score out of 100 as a ring filled that far. A coloured ring
+	runs from bronze through amber to olive as the score rises, a plain one
+	keeps to the ink. It fills the width it is given, its number growing with
+	it. */
+	let { score, coloured }: { score: number; coloured: boolean } = $props();
 
 	const t = getTranslatorContext();
 
 	const RADIUS = 16;
 	const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-	const colour = $derived(
-		score >= 50
-			? `color-mix(in oklch, var(--color-olive) ${(score - 50) * 2}%, var(--color-amber))`
-			: `color-mix(in oklch, var(--color-amber) ${score * 2}%, var(--color-bronze))`
-	);
+	const colour = $derived(ringColour(score, coloured));
+
+	function ringColour(score: number, coloured: boolean): string {
+		if (!coloured) return 'var(--color-ink)';
+		if (score >= 50) return `color-mix(in oklch, var(--color-olive) ${(score - 50) * 2}%, var(--color-amber))`;
+		return `color-mix(in oklch, var(--color-amber) ${score * 2}%, var(--color-bronze))`;
+	}
 </script>
 
 <div class="score-ring" style:--score-colour={colour} role="img" aria-label={t.t('Score {score} of 100', { score })}>

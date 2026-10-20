@@ -194,7 +194,7 @@
 	<div class="property-detail__panels">
 		{#if score !== null && parts.length > 0}
 			<section class="property-detail__panel property-detail__score">
-				<div class="property-detail__ring"><ScoreRing {score} /></div>
+				<div class="property-detail__ring"><ScoreRing {score} coloured={true} /></div>
 			</section>
 
 			<section class="property-detail__panel">
