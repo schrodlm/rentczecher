@@ -4,6 +4,7 @@ import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$li
 import type { ScoringPreferences } from '$lib/scoring/score';
 import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
+import { PRAHA_7 } from '$lib/welcome/sample-flats';
 import PropertyDetail from './PropertyDetail.svelte';
 
 const PREFERENCES: ScoringPreferences = {
@@ -83,6 +84,36 @@ describe('PropertyDetail', () => {
 	test('shows no photos before its gallery loads', async () => {
 		const { container } = await renderDetail();
 		expect(container.querySelector('.photo-collage, .photo-collage__empty')).toBeNull();
+	});
+
+	test('shows a listing with a point on a street map of its own, beside the place map, crediting both', async () => {
+		const { container, getByRole } = await renderDetail(trackedProperty('sreality:4', {
+			resolved_location: PRAHA_7,
+			point: { lat: 50.1, lon: 14.44 }
+		}));
+		expect(container.querySelector('.street-map')).not.toBeNull();
+		expect(getByRole('link', { name: 'ČÚZK, 2026' })).toBeInTheDocument();
+		expect(getByRole('link', { name: '© přispěvatelé OpenStreetMap' })).toBeInTheDocument();
+	});
+
+	test('opens the street map over the whole window and closes it', async () => {
+		const { getByLabelText, queryByRole } = await renderDetail(trackedProperty('sreality:4', {
+			resolved_location: PRAHA_7,
+			point: { lat: 50.1, lon: 14.44 }
+		}));
+		await fireEvent.click(getByLabelText('Otevřít mapu přes celé okno'));
+		expect(queryByRole('dialog')).not.toBeNull();
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(queryByRole('dialog')).toBeNull();
+	});
+
+	test('shows a listing without a point on the place map alone', async () => {
+		const { container, queryByRole } = await renderDetail(trackedProperty('bezrealitky:5', {
+			resolved_location: PRAHA_7,
+			point: null
+		}));
+		expect(container.querySelector('.street-map')).toBeNull();
+		expect(queryByRole('link', { name: '© přispěvatelé OpenStreetMap' })).toBeNull();
 	});
 
 	test('credits ČÚZK under the map of where the listing lies', async () => {
