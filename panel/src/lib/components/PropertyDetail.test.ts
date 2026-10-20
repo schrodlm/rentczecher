@@ -2,6 +2,7 @@ import { fireEvent } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
+import { quietNearby } from '$lib/test-support/nearby';
 import { trackedProperty } from '$lib/test-support/tracked-property';
 import { renderWithTranslator } from '$lib/test-support/render';
 import { PRAHA_7 } from '$lib/welcome/sample-flats';
@@ -54,6 +55,7 @@ async function renderDetail(
 		preferences,
 		priceHistory,
 		gallery: null,
+		nearby: quietNearby(),
 		onfavourite
 	});
 	return { onfavourite, ...rendered };
@@ -78,6 +80,11 @@ describe('PropertyDetail', () => {
 		);
 	});
 
+	test('shows what lies nearest the flat', async () => {
+		const { getByRole } = await renderDetail();
+		expect(getByRole('heading', { name: 'Okolí' })).toBeInTheDocument();
+	});
+
 	test('leads with the photos of its gallery', async () => {
 		const gallery: GalleryModel = {
 			status: 'stored',
@@ -92,6 +99,7 @@ describe('PropertyDetail', () => {
 			preferences: PREFERENCES,
 			priceHistory: FLAT_PRICES,
 			gallery,
+			nearby: quietNearby(),
 			onfavourite: vi.fn()
 		});
 		const first = container.querySelector('.property-detail')?.firstElementChild;
