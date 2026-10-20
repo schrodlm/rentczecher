@@ -121,6 +121,19 @@ class SqlitePhotoRepository:
         stmt = "SELECT file_key FROM listing_photos WHERE file_key IS NOT NULL"
         return {row["file_key"] for row in self._conn.execute(stmt)}
 
+    def main_photo_keys(self, profile_id: str) -> dict[str, str]:
+        """The stored main photo of each property the profile tracks, by
+        property id."""
+        stmt = _GALLERY_LISTINGS + """
+            SELECT gallery_listings.property_id AS property_id, listing_photos.file_key AS file_key
+            FROM gallery_listings
+            JOIN property_tracking ON property_tracking.property_id = gallery_listings.property_id
+            JOIN listing_photos ON listing_photos.listing_id = gallery_listings.listing_id
+            WHERE property_tracking.profile_id = ?
+              AND listing_photos.position = 0 AND listing_photos.file_key IS NOT NULL
+        """
+        return {row["property_id"]: row["file_key"] for row in self._conn.execute(stmt, (profile_id,))}
+
     def gallery(self, profile_id: str, property_id: str) -> Gallery | None:
         """The property's gallery, or None when the profile does not track
         the property."""

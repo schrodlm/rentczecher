@@ -3,7 +3,8 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from rentczecher_engine.adapters.api.deps import resolve_profile
-from rentczecher_engine.adapters.api.models import GalleryModel, PostingPricesModel, TrackedPropertyModel
+from rentczecher_engine.adapters.api.models import GalleryModel, PhotoModel, PostingPricesModel, TrackedPropertyModel
+from rentczecher_engine.adapters.api.photo_links import PhotoLinks
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
 from rentczecher_engine.domain.property import TrackedProperty
 from rentczecher_engine.domain.location import Location
@@ -20,11 +21,21 @@ def list_tracked_properties(
     deps = request.app.state.api_deps
     with deps.open_run_store() as store:
         tracked_properties = store.tracked_properties(profile.id, only_new=filter == "new")
+        main_photo_keys = store.main_photo_keys(profile.id)
+    links: PhotoLinks = request.app.state.photo_links
     with deps.open_gazetteer() as gazetteer:
         return [
-            TrackedPropertyModel.from_tracked_property(tracked, _resolved_location(tracked, gazetteer))
+            TrackedPropertyModel.from_tracked_property(
+                tracked, _resolved_location(tracked, gazetteer),
+                _main_photo(main_photo_keys.get(tracked.id), links))
             for tracked in tracked_properties
         ]
+
+
+def _main_photo(file_key: str | None, links: PhotoLinks) -> PhotoModel | None:
+    if file_key is None:
+        return None
+    return PhotoModel(url=links.link(file_key))
 
 
 def _not_tracked(profile: Profile, property_id: str) -> HTTPException:

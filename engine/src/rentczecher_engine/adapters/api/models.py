@@ -287,9 +287,11 @@ class TrackedPropertyModel(BaseModel):
     price: int | None
     price_drop_from: int | None
     sibling_sources: list[SiblingSourceModel]
+    main_photo: PhotoModel | None
 
     @classmethod
-    def from_tracked_property(cls, tracked: TrackedProperty, resolved_location: Location | None) -> "TrackedPropertyModel":
+    def from_tracked_property(cls, tracked: TrackedProperty, resolved_location: Location | None,
+                              main_photo: PhotoModel | None) -> "TrackedPropertyModel":
         return cls(
             id=tracked.id,
             listing_id=tracked.listing_id,
@@ -312,6 +314,7 @@ class TrackedPropertyModel(BaseModel):
                 SiblingSourceModel(source=sibling.source, url=sibling.url)
                 for sibling in tracked.sibling_sources
             ],
+            main_photo=main_photo,
         )
 
 
