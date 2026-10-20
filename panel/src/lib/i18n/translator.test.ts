@@ -28,6 +28,14 @@ describe('Translator', () => {
 		expect(en.area(1200)).toBe(`1,200${NBSP}m²`);
 	});
 
+	test('writes a distance in metres to the ten under a kilometre and in kilometres to the tenth past it', () => {
+		expect(cs.distance(447)).toBe(`450${NBSP}m`);
+		expect(cs.distance(996)).toBe(`1${NBSP}km`);
+		expect(cs.distance(1234)).toBe(`1,2${NBSP}km`);
+		expect(en.distance(1234)).toBe(`1.2${NBSP}km`);
+		expect(cs.distance(2000)).toBe(`2${NBSP}km`);
+	});
+
 	test('writes the price per square metre rounded, and none for no size', () => {
 		expect(cs.pricePerM2(21000, 52)).toBe(`404${NBSP}Kč/m²`);
 		expect(cs.perM2(403.8)).toBe(`404${NBSP}Kč/m²`);
