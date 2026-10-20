@@ -14,6 +14,7 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { keepSelection, takeKeptSelection } from '$lib/kept-selection';
+	import { GalleryStore } from '$lib/stores/gallery.svelte';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { applyTheme } from '$lib/theme';
 	import { UserConfigFile, type Language, type Theme, type UserConfig } from '$lib/user-config';
@@ -34,6 +35,7 @@
 	let engineStopped = $state(false);
 
 	const runProgress = new RunProgressStore();
+	let galleries = $state<GalleryStore | null>(null);
 
 	let profiles = $state<ProfileModel[] | null>(null);
 	let profilesError = $state<string | null>(null);
@@ -247,6 +249,16 @@
 		}
 	}
 
+	// Before the details draw, so a newly selected flat never shows the
+	// previous one's photos.
+	$effect.pre(() => {
+		galleries?.show(
+			selectedProfileId === null || selectedPropertyId === null
+				? null
+				: { profileId: selectedProfileId, propertyId: selectedPropertyId }
+		);
+	});
+
 	onMount(() => {
 		const stopListening = onEngineStopped(() => (engineStopped = true));
 		// Taken before anything can fail, so it never outlives the reload it was
@@ -256,6 +268,8 @@
 			try {
 				const connection = await sidecarConnection();
 				client = new SidecarClient(connection.baseUrl, connection.token);
+				galleries = new GalleryStore(client);
+				galleries.connect();
 				profiles = await client.listProfiles();
 			} catch (err) {
 				profilesError = errorMessage(err);
@@ -271,6 +285,7 @@
 
 		return () => {
 			runProgress.disconnect();
+			galleries?.disconnect();
 			void stopListening.then((unlisten) => unlisten());
 		};
 	});
@@ -355,6 +370,7 @@
 					onfavourite={handleFavourite}
 					onmarkallviewed={handleMarkAllViewed}
 					{loadPriceHistory}
+					gallery={galleries?.gallery ?? null}
 					bind:selectedId={selectedPropertyId}
 				/>
 			{/key}

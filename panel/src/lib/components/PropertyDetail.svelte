@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
+	import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 	import { opensInBrowser } from '$lib/browser-link';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
@@ -21,24 +21,27 @@
 	import PlaceMap from '$lib/map/PlaceMap.svelte';
 	import { shownPortal } from '$lib/portals';
 	import { scoreProperty, scoreParts, type ScorePart, type ScoringPreferences } from '$lib/scoring/score';
+	import PhotoCollage from './PhotoCollage.svelte';
 	import PriceChart from './PriceChart.svelte';
 	import ScoreRing from './ScoreRing.svelte';
 	import StandingStrip from './StandingStrip.svelte';
 
-	/* The selected listing at length: its facts and links, why it scores what
-	it does, how it compares within its profile, what happened to it and
-	where it lies. A panel with nothing to say is left out. */
+	/* The selected listing at length: its photos, its facts and links, why
+	it scores what it does, how it compares within its profile, what happened
+	to it and where it lies. A panel with nothing to say is left out. */
 	let {
 		listing,
 		listings,
 		preferences,
 		priceHistory,
+		gallery,
 		onfavourite
 	}: {
 		listing: TrackedPropertyModel;
 		listings: readonly TrackedPropertyModel[];
 		preferences: ScoringPreferences | null;
 		priceHistory: PostingPricesModel[] | null;
+		gallery: GalleryModel | null;
 		onfavourite: (favourite: boolean) => void;
 	} = $props();
 
@@ -132,6 +135,7 @@
 </script>
 
 <article class="property-detail">
+	{#if gallery !== null}<PhotoCollage {gallery} />{/if}
 	<header class="property-detail__head">
 		<span class="property-detail__logo">
 			{#if portal}<img src={portal.logo} alt="" />{/if}
