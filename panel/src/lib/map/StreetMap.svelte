@@ -49,7 +49,10 @@
 <div class="street-map" bind:this={element}></div>
 
 <style>
+	/* Leaflet stacks its panes and controls up to z-index 1000, so the map
+	keeps them inside itself, under any window laid over the page. */
 	.street-map {
+		isolation: isolate;
 		height: 100%;
 		border-radius: var(--radius-md);
 		background: var(--color-card);
