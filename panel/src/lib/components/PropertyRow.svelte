@@ -144,8 +144,9 @@ a row focuses the list and a screen reader follows the selection from there. -->
 
 	.property-row__facts {
 		overflow: hidden;
-		color: var(--color-bronze);
-		font-size: 0.875rem;
+		color: color-mix(in srgb, var(--color-ink) 65%, var(--color-bronze));
+		font-size: 0.9375rem;
+		font-weight: 500;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
