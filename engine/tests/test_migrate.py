@@ -14,7 +14,7 @@ from rentczecher_engine.domain.location import PlaceKind
 from rentczecher_engine.domain.profile import EstateType, OfferType, Portal
 
 EXPECTED_TABLES = {
-    "profiles", "properties", "property_images", "listings",
+    "profiles", "properties", "listing_photos", "listings",
     "listing_tracking", "property_tracking",
     "price_observations", "dedup_records", "scrape_runs",
     "portals", "offer_types", "estate_types", "place_kinds",
@@ -44,8 +44,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert migrate.apply_pending(conn) == [1, 2]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -293,6 +293,47 @@ class TestAcceptedDispositions:
         conn.execute("INSERT INTO accepted_dispositions (profile_id, disposition) VALUES ('p', '2+kk')")
         conn.execute("DELETE FROM profiles WHERE id = 'p'")
         assert conn.execute("SELECT count(*) FROM accepted_dispositions").fetchone()[0] == 0
+
+
+class TestListingPhotos:
+    """A listing's photos sit at distinct positions, each stored file belongs
+    to one photo, and the photos go with their listing."""
+
+    NOW = "2026-10-20T00:00:00+00:00"
+
+    def _with_listing(self, tmp_path):
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (self.NOW,))
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('sreality:1', 'x', 'sreality', 'u', ?)", (self.NOW,))
+        return conn
+
+    def test_a_position_holds_one_photo(self, tmp_path):
+        conn = self._with_listing(tmp_path)
+        conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) VALUES ('sreality:1', 0, 'a')")
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) VALUES ('sreality:1', 0, 'b')")
+
+    def test_a_stored_file_belongs_to_one_photo(self, tmp_path):
+        conn = self._with_listing(tmp_path)
+        stmt = "INSERT INTO listing_photos (listing_id, position, source_url, file_key) VALUES ('sreality:1', ?, ?, 'k')"
+        conn.execute(stmt, (0, "a"))
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(stmt, (1, "b"))
+
+    @pytest.mark.parametrize("column", ["position", "attempts"])
+    def test_a_count_is_never_negative(self, tmp_path, column):
+        conn = self._with_listing(tmp_path)
+        conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) VALUES ('sreality:1', 0, 'a')")
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(f"UPDATE listing_photos SET {column} = -1")
+
+    def test_photos_go_with_their_listing(self, tmp_path):
+        conn = self._with_listing(tmp_path)
+        conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) VALUES ('sreality:1', 0, 'a')")
+        conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
+        assert conn.execute("SELECT count(*) FROM listing_photos").fetchone()[0] == 0
 
 
 class TestConcurrentWriters:
