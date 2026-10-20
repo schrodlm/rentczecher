@@ -47,3 +47,7 @@ def pid_lock_path() -> Path:
 
 def db_path() -> Path:
     return data_dir() / "rentczecher.db"
+
+
+def photos_dir() -> Path:
+    return data_dir() / "photos"
