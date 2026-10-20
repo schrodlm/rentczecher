@@ -1,13 +1,13 @@
-"""Downloading the photos the app wants, and deleting the files nothing
-refers to any more."""
+"""Downloading the photos the app wants, reading the advert pages that list
+a whole gallery, and deleting the files nothing refers to any more."""
 
 import logging
 import time
 from collections.abc import Callable
 from typing import Protocol
 
-from rentczecher_engine.domain.errors import PhotoFetchError, PhotoGoneError, PhotoRefusedError
-from rentczecher_engine.domain.photo import FetchedPhoto, PendingPhoto
+from rentczecher_engine.domain.errors import PhotoFetchError, PhotoGoneError, PhotoRefusedError, ScraperBrokenError
+from rentczecher_engine.domain.photo import FetchedPhoto, PendingAdvertPage, PendingPhoto
 
 log = logging.getLogger("rentczecher")
 
@@ -23,6 +23,15 @@ SWEEP_GRACE_S = 600
 
 
 class PhotoRecords(Protocol):
+    def requested_advert_pages(self) -> list[PendingAdvertPage]:
+        ...
+
+    def record_advert_gallery(self, page: PendingAdvertPage, photo_urls: tuple[str, ...]) -> None:
+        ...
+
+    def count_advert_failure(self, page: PendingAdvertPage, give_up: bool) -> None:
+        ...
+
     def requested_photos(self) -> list[PendingPhoto]:
         ...
 
@@ -58,26 +67,34 @@ class PhotoFetcher(Protocol):
         ...
 
 
-class PhotoDownloader:
-    """One pass deletes the files nothing refers to, then downloads every
-    photo of the galleries users asked for, then the main photos within each
-    portal's budget, one photo at a time. A portal that refuses a photo gets
-    no further request in the pass."""
+class AdvertGalleryReader(Protocol):
+    def read(self, source: str, url: str) -> tuple[str, ...]:
+        ...
 
-    def __init__(self, records: PhotoRecords, store: PhotoStore, fetcher: PhotoFetcher, *,
-                 pause: Callable[[float], None] = time.sleep):
+
+class PhotoDownloader:
+    """One pass deletes the files nothing refers to, reads the advert pages
+    of the galleries users asked for that only their advert lists in whole,
+    downloads every photo of those galleries, then the main photos within
+    each portal's budget, one request at a time. A portal that refuses one
+    gets no further request in the pass."""
+
+    def __init__(self, records: PhotoRecords, store: PhotoStore, fetcher: PhotoFetcher,
+                 advert_galleries: AdvertGalleryReader, *, pause: Callable[[float], None] = time.sleep):
         self._records = records
         self._store = store
         self._fetcher = fetcher
+        self._advert_galleries = advert_galleries
         self._pause = pause
 
     def run_pass(self, on_property_done: Callable[[str], None] | None = None,
                  should_yield: Callable[[], bool] | None = None) -> None:
-        """on_property_done is called with each property whose photos the
-        pass finished with, stored or not. The main photos stop early once
-        should_yield says another pass is waiting."""
+        """on_property_done is called with each property whose gallery the
+        pass read or whose photos it finished with, stored or not. The main
+        photos stop early once should_yield says another pass is waiting."""
         self._sweep_orphans()
         refused: set[str] = set()
+        self._read_advert_pages(self._records.requested_advert_pages(), refused, on_property_done)
         self._download_all(self._records.requested_photos(), REQUESTED_PHOTO_PAUSE_S, refused,
                            on_property_done, should_yield=None)
         self._download_all(self._within_budget(self._records.main_photos()), MAIN_PHOTO_PAUSE_S, refused,
@@ -87,6 +104,32 @@ class PhotoDownloader:
         for file_key in self._store.file_keys(older_than_s=SWEEP_GRACE_S) - self._records.file_keys():
             self._store.delete(file_key)
         self._store.remove_partials()
+
+    def _read_advert_pages(self, pages: list[PendingAdvertPage], refused: set[str],
+                           on_property_done: Callable[[str], None] | None) -> None:
+        for page in pages:
+            if page.source in refused:
+                continue
+            self._pause(REQUESTED_PHOTO_PAUSE_S)
+            try:
+                photo_urls = self._advert_galleries.read(page.source, page.url)
+            except PhotoRefusedError as error:
+                log.warning("photos: %s refused the app, no more requests to it this pass: %s", page.source, error)
+                refused.add(page.source)
+                continue
+            except PhotoGoneError as error:
+                log.info("photos: %s", error)
+                self._records.count_advert_failure(page, give_up=True)
+            except PhotoFetchError as error:
+                log.info("photos: %s", error)
+                self._records.count_advert_failure(page, give_up=False)
+            except ScraperBrokenError as error:
+                log.warning("photos: %s", error)
+                self._records.count_advert_failure(page, give_up=False)
+            else:
+                self._records.record_advert_gallery(page, photo_urls)
+            if on_property_done is not None:
+                on_property_done(page.property_id)
 
     def _download_all(self, photos: list[PendingPhoto], pause_s: float, refused: set[str],
                       on_property_done: Callable[[str], None] | None,
@@ -107,7 +150,7 @@ class PhotoDownloader:
         try:
             fetched = self._fetcher.fetch(photo.source_url)
         except PhotoRefusedError as error:
-            log.warning("photos: %s refused the app, no more photos from it this pass: %s", photo.source, error)
+            log.warning("photos: %s refused the app, no more requests to it this pass: %s", photo.source, error)
             return False
         except PhotoGoneError as error:
             log.info("photos: %s", error)

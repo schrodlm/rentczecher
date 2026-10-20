@@ -18,6 +18,7 @@ from pathlib import Path
 from fastapi import Request
 
 from rentczecher_engine.adapters.geocoding.gazetteer import Gazetteer
+from rentczecher_engine.adapters.photos.advert_galleries import HttpAdvertGalleryReader
 from rentczecher_engine.adapters.photos.fetcher import HttpPhotoFetcher
 from rentczecher_engine.adapters.photos.store import FilePhotoStore
 from rentczecher_engine.adapters.repositories.sqlite import connection
@@ -105,7 +106,8 @@ class ApiDeps:
         conn = connection.connect(self.db_path)
         try:
             with build_client() as client:
-                yield PhotoDownloader(SqlitePhotoRecords(conn), self.photo_store(), HttpPhotoFetcher(client))
+                yield PhotoDownloader(SqlitePhotoRecords(conn), self.photo_store(), HttpPhotoFetcher(client),
+                                  HttpAdvertGalleryReader(client))
         finally:
             conn.close()
 
