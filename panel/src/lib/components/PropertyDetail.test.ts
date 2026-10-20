@@ -107,6 +107,15 @@ describe('PropertyDetail', () => {
 		expect(queryByRole('dialog')).toBeNull();
 	});
 
+	test('links a listing with a point to Mapy.cz and Google Maps', async () => {
+		const { getByRole } = await renderDetail(trackedProperty('sreality:4', {
+			resolved_location: PRAHA_7,
+			point: { lat: 50.1, lon: 14.44 }
+		}));
+		expect(getByRole('link', { name: 'Mapy.cz ↗' })).toHaveAttribute('href', expect.stringContaining('center=14.44,50.1'));
+		expect(getByRole('link', { name: 'Google Maps ↗' })).toHaveAttribute('href', expect.stringContaining('query=50.1,14.44'));
+	});
+
 	test('shows a listing without a point on the place map alone', async () => {
 		const { container, queryByRole } = await renderDetail(trackedProperty('bezrealitky:5', {
 			resolved_location: PRAHA_7,
@@ -114,6 +123,7 @@ describe('PropertyDetail', () => {
 		}));
 		expect(container.querySelector('.street-map')).toBeNull();
 		expect(queryByRole('link', { name: '© přispěvatelé OpenStreetMap' })).toBeNull();
+		expect(queryByRole('link', { name: 'Mapy.cz ↗' })).toBeNull();
 	});
 
 	test('credits ČÚZK under the map of where the listing lies', async () => {
