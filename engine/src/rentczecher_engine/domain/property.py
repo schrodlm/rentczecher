@@ -66,11 +66,13 @@ class TrackedProperty:
     """A property as one profile tracks it, identified by the property's id
     and shown by the cheapest of its listings the profile tracks: that
     listing's id, portal, link and price, the property's facts, and the
-    profile's tracking of the property. price_drop_from is the higher price
-    that listing last dropped from, and sibling_sources are the profile's
-    other listings of the property."""
+    profile's tracking of the property. index is the property's place in
+    the order the profile found its flats. price_drop_from is the higher
+    price that listing last dropped from, and sibling_sources are the
+    profile's other listings of the property."""
 
     id: str
+    index: int
     listing_id: str
     source: str
     url: str
