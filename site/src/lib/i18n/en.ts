@@ -1,5 +1,5 @@
 import type { Messages } from './messages';
-import { ISSUES_URL, OPERATOR_CONTACT_EMAIL, REPO_URL, SUPPORT_URL } from '$lib/links';
+import { CONTACT_EMAIL, ISSUES_URL, REPO_URL, SUPPORT_URL } from '$lib/links';
 
 export const en: Messages = {
 	meta: {
@@ -273,7 +273,7 @@ export const en: Messages = {
 		contactHeading: 'Contact',
 		contact: [
 			'If you have any concern about how rentczecher uses your portal, email me at ',
-			{ text: OPERATOR_CONTACT_EMAIL, href: `mailto:${OPERATOR_CONTACT_EMAIL}` },
+			{ text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
 			'. Every such message gets a quick answer.'
 		],
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any real-estate portal.'
