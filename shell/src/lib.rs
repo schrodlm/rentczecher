@@ -52,6 +52,17 @@ struct Sidecar {
     _parent_link: ChildStdin,
 }
 
+impl Sidecar {
+    /// Ends the engine and waits until its process is gone, so nothing it
+    /// holds open is still in use when this returns.
+    fn stop(&self) {
+        if let Ok(mut process) = self.process.lock() {
+            let _ = process.kill();
+            let _ = process.wait();
+        }
+    }
+}
+
 /// The file holding the user config. The panel owns its shape, the shell only
 /// moves its text.
 struct UserConfigFile(PathBuf);
@@ -347,9 +358,7 @@ fn wait_for_health(connection: &SidecarConnection) -> Result<(), String> {
 fn start_healthy_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<Sidecar, String> {
     let sidecar = start_engine(app, scenario_home)?;
     if let Err(error) = wait_for_health(&sidecar.connection) {
-        if let Ok(mut process) = sidecar.process.lock() {
-            let _ = process.kill();
-        }
+        sidecar.stop();
         return Err(error);
     }
     Ok(sidecar)
@@ -437,9 +446,8 @@ pub fn run() {
             // engine only must not outlive the app.
             if let RunEvent::Exit = event
                 && let Some(sidecar) = app.try_state::<Sidecar>()
-                && let Ok(mut process) = sidecar.process.lock()
             {
-                let _ = process.kill();
+                sidecar.stop();
             }
         });
 }
