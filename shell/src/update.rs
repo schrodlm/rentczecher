@@ -131,3 +131,26 @@ pub(crate) async fn install_update(app: AppHandle, pending: State<'_, PendingUpd
     }
     app.restart();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::percent_of;
+
+    #[test]
+    fn progress_is_whole_percent_of_the_announced_size() {
+        assert_eq!(percent_of(0, Some(200)), Some(0));
+        assert_eq!(percent_of(99, Some(200)), Some(49));
+        assert_eq!(percent_of(200, Some(200)), Some(100));
+    }
+
+    #[test]
+    fn progress_is_unknown_without_a_size() {
+        assert_eq!(percent_of(500, None), None);
+        assert_eq!(percent_of(500, Some(0)), None);
+    }
+
+    #[test]
+    fn progress_stops_at_100() {
+        assert_eq!(percent_of(300, Some(200)), Some(100));
+    }
+}
