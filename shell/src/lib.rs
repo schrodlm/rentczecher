@@ -200,7 +200,8 @@ fn start_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<
     command
         .env("RENTCZECHER_API_TOKEN", &token)
         .stdin(Stdio::piped())
-        .stdout(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     #[cfg(windows)]
     {
         // Without this the engine opens its own console window on Windows.
@@ -232,6 +233,15 @@ fn start_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<
         }
         log::warn!("the engine stopped");
         let _ = app_handle.emit(ENGINE_STOPPED_EVENT, ());
+    });
+
+    // The engine writes its own log to stderr, which needs draining for the
+    // same reason as stdout.
+    let stderr = process.stderr.take().expect("stderr was piped");
+    thread::spawn(move || {
+        for line in engine_lines(stderr) {
+            log::info!("engine: {line}");
+        }
     });
 
     let port = match port_receiver.recv_timeout(PORT_ANNOUNCE_TIMEOUT) {
