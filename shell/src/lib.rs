@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{BufRead, BufReader, ErrorKind};
+use std::io::{BufRead, BufReader, ErrorKind, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{mpsc, Mutex};
@@ -102,6 +102,17 @@ fn open_in_browser(url: String) -> Result<(), String> {
         return Err(format!("not an https link: {url}"));
     }
     open::that_detached(&url).map_err(|error| error.to_string())
+}
+
+/// The lines a stream of the engine's output carries. Python on Windows writes
+/// in the system code page rather than UTF-8, so a line is decoded leniently
+/// instead of ending the read, which would leave the pipe to fill and block
+/// the engine.
+fn engine_lines(stream: impl Read) -> impl Iterator<Item = String> {
+    BufReader::new(stream)
+        .split(b'\n')
+        .map_while(Result::ok)
+        .map(|bytes| String::from_utf8_lossy(&bytes).trim_end_matches('\r').to_string())
 }
 
 /// A fresh secret for every launch, 32 bytes from the OS random source as hex.
@@ -211,7 +222,7 @@ fn start_engine(app: &tauri::AppHandle, scenario_home: Option<&Path>) -> Result<
     let (port_sender, port_receiver) = mpsc::channel();
     let app_handle = app.clone();
     thread::spawn(move || {
-        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+        for line in engine_lines(stdout) {
             match line.strip_prefix("PORT=") {
                 Some(port) => {
                     let _ = port_sender.send(port.to_string());
