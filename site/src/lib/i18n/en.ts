@@ -249,6 +249,7 @@ export const en: Messages = {
 		credit:
 			'Made by Matěj Schrödl. An independent open-source project, not affiliated with any real-estate portal.',
 		operators: 'For portal operators',
+		privacyPolicy: 'Privacy policy',
 		support: 'Say thanks'
 	},
 	operators: {
@@ -277,5 +278,36 @@ export const en: Messages = {
 			'. Every such message gets a quick answer.'
 		],
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any real-estate portal.'
+	},
+	privacyPolicy: {
+		title: 'Privacy policy',
+		intro: 'rentczecher collects no personal data. This page lists every connection the app and this website make, so you can see exactly where your data goes.',
+		keepsHeading: 'What the app keeps',
+		keeps: [
+			"Your profiles, saved and hidden listings, photos and price history are stored only on your computer, in the app's own data folder.",
+			'There is no account, no server, no analytics, no crash reporting and no tracking. Nothing is ever sent to the author.',
+			'Uninstalling the app and deleting its data folder removes everything it kept.'
+		],
+		connectionsHeading: 'Who the app talks to',
+		connectionsIntro: 'The app connects only to the services below, and only to do what you asked of it. Each of them sees your IP address, as any website you visit does.',
+		connections: [
+			"The real-estate portals you turn on, and their image servers. When you run a scan it reads your saved searches and downloads each new listing's main photo. It reads a listing's advert and its other photos when you open or star it.",
+			"OpenStreetMap's tile server (tile.openstreetmap.org), to draw street maps.",
+			'Public OpenStreetMap Overpass servers (overpass-api.de, overpass.private.coffee, overpass.kumi.systems), to find nearby places such as shops or stops. They receive the map area around a listing and the kinds of places to look for, nothing else.',
+			"A link to an advert, Mapy.com or Google Maps opens in your web browser, and from there that site's own privacy policy applies."
+		],
+		siteHeading: 'This website',
+		site: [
+			'rentczecher.cz is a static site hosted on GitHub Pages. It sets no cookies and runs no analytics.',
+			"GitHub, as the host, may log technical data such as your IP address, under GitHub's own privacy statement.",
+			'Your choice of light or dark theme is remembered in your browser only.'
+		],
+		contactHeading: 'Contact',
+		contact: [
+			'Questions about privacy go to ',
+			{ text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
+			'.'
+		],
+		updated: 'Last updated on 26 October 2026.'
 	}
 };

@@ -249,6 +249,7 @@ export const cs: Messages = {
 		credit:
 			'Vytvořil Matěj Schrödl. Nezávislý open-source projekt, nijak nespojený s žádným realitním portálem.',
 		operators: 'Pro provozovatele portálů',
+		privacyPolicy: 'Ochrana soukromí',
 		support: 'Poděkovat'
 	},
 	operators: {
@@ -277,5 +278,36 @@ export const cs: Messages = {
 			'. Každá taková zpráva dostane rychlou odpověď.'
 		],
 		notAffiliated: 'rentczecher není s žádným realitním portálem nijak spojený a žádný ho nepodporuje.'
+	},
+	privacyPolicy: {
+		title: 'Ochrana soukromí',
+		intro: 'rentczecher nesbírá žádné osobní údaje. Tato stránka uvádí všechna spojení, která aplikace a tento web navazují, takže přesně vidíte, kam vaše data putují.',
+		keepsHeading: 'Co si aplikace ukládá',
+		keeps: [
+			'Vaše profily, uložené a skryté nabídky, fotky a historie cen zůstávají jen na vašem počítači, ve vlastní datové složce aplikace.',
+			'Nemá žádný účet, server, analytiku, hlášení pádů ani sledování. Autorovi se nikdy nic neposílá.',
+			'Odinstalováním aplikace a smazáním její datové složky zmizí vše, co si uložila.'
+		],
+		connectionsHeading: 'S kým aplikace komunikuje',
+		connectionsIntro: 'Aplikace se připojuje jen ke službám níže, a jen aby udělala to, oč jste ji požádali. Každá z nich vidí vaši IP adresu, stejně jako každý web, který navštívíte.',
+		connections: [
+			'Realitní portály, které zapnete, a jejich servery s obrázky. Když spustíte kontrolu, přečte vaše uložená hledání a u každé nové nabídky stáhne hlavní fotku. Inzerát a další fotky nabídky čte, když ji otevřete nebo označíte hvězdičkou.',
+			'Server s dlaždicemi OpenStreetMap (tile.openstreetmap.org), aby mohla vykreslit mapy ulic.',
+			'Veřejné servery Overpass projektu OpenStreetMap (overpass-api.de, overpass.private.coffee, overpass.kumi.systems), aby našla místa v okolí, třeba obchody nebo zastávky. Dostanou jen výřez mapy kolem nabídky a druhy hledaných míst, nic dalšího.',
+			'Odkaz na inzerát, Mapy.com nebo Google Mapy se otevře ve vašem prohlížeči a odtamtud platí zásady ochrany soukromí daného webu.'
+		],
+		siteHeading: 'Tento web',
+		site: [
+			'rentczecher.cz je statický web hostovaný na GitHub Pages. Neukládá žádné cookies a nepoužívá žádnou analytiku.',
+			'GitHub jako hostitel může zaznamenávat technické údaje, například vaši IP adresu, podle svých vlastních zásad ochrany soukromí.',
+			'Zvolený světlý nebo tmavý motiv si pamatuje jen váš prohlížeč.'
+		],
+		contactHeading: 'Kontakt',
+		contact: [
+			'Dotazy k ochraně soukromí posílejte na ',
+			{ text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
+			'.'
+		],
+		updated: 'Naposledy aktualizováno 26. října 2026.'
 	}
 };

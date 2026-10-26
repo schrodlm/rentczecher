@@ -16,6 +16,7 @@
 			<a class="github" href={REPO_URL}>GitHub</a>
 			<a href="/devlog/">{t.nav.devlog}</a>
 			<a href="{homePath(lang)}operators/">{t.footer.operators}</a>
+			<a href="{homePath(lang)}privacy/">{t.footer.privacyPolicy}</a>
 			<a href={SUPPORT_URL}>{t.footer.support}</a>
 		</nav>
 	</div>

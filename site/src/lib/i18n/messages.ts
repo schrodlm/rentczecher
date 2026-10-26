@@ -153,6 +153,7 @@ export interface Messages {
 		label: string;
 		credit: string;
 		operators: string;
+		privacyPolicy: string;
 		support: string;
 	};
 	operators: {
@@ -166,5 +167,19 @@ export interface Messages {
 		contactHeading: string;
 		contact: RichText;
 		notAffiliated: string;
+	};
+	privacyPolicy: {
+		title: string;
+		intro: string;
+		keepsHeading: string;
+		keeps: string[];
+		connectionsHeading: string;
+		connectionsIntro: string;
+		connections: string[];
+		siteHeading: string;
+		site: string[];
+		contactHeading: string;
+		contact: RichText;
+		updated: string;
 	};
 }
