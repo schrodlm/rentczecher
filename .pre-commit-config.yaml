@@ -56,6 +56,15 @@ repos:
         pass_filenames: false
         files: ^(engine/src/rentczecher_engine/|engine/scripts/export_openapi_schema\.py|docs/api/openapi\.json)
 
+      # Lints the debug build only, CI also lints the release build. Needs
+      # shell/sidecar, which bootstrap creates.
+      - id: clippy
+        name: clippy (shell)
+        entry: cargo clippy --manifest-path shell/Cargo.toml --all-targets -- -D warnings
+        language: system
+        pass_filenames: false
+        files: ^shell/
+
       # Every t()/tn() msgid in panel/src must carry a Czech translation.
       # Needs panel/node_modules installed (npm ci in panel/).
       - id: panel-locales
