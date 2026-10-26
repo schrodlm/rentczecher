@@ -47,19 +47,47 @@ def require_linux_shell_libraries() -> None:
             "https://v2.tauri.app/start/prerequisites/")
 
 
-def npm_floor() -> tuple[int, int]:
-    declared = json.loads((PANEL / "package.json").read_text())["engines"]["npm"]
-    if not declared.startswith(">="):
-        sys.exit(f'bootstrap: cannot read panel/package.json engines.npm {declared!r}, expected ">=X.Y"')
-    major, minor = (int(part) for part in declared.removeprefix(">=").split(".")[:2])
+def major_minor(version: str) -> tuple[int, int]:
+    major, minor = (int(part) for part in version.split(".")[:2])
     return major, minor
 
 
+def version_of(tool: str) -> tuple[int, int]:
+    output = subprocess.run(
+        [tool, "--version"], capture_output=True, text=True, check=True).stdout.strip()
+    return major_minor(output.removeprefix("v"))
+
+
+def range_admits(declared: str, version: tuple[int, int]) -> bool:
+    for alternative in declared.split("||"):
+        alternative = alternative.strip()
+        if alternative.startswith("^"):
+            floor = major_minor(alternative.removeprefix("^"))
+            if version[0] == floor[0] and version >= floor:
+                return True
+        elif alternative.startswith(">="):
+            if version >= major_minor(alternative.removeprefix(">=")):
+                return True
+        else:
+            sys.exit(f'bootstrap: cannot read engines range {declared!r}, expected "^X.Y" or ">=X.Y" alternatives')
+    return False
+
+
+def panel_engines() -> dict[str, str]:
+    return json.loads((PANEL / "package.json").read_text())["engines"]
+
+
+def require_node_version() -> None:
+    declared = panel_engines()["node"]
+    node = version_of("node")
+    if not range_admits(declared, node):
+        sys.exit(
+            f"bootstrap: node {node[0]}.{node[1]} is too old, the panel and site need {declared}. "
+            "Upgrade it: https://nodejs.org (the current LTS works)")
+
+
 def npm_ci_command() -> list[str]:
-    version = subprocess.run(
-        ["npm", "--version"], capture_output=True, text=True, check=True).stdout.strip()
-    major, minor = (int(part) for part in version.split(".")[:2])
-    if (major, minor) >= npm_floor():
+    if range_admits(panel_engines()["npm"], version_of("npm")):
         return ["npm", "ci"]
     # panel/.npmrc makes the engines floor fatal, so a system npm below it
     # borrows a current one for the install.
@@ -68,7 +96,8 @@ def npm_ci_command() -> list[str]:
 
 def main() -> None:
     require("uv", "https://docs.astral.sh/uv/getting-started/installation/")
-    require("node", "https://nodejs.org (20 or newer)")
+    require("node", "https://nodejs.org")
+    require_node_version()
     require("cargo", "https://rustup.rs")
     require_linux_shell_libraries()
     require("npm", "ships with node")
