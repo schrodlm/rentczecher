@@ -70,7 +70,6 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-
       # Runs the engine this OS just froze, the way the shell runs it.
       - run: uv run pytest -m smoke -v
         working-directory: engine
@@ -97,6 +96,9 @@ jobs:
 
       # A release publishes each installer under a name without the version,
       # so a link to releases/latest/download/<name> always finds the newest.
+      # Each installer the app updates itself from keeps its signature beside
+      # it, for the release job's update manifest. macOS updates from an
+      # archive of the app rather than from the disk image.
       - name: Name the installers for the release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
@@ -106,13 +108,18 @@ jobs:
           case "$RUNNER_OS" in
             Linux)
               cp $bundle/appimage/*.AppImage release/rentczecher-linux-x86_64.AppImage
+              cp $bundle/appimage/*.AppImage.sig release/rentczecher-linux-x86_64.AppImage.sig
               cp $bundle/deb/*.deb release/rentczecher-linux-amd64.deb
+              cp $bundle/deb/*.deb.sig release/rentczecher-linux-amd64.deb.sig
               ;;
             Windows)
               cp $bundle/nsis/*.exe release/rentczecher-windows-x64-setup.exe
+              cp $bundle/nsis/*.exe.sig release/rentczecher-windows-x64-setup.exe.sig
               ;;
             macOS)
               cp $bundle/dmg/*.dmg release/rentczecher-macos-arm64.dmg
+              cp $bundle/macos/*.app.tar.gz release/rentczecher-macos-arm64.app.tar.gz
+              cp $bundle/macos/*.app.tar.gz.sig release/rentczecher-macos-arm64.app.tar.gz.sig
               ;;
           esac
 
@@ -132,11 +139,22 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           pattern: release-*
           path: release
           merge-multiple: true
+
+      # The app asks releases/latest/download/latest.json for a newer
+      # version, so a release is offered to installed apps once it is
+      # published, and not while it is a draft. The signatures travel inside
+      # the manifest, so they are not uploaded on their own.
+      - name: Write the update manifest
+        run: |
+          python3 engine/scripts/updater_manifest.py release "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY"
+          rm release/*.sig
 
       - name: Draft the release
         env:
