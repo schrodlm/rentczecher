@@ -289,11 +289,12 @@ export const en: Messages = {
 			'Uninstalling the app and deleting its data folder removes everything it kept.'
 		],
 		connectionsHeading: 'Who the app talks to',
-		connectionsIntro: 'The app connects only to the services below, and only to do what you asked of it. Each of them sees your IP address, as any website you visit does.',
+		connectionsIntro: 'The app connects only to the services below, each for the one purpose listed. Each of them sees your IP address, as any website you visit does.',
 		connections: [
 			"The real-estate portals you turn on, and their image servers. When you run a scan it reads your saved searches and downloads each new listing's main photo. It reads a listing's advert and its other photos when you open or star it.",
 			"OpenStreetMap's tile server (tile.openstreetmap.org), to draw street maps.",
 			'Public OpenStreetMap Overpass servers (overpass-api.de, overpass.private.coffee, overpass.kumi.systems), to find nearby places such as shops or stops. They receive the map area around a listing and the kinds of places to look for, nothing else.',
+			"GitHub (github.com, with downloads served from githubusercontent.com), where the app's releases are published. When the app starts and once a day after that, it asks whether a newer version is out, and it downloads one only when you choose to update. GitHub counts each check and download, so the author sees how often the app checks, but not who checked.",
 			"A link to an advert, Mapy.com or Google Maps opens in your web browser, and from there that site's own privacy policy applies."
 		],
 		siteHeading: 'This website',

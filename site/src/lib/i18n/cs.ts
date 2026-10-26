@@ -289,11 +289,12 @@ export const cs: Messages = {
 			'Odinstalováním aplikace a smazáním její datové složky zmizí vše, co si uložila.'
 		],
 		connectionsHeading: 'S kým aplikace komunikuje',
-		connectionsIntro: 'Aplikace se připojuje jen ke službám níže, a jen aby udělala to, oč jste ji požádali. Každá z nich vidí vaši IP adresu, stejně jako každý web, který navštívíte.',
+		connectionsIntro: 'Aplikace se připojuje jen ke službám níže, ke každé jen za uvedeným účelem. Každá z nich vidí vaši IP adresu, stejně jako každý web, který navštívíte.',
 		connections: [
 			'Realitní portály, které zapnete, a jejich servery s obrázky. Když spustíte kontrolu, přečte vaše uložená hledání a u každé nové nabídky stáhne hlavní fotku. Inzerát a další fotky nabídky čte, když ji otevřete nebo označíte hvězdičkou.',
 			'Server s dlaždicemi OpenStreetMap (tile.openstreetmap.org), aby mohla vykreslit mapy ulic.',
 			'Veřejné servery Overpass projektu OpenStreetMap (overpass-api.de, overpass.private.coffee, overpass.kumi.systems), aby našla místa v okolí, třeba obchody nebo zastávky. Dostanou jen výřez mapy kolem nabídky a druhy hledaných míst, nic dalšího.',
+			'GitHub (github.com, stahování obsluhuje githubusercontent.com), kde vycházejí nové verze aplikace. Aplikace se při spuštění a pak jednou denně zeptá, zda je k dispozici novější verze, a stáhne ji, jen když se rozhodnete aktualizovat. GitHub každý dotaz i stažení započítá, takže autor vidí, jak často se aplikace ptá, ale ne, kdo se ptal.',
 			'Odkaz na inzerát, Mapy.com nebo Google Mapy se otevře ve vašem prohlížeči a odtamtud platí zásady ochrany soukromí daného webu.'
 		],
 		siteHeading: 'Tento web',
