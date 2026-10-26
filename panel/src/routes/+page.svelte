@@ -14,12 +14,14 @@
 	import Inbox from '$lib/components/Inbox.svelte';
 	import LanguageToggle from '$lib/components/LanguageToggle.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import UpdateNotice from '$lib/components/UpdateNotice.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { keepSelection, takeKeptSelection } from '$lib/kept-selection';
 	import { NearbyStore } from '$lib/nearby/nearby-store.svelte';
 	import { OverpassClient } from '$lib/nearby/overpass';
 	import { GalleryStore } from '$lib/stores/gallery.svelte';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
+	import { UpdateStore } from '$lib/stores/update.svelte';
 	import { applyTheme } from '$lib/theme';
 	import { UserConfigFile, type Language, type Theme, type UserConfig } from '$lib/user-config';
 	import WelcomeWizard from '$lib/welcome/WelcomeWizard.svelte';
@@ -39,6 +41,7 @@
 	let engineStopped = $state(false);
 
 	const runProgress = new RunProgressStore();
+	const updates = new UpdateStore();
 	let galleries = $state<GalleryStore | null>(null);
 	const nearby = new NearbyStore(new OverpassClient());
 
@@ -274,6 +277,7 @@
 
 	onMount(() => {
 		const stopListening = onEngineStopped(() => (engineStopped = true));
+		updates.watch();
 		// Taken before anything can fail, so it never outlives the reload it was
 		// kept for.
 		const kept = takeKeptSelection();
@@ -297,6 +301,7 @@
 		})();
 
 		return () => {
+			updates.unwatch();
 			runProgress.disconnect();
 			galleries?.disconnect();
 			void stopListening.then((unlisten) => unlisten());
@@ -348,6 +353,7 @@
 			{/if}
 		</nav>
 		<div class="topbar__end">
+			<UpdateNotice {updates} />
 			<InboxHeader
 				{health}
 				runState={runProgress.state}

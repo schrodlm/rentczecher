@@ -837,3 +837,21 @@ msgstr "E-mail se otevřel ve vašem poštovním programu."
 
 msgid "The issue opened in your browser."
 msgstr "Issue se otevřelo ve vašem prohlížeči."
+
+msgid "Version {version} is available"
+msgstr "Je k dispozici verze {version}"
+
+msgid "Update and restart"
+msgstr "Aktualizovat a restartovat"
+
+msgid "Downloading the update..."
+msgstr "Stahuji aktualizaci..."
+
+msgid "Downloading the update... {percent} %"
+msgstr "Stahuji aktualizaci... {percent} %"
+
+msgid "The update could not be installed."
+msgstr "Aktualizaci se nepodařilo nainstalovat."
+
+msgid "Download it by hand"
+msgstr "Stáhnout ručně"

@@ -25,3 +25,4 @@ getrandom = "0.4.3"
 ureq = { version = "3.4.2", default-features = false }
 tauri-plugin-dialog = "2"
 open = "5"
+tauri-plugin-updater = "2.14"

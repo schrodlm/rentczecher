@@ -10,6 +10,8 @@ use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
+mod update;
+
 // The event the window receives when the engine's process ends. The panel's
 // onEngineStopped() listens for exactly this name.
 const ENGINE_STOPPED_EVENT: &str = "engine-stopped";
@@ -43,7 +45,7 @@ struct SidecarConnection {
 }
 
 /// The engine process the shell started, and how to reach it.
-struct Sidecar {
+pub(crate) struct Sidecar {
     connection: SidecarConnection,
     process: Mutex<Child>,
     // The write end of the engine's stdin, never written to. The engine runs
@@ -55,7 +57,7 @@ struct Sidecar {
 impl Sidecar {
     /// Ends the engine and waits until its process is gone, so nothing it
     /// holds open is still in use when this returns.
-    fn stop(&self) {
+    pub(crate) fn stop(&self) {
         if let Ok(mut process) = self.process.lock() {
             let _ = process.kill();
             let _ = process.wait();
@@ -381,6 +383,8 @@ fn report_startup_failure(app: &tauri::AppHandle, error: &str) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(update::PendingUpdate::default())
         .setup(|app| {
             // A release build has no terminal, so the file is what a user can
             // send when something breaks. An app that cannot write its log
@@ -436,6 +440,8 @@ pub fn run() {
             open_mail_draft,
             app_details,
             open_log_folder,
+            update::check_for_update,
+            update::install_update,
             read_user_config,
             write_user_config
         ])
