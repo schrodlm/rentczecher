@@ -9,13 +9,15 @@ import json
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 ENGINE = REPO / "engine"
 PANEL = REPO / "panel"
 SITE = REPO / "site"
-SIDECAR = REPO / "shell" / "sidecar"
+SHELL = REPO / "shell"
+SIDECAR = SHELL / "sidecar"
 
 
 def run(*command: str, cwd: Path) -> None:
@@ -56,7 +58,7 @@ def major_minor(version: str) -> tuple[int, int]:
 def version_of(tool: str) -> tuple[int, int]:
     output = subprocess.run(
         [tool, "--version"], capture_output=True, text=True, check=True).stdout.strip()
-    return major_minor(output.removeprefix("v"))
+    return major_minor(output.removeprefix(f"{tool} ").removeprefix("v"))
 
 
 def range_admits(declared: str, version: tuple[int, int]) -> bool:
@@ -87,6 +89,21 @@ def require_node_version() -> None:
             "Upgrade it: https://nodejs.org (the current LTS works)")
 
 
+def require_rust_version() -> None:
+    declared = tomllib.loads((SHELL / "Cargo.toml").read_text())["package"]["rust-version"]
+    cargo = version_of("cargo")
+    if cargo < major_minor(declared):
+        sys.exit(
+            f"bootstrap: cargo {cargo[0]}.{cargo[1]} is too old, the shell needs {declared} or newer. "
+            "Install a current toolchain through rustup: https://rustup.rs")
+
+
+def require_clippy() -> None:
+    if subprocess.run(["cargo", "clippy", "--version"], capture_output=True).returncode != 0:
+        sys.exit("bootstrap: clippy not found, the commit hooks lint the shell with it. "
+                 "Install it: rustup component add clippy")
+
+
 def npm_ci_command() -> list[str]:
     if range_admits(panel_engines()["npm"], version_of("npm")):
         return ["npm", "ci"]
@@ -100,6 +117,8 @@ def main() -> None:
     require("node", "https://nodejs.org")
     require_node_version()
     require("cargo", "https://rustup.rs")
+    require_rust_version()
+    require_clippy()
     require_linux_shell_libraries()
     require("npm", "ships with node")
 
