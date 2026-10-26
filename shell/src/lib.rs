@@ -443,3 +443,27 @@ pub fn run() {
             }
         });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::check_mail_draft;
+
+    #[test]
+    fn a_mail_draft_may_carry_a_subject_and_a_body() {
+        assert!(check_mail_draft("mailto:a@b.cz?subject=Hi&body=Text%0D%0A").is_ok());
+        assert!(check_mail_draft("mailto:a@b.cz").is_ok());
+    }
+
+    #[test]
+    fn a_mail_draft_carries_no_other_field() {
+        assert!(check_mail_draft("mailto:a@b.cz?body=x&attach=/home/u/.ssh/id_rsa").is_err());
+        assert!(check_mail_draft("mailto:a@b.cz?Attach=/etc/passwd").is_err());
+        assert!(check_mail_draft("mailto:a@b.cz?cc=c@d.cz").is_err());
+    }
+
+    #[test]
+    fn only_mailto_links_are_mail_drafts() {
+        assert!(check_mail_draft("https://example.com").is_err());
+        assert!(check_mail_draft("file:///etc/passwd").is_err());
+    }
+}
