@@ -4,6 +4,7 @@
     "beforeBuildCommand": "npm run build && uv run --directory ../engine python scripts/freeze_sidecar.py && uv run --directory ../engine python scripts/third_party_notices.py"
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "resources": {
       "sidecar/": "sidecar/",
       "THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.txt",
