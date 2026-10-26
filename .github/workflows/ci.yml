@@ -38,3 +38,28 @@ jobs:
       - run: npm run check
       - run: npm run check:locales
       - run: npm test
+
+  shell:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shell
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the webview libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential file libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: shell
+      # The build script checks the bundled resources exist, and the frozen
+      # engine lands in this folder only during a release build.
+      - run: mkdir sidecar
+      # Some code compiles only into release builds, so both get linted.
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo clippy --locked --release --all-targets -- -D warnings
