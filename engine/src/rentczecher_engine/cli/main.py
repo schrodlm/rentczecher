@@ -77,8 +77,11 @@ def serve(port: int, allowed_origins: list[str], exit_with_parent: bool = False)
     # Binding before announcing makes the announced port a promise: the
     # socket already holds it, so nothing else can take it in between.
     # Open event streams never close by themselves, so a graceful shutdown
-    # stops waiting for them after two seconds.
-    server_config = uvicorn.Config(app, host="127.0.0.1", port=port, timeout_graceful_shutdown=2)
+    # stops waiting for them after two seconds. The access log stays off,
+    # because the event stream carries its token in the query string and
+    # whatever the engine prints may end up in a log file.
+    server_config = uvicorn.Config(app, host="127.0.0.1", port=port, timeout_graceful_shutdown=2,
+                                   access_log=False)
     sock = server_config.bind_socket()
     print(f"PORT={sock.getsockname()[1]}", flush=True)
     server = uvicorn.Server(server_config)
