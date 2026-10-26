@@ -798,3 +798,42 @@ msgstr "Data z OpenStreetMap, zjišťovaná živě. Když jsou servery přetíž
 
 msgid "Nearby"
 msgstr "Okolí"
+
+msgid "Send feedback"
+msgstr "Poslat zpětnou vazbu"
+
+msgid "A bug, an idea, anything at all."
+msgstr "Chyba, nápad, cokoli."
+
+msgid "Sent along: {details}"
+msgstr "Přiloží se: {details}"
+
+msgid "Something broke? Attach the log file to your message."
+msgstr "Něco se rozbilo? Přiložte ke zprávě soubor s logem."
+
+msgid "Show log file"
+msgstr "Zobrazit soubor s logem"
+
+msgid "Open GitHub issue"
+msgstr "Založit issue na GitHubu"
+
+msgid "Send by email"
+msgstr "Poslat e-mailem"
+
+msgid "rentczecher feedback"
+msgstr "Zpětná vazba k rentczecher"
+
+msgid "Could not open the draft: {reason}"
+msgstr "Koncept se nepodařilo otevřít: {reason}"
+
+msgid "Could not open the log folder: {reason}"
+msgstr "Složku s logem se nepodařilo otevřít: {reason}"
+
+msgid "Could not read the app version: {reason}"
+msgstr "Verzi aplikace se nepodařilo zjistit: {reason}"
+
+msgid "The email opened in your mail client."
+msgstr "E-mail se otevřel ve vašem poštovním programu."
+
+msgid "The issue opened in your browser."
+msgstr "Issue se otevřelo ve vašem prohlížeči."
