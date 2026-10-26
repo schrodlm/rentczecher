@@ -12,7 +12,7 @@ these or a derived neutral.
 |---|---|
 | ink | text, and the glyphs in the logo |
 | ground | the page background |
-| card | listing cards, the active sidebar item |
+| card | listing cards, the top bar |
 | line | borders and dividers |
 | olive | the good semantics: price drops, healthy portal dots, high scores |
 | bronze | secondary accents: labels, mid scores, accent text on the light ground |

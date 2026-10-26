@@ -302,98 +302,90 @@
 </script>
 
 <div class="shell" inert={welcoming}>
-	<aside class="sidebar">
-		<h1 class="sidebar__brand">
-			<img class="sidebar__logo" src={logo} alt="" />
-			rentczecher
-		</h1>
-	</aside>
-
-	<div class="shell__main">
-		<header class="topbar">
-			<nav class="tabs" aria-label={t.t('Profiles')}>
-				{#if profilesError}
-					<span class="tabs__status">
-						{t.t('Could not load profiles: {message}', { message: profilesError })}
-					</span>
-				{:else if profiles === null}
-					<span class="tabs__status">{t.t('Loading profiles...')}</span>
-				{:else}
-					{#if profiles.length === 0}
-						<span class="tabs__status">{t.t('No profiles yet')}</span>
-					{/if}
-					{#each profiles as profile (profile.id)}
-						{@const selected = profile.id === selectedProfileId}
-						<div class="tab" class:tab--selected={selected}>
-							<button class="tab__select" onclick={() => selectProfile(profile.id)}>
-								{profile.name}
-								{#if newCounts[profile.id]}
-									<span class="tab__count">{newCounts[profile.id]}</span>
-								{/if}
-							</button>
-							{#if selected}
-								<button
-									class="tab__edit"
-									aria-label={t.t('Edit profile {name}', { name: profile.name })}
-									title={t.t('Edit profile {name}', { name: profile.name })}
-									onclick={() => openStoredProfile(profile)}
-								>
-									<svg viewBox="0 0 24 24" aria-hidden="true">
-										<path
-											fill-rule="evenodd"
-											d="M9.91 4.69 L10.36 1.63 L13.64 1.63 L14.09 4.69 L15.68 5.35 L18.17 3.51 L20.49 5.83 L18.65 8.32 L19.31 9.91 L22.37 10.36 L22.37 13.64 L19.31 14.09 L18.65 15.68 L20.49 18.17 L18.17 20.49 L15.68 18.65 L14.09 19.31 L13.64 22.37 L10.36 22.37 L9.91 19.31 L8.32 18.65 L5.83 20.49 L3.51 18.17 L5.35 15.68 L4.69 14.09 L1.63 13.64 L1.63 10.36 L4.69 9.91 L5.35 8.32 L3.51 5.83 L5.83 3.51 L8.32 5.35 Z M15 12a3 3 0 1 0-6 0 3 3 0 1 0 6 0Z"
-										/>
-									</svg>
-								</button>
-							{/if}
-						</div>
-					{/each}
-					<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
+	<header class="topbar">
+		<h1 class="topbar__logo"><img src={logo} alt="rentczecher" /></h1>
+		<nav class="tabs" aria-label={t.t('Profiles')}>
+			{#if profilesError}
+				<span class="tabs__status">
+					{t.t('Could not load profiles: {message}', { message: profilesError })}
+				</span>
+			{:else if profiles === null}
+				<span class="tabs__status">{t.t('Loading profiles...')}</span>
+			{:else}
+				{#if profiles.length === 0}
+					<span class="tabs__status">{t.t('No profiles yet')}</span>
 				{/if}
-			</nav>
-			<div class="topbar__end">
-				<InboxHeader
-					{health}
-					runState={runProgress.state}
-					lastFinishedAt={runProgress.lastFinishedAt}
-					triggerError={runError}
-					onrun={handleRun}
-				/>
-				<span class="topbar__divider" aria-hidden="true"></span>
-				<ThemeToggle theme={userConfig.theme} onchange={changeTheme} />
-				<LanguageToggle language={userConfig.language} onchange={changeLanguage} />
-			</div>
-		</header>
+				{#each profiles as profile (profile.id)}
+					{@const selected = profile.id === selectedProfileId}
+					<div class="tab" class:tab--selected={selected}>
+						<button class="tab__select" onclick={() => selectProfile(profile.id)}>
+							{profile.name}
+							{#if newCounts[profile.id]}
+								<span class="tab__count">{newCounts[profile.id]}</span>
+							{/if}
+						</button>
+						{#if selected}
+							<button
+								class="tab__edit"
+								aria-label={t.t('Edit profile {name}', { name: profile.name })}
+								title={t.t('Edit profile {name}', { name: profile.name })}
+								onclick={() => openStoredProfile(profile)}
+							>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path
+										fill-rule="evenodd"
+										d="M9.91 4.69 L10.36 1.63 L13.64 1.63 L14.09 4.69 L15.68 5.35 L18.17 3.51 L20.49 5.83 L18.65 8.32 L19.31 9.91 L22.37 10.36 L22.37 13.64 L19.31 14.09 L18.65 15.68 L20.49 18.17 L18.17 20.49 L15.68 18.65 L14.09 19.31 L13.64 22.37 L10.36 22.37 L9.91 19.31 L8.32 18.65 L5.83 20.49 L3.51 18.17 L5.35 15.68 L4.69 14.09 L1.63 13.64 L1.63 10.36 L4.69 9.91 L5.35 8.32 L3.51 5.83 L5.83 3.51 L8.32 5.35 Z M15 12a3 3 0 1 0-6 0 3 3 0 1 0 6 0Z"
+									/>
+								</svg>
+							</button>
+						{/if}
+					</div>
+				{/each}
+				<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
+			{/if}
+		</nav>
+		<div class="topbar__end">
+			<InboxHeader
+				{health}
+				runState={runProgress.state}
+				lastFinishedAt={runProgress.lastFinishedAt}
+				triggerError={runError}
+				onrun={handleRun}
+			/>
+			<span class="topbar__divider" aria-hidden="true"></span>
+			<ThemeToggle theme={userConfig.theme} onchange={changeTheme} />
+			<LanguageToggle language={userConfig.language} onchange={changeLanguage} />
+		</div>
+	</header>
 
-		{#if engineStopped}
-			<p class="engine-stopped" role="alert">
-				{t.t('rentczecher stopped working. Restart the app to continue.')}
-			</p>
-		{/if}
+	{#if engineStopped}
+		<p class="engine-stopped" role="alert">
+			{t.t('rentczecher stopped working. Restart the app to continue.')}
+		</p>
+	{/if}
 
-		{#if listingsError}
-			<p class="shell__status">{t.t('Could not load listings: {message}', { message: listingsError })}</p>
-		{:else if profiles !== null && profiles.length === 0}
-			<p class="shell__status">{t.t('Create a profile with + to start watching.')}</p>
-		{:else if listings === null}
-			<p class="shell__status">{t.t('Loading listings...')}</p>
-		{:else}
-			<!-- Each profile opens fresh: its first listing picked, its own order. -->
-			{#key selectedProfileId}
-				<Inbox
-					{listings}
-					preferences={scoring}
-					onview={handleViewed}
-					onfavourite={handleFavourite}
-					onmarkallviewed={handleMarkAllViewed}
-					{loadPriceHistory}
-					gallery={galleries?.gallery ?? null}
-					{nearby}
-					bind:selectedId={selectedPropertyId}
-				/>
-			{/key}
-		{/if}
-	</div>
+	{#if listingsError}
+		<p class="shell__status">{t.t('Could not load listings: {message}', { message: listingsError })}</p>
+	{:else if profiles !== null && profiles.length === 0}
+		<p class="shell__status">{t.t('Create a profile with + to start watching.')}</p>
+	{:else if listings === null}
+		<p class="shell__status">{t.t('Loading listings...')}</p>
+	{:else}
+		<!-- Each profile opens fresh: its first listing picked, its own order. -->
+		{#key selectedProfileId}
+			<Inbox
+				{listings}
+				preferences={scoring}
+				onview={handleViewed}
+				onfavourite={handleFavourite}
+				onmarkallviewed={handleMarkAllViewed}
+				{loadPriceHistory}
+				gallery={galleries?.gallery ?? null}
+				{nearby}
+				bind:selectedId={selectedPropertyId}
+			/>
+		{/key}
+	{/if}
 </div>
 
 {#if welcoming}
@@ -415,31 +407,9 @@
 	/* As tall as the window, so the inbox's list and details scroll each on
 	their own. */
 	.shell {
-		display: grid;
-		grid-template-columns: 11rem 1fr;
-		height: 100vh;
-	}
-
-	.sidebar {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
-		background: var(--color-card);
-		border-right: 1px solid var(--color-line);
-		padding: var(--space-4);
-	}
-
-	.sidebar__brand {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: 1.125rem;
-		margin: 0;
-	}
-
-	.sidebar__logo {
-		width: 1.5rem;
-		height: 1.5rem;
+		height: 100vh;
 	}
 
 	.engine-stopped {
@@ -451,17 +421,10 @@
 		font-weight: 600;
 	}
 
-	.shell__main {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-		min-height: 0;
-	}
 
 	.topbar {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-4);
 		padding: var(--space-2) var(--space-4) 0;
 		border-bottom: 1px solid var(--color-line);
@@ -469,12 +432,26 @@
 	}
 
 	/* The bar pads only its top, seating the tabs on its bottom border, so the
-	end pads its bottom as much to sit in the middle of the bar. */
+	logo and the end keep as much below them to sit in the middle of the bar. */
+	.topbar__logo,
+	.topbar__end {
+		margin-bottom: var(--space-2);
+	}
+
+	.topbar__logo {
+		display: flex;
+		margin-top: 0;
+	}
+
+	.topbar__logo img {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
 	.topbar__end {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding-bottom: var(--space-2);
 	}
 
 	.topbar__divider {
@@ -488,6 +465,7 @@
 	the selected one covers the line and joins the inbox below. */
 	.tabs {
 		display: flex;
+		flex: 1;
 		align-self: flex-end;
 		align-items: flex-end;
 		gap: var(--space-1);
