@@ -9,6 +9,8 @@
 	import InboxHeader from '$lib/components/InboxHeader.svelte';
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
 	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
+	import FeedbackButton from '$lib/components/FeedbackButton.svelte';
+	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
 	import Inbox from '$lib/components/Inbox.svelte';
 	import LanguageToggle from '$lib/components/LanguageToggle.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -52,6 +54,7 @@
 	// The profile open in the editor, with the id it is stored under, or null
 	// for a new one.
 	let editing = $state<{ draft: ProfileDraft; profileId: string | null } | null>(null);
+	let writingFeedback = $state(false);
 
 	// While no preference weighs anything every listing scores 0, which says
 	// nothing, so listings go unscored.
@@ -301,7 +304,7 @@
 	});
 </script>
 
-<div class="shell" inert={welcoming}>
+<div class="shell" inert={welcoming || writingFeedback}>
 	<header class="topbar">
 		<h1 class="topbar__logo"><img src={logo} alt="rentczecher" /></h1>
 		<nav class="tabs" aria-label={t.t('Profiles')}>
@@ -355,6 +358,7 @@
 			<span class="topbar__divider" aria-hidden="true"></span>
 			<ThemeToggle theme={userConfig.theme} onchange={changeTheme} />
 			<LanguageToggle language={userConfig.language} onchange={changeLanguage} />
+			<FeedbackButton onclick={() => (writingFeedback = true)} />
 		</div>
 	</header>
 
@@ -390,6 +394,10 @@
 
 {#if welcoming}
 	<WelcomeWizard theme={userConfig.theme} oncomplete={completeWelcome} />
+{/if}
+
+{#if writingFeedback}
+	<FeedbackDialog onclose={() => (writingFeedback = false)} />
 {/if}
 
 {#if editing !== null}
