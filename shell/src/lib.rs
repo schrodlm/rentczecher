@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
 // The event the window receives when the engine's process ends. The panel's
 // onEngineStopped() listens for exactly this name.
@@ -20,6 +21,10 @@ const PORT_ANNOUNCE_TIMEOUT: Duration = Duration::from_secs(10);
 // health check, and how often the shell asks.
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(10);
 const HEALTH_POLL_INTERVAL: Duration = Duration::from_millis(250);
+
+// The log file in the OS log folder, without its extension.
+const LOG_FILE_NAME: &str = "rentczecher";
+const LOG_FILE_MAX_BYTES: u128 = 5_000_000;
 
 // The origins the window's page runs on. A debug build loads it from Vite, a
 // release build from inside the app, whose origin differs on Windows.
@@ -312,13 +317,23 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            // A release build has no terminal, so the file is what a user can
+            // send when something breaks. An app that cannot write its log
+            // still starts.
+            let _ = app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .clear_targets()
+                    .target(Target::new(TargetKind::Stdout))
+                    .target(Target::new(TargetKind::LogDir {
+                        file_name: Some(LOG_FILE_NAME.to_string()),
+                    }))
+                    .max_file_size(LOG_FILE_MAX_BYTES)
+                    // A full file is set aside rather than deleted, so a
+                    // report sent right after the switch still holds history.
+                    .rotation_strategy(RotationStrategy::KeepSome(1))
+                    .level(log::LevelFilter::Info)
+                    .build(),
+            );
             let started = scenario_home().and_then(|home| {
                 let user_config = match &home {
                     Some(home) => UserConfigFile::in_folder(home),
