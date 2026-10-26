@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""One-command dev setup: checks required tools, then installs the Python
-and panel environments. Idempotent, rerun anytime.
+"""One-command dev setup: checks required tools, then installs the Python,
+panel and site environments. Idempotent, rerun anytime.
 
 Run: python3 scripts/bootstrap.py
 """
@@ -14,6 +14,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 ENGINE = REPO / "engine"
 PANEL = REPO / "panel"
+SITE = REPO / "site"
 SIDECAR = REPO / "shell" / "sidecar"
 
 
@@ -89,7 +90,7 @@ def require_node_version() -> None:
 def npm_ci_command() -> list[str]:
     if range_admits(panel_engines()["npm"], version_of("npm")):
         return ["npm", "ci"]
-    # panel/.npmrc makes the engines floor fatal, so a system npm below it
+    # The apps' .npmrc makes the engines floor fatal, so a system npm below it
     # borrows a current one for the install.
     return ["npx", "-y", "npm@10", "ci"]
 
@@ -108,6 +109,7 @@ def main() -> None:
     # The generated catalog and API types are gitignored, so a fresh clone
     # needs one codegen pass before the editor sees a consistent tree.
     run("npm", "run", "codegen", cwd=PANEL)
+    run(*npm_ci_command(), cwd=SITE)
     # The shell bundles the frozen engine from this gitignored folder, and its
     # build fails when the folder is missing, even in dev, which runs the
     # engine from source and never reads it.
