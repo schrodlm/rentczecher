@@ -120,6 +120,62 @@ fn engine_lines(stream: impl Read) -> impl Iterator<Item = String> {
         .map(|bytes| String::from_utf8_lossy(&bytes).trim_end_matches('\r').to_string())
 }
 
+/// Opens a drafted email in the default mail client. Only mailto links
+/// carrying just a subject and a body, so the panel can never make the shell
+/// open a file or run a program, and some mail clients honour an attach
+/// field that would pick up a local file.
+#[tauri::command]
+fn open_mail_draft(url: String) -> Result<(), String> {
+    check_mail_draft(&url)?;
+    open::that_detached(&url).map_err(|error| error.to_string())
+}
+
+fn check_mail_draft(url: &str) -> Result<(), String> {
+    let query = url
+        .strip_prefix("mailto:")
+        .ok_or_else(|| format!("not a mailto link: {url}"))?
+        .split_once('?')
+        .map_or("", |(_, query)| query);
+    for field in query.split('&').filter(|field| !field.is_empty()) {
+        let name = field.split_once('=').map_or(field, |(name, _)| name);
+        if name != "subject" && name != "body" {
+            return Err(format!("a mail draft carries only a subject and a body, not {name}"));
+        }
+    }
+    Ok(())
+}
+
+/// What the app is and what it runs on, for a user to pass along with their
+/// feedback.
+#[derive(serde::Serialize)]
+struct AppDetails {
+    version: String,
+    os: String,
+    arch: String,
+}
+
+#[tauri::command]
+fn app_details(app: tauri::AppHandle) -> AppDetails {
+    AppDetails {
+        version: app.package_info().version.to_string(),
+        os: std::env::consts::OS.to_string(),
+        arch: std::env::consts::ARCH.to_string(),
+    }
+}
+
+/// Shows the folder holding the log file in the file manager, so a user can
+/// attach the file to their feedback.
+#[tauri::command]
+fn open_log_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let folder = app
+        .path()
+        .app_log_dir()
+        .map_err(|error| format!("could not locate the log folder: {error}"))?;
+    // The folder is missing when the log could not be written.
+    fs::create_dir_all(&folder).map_err(|error| format!("could not create {}: {error}", folder.display()))?;
+    open::that_detached(&folder).map_err(|error| error.to_string())
+}
+
 /// A fresh secret for every launch, 32 bytes from the OS random source as hex.
 fn generate_token() -> String {
     let mut bytes = [0u8; 32];
@@ -368,6 +424,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             sidecar_connection,
             open_in_browser,
+            open_mail_draft,
+            app_details,
+            open_log_folder,
             read_user_config,
             write_user_config
         ])
