@@ -63,3 +63,4 @@ jobs:
       # Some code compiles only into release builds, so both get linted.
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo clippy --locked --release --all-targets -- -D warnings
+      - run: cargo test --locked
