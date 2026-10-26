@@ -128,6 +128,25 @@ class TestServe:
         assert capsys.readouterr().out.strip().splitlines()[-1] == f"PORT={port}"
 
 
+    def test_logs_no_requests(self, monkeypatch, tmp_path):
+        """The server keeps uvicorn's access log off, so the token the event
+        stream carries in its query string never reaches the log."""
+        monkeypatch.setenv("RENTCZECHER_API_TOKEN", "test-token")
+        monkeypatch.setattr(main_module.paths, "db_path", lambda: tmp_path / "t.db")
+        servers = []
+
+        def fake_run(self, sockets=None):
+            servers.append(self)
+            for sock in sockets:
+                sock.close()
+
+        monkeypatch.setattr(main_module.uvicorn.Server, "run", fake_run)
+
+        main_module.serve(0, allowed_origins=[])
+
+        assert servers[0].config.access_log is False
+
+
     def test_shutdown_callback_stops_the_server(self, monkeypatch, tmp_path):
         """The callback serve hands to the app sets the running server's
         exit flag, the same flag uvicorn's own Ctrl-C handler sets."""
