@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup, Tag
 from rentczecher_engine.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher_engine.adapters.scrapers.parsing import parse_comma_separated_address
+from rentczecher_engine.domain.errors import ScraperBrokenError
 from rentczecher_engine.domain.location import PlaceKind
 
 log = logging.getLogger("rentczecher")
@@ -38,6 +39,23 @@ DETAIL_PATH = re.compile(r"/detail/[^?#]+/([0-9a-f]{24})/?$")
 AREA_RE = re.compile(r"(\d{1,3}(?:\xa0\d{3})*)\xa0?m²")
 LAND_RE = re.compile(r"s pozemkem (\d{1,3}(?:\xa0\d{3})*)\xa0?m²")
 DISPOSITION_RE = re.compile(r"\b(\d\+(?:kk|\d))")
+
+
+def gallery_from_advert_page(html: str) -> tuple[str, ...]:
+    """The full-size photos the advert page's gallery links to, in its order."""
+    gallery = BeautifulSoup(html, "lxml").select_one("div.b-gallery")
+    if gallery is None:
+        raise ScraperBrokenError("idnes: advert page carries no gallery")
+    urls = []
+    # The gallery's videos and 3D tours open from the same carousel, marked
+    # by attributes of their own.
+    photo_links = gallery.select(
+        'a[data-fancybox="images"]:not([data-fancybox-video]):not([data-fancybox-virtual]):not([data-type])')
+    for link in photo_links:
+        href = str(link.get("href", ""))
+        if href:
+            urls.append(urljoin(SITE_URL, href))
+    return tuple(dict.fromkeys(urls))
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +196,7 @@ class IdnesScraper(BaseScraper):
             parsed_place=parse_comma_separated_address(location),
             url=url,
             photo_urls=(image_url,) if image_url else (),
+            gallery_on_advert_page=True,
             size_m2=size_m2,
             land_m2=land_m2,
             disposition_raw_text=disposition_match.group(1) if disposition_match else None,
