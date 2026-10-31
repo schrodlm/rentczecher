@@ -3,7 +3,7 @@ import httpx
 # The app names itself and its site in every request. The version follows
 # the package's, which a frozen build cannot read at runtime.
 IDENTITY_HEADERS = {
-    "User-Agent": "rentczecher/0.2.0 (+https://rentczecher.cz)",
+    "User-Agent": "rentczecher/0.3.0 (+https://rentczecher.cz)",
 }
 
 
