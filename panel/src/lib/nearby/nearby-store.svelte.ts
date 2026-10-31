@@ -1,4 +1,5 @@
 import { boxAround, nearest, type Box, type NearbyPlace, type Nearest, type Point } from './geometry';
+import { keepNearbyKinds, keptNearbyKinds } from './kept-kinds';
 import { NEARBY_KIND_ORDER, NEARBY_KINDS, type NearbyKind } from './kinds';
 import type { OverpassClient } from './overpass';
 
@@ -7,7 +8,6 @@ import type { OverpassClient } from './overpass';
 const MARGIN_M = 1500;
 // A kind none of the servers answered is asked for again after a minute.
 const RETRY_MS = 60_000;
-const KEY_PREFIX = 'rentczecher.nearbyKinds.';
 
 type Found = { box: Box; places: NearbyPlace[] };
 export type KindDistance = { kind: NearbyKind; distanceM: number };
@@ -34,7 +34,7 @@ export class NearbyStore {
 		if (profileId !== this.profileId) {
 			this.profileId = profileId;
 			this.setFound(new Map());
-			this.chosen = chosenKinds(profileId);
+			this.chosen = keptNearbyKinds(profileId);
 		}
 		this.box = boxAround(points, MARGIN_M);
 		for (const kind of this.chosen) void this.load(kind);
@@ -45,7 +45,7 @@ export class NearbyStore {
 		const chosen = this.chosen.includes(kind) ? this.chosen.filter((each) => each !== kind) : [...this.chosen, kind];
 		// Kept in the list's order, whatever order they were switched on in.
 		this.chosen = NEARBY_KIND_ORDER.filter((each) => chosen.includes(each));
-		keepChosenKinds(this.profileId, this.chosen);
+		keepNearbyKinds(this.profileId, this.chosen);
 		if (this.chosen.includes(kind)) void this.load(kind);
 	}
 
@@ -105,24 +105,4 @@ export class NearbyStore {
 
 function contains(outer: Box, inner: Box): boolean {
 	return outer.south <= inner.south && outer.west <= inner.west && outer.north >= inner.north && outer.east >= inner.east;
-}
-
-// The browser may refuse its storage, as in a private window, and then a
-// profile simply shows no kinds.
-function chosenKinds(profileId: string): NearbyKind[] {
-	try {
-		const kept: unknown = JSON.parse(localStorage.getItem(KEY_PREFIX + profileId) ?? '[]');
-		if (!Array.isArray(kept)) return [];
-		return NEARBY_KIND_ORDER.filter((kind) => kept.includes(kind));
-	} catch {
-		return [];
-	}
-}
-
-function keepChosenKinds(profileId: string, kinds: readonly NearbyKind[]): void {
-	try {
-		localStorage.setItem(KEY_PREFIX + profileId, JSON.stringify(kinds));
-	} catch {
-		return;
-	}
 }
