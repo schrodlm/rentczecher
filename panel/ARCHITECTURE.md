@@ -116,6 +116,22 @@ file in the operating system's config folder, and the panel reads and writes
 it through the shell's commands (`lib/user-config.ts`). Choosing a language
 reloads the app, which reopens on the same profile and listing.
 
+## The profiles file
+
+Profiles move between computers through a JSON file the user saves and opens
+in the system's own dialogs (`lib/profiles-file.ts`). The panel owns its
+format and version, and the shell only moves its text, as with the user
+config. A profile is written as the body the engine creates it from, with its
+places by kind and code, plus the kinds of place it shows nearby, which this
+machine keeps for it. It never holds listings, favourites or whether the
+profile was paused.
+
+Importing adds every profile in the file as a new one through the engine's
+API (`lib/import-profiles.ts`), which checks each as it would one made in the
+editor. A name already in use gets the first free number after it. A profile
+the engine refuses is left out and named in the report, and the rest still
+come in.
+
 ## Tests
 
 Vitest with Testing Library, next to the code they test (`*.test.ts`).
