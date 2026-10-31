@@ -19,19 +19,46 @@ def apply_pending(conn: sqlite3.Connection) -> list[int]:
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     applied = []
     for version, path in _pending(current):
-        conn.execute("BEGIN")
+        # Dropping a table to rebuild it would cascade-delete its child rows,
+        # and the pragma is ignored inside a transaction, so it goes off first.
+        conn.execute("PRAGMA foreign_keys = OFF")
         try:
-            for statement in _split_statements(path.read_text(encoding="utf-8")):
-                conn.execute(statement)
-            # user_version takes no bound parameter; version is a validated
-            # filename integer, not user input.
-            conn.execute(f"PRAGMA user_version = {version}")
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
+            _apply(conn, version, path)
+        finally:
+            conn.execute("PRAGMA foreign_keys = ON")
         applied.append(version)
     return applied
+
+
+def _apply(conn: sqlite3.Connection, version: int, path: Path) -> None:
+    """Raises IntegrityError, applying nothing, when the migration orphans a
+    row. Rows orphaned before it ran do not count, so a migration that
+    rebuilds a table keeps its rowids."""
+    conn.execute("BEGIN")
+    try:
+        orphans_before = _orphans(conn)
+        for statement in _split_statements(path.read_text(encoding="utf-8")):
+            conn.execute(statement)
+        orphans = _orphans(conn) - orphans_before
+        if orphans:
+            child_table, _rowid, parent_table = next(iter(orphans))
+            raise sqlite3.IntegrityError(
+                f"Migration {path.name} leaves {len(orphans)} row(s) in {child_table} "
+                f"without their parent row in {parent_table}")
+        # user_version takes no bound parameter; version is a validated
+        # filename integer, not user input.
+        conn.execute(f"PRAGMA user_version = {version}")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def _orphans(conn: sqlite3.Connection) -> set[tuple[str, int, str]]:
+    """Each row without its parent row, as its table, rowid and parent table."""
+    # Keyed without the foreign key's id, which a rebuild renumbers.
+    return {(child_table, rowid, parent_table)
+            for child_table, rowid, parent_table, _fk_id in conn.execute("PRAGMA foreign_key_check")}
 
 
 def apply_pending_at(db_file: Path) -> list[int]:
