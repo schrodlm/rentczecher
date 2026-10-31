@@ -1063,6 +1063,7 @@ class TestIdnesParsing:
         assert listing.parsed_place.names == ("Vymyšlená", "Plzeň", "Doubravka")
         assert listing.url == f"https://reality.idnes.cz/detail/pronajem/byt/plzen-vymyslena/{_idnes_id(1)}/"
         assert listing.photo_urls == (f"https://img.example/{_idnes_id(1)}.webp",)
+        assert listing.gallery_on_advert_page
         assert listing.scraped.size_m2 == 54
         assert listing.scraped.land_m2 is None
         assert listing.scraped.disposition_raw_text == "2+kk"
@@ -1179,6 +1180,53 @@ class TestIdnesPagination:
         client, _ = _serve_idnes_pages(monkeypatch, pages)
         assert len(IdnesScraper(IDNES_CRITERIA, client).scrape()) == 50
         assert "pagination cap" not in caplog.text
+
+
+def _idnes_advert_page(hrefs):
+    large = "".join(
+        f'<a class="carousel__item b-gallery__img-lg__item" data-fancybox="images" href="{href}">'
+        f'<span><img data-lazy="{href}-thumb" src="https://img.example/no-image-gallery.png"></span></a>'
+        for href in hrefs)
+    small = "".join(f'<a class="b-gallery__imgs-sm__item" href="#"><img src="{href}-small.webp"></a>'
+                    for href in hrefs)
+    return (f'<html><body><div class="b-gallery carousel"><div class="carousel__list">{large}</div>'
+            f'<div class="b-gallery__imgs-sm">{small}</div></div></body></html>')
+
+
+class TestIdnesAdvertGallery:
+    """The whole gallery from the full-size links of the advert page's
+    gallery."""
+
+    def test_lists_every_full_size_photo_in_the_pages_order(self):
+        page = _idnes_advert_page(["https://img.example/a.jpg?gt=r", "https://img.example/b.jpg?gt=r"])
+        assert idnes.gallery_from_advert_page(page) == (
+            "https://img.example/a.jpg?gt=r", "https://img.example/b.jpg?gt=r")
+
+    def test_lists_a_repeated_photo_once(self):
+        page = _idnes_advert_page(["https://img.example/a.jpg?gt=r"] * 2)
+        assert idnes.gallery_from_advert_page(page) == ("https://img.example/a.jpg?gt=r",)
+
+    def test_a_gallery_without_links_has_no_photos(self):
+        assert idnes.gallery_from_advert_page(_idnes_advert_page([])) == ()
+
+    def test_leaves_out_links_outside_the_gallery(self):
+        page = _idnes_advert_page(["https://img.example/a.jpg?gt=r"]).replace(
+            "</body>", '<a data-fancybox="images" href="https://img.example/similar.jpg"></a></body>')
+        assert idnes.gallery_from_advert_page(page) == ("https://img.example/a.jpg?gt=r",)
+
+    def test_leaves_out_the_gallerys_videos_and_3d_tours(self):
+        page = _idnes_advert_page(["https://img.example/a.jpg?gt=r"]).replace(
+            '<div class="carousel__list">',
+            '<div class="carousel__list">'
+            '<a class="carousel__item b-gallery__img-lg__item" data-fancybox="images" data-fancybox-video=""'
+            ' href="https://img.example/video/tour.mp4"></a>'
+            '<a class="carousel__item" data-fancybox="images" data-fancybox-virtual="" data-type="iframe"'
+            ' href="https://tour.example/show/?m=1"></a>')
+        assert idnes.gallery_from_advert_page(page) == ("https://img.example/a.jpg?gt=r",)
+
+    def test_a_page_without_a_gallery_is_broken(self):
+        with pytest.raises(ScraperBrokenError):
+            idnes.gallery_from_advert_page("<html><body>no gallery</body></html>")
 
 
 class TestPortalCoverage:

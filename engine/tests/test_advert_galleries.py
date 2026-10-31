@@ -24,6 +24,13 @@ class TestHttpAdvertGalleryReader:
         assert reader.read("remax", "https://www.remax-czech.cz/reality/detail/1") == (
             "https://mlsf.remax-czech.cz/data/1/a.png",)
 
+    def test_reads_an_idnes_gallery_with_its_parser(self):
+        page = ('<div class="b-gallery"><a data-fancybox="images" href="https://img.example/a.jpg?gt=r">'
+                '</a></div>')
+        reader = _reader(lambda request: httpx.Response(200, text=page))
+        assert reader.read("idnes", "https://reality.idnes.cz/detail/prodej/byt/x/0123456789abcdef01234567/") == (
+            "https://img.example/a.jpg?gt=r",)
+
     def test_a_portal_without_a_parser_is_broken(self):
         reader = _reader(lambda request: httpx.Response(200, text=REMAX_PAGE))
         with pytest.raises(ScraperBrokenError):
