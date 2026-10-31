@@ -286,7 +286,8 @@ export const en: Messages = {
 		keeps: [
 			"Your profiles, saved and hidden listings, photos and price history are stored only on your computer, in the app's own data folder.",
 			'There is no account, no server, no analytics, no crash reporting and no tracking. Nothing is ever sent to the author.',
-			'Uninstalling the app and deleting its data folder removes everything it kept.'
+			'Uninstalling the app and deleting its data folder removes everything it kept.',
+			'You can save chosen profiles to a file, to add them on another computer. The file holds your searches and their preferences, never listings, and stays wherever you save it, even after the app is uninstalled.'
 		],
 		connectionsHeading: 'Who the app talks to',
 		connectionsIntro: 'The app connects only to the services below, each for the one purpose listed. Each of them sees your IP address, as any website you visit does.',
@@ -309,6 +310,6 @@ export const en: Messages = {
 			{ text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
 			'.'
 		],
-		updated: 'Last updated on 26 October 2026.'
+		updated: 'Last updated on 31 October 2026.'
 	}
 };
