@@ -111,6 +111,13 @@ price, size, land area, disposition or place. Preferences order the listings
 that meet the criteria and never hide one.
 _Avoid_: wish, scoring setting, weight
 
+**Profiles file**:
+A file the user saves some of their profiles into, to add them again on
+another computer: each profile's criteria, preferences, portals and the kinds
+of place it shows nearby. Never its tracked properties. Importing one adds
+every profile in it as a new one.
+_Avoid_: backup, export (for the file itself)
+
 **Score**:
 How well a listing meets its profile's preferences, worked out by each client
 that presents listings. The engine stores preferences and never scores.
