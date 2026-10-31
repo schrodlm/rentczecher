@@ -209,3 +209,46 @@ class TestRemaxLive:
         listings = s.scrape()
         # Genuinely 0 results in Domazlice on RE/MAX - just ensure no crash
         assert isinstance(listings, list)
+
+
+# ─── iDNES Reality ──────────────────────────────────────────
+
+class TestIdnesLive:
+    def test_praha_returns_only_rentals_priced_by_the_month(self, client):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
+        listings = _scraper(IdnesScraper, "praha-byty", client).scrape()
+        assert len(listings) > 0, "iDNES should return Praha rentals"
+        for l in listings:
+            assert l.title.startswith("Pronájem"), f"Not a rental: {l.title}"
+            # Praha's largest flats rent for half a million a month.
+            assert 1000 < l.price <= 1000000, f"Not a monthly rent: {l.price} for {l.title}"
+            assert l.url.startswith("https://reality.idnes.cz/detail/"), l.url
+
+    def test_praha7_prices_within_the_search(self, client):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
+        listings = _scraper(IdnesScraper, "praha7-byty", client).scrape()
+        max_price = SEARCHES["praha7-byty"].max_price
+        assert max_price is not None
+        for l in listings:
+            assert 0 < l.price <= max_price
+
+    def test_praha7_location_normalized(self, client):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
+        listings = _scraper(IdnesScraper, "praha7-byty", client).scrape()
+        for l in listings:
+            assert "\n" not in l.location_raw_text, f"Newline in location: {repr(l.location_raw_text)}"
+            assert "  " not in l.location_raw_text, f"Double space in location: {repr(l.location_raw_text)}"
+
+    def test_domazlice_houses_have_land_area(self, client):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
+        listings = _scraper(IdnesScraper, "domazlice-domy", client).scrape()
+        assert len(listings) > 0, "iDNES should return Domažlice houses"
+        assert any(l.land_m2 for l in listings), "No house carried its land area"
+
+    def test_first_advert_gallery_has_photos(self, client):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper, gallery_from_advert_page
+        listings = _scraper(IdnesScraper, "domazlice-domy", client).scrape()
+        assert listings, "iDNES should return Domažlice houses"
+        response = client.get(listings[0].url)
+        assert response.status_code == 200
+        assert len(gallery_from_advert_page(response.text)) > 0
