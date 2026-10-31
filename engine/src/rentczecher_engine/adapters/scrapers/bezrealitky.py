@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 from rentczecher_engine.adapters.scrapers.base import BaseScraper, Listing
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
+from rentczecher_engine.adapters.scrapers.parsing import parse_comma_separated_address
 from rentczecher_engine.domain.errors import ScraperBrokenError
-from rentczecher_engine.domain.location import ParsedPlace
 
 log = logging.getLogger("rentczecher")
 
@@ -59,22 +59,6 @@ def gallery_from_advert_page(html: str) -> tuple[str, ...]:
         raise ScraperBrokenError("bezrealitky: advert page carries no publicImages")
     urls = [image.get("url") for image in images if isinstance(image, dict)]
     return tuple(dict.fromkeys(url for url in urls if isinstance(url, str) and url))
-
-
-def _parse_location(address: str) -> ParsedPlace:
-    """The portal's address string is comma-separated, with 'Praha - Bubeneč'
-    style dash pairs inside a segment. An 'okres Domažlice' segment states
-    the district."""
-    names = []
-    district = None
-    for segment in address.split(","):
-        for name in re.split(r"\s+[-–]\s+", segment):
-            name = name.strip()
-            if name.casefold().startswith("okres "):
-                district = name[len("okres "):]
-            elif name and name not in names:
-                names.append(name)
-    return ParsedPlace(names=tuple(names), district=district)
 
 
 def _apollo_get(obj: dict, prefix: str):
@@ -264,7 +248,7 @@ class BezrealitkyScraper(BaseScraper):
             title=title,
             price=price,
             location_raw_text=address,
-            parsed_place=_parse_location(address),
+            parsed_place=parse_comma_separated_address(address),
             url=f"{DETAIL_BASE}/{uri}",
             photo_urls=(main_photo_url,) if main_photo_url else (),
             gallery_on_advert_page=True,

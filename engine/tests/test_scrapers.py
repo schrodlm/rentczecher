@@ -13,8 +13,8 @@ import pytest
 
 from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS, bezrealitky, remax, sreality
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
-from rentczecher_engine.adapters.scrapers.bezrealitky import _parse_location as _bez_parse_location
 from rentczecher_engine.adapters.scrapers.client import build_client
+from rentczecher_engine.adapters.scrapers.parsing import parse_comma_separated_address
 from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
 from rentczecher_engine.adapters.scrapers.remax import _parse_location as _remax_parse_location
 from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
@@ -534,26 +534,26 @@ class TestBezrealitkyPagination:
         assert len(calls) == 3
 
 
-class TestBezrealitkyLocationParsing:
+class TestCommaSeparatedAddressParsing:
     """The comma-separated address splits into names on both commas and
     'Praha - Bubeneč' style dash pairs. An 'okres X' segment states the
     district."""
 
     def test_comma_separated_address(self):
-        place = _bez_parse_location("Veletržní, Praha 7")
+        place = parse_comma_separated_address("Veletržní, Praha 7")
         assert place.names == ("Veletržní", "Praha 7")
         assert place.district is None
 
     def test_dash_pair_segment_splits_further(self):
-        place = _bez_parse_location("U Studánky, Praha - Bubeneč")
+        place = parse_comma_separated_address("U Studánky, Praha - Bubeneč")
         assert place.names == ("U Studánky", "Praha", "Bubeneč")
         assert place.district is None
 
     def test_empty_address(self):
-        assert _bez_parse_location("") == ParsedPlace()
+        assert parse_comma_separated_address("") == ParsedPlace()
 
     def test_an_okres_segment_states_the_district(self):
-        place = _bez_parse_location("Nekvasovy, okres Plzeň-jih")
+        place = parse_comma_separated_address("Nekvasovy, okres Plzeň-jih")
         assert place.names == ("Nekvasovy",)
         assert place.district == "Plzeň-jih"
 
