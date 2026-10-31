@@ -520,7 +520,8 @@
               "enum": [
                 "sreality",
                 "bezrealitky",
-                "remax"
+                "remax",
+                "idnes"
               ],
               "type": "string"
             },
@@ -983,7 +984,8 @@
               "enum": [
                 "sreality",
                 "bezrealitky",
-                "remax"
+                "remax",
+                "idnes"
               ],
               "type": "string"
             },
@@ -1022,7 +1024,8 @@
               "enum": [
                 "sreality",
                 "bezrealitky",
-                "remax"
+                "remax",
+                "idnes"
               ],
               "type": "string"
             },

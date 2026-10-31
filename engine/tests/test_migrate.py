@@ -45,8 +45,8 @@ class TestMigrate:
 
     def test_fresh_db_gets_all_tables_at_the_latest_version(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
-        assert migrate.apply_pending(conn) == [1, 2, 3]
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert migrate.apply_pending(conn) == [1, 2, 3, 4]
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert EXPECTED_TABLES <= tables
 
@@ -488,7 +488,7 @@ class TestListingPortalReference:
     def test_every_listing_and_its_children_survive_the_upgrade(self, tmp_path, monkeypatch):
         conn = self._at_version_2_with_listings(tmp_path, monkeypatch)
         before = self._rows_by_table(conn)
-        assert migrate.apply_pending(conn) == [3]
+        assert migrate.apply_pending(conn) == [3, 4]
         assert self._rows_by_table(conn) == before
 
     def test_a_listing_keeps_its_rowid(self, tmp_path, monkeypatch):
@@ -504,7 +504,7 @@ class TestListingPortalReference:
                      "VALUES ('remax:3', 'gone', 'remax', 'u', ?)", (self.NOW,))
         conn.commit()
         conn.execute("PRAGMA foreign_keys = ON")
-        assert migrate.apply_pending(conn) == [3]
+        assert migrate.apply_pending(conn) == [3, 4]
 
     def test_deleting_a_listing_still_deletes_its_children(self, tmp_path, monkeypatch):
         conn = self._at_version_2_with_listings(tmp_path, monkeypatch)
