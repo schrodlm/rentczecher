@@ -10,6 +10,7 @@ use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
+mod profiles_file;
 mod update;
 
 // The event the window receives when the engine's process ends. The panel's
@@ -442,6 +443,8 @@ pub fn run() {
             open_log_folder,
             update::check_for_update,
             update::install_update,
+            profiles_file::save_profiles_file,
+            profiles_file::open_profiles_file,
             read_user_config,
             write_user_config
         ])
