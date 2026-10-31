@@ -286,7 +286,8 @@ export const cs: Messages = {
 		keeps: [
 			'Vaše profily, uložené a skryté nabídky, fotky a historie cen zůstávají jen na vašem počítači, ve vlastní datové složce aplikace.',
 			'Nemá žádný účet, server, analytiku, hlášení pádů ani sledování. Autorovi se nikdy nic neposílá.',
-			'Odinstalováním aplikace a smazáním její datové složky zmizí vše, co si uložila.'
+			'Odinstalováním aplikace a smazáním její datové složky zmizí vše, co si uložila.',
+			'Vybrané profily můžete uložit do souboru a přidat je na jiném počítači. Soubor obsahuje vaše hledání a jejich preference, nikdy nabídky, a zůstává tam, kam ho uložíte, i po odinstalování aplikace.'
 		],
 		connectionsHeading: 'S kým aplikace komunikuje',
 		connectionsIntro: 'Aplikace se připojuje jen ke službám níže, ke každé jen za uvedeným účelem. Každá z nich vidí vaši IP adresu, stejně jako každý web, který navštívíte.',
@@ -309,6 +310,6 @@ export const cs: Messages = {
 			{ text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` },
 			'.'
 		],
-		updated: 'Naposledy aktualizováno 26. října 2026.'
+		updated: 'Naposledy aktualizováno 31. října 2026.'
 	}
 };
