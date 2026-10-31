@@ -6,6 +6,7 @@ import httpx
 from rentczecher_engine.adapters.scrapers import bezrealitky, remax
 from rentczecher_engine.adapters.scrapers.base import BaseScraper
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
+from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
 from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
 from rentczecher_engine.adapters.scrapers.sreality import SrealityScraper
 from rentczecher_engine.domain.profile import Criteria, Portal
@@ -15,6 +16,7 @@ ALL_SCRAPERS: dict[Portal, Callable[[Criteria, httpx.Client], BaseScraper]] = {
     "sreality": SrealityScraper,
     "bezrealitky": BezrealitkyScraper,
     "remax": RemaxScraper,
+    "idnes": IdnesScraper,
 }
 
 

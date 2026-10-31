@@ -9,6 +9,7 @@ from rentczecher_engine.domain.location import PlaceRef
 @dataclass(frozen=True, slots=True)
 class PlaceParams:
     name: str
+    search_area: PlaceRef
     sreality_district_id: int | None
     sreality_region_id: int
     remax_regions: dict[int, tuple[int, ...]]
@@ -76,8 +77,10 @@ def _index() -> dict[PlaceRef, PlaceParams]:
     sreality_region_by_kraj = {row["kraj_code"]: row["sreality_region_id"] for row in regions}
     index: dict[PlaceRef, PlaceParams] = {}
     for row in districts:
-        index[PlaceRef(kind=row["kind"], code=row["code"])] = PlaceParams(
+        area = PlaceRef(kind=row["kind"], code=row["code"])
+        index[area] = PlaceParams(
             name=row["name"],
+            search_area=area,
             sreality_district_id=row["sreality_district_id"],
             sreality_region_id=sreality_region_by_kraj[row["kraj_code"]],
             remax_regions={row["remax_region_id"]: (row["remax_district_id"],)},
@@ -87,8 +90,10 @@ def _index() -> dict[PlaceRef, PlaceParams]:
         district_ids = tuple(
             district["remax_district_id"] for district in districts if district["kraj_code"] == row["kraj_code"]
         )
-        index[PlaceRef(kind="kraj", code=row["kraj_code"])] = PlaceParams(
+        area = PlaceRef(kind="kraj", code=row["kraj_code"])
+        index[area] = PlaceParams(
             name=row["name"],
+            search_area=area,
             sreality_district_id=None,
             sreality_region_id=row["sreality_region_id"],
             remax_regions={row["remax_region_id"]: district_ids},

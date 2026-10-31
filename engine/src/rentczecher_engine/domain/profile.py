@@ -7,7 +7,7 @@ from rentczecher_engine.domain.location import PlaceRef
 
 OfferType = Literal["rent", "sale"]
 EstateType = Literal["flat", "house", "land", "cottage"]
-Portal = Literal["sreality", "bezrealitky", "remax"]
+Portal = Literal["sreality", "bezrealitky", "remax", "idnes"]
 
 
 @dataclass(frozen=True, slots=True)
