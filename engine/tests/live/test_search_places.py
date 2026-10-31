@@ -6,11 +6,13 @@ Run: uv run pytest -m live tests/live/test_search_places.py -v
 """
 
 import time
+import unicodedata
 
 import httpx
 import pytest
 
 from rentczecher_engine.adapters.scrapers.client import IDENTITY_HEADERS
+from rentczecher_engine.adapters.scrapers.idnes import SEARCH_URL, IdnesPlace
 from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams, resolve
 from rentczecher_engine.domain.location import PlaceRef
 from scripts.gazetteer.portals.bezrealitky import heading_names
@@ -65,3 +67,18 @@ def test_remax_region_and_district_pairs_are_accepted(sample, client):
         response = client.get("https://www.remax-czech.cz/reality/vyhledavani/",
                               params={"hledani": 1, f"regions[{region_id}][{district_ids[0]}]": "on"})
         assert response.status_code == 200, place.name
+
+
+def _url_slug(name: str) -> str:
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return ascii_name.casefold().replace(" ", "-")
+
+
+def test_idnes_localities_land_on_the_place(sample, client):
+    """iDNES redirects a locality code to the URL of the place it names."""
+    for place in sample:
+        time.sleep(REQUEST_SPACING_S)
+        response = client.get(SEARCH_URL, params={"f[offer]": "lease", "f[type]": "flat",
+                                                  "f[locality]": IdnesPlace.from_params(place).locality})
+        assert response.status_code == 200, place.name
+        assert _url_slug(place.name) in response.url.path, (place.name, str(response.url))
