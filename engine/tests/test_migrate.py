@@ -127,6 +127,69 @@ class TestMigrate:
         assert "a" in tables
 
 
+class TestForeignKeysDuringMigration:
+    """A migration runs with foreign keys off, so it can rebuild a table, and
+    commits only when it orphans no row that had its parent before."""
+
+    PARENT_AND_CHILD = (
+        "CREATE TABLE parent (id INTEGER PRIMARY KEY);\n"
+        "CREATE TABLE child (id INTEGER PRIMARY KEY,"
+        " parent_id INTEGER NOT NULL REFERENCES parent(id) ON DELETE CASCADE);\n"
+        "INSERT INTO parent (id) VALUES (1);\n"
+        "INSERT INTO child (id, parent_id) VALUES (10, 1);\n")
+
+    def _migrated_to_parent_and_child(self, tmp_path, monkeypatch):
+        (tmp_path / "0001_parent_and_child.sql").write_text(self.PARENT_AND_CHILD)
+        monkeypatch.setattr(migrate, "MIGRATIONS_DIR", tmp_path)
+        conn = connection.connect(tmp_path / "t.db")
+        migrate.apply_pending(conn)
+        return conn
+
+    def test_rebuilding_a_parent_table_keeps_its_child_rows(self, tmp_path, monkeypatch):
+        conn = self._migrated_to_parent_and_child(tmp_path, monkeypatch)
+        (tmp_path / "0002_rebuild_parent.sql").write_text(
+            "CREATE TABLE parent_new (id INTEGER PRIMARY KEY, name TEXT);\n"
+            "INSERT INTO parent_new (id) SELECT id FROM parent;\n"
+            "DROP TABLE parent;\n"
+            "ALTER TABLE parent_new RENAME TO parent;\n")
+        assert migrate.apply_pending(conn) == [2]
+        assert conn.execute("SELECT id, parent_id FROM child").fetchall() == [(10, 1)]
+
+    def test_a_migration_that_orphans_rows_applies_nothing(self, tmp_path, monkeypatch):
+        conn = self._migrated_to_parent_and_child(tmp_path, monkeypatch)
+        (tmp_path / "0002_orphan_child.sql").write_text(
+            "CREATE TABLE marker (id INTEGER PRIMARY KEY);\n"
+            "DELETE FROM parent;\n")
+        with pytest.raises(sqlite3.IntegrityError, match="child"):
+            migrate.apply_pending(conn)
+        assert conn.execute("SELECT id FROM parent").fetchall() == [(1,)]
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert "marker" not in tables
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+
+    def test_rows_orphaned_before_a_migration_do_not_block_it(self, tmp_path, monkeypatch):
+        conn = self._migrated_to_parent_and_child(tmp_path, monkeypatch)
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("DELETE FROM parent")
+        conn.commit()
+        conn.execute("PRAGMA foreign_keys = ON")
+        (tmp_path / "0002_marker.sql").write_text("CREATE TABLE marker (id INTEGER PRIMARY KEY);\n")
+        assert migrate.apply_pending(conn) == [2]
+
+    def test_foreign_keys_are_on_after_a_migration_applies(self, tmp_path, monkeypatch):
+        conn = self._migrated_to_parent_and_child(tmp_path, monkeypatch)
+        (tmp_path / "0002_marker.sql").write_text("CREATE TABLE marker (id INTEGER PRIMARY KEY);\n")
+        assert migrate.apply_pending(conn) == [2]
+        assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+
+    def test_foreign_keys_are_on_after_a_migration_is_refused(self, tmp_path, monkeypatch):
+        conn = self._migrated_to_parent_and_child(tmp_path, monkeypatch)
+        (tmp_path / "0002_orphan_child.sql").write_text("DELETE FROM parent;\n")
+        with pytest.raises(sqlite3.IntegrityError):
+            migrate.apply_pending(conn)
+        assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+
+
 class TestPropertyIndexes:
     """Flats tracked before indexing get indexes in the order each profile
     found them."""
