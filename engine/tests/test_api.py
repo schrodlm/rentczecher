@@ -281,7 +281,7 @@ class TestCreateProfile:
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"min_price": 30000}),
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"max_price": 2**70}),
         _new_profile_body(portals=["sreality", "sreality"]),
-        _new_profile_body(portals=["idnes"]),
+        _new_profile_body(portals=["no-such-portal"]),
         _new_profile_body(preferences=_preferences_body(preferred_dispositions=["2+2"])),
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"dispositions": ["2+kk", "2+kk"]}),
         _new_profile_body(criteria=_new_profile_body()["criteria"] | {"dispositions": ["2+2"]}),
