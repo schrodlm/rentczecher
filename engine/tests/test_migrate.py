@@ -3,6 +3,7 @@
 Run: python3 -m pytest tests/test_migrate.py -v
 """
 
+import shutil
 import sqlite3
 from typing import get_args
 
@@ -430,6 +431,88 @@ class TestListingPhotos:
         conn.execute("INSERT INTO advert_page_reads (listing_id) VALUES ('sreality:1')")
         conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
         assert conn.execute("SELECT count(*) FROM advert_page_reads").fetchone()[0] == 0
+
+
+class TestListingPortalReference:
+    """Upgrading a database to a listing source that references the portals
+    table keeps every listing and everything read with it."""
+
+    NOW = "2026-10-31T00:00:00+00:00"
+    LISTING_CHILDREN = ("listing_tracking", "price_observations", "dedup_records",
+                        "listing_photos", "advert_page_reads")
+
+    def _at_version_2(self, tmp_path, monkeypatch):
+        migrations = tmp_path / "migrations"
+        migrations.mkdir()
+        shutil.copy(migrate.MIGRATIONS_DIR / "0001_init.sql", migrations)
+        shutil.copy(migrate.MIGRATIONS_DIR / "0002_listing_photos.sql", migrations)
+        conn = connection.connect(tmp_path / "t.db")
+        with monkeypatch.context() as patch:
+            patch.setattr(migrate, "MIGRATIONS_DIR", migrations)
+            migrate.apply_pending(conn)
+        return conn
+
+    def _add_listing_with_children(self, conn, listing_id):
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES (?, 'x', 'sreality', 'u', ?)", (listing_id, self.NOW))
+        conn.execute("INSERT INTO listing_tracking (profile_id, listing_id, first_seen_at, last_seen_at) "
+                     "VALUES ('p', ?, ?, ?)", (listing_id, self.NOW, self.NOW))
+        conn.execute("INSERT INTO price_observations (listing_id, price, observed_at) VALUES (?, 100, ?)",
+                     (listing_id, self.NOW))
+        conn.execute("INSERT INTO dedup_records (property_id, listing_id, match_reason, decided_at) "
+                     "VALUES ('x', ?, 'r', ?)", (listing_id, self.NOW))
+        conn.execute("INSERT INTO listing_photos (listing_id, position, source_url) VALUES (?, 0, 'u')",
+                     (listing_id,))
+        conn.execute("INSERT INTO advert_page_reads (listing_id) VALUES (?)", (listing_id,))
+
+    def _at_version_2_with_listings(self, tmp_path, monkeypatch):
+        conn = self._at_version_2(tmp_path, monkeypatch)
+        conn.execute("INSERT INTO profiles (id, name, created_at) VALUES ('p', 'P', ?)", (self.NOW,))
+        conn.execute("INSERT INTO properties (id, created_at) VALUES ('x', ?)", (self.NOW,))
+        self._add_listing_with_children(conn, "sreality:1")
+        self._add_listing_with_children(conn, "remax:2")
+        conn.commit()
+        return conn
+
+    def _with_a_rowid_gap(self, tmp_path, monkeypatch):
+        """A deleted first listing, so renumbering the rest would change them."""
+        conn = self._at_version_2_with_listings(tmp_path, monkeypatch)
+        conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
+        conn.commit()
+        return conn
+
+    def _rows_by_table(self, conn):
+        return {table: conn.execute(f"SELECT * FROM {table} ORDER BY rowid").fetchall()
+                for table in ("listings", *self.LISTING_CHILDREN)}
+
+    def test_every_listing_and_its_children_survive_the_upgrade(self, tmp_path, monkeypatch):
+        conn = self._at_version_2_with_listings(tmp_path, monkeypatch)
+        before = self._rows_by_table(conn)
+        assert migrate.apply_pending(conn) == [3]
+        assert self._rows_by_table(conn) == before
+
+    def test_a_listing_keeps_its_rowid(self, tmp_path, monkeypatch):
+        conn = self._with_a_rowid_gap(tmp_path, monkeypatch)
+        before = conn.execute("SELECT rowid, id FROM listings").fetchall()
+        migrate.apply_pending(conn)
+        assert conn.execute("SELECT rowid, id FROM listings").fetchall() == before
+
+    def test_a_listing_orphaned_before_the_upgrade_does_not_block_it(self, tmp_path, monkeypatch):
+        conn = self._with_a_rowid_gap(tmp_path, monkeypatch)
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("INSERT INTO listings (id, property_id, source, url, scraped_at) "
+                     "VALUES ('remax:3', 'gone', 'remax', 'u', ?)", (self.NOW,))
+        conn.commit()
+        conn.execute("PRAGMA foreign_keys = ON")
+        assert migrate.apply_pending(conn) == [3]
+
+    def test_deleting_a_listing_still_deletes_its_children(self, tmp_path, monkeypatch):
+        conn = self._at_version_2_with_listings(tmp_path, monkeypatch)
+        migrate.apply_pending(conn)
+        conn.execute("DELETE FROM listings WHERE id = 'sreality:1'")
+        for table in self.LISTING_CHILDREN:
+            assert conn.execute(f"SELECT count(*) FROM {table} WHERE listing_id = 'sreality:1'"
+                                ).fetchone()[0] == 0, table
 
 
 class TestConcurrentWriters:
