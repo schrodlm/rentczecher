@@ -1167,6 +1167,19 @@ class TestIdnesPagination:
         assert [(listing.id, listing.price) for listing in listings] == [
             (f"idnes:{_idnes_id(1)}", 18000), (f"idnes:{_idnes_id(2)}", 18500)]
 
+    @pytest.mark.parametrize("href", [
+        "/s/pronajem/byty/plzen/?page=1&sort=price",
+        "/s/pronajem/byty/cena-nad-10000/plzen/?page=1",
+        "/s/pronajem/byty/plzen/?s-l=OKRES-3405%7COKRES-3406&page=1",
+        "https://elsewhere.example/s/pronajem/byty/?page=1",
+    ], ids=["sorted", "price floor", "two values", "another site"])
+    def test_refuses_a_next_page_link_robots_txt_rules_out(self, monkeypatch, href):
+        page = _idnes_page([_idnes_card(1)], next_page=1).replace("/s/pronajem/byty/plzen/?page=1", href)
+        client, calls = _serve_idnes_pages(monkeypatch, {0: page})
+        with pytest.raises(ScraperBrokenError):
+            IdnesScraper(IDNES_CRITERIA, client).scrape()
+        assert len(calls) == 2
+
     def test_stops_at_the_page_cap_and_says_so(self, monkeypatch, caplog):
         pages = {page: _idnes_page([_idnes_card(page + 1)], next_page=page + 1) for page in range(60)}
         client, _ = _serve_idnes_pages(monkeypatch, pages)
