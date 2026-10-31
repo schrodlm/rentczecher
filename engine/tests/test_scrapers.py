@@ -11,9 +11,10 @@ from typing import get_args
 import httpx
 import pytest
 
-from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS, bezrealitky, remax, sreality
+from rentczecher_engine.adapters.scrapers import ALL_SCRAPERS, bezrealitky, idnes, remax, sreality
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher_engine.adapters.scrapers.client import build_client
+from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
 from rentczecher_engine.adapters.scrapers.parsing import parse_comma_separated_address
 from rentczecher_engine.adapters.scrapers.remax import RemaxScraper
 from rentczecher_engine.adapters.scrapers.remax import _parse_location as _remax_parse_location
@@ -938,6 +939,248 @@ class TestRemaxPlaceBasedUrl:
         assert "regions%5B43%5D%5B3401%5D=on" in url
 
 
+def _idnes_id(n):
+    return f"{n:024x}"
+
+
+def _idnes_card(n, title="bytu 2+kk 54\xa0m²", price="18 500 Kč/měsíc", info="Vymyšlená, Plzeň - Doubravka",
+                photo=True):
+    listing_id = _idnes_id(n)
+    photo_html = (f'<img class="image-preloading" data-src="https://img.example/{listing_id}.webp" alt="">'
+                  if photo else "")
+    return f"""
+    <div class="grid__cell"><div class="c-products__item"><div id="snippet-s-result-article-{listing_id}"><article>
+      <div class="c-products__inner">
+        <a href="https://reality.idnes.cz/detail/pronajem/byt/plzen-vymyslena/{listing_id}/"
+           data-brand="Vymyšlená realitní kancelář" class="c-products__link">
+          <span class="c-products__imgs"><span class="c-products__img" style="background-image: url('bg.webp')">
+            {photo_html}
+            <span class="c-products__service"><img src="https://img.example/agency-logo.webp"
+              class="c-products__service-img"></span>
+          </span></span>
+          <div class="c-products__content">
+            <h2 class="c-products__title">
+<span class="text-capitalize">pronájem</span>
+{title}
+            </h2>
+            <p class="c-products__info">
+              {info}
+            </p>
+            <div class="c-products__footer"><p class="c-products__price"><strong>{price}</strong></p></div>
+          </div>
+        </a>
+      </div>
+    </article></div></div></div>"""
+
+
+_IDNES_AD_TILE = ('<div class="c-products__item c-products__item-advertisment">'
+                  '<a href="https://ads.example/click">Reklama</a></div>')
+
+
+def _idnes_page(cards, next_page=None):
+    next_html = (f'<p class="paginator"><a class="btn paging__item next" href="/s/pronajem/byty/plzen/?page={next_page}">'
+                 'Další</a></p>' if next_page is not None else "")
+    return (f'<html><body><div class="c-products__list grid">{_IDNES_AD_TILE}{"".join(cards)}</div>'
+            f'{next_html}</body></html>')
+
+
+def _serve_idnes_pages(monkeypatch, pages):
+    """Serve canned search pages keyed by the 0-based page parameter. The
+    search form's own request is redirected to the results' URL, as the
+    portal does."""
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        if request.url.path == "/s/":
+            return httpx.Response(301, headers={"Location": "https://reality.idnes.cz/s/pronajem/byty/plzen/"})
+        page = int(request.url.params.get("page", "0"))
+        return httpx.Response(200, text=pages[page])
+
+    monkeypatch.setattr(idnes.time, "sleep", lambda _: None)
+    return build_client(transport=httpx.MockTransport(handler)), calls
+
+
+IDNES_CRITERIA = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("okres", 3405),
+                          min_price=10000, max_price=25000)
+
+
+class TestIdnesSearchUrl:
+    """The search form's query names the offer, estate type, the search
+    area by its RÚIAN code and a price ceiling, and never a URL robots.txt
+    rules out."""
+
+    def test_flat_rental_in_an_okres(self):
+        url = IdnesScraper(IDNES_CRITERIA, _refusing_client())._build_url()
+        assert url.startswith("https://reality.idnes.cz/s/?")
+        assert "f%5Boffer%5D=lease" in url
+        assert "f%5Btype%5D=flat" in url
+        assert "f%5Blocality%5D=OKRES-3405" in url
+        assert "f%5BpriceMax%5D=25000" in url
+
+    @pytest.mark.parametrize(("place", "locality"), [
+        (PlaceRef("kraj", 43), "VUSC-43"),
+        (PlaceRef("obvod", 78), "MOP-78"),
+        (PlaceRef("obec", 554791), "OKRES-3405"),
+    ], ids=["kraj", "obvod", "obec searches its okres"])
+    def test_the_search_area_names_the_locality(self, place, locality):
+        criteria = Criteria(offer_type="sale", estate_type="house", place=place)
+        assert f"f%5Blocality%5D={locality}" in IdnesScraper(criteria, _refusing_client())._build_url()
+
+    @pytest.mark.parametrize(("estate_type", "subtype"), [("house", "house"), ("cottage", "cabin")])
+    def test_houses_and_cottages_are_subtypes_of_houses(self, estate_type, subtype):
+        criteria = Criteria(offer_type="sale", estate_type=estate_type, place=PlaceRef("okres", 3401))
+        url = IdnesScraper(criteria, _refusing_client())._build_url()
+        assert "f%5Btype%5D=house" in url
+        assert f"f%5BsubtypeHouse%5D%5B%5D={subtype}" in url
+
+    def test_never_builds_a_url_robots_txt_disallows(self):
+        url = IdnesScraper(IDNES_CRITERIA, _refusing_client())._build_url()
+        assert "priceMin" not in url
+        assert "sort" not in url
+        assert "%7C" not in url and "|" not in url
+
+    def test_no_price_bounds_send_no_price_params(self):
+        criteria = Criteria(offer_type="sale", estate_type="land", place=PlaceRef("okres", 3401))
+        assert "price" not in IdnesScraper(criteria, _refusing_client())._build_url()
+
+
+class TestIdnesParsing:
+    """Each result card becomes a listing. Cards without a whole price, or
+    outside the price range, are skipped."""
+
+    def _scrape(self, monkeypatch, cards, criteria=IDNES_CRITERIA):
+        client, _ = _serve_idnes_pages(monkeypatch, {0: _idnes_page(cards)})
+        return IdnesScraper(criteria, client).scrape()
+
+    def test_parses_every_field_of_a_flat_card(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(1)])
+        assert listing.id == f"idnes:{_idnes_id(1)}"
+        assert listing.source == "idnes"
+        assert listing.title == "Pronájem bytu 2+kk 54 m²"
+        assert listing.price == 18500
+        assert listing.location_raw_text == "Vymyšlená, Plzeň - Doubravka"
+        assert listing.parsed_place.names == ("Vymyšlená", "Plzeň", "Doubravka")
+        assert listing.url == f"https://reality.idnes.cz/detail/pronajem/byt/plzen-vymyslena/{_idnes_id(1)}/"
+        assert listing.photo_urls == (f"https://img.example/{_idnes_id(1)}.webp",)
+        assert listing.scraped.size_m2 == 54
+        assert listing.scraped.land_m2 is None
+        assert listing.scraped.disposition_raw_text == "2+kk"
+
+    def test_a_house_gives_its_size_and_land_with_grouped_digits(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(
+            1, title="domu 352\xa0m² s pozemkem 1\xa0255\xa0m²", price="19 000 Kč/měsíc")])
+        assert listing.scraped.size_m2 == 352
+        assert listing.scraped.land_m2 == 1255
+
+    def test_a_plain_space_after_the_disposition_does_not_group_digits(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(1, title="bytu 3+1 120\xa0m²")])
+        assert listing.scraped.size_m2 == 120
+        assert listing.scraped.disposition_raw_text == "3+1"
+
+    def test_a_plot_area_is_its_land(self, monkeypatch):
+        criteria = Criteria(offer_type="sale", estate_type="land", place=PlaceRef("okres", 3401))
+        listing, = self._scrape(monkeypatch, [_idnes_card(
+            1, title="stavebního pozemku 1\xa0104\xa0m²", price="3 050 000 Kč")], criteria)
+        assert listing.scraped.land_m2 == 1104
+        assert listing.scraped.size_m2 is None
+        assert listing.price == 3050000
+
+    def test_a_room_has_no_disposition(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(1, title="pokoje 18\xa0m²", price="12 000 Kč/měsíc")])
+        assert listing.scraped.disposition_raw_text is None
+        assert listing.scraped.size_m2 == 18
+
+    @pytest.mark.parametrize("price", ["Cena na vyžádání", "18 500 Kč/rok", "18 500 €"])
+    def test_skips_a_card_without_a_whole_price(self, monkeypatch, price):
+        assert self._scrape(monkeypatch, [_idnes_card(1, price=price)]) == []
+
+    @pytest.mark.parametrize("price", ["9 900 Kč/měsíc", "25 001 Kč/měsíc"])
+    def test_skips_a_card_outside_the_price_range(self, monkeypatch, price):
+        assert self._scrape(monkeypatch, [_idnes_card(1, price=price)]) == []
+
+    def test_an_unset_max_price_keeps_expensive_cards(self, monkeypatch):
+        criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("okres", 3405))
+        listings = self._scrape(monkeypatch, [_idnes_card(1, price="95 000 Kč/měsíc")], criteria)
+        assert [listing.price for listing in listings] == [95000]
+
+    def test_an_okres_in_the_address_states_the_district(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(1, info="Vymyšlov, okres Plzeň-Jih")])
+        assert listing.parsed_place.names == ("Vymyšlov",)
+        assert listing.parsed_place.district == "Plzeň-Jih"
+
+    def test_reads_neither_ad_tiles_nor_similar_offers(self, monkeypatch):
+        similar = (f'<div class="grid-similar-offers"><article class="c-grid-products__item">'
+                   f'<a class="c-grid-products__inner" href="https://reality.idnes.cz/detail/prodej/byt/'
+                   f'jinde/{_idnes_id(9)}/">Podobná nabídka</a></article></div>')
+        page = f"<html><body>{_IDNES_AD_TILE}{similar}</body></html>"
+        client, _ = _serve_idnes_pages(monkeypatch, {0: page})
+        assert IdnesScraper(IDNES_CRITERIA, client).scrape() == []
+
+    def test_a_card_without_a_photo_ignores_the_agency_logo(self, monkeypatch):
+        listing, = self._scrape(monkeypatch, [_idnes_card(1, photo=False)])
+        assert listing.photo_urls == ()
+
+
+class TestIdnesPagination:
+    """Paging follows the portal's own next link, stopping on the last page,
+    a page served again, or the page cap."""
+
+    def test_follows_the_next_link_until_there_is_none(self, monkeypatch):
+        client, calls = _serve_idnes_pages(monkeypatch, {
+            0: _idnes_page([_idnes_card(1)], next_page=1),
+            1: _idnes_page([_idnes_card(2)], next_page=2),
+            2: _idnes_page([_idnes_card(3)]),
+        })
+        scraper = IdnesScraper(IDNES_CRITERIA, client)
+        listings = scraper.scrape()
+        assert sorted(listing.id for listing in listings) == [f"idnes:{_idnes_id(n)}" for n in (1, 2, 3)]
+        assert [str(call.url) for call in calls] == [
+            scraper._build_url(),
+            "https://reality.idnes.cz/s/pronajem/byty/plzen/",
+            "https://reality.idnes.cz/s/pronajem/byty/plzen/?page=1",
+            "https://reality.idnes.cz/s/pronajem/byty/plzen/?page=2",
+        ]
+
+    def test_stops_when_the_portal_serves_the_same_page_again(self, monkeypatch):
+        same = _idnes_page([_idnes_card(1), _idnes_card(2)], next_page=1)
+        client, calls = _serve_idnes_pages(monkeypatch, {0: same, 1: same})
+        assert len(IdnesScraper(IDNES_CRITERIA, client).scrape()) == 2
+        assert len(calls) == 3
+
+    def test_reads_on_past_a_page_whose_cards_are_all_filtered_out(self, monkeypatch):
+        client, _ = _serve_idnes_pages(monkeypatch, {
+            0: _idnes_page([_idnes_card(1)], next_page=1),
+            1: _idnes_page([_idnes_card(2, price="Cena na vyžádání")], next_page=2),
+            2: _idnes_page([_idnes_card(3)]),
+        })
+        listings = IdnesScraper(IDNES_CRITERIA, client).scrape()
+        assert sorted(listing.id for listing in listings) == [f"idnes:{_idnes_id(n)}" for n in (1, 3)]
+
+    def test_a_card_that_moves_onto_the_next_page_keeps_its_first_reading(self, monkeypatch):
+        client, _ = _serve_idnes_pages(monkeypatch, {
+            0: _idnes_page([_idnes_card(1, price="18 000 Kč/měsíc")], next_page=1),
+            1: _idnes_page([_idnes_card(1, price="17 000 Kč/měsíc"), _idnes_card(2)]),
+        })
+        listings = IdnesScraper(IDNES_CRITERIA, client).scrape()
+        assert [(listing.id, listing.price) for listing in listings] == [
+            (f"idnes:{_idnes_id(1)}", 18000), (f"idnes:{_idnes_id(2)}", 18500)]
+
+    def test_stops_at_the_page_cap_and_says_so(self, monkeypatch, caplog):
+        pages = {page: _idnes_page([_idnes_card(page + 1)], next_page=page + 1) for page in range(60)}
+        client, _ = _serve_idnes_pages(monkeypatch, pages)
+        listings = IdnesScraper(IDNES_CRITERIA, client).scrape()
+        assert len(listings) == idnes.MAX_PAGES
+        assert "pagination cap" in caplog.text
+
+    def test_the_last_page_within_the_cap_says_nothing(self, monkeypatch, caplog):
+        pages = {page: _idnes_page([_idnes_card(page + 1)], next_page=page + 1) for page in range(49)}
+        pages[49] = _idnes_page([_idnes_card(50)])
+        client, _ = _serve_idnes_pages(monkeypatch, pages)
+        assert len(IdnesScraper(IDNES_CRITERIA, client).scrape()) == 50
+        assert "pagination cap" not in caplog.text
+
+
 class TestPortalCoverage:
     def test_every_portal_has_a_scraper(self):
         assert set(ALL_SCRAPERS) == set(get_args(Portal))
@@ -955,6 +1198,7 @@ class TestEstateOfferTypeCoverage:
         SrealityScraper(criteria, _refusing_client())._build_params(offset=0)
         BezrealitkyScraper(criteria, _refusing_client())._build_url()
         RemaxScraper(criteria, _refusing_client())._build_url()
+        IdnesScraper(criteria, _refusing_client())._build_url()
 
 
 class TestNarrowPlaceViews:
@@ -981,10 +1225,15 @@ class TestNarrowPlaceViews:
         kraj = RemaxPlace.from_params(resolve(PlaceRef("kraj", 43)))
         assert kraj.region_id == 43 and len(kraj.district_ids) == 7
 
+    def test_idnes_view_names_the_search_area_by_its_ruian_code(self):
+        from rentczecher_engine.adapters.scrapers.idnes import IdnesPlace
+        from rentczecher_engine.adapters.scrapers.location_resolver import resolve
+        assert IdnesPlace.from_params(resolve(PlaceRef("okres", 3401))) == IdnesPlace(locality="OKRES-3401")
+
     def test_scrapers_hold_no_full_place_params(self):
         from rentczecher_engine.adapters.scrapers.location_resolver import PlaceParams
         criteria = Criteria(offer_type="rent", estate_type="flat", place=PlaceRef("obvod", 78), max_price=25000)
-        for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
+        for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper, IdnesScraper):
             scraper = scraper_cls(criteria, _refusing_client())
             assert not any(isinstance(value, PlaceParams)
                            for value in vars(scraper).values()), scraper_cls.name
@@ -997,6 +1246,6 @@ class TestPlaceResolutionFailure:
     def test_unknown_place_raises_at_construction(self):
         criteria = Criteria(offer_type="rent", estate_type="flat",
                             place=PlaceRef("okres", 999999), max_price=25000)
-        for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper):
+        for scraper_cls in (SrealityScraper, BezrealitkyScraper, RemaxScraper, IdnesScraper):
             with pytest.raises(PlaceNotFoundError):
                 scraper_cls(criteria, _refusing_client())
