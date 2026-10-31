@@ -31,6 +31,7 @@ erDiagram
     estate_types ||--o{ profile_criteria : "typed as"
     place_kinds  ||--o{ profile_criteria : "placed by"
     portals      ||--o{ profile_portals  : "scanned as"
+    portals      ||--o{ listings         : "posted on"
     dispositions ||--o{ accepted_dispositions : "accepted as"
     dispositions ||--o{ preferred_dispositions : "preferred as"
     place_kinds  ||--o{ preferred_places : "placed by"
