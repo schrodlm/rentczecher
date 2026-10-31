@@ -116,6 +116,8 @@ scores the listings when it shows them.
 | Photos: one file per stored photo | the same data folder, in `photos/` | engine |
 | Gazetteer: every Czech place and the portals' ids for them | inside the engine, read-only | built by a script, see [development.md](development.md#the-gazetteer) |
 | User config: language and theme | the operating system's config folder | shell, for the panel |
+| Nearby kinds: which kinds of place each profile shows | the window's local storage | panel |
+| Profiles file: chosen profiles, to move them to another computer | wherever the user saves it | shell, for the panel |
 
 ## Where the engine comes from
 
