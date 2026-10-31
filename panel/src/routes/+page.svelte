@@ -10,15 +10,21 @@
 	import { ProfileDraft } from '$lib/editor/profile-draft.svelte';
 	import ProfileEditor from '$lib/editor/ProfileEditor.svelte';
 	import FeedbackButton from '$lib/components/FeedbackButton.svelte';
+	import ExportProfilesDialog from '$lib/components/ExportProfilesDialog.svelte';
 	import FeedbackDialog from '$lib/components/FeedbackDialog.svelte';
+	import ImportProfilesReport from '$lib/components/ImportProfilesReport.svelte';
 	import Inbox from '$lib/components/Inbox.svelte';
 	import LanguageToggle from '$lib/components/LanguageToggle.svelte';
+	import ProfilesMenu from '$lib/components/ProfilesMenu.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import UpdateNotice from '$lib/components/UpdateNotice.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { importProfilesFile, type ImportReport } from '$lib/import-profiles';
 	import { keepSelection, takeKeptSelection } from '$lib/kept-selection';
+	import { keptNearbyKinds } from '$lib/nearby/kept-kinds';
 	import { NearbyStore } from '$lib/nearby/nearby-store.svelte';
 	import { OverpassClient } from '$lib/nearby/overpass';
+	import { newProfileBodyOf, ProfilesFile } from '$lib/profiles-file';
 	import { GalleryStore } from '$lib/stores/gallery.svelte';
 	import { RunProgressStore } from '$lib/stores/run-progress.svelte';
 	import { UpdateStore } from '$lib/stores/update.svelte';
@@ -31,6 +37,7 @@
 
 	const t = getTranslatorContext();
 	const userConfigFile = new UserConfigFile();
+	const profilesFile = new ProfilesFile();
 	// svelte-ignore state_referenced_locally
 	let userConfig = $state<UserConfig>(data.userConfig);
 	// svelte-ignore state_referenced_locally
@@ -58,6 +65,9 @@
 	// for a new one.
 	let editing = $state<{ draft: ProfileDraft; profileId: string | null } | null>(null);
 	let writingFeedback = $state(false);
+	let exportingProfiles = $state(false);
+	let importing = $state(false);
+	let importReport = $state<ImportReport | null>(null);
 
 	// While no preference weighs anything every listing scores 0, which says
 	// nothing, so listings go unscored.
@@ -208,6 +218,31 @@
 		if (profiles.length > 0) selectProfile(profiles[0].id);
 	}
 
+	function exportProfiles(chosen: ProfileModel[]): Promise<boolean> {
+		return profilesFile.save(
+			chosen.map((profile) => ({ profile: newProfileBodyOf(profile), nearbyKinds: keptNearbyKinds(profile.id) }))
+		);
+	}
+
+	async function importProfilesFromFile(): Promise<void> {
+		if (profiles === null || importing) return;
+		importing = true;
+		let report: ImportReport | null;
+		try {
+			report = await importProfilesFile(profilesFile, client, () => (profiles ?? []).map((profile) => profile.name));
+		} finally {
+			importing = false;
+		}
+		if (report === null) return;
+		if (report.status === 'done' && profiles !== null) {
+			const added = report.outcome.added;
+			profiles = [...profiles, ...added];
+			newCounts = { ...newCounts, ...Object.fromEntries(added.map((profile) => [profile.id, 0])) };
+			if (selectedProfileId === null && added.length > 0) selectProfile(added[0].id);
+		}
+		importReport = report;
+	}
+
 	// A config that could not be saved is not shown either, so the app never
 	// looks set to something it will not open with.
 	async function changeTheme(theme: Theme): Promise<void> {
@@ -309,7 +344,7 @@
 	});
 </script>
 
-<div class="shell" inert={welcoming || writingFeedback}>
+<div class="shell" inert={welcoming || writingFeedback || exportingProfiles || importing || importReport !== null}>
 	<header class="topbar">
 		<h1 class="topbar__logo"><img src={logo} alt="rentczecher" /></h1>
 		<nav class="tabs" aria-label={t.t('Profiles')}>
@@ -352,6 +387,15 @@
 				<button class="tab tab--add" title={t.t('Add profile')} onclick={openNewProfile}>+</button>
 			{/if}
 		</nav>
+		<!-- Beside the tabs rather than among them, so its list is not cut off by
+		their scrolling. -->
+		{#if profiles !== null}
+			<ProfilesMenu
+				canExport={profiles.length > 0}
+				onimport={importProfilesFromFile}
+				onexport={() => (exportingProfiles = true)}
+			/>
+		{/if}
 		<div class="topbar__end">
 			<UpdateNotice {updates} />
 			<InboxHeader
@@ -404,6 +448,18 @@
 
 {#if writingFeedback}
 	<FeedbackDialog onclose={() => (writingFeedback = false)} />
+{/if}
+
+{#if exportingProfiles && profiles !== null}
+	<ExportProfilesDialog {profiles} onexport={exportProfiles} onclose={() => (exportingProfiles = false)} />
+{/if}
+
+{#if importing}
+	<p class="importing" role="status">{t.t('Importing profiles...')}</p>
+{/if}
+
+{#if importReport !== null}
+	<ImportProfilesReport report={importReport} onclose={() => (importReport = null)} />
 {/if}
 
 {#if editing !== null}
@@ -464,8 +520,23 @@
 
 	.topbar__end {
 		display: flex;
+		margin-left: auto;
 		align-items: center;
 		gap: var(--space-2);
+	}
+
+	.importing {
+		position: fixed;
+		top: 12vh;
+		left: 50%;
+		z-index: 41;
+		margin: 0;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-full);
+		background: var(--color-card);
+		color: var(--color-bronze);
+		transform: translateX(-50%);
 	}
 
 	.topbar__divider {
@@ -479,7 +550,7 @@
 	the selected one covers the line and joins the inbox below. */
 	.tabs {
 		display: flex;
-		flex: 1;
+		flex: 0 1 auto;
 		align-self: flex-end;
 		align-items: flex-end;
 		gap: var(--space-1);

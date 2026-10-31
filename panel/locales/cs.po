@@ -855,3 +855,51 @@ msgstr "Aktualizaci se nepodařilo nainstalovat."
 
 msgid "Download it by hand"
 msgstr "Stáhnout ručně"
+
+msgid "More profile actions"
+msgstr "Další akce s profily"
+
+msgid "Import profiles..."
+msgstr "Importovat profily..."
+
+msgid "Export profiles..."
+msgstr "Exportovat profily..."
+
+msgid "Export profiles"
+msgstr "Export profilů"
+
+msgid "The file holds the chosen searches and their preferences, not the listings they found."
+msgstr "Soubor obsahuje vybraná hledání a jejich preference, nikoli nalezené inzeráty."
+
+msgid "Export"
+msgstr "Exportovat"
+
+msgid "Could not save the file: {reason}"
+msgstr "Soubor se nepodařilo uložit: {reason}"
+
+msgid "Import profiles"
+msgstr "Import profilů"
+
+msgid "This file holds no profiles rentczecher can read."
+msgstr "Tento soubor neobsahuje profily, které rentczecher umí přečíst."
+
+msgid "Could not read the file: {reason}"
+msgstr "Soubor se nepodařilo přečíst: {reason}"
+
+msgid "Added {count} profile:"
+msgid_plural "Added {count} profiles:"
+msgstr[0] "Přidán {count} profil:"
+msgstr[1] "Přidány {count} profily:"
+msgstr[2] "Přidáno {count} profilů:"
+
+msgid "The file holds no profiles."
+msgstr "Soubor neobsahuje žádné profily."
+
+msgid "{count} profile could not be added:"
+msgid_plural "{count} profiles could not be added:"
+msgstr[0] "{count} profil se nepodařilo přidat:"
+msgstr[1] "{count} profily se nepodařilo přidat:"
+msgstr[2] "{count} profilů se nepodařilo přidat:"
+
+msgid "Importing profiles..."
+msgstr "Importuji profily..."
