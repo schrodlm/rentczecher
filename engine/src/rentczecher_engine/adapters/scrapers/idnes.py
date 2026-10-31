@@ -2,7 +2,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from urllib.parse import urlencode, urljoin
+from urllib.parse import unquote, urlencode, urljoin, urlsplit
 
 from bs4 import BeautifulSoup, Tag
 
@@ -76,6 +76,15 @@ class SearchPage:
     next_url: str | None
 
 
+def _is_allowed_search_url(url: str) -> bool:
+    """Whether a search URL stays inside what robots.txt allows: no price
+    floor, no multi-value filter and no sorting."""
+    parts = urlsplit(url)
+    query = unquote(parts.query)
+    return (parts.netloc == "reality.idnes.cz" and parts.path.startswith("/s/")
+            and "cena-nad-" not in parts.path and "|" not in query and "sort" not in query)
+
+
 def _square_metres(match: re.Match[str] | None) -> int | None:
     return int(match.group(1).replace("\xa0", "")) if match else None
 
@@ -109,7 +118,8 @@ class IdnesScraper(BaseScraper):
 
     def scrape(self) -> list[Listing]:
         """Requests only the search form and the next-page links the portal
-        serves."""
+        serves. Raises ScraperBrokenError for a next-page link robots.txt
+        rules out."""
         listings: dict[str, Listing] = {}
         seen_card_ids: set[str] = set()
         url = self._build_url()
@@ -123,6 +133,8 @@ class IdnesScraper(BaseScraper):
             seen_card_ids |= page.card_ids
             if not page.card_ids or page.next_url is None or repeated:
                 break
+            if not _is_allowed_search_url(page.next_url):
+                raise ScraperBrokenError(f"idnes: next page {page.next_url} is a URL robots.txt rules out")
             url = page.next_url
             time.sleep(1.5)
         else:
