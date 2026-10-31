@@ -68,7 +68,7 @@ class TestMigrate:
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute(
                 "INSERT INTO listings (id, property_id, source, url, scraped_at) "
-                "VALUES ('idnes:1', 'x', 'idnes', 'u', 't')")
+                "VALUES ('no-such-portal:1', 'x', 'no-such-portal', 'u', 't')")
 
     def test_invalid_differences_json_is_rejected(self, tmp_path):
         conn = connection.connect(tmp_path / "t.db")
@@ -291,7 +291,7 @@ class TestProfileTables:
 
     @pytest.mark.parametrize("stmt", [
         "INSERT INTO preferred_places (profile_id, place_kind, place_code, rank) VALUES ('p', 'street', 1, 1)",
-        "INSERT INTO profile_portals (profile_id, portal) VALUES ('p', 'idnes')",
+        "INSERT INTO profile_portals (profile_id, portal) VALUES ('p', 'no-such-portal')",
         "INSERT INTO preferred_dispositions (profile_id, disposition, rank) VALUES ('p', '10+kk', 1)",
     ])
     def test_an_unknown_place_kind_portal_or_disposition_is_rejected(self, tmp_path, stmt):
