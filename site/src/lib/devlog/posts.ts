@@ -8,6 +8,20 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'profiles-move-between-computers',
+		title: 'Profiles move between computers',
+		date: '2026-10-31',
+		summary:
+			'Save the chosen profiles into a JSON file and add them on another computer, with every place kept by its RÚIAN code. With the updater, this makes version 0.3.0.'
+	},
+	{
+		slug: 'the-app-updates-itself',
+		title: 'The app updates itself',
+		date: '2026-10-26',
+		summary:
+			"Tauri's updater offers each new release in the top bar, and every release is signed, so the app installs only what I built."
+	},
+	{
 		slug: 'finding-your-way-around-a-flat',
 		title: 'Finding your way around a flat',
 		date: '2026-10-20',
