@@ -3,7 +3,7 @@ from typing import cast
 
 import httpx
 
-from rentczecher_engine.adapters.scrapers import bezrealitky, remax
+from rentczecher_engine.adapters.scrapers import bezrealitky, idnes, remax
 from rentczecher_engine.adapters.scrapers.base import BaseScraper
 from rentczecher_engine.adapters.scrapers.bezrealitky import BezrealitkyScraper
 from rentczecher_engine.adapters.scrapers.idnes import IdnesScraper
@@ -25,6 +25,7 @@ ALL_SCRAPERS: dict[Portal, Callable[[Criteria, httpx.Client], BaseScraper]] = {
 ADVERT_GALLERY_PARSERS: dict[str, Callable[[str], tuple[str, ...]]] = {
     "bezrealitky": bezrealitky.gallery_from_advert_page,
     "remax": remax.gallery_from_advert_page,
+    "idnes": idnes.gallery_from_advert_page,
 }
 
 
