@@ -42,6 +42,9 @@ district is for the gazetteer to work out.
 - Bezrealitky gives a comma-separated string.
 - RE/MAX gives a comma-separated string ending with the kraj, and the town in
   the card title.
+- iDNES Reality gives a comma-separated string. A town outside the okres's
+  own town usually ends with an `okres X` segment, and a town part follows
+  the town after ` - `.
 
 Two things the adapter does label, because no lookup could tell them apart:
 
@@ -51,7 +54,8 @@ Two things the adapter does label, because no lookup could tell them apart:
 - **The house numbers**, when the portal gives them. Sreality has a field for
   each. RE/MAX writes `street 1419 / 1419`, repeating the číslo popisné when
   there is no číslo orientační. A single number is left out, since it does not
-  say which of the two it is. The Bezrealitky adapter reads none.
+  say which of the two it is. The Bezrealitky and iDNES Reality adapters read
+  none.
 
 ## 2. The gazetteer picks the one unit the text pins down
 
