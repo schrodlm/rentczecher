@@ -14,6 +14,11 @@ export function factsOf(listing: TrackedPropertyModel, t: Translator): string {
 		.join(' · ');
 }
 
+/* A flat never viewed, or a viewed one a scan found changed since. */
+export function isNewOrUpdated(listing: TrackedPropertyModel): boolean {
+	return listing.viewed_at === null || listing.updated_at !== null;
+}
+
 /* Where the listing lies, as the two finest different names of its place,
 such as its street and part of town. The portal's own words stand in while
 the place is not known. */

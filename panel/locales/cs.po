@@ -70,6 +70,9 @@ msgstr "Nové"
 msgid "Viewed"
 msgstr "Už zobrazené"
 
+msgid "Updated"
+msgstr "Aktualizované"
+
 msgid "working"
 msgstr "v pořádku"
 
