@@ -33,7 +33,9 @@
 	function view(propertyId: string): void {
 		onview(propertyId);
 		const listing = held.find((each) => each.id === propertyId);
-		if (listing !== undefined) listing.viewed_at = NOW;
+		if (listing === undefined) return;
+		listing.viewed_at = listing.viewed_at ?? NOW;
+		listing.updated_at = null;
 	}
 
 	function favourite(propertyId: string, on: boolean): void {
@@ -46,7 +48,9 @@
 
 	function markAllViewedAndReload(propertyIds: string[]): void {
 		held = held.map((listing) =>
-			propertyIds.includes(listing.id) ? { ...listing, viewed_at: listing.viewed_at ?? NOW } : listing
+			propertyIds.includes(listing.id)
+				? { ...listing, viewed_at: listing.viewed_at ?? NOW, updated_at: null }
+				: listing
 		);
 	}
 </script>
