@@ -1,5 +1,6 @@
 # The same flat listed on two portals, at the same address and GPS point
-# for slightly different prices: dedup folds them into one listing.
+# for slightly different prices: dedup folds them into one listing. Another
+# flat is on two portals that give no GPS point, and folds by its street.
 profile:
   name: Praha 7 flats
   search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
@@ -9,3 +10,4 @@ scans:
       - {id: "sreality:1301", price: 24500, location_raw_text: "Dukelských hrdinů, Praha 7", size_m2: 60, lat: 50.1001, lon: 14.4326}
       - {id: "bezrealitky:2301", price: 24000, location_raw_text: "Dukelských hrdinů, Praha 7", size_m2: 60, lat: 50.1002, lon: 14.4327}
       - {id: "remax:3301", price: 19000, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition_raw_text: "1+kk"}
+      - {id: "idnes:4301", price: 19500, location_raw_text: "Jankovcova, Praha 7 - Holešovice", size_m2: 40, disposition_raw_text: "1+kk"}

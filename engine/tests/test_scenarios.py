@@ -88,11 +88,12 @@ def test_disappeared_misses_the_listing_three_scans_in_a_row(tmp_path):
 
 
 def test_cross_portal_folds_the_same_flat_into_one_property(tmp_path):
-    """The two postings of one flat show as one, its cheaper posting with
-    the other as its sibling, and the unrelated flat has none."""
+    """Each flat's two postings show as one, its cheaper posting with the
+    other as its sibling, whether the postings give a GPS point or only a
+    street."""
     store, profile_id = replayed("cross-portal", tmp_path)
     siblings = {card.listing_id: {s.source for s in card.sibling_sources} for card in store.tracked_properties(profile_id)}
-    assert siblings == {"bezrealitky:2301": {"sreality"}, "remax:3301": set()}
+    assert siblings == {"bezrealitky:2301": {"sreality"}, "remax:3301": {"idnes"}}
 
 
 def test_replaying_onto_an_existing_database_is_refused(tmp_path):
