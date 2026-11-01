@@ -657,38 +657,96 @@ class TestVeletrzniShapedMatch:
         assert len(result) == 1
 
 
-class TestTheFlatAgainstItsLocation:
+def _pair_on_one_street(on_both=None, **on_second):
     """Two listings on one street at one point, alike in everything but what
-    each test changes on the second."""
+    a test changes on both or on the second."""
+    shared = ParsedPlace(names=("Veletržní", "Praha"))
+    first = {"id": "sreality:1", "source": "sreality", "price": 20000, "size_m2": 50,
+             "disposition_raw_text": "2+kk", "lat": 50.1005, "lon": 14.4270, "parsed_place": shared,
+             **(on_both or {})}
+    second = {**first, "id": "bezrealitky:1", "source": "bezrealitky", **on_second}
+    return [_make_listing(**first), _make_listing(**second)]
 
-    @staticmethod
-    def _pair_on_one_street(on_both=None, **on_second):
-        shared = ParsedPlace(names=("Veletržní", "Praha"))
-        first = {"id": "sreality:1", "source": "sreality", "price": 20000, "size_m2": 50,
-                 "disposition_raw_text": "2+kk", "lat": 50.1005, "lon": 14.4270, "parsed_place": shared,
-                 **(on_both or {})}
-        second = {**first, "id": "bezrealitky:1", "source": "bezrealitky", **on_second}
-        return [_make_listing(**first), _make_listing(**second)]
+
+class TestTheFlatAgainstItsLocation:
+    """However close two flat listings lie, they merge only when the flat agrees."""
 
     def test_prices_thirty_percent_apart_stay_separate(self):
-        pair = self._pair_on_one_street(price=14000)
+        pair = _pair_on_one_street(price=14000)
         assert len(_locate_and_dedup(pair)) == 2
 
     def test_sizes_sixteen_square_metres_apart_stay_separate(self):
-        pair = self._pair_on_one_street(size_m2=66)
+        pair = _pair_on_one_street(size_m2=66)
         assert len(_locate_and_dedup(pair)) == 2
 
     def test_no_disposition_on_either_side_stays_separate(self):
-        pair = self._pair_on_one_street(on_both={"disposition_raw_text": None})
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None})
         assert len(_locate_and_dedup(pair)) == 2
 
     def test_no_size_on_either_side_stays_separate(self):
-        pair = self._pair_on_one_street(on_both={"size_m2": None})
+        pair = _pair_on_one_street(on_both={"size_m2": None})
         assert len(_locate_and_dedup(pair)) == 2
 
     def test_prices_ten_percent_and_sizes_six_square_metres_apart_merge(self):
-        pair = self._pair_on_one_street(price=18000, size_m2=56)
+        pair = _pair_on_one_street(price=18000, size_m2=56)
         assert len(_locate_and_dedup(pair)) == 1
+
+
+class TestThePropertyByEstateType:
+    """What has to agree besides the location depends on the profile's estate type."""
+
+    def test_a_flat_pair_scoring_as_a_match_without_agreeing_is_recorded_as_uncertain(self):
+        outcome = _locate_and_dedup_outcome(_pair_on_one_street(price=17900))
+        assert len(outcome.survivors) == 2
+        assert outcome.merges == ()
+        [pair] = outcome.uncertain
+        assert pair.score.band is MatchBand.UNCERTAIN
+        assert pair.score.total >= 55
+
+    def test_prices_more_than_ten_percent_apart_keep_any_estate_type_separate(self):
+        for estate_type in ("flat", "house", "cottage", "land"):
+            pair = _pair_on_one_street(on_both={"land_m2": 800}, price=17900)
+            assert len(_locate_and_dedup(pair, estate_type=estate_type)) == 2, estate_type
+
+    def test_a_house_merges_on_its_size_without_a_disposition(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": "Rodinný", "size_m2": 140})
+        assert len(_locate_and_dedup(pair, estate_type="house")) == 1
+
+    def test_a_house_merges_with_a_disposition_on_one_side_only(self):
+        pair = _pair_on_one_street(on_both={"size_m2": 140}, disposition_raw_text="Rodinný")
+        assert len(_locate_and_dedup(pair, estate_type="house")) == 1
+
+    def test_houses_giving_different_dispositions_stay_separate(self):
+        pair = _pair_on_one_street(on_both={"size_m2": 140, "disposition_raw_text": "4+1"},
+                                   disposition_raw_text="5+1")
+        assert len(_locate_and_dedup(pair, estate_type="house")) == 2
+
+    def test_a_house_without_a_size_merges_on_its_plot(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None, "size_m2": None, "land_m2": 800},
+                                   land_m2=760)
+        assert len(_locate_and_dedup(pair, estate_type="house")) == 1
+
+    def test_a_house_with_neither_size_nor_plot_stays_separate(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None, "size_m2": None})
+        assert len(_locate_and_dedup(pair, estate_type="house")) == 2
+
+    def test_a_cottage_follows_the_house_rule(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None, "size_m2": 60})
+        assert len(_locate_and_dedup(pair, estate_type="cottage")) == 1
+
+    def test_land_merges_on_plots_within_ten_percent(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None, "size_m2": None, "land_m2": 1000},
+                                   land_m2=900)
+        assert len(_locate_and_dedup(pair, estate_type="land")) == 1
+
+    def test_land_with_plots_more_than_ten_percent_apart_stays_separate(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None, "size_m2": None, "land_m2": 1000},
+                                   land_m2=899)
+        assert len(_locate_and_dedup(pair, estate_type="land")) == 2
+
+    def test_land_without_a_plot_area_stays_separate(self):
+        pair = _pair_on_one_street(on_both={"disposition_raw_text": None})
+        assert len(_locate_and_dedup(pair, estate_type="land")) == 2
 
 
 class TestGeocellBoundaries:
