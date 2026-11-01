@@ -301,6 +301,17 @@ class TestFoldInto:
             ("p", "prop-winner", "2026-10-01", None, 3),
         ]
 
+    def test_the_winner_stays_updated_since_the_later_of_the_two_updates(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.create(_property(id="prop-winner"))
+        repo.create(_property(id="prop-loser"))
+        conn.execute("INSERT INTO property_tracking (profile_id, property_id, viewed_at, updated_at, profile_index) "
+                     "VALUES ('p', 'prop-winner', '2026-10-01', '2026-10-05', 1), "
+                     "('p', 'prop-loser', '2026-10-02', '2026-10-07', 2)")
+        repo.fold_into("prop-loser", "prop-winner")
+        stmt = "SELECT updated_at FROM property_tracking WHERE property_id = 'prop-winner'"
+        assert conn.execute(stmt).fetchone()[0] == "2026-10-07"
+
     def test_merges_tracking_of_both_keeping_the_first_view_and_star(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.create(_property(id="prop-winner"))

@@ -242,6 +242,46 @@ class TestMarkViewed:
         assert row["viewed_at"] is None
 
 
+class TestUpdates:
+    @staticmethod
+    def _updated_at(conn, profile_id=PROFILE):
+        stmt = "SELECT updated_at FROM property_tracking WHERE profile_id = ? AND property_id = ?"
+        return conn.execute(stmt, (profile_id, PROPERTY)).fetchone()["updated_at"]
+
+    def test_marking_records_when_the_flat_changed(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, PROPERTY)
+        repo.mark_updated(PROFILE, PROPERTY)
+        assert self._updated_at(conn) == BASE.isoformat()
+
+    def test_viewing_again_clears_the_update_and_keeps_the_first_view(self, tmp_path):
+        repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2),
+                                                BASE + timedelta(hours=3)))
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.mark_viewed(PROFILE, PROPERTY)
+        repo.mark_updated(PROFILE, PROPERTY)
+        repo.mark_viewed(PROFILE, PROPERTY)
+        assert self._updated_at(conn) is None
+        row = conn.execute("SELECT viewed_at FROM property_tracking WHERE profile_id = ?", (PROFILE,)).fetchone()
+        assert row["viewed_at"] == (BASE + timedelta(hours=1)).isoformat()
+
+    def test_marking_is_scoped_to_the_profile(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing())
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing())
+        repo.mark_updated(PROFILE, PROPERTY)
+        assert self._updated_at(conn, OTHER_PROFILE) is None
+
+    def test_viewed_ids_hold_every_listing_on_a_viewed_flat(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing("sreality:1"))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing("bezrealitky:1"))
+        repo.mark_viewed(PROFILE, PROPERTY)
+        assert repo.viewed_ids(PROFILE) == {"sreality:1", "bezrealitky:1"}
+        assert repo.viewed_ids(OTHER_PROFILE) == set()
+
+
 class TestFavourite:
     def _row(self, conn):
         return conn.execute(

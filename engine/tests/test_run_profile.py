@@ -26,16 +26,18 @@ class FakeRunStore:
 
     def __init__(self):
         self.seen: set[str] = set()
+        self.viewed: set[str] = set()
         self.prices: dict[str, int] = {}
         self.pending: set[str] = set()
         self.persist_calls: list = []
+        self.updated_keeper_ids: list[set[str]] = []
         self.prune_calls: list[str] = []
 
     def seen_ids(self, profile_id):
         return self.seen
 
     def viewed_ids(self, profile_id):
-        return set()
+        return self.viewed
 
     def latest_prices(self, profile_id):
         return self.prices
@@ -48,6 +50,7 @@ class FakeRunStore:
 
     def persist_outcome(self, profile_id, outcome, located_by_id, current_ids, updated_keeper_ids):
         self.persist_calls.append((profile_id, outcome, located_by_id, current_ids))
+        self.updated_keeper_ids.append(updated_keeper_ids)
 
 
 def _listing(id, source, **kw):
@@ -222,6 +225,30 @@ class TestCountsAndHealth:
         assert result.started_at == BASE
         assert result.finished_at == BASE
         assert result.profile_id == "praha7-byty"
+
+
+class TestUpdatedFlats:
+    def test_a_viewed_flat_whose_price_moved_is_persisted_as_updated(self):
+        store = FakeRunStore()
+        store.seen = {"sreality:1"}
+        store.viewed = {"sreality:1"}
+        store.prices = {"sreality:1": 25000}
+        deps = _deps(store=store, scrapers={"sreality": _scraper([_listing("1", "sreality", price=20000)])})
+
+        run_profile(_profile(), deps)
+
+        assert store.updated_keeper_ids == [{"sreality:1"}]
+
+    def test_a_dry_run_persists_no_update(self):
+        store = FakeRunStore()
+        store.seen = {"sreality:1"}
+        store.viewed = {"sreality:1"}
+        store.prices = {"sreality:1": 25000}
+        deps = _deps(store=store, scrapers={"sreality": _scraper([_listing("1", "sreality", price=20000)])})
+
+        run_profile(_profile(), deps, dry_run=True)
+
+        assert store.updated_keeper_ids == []
 
 
 class TestSearchPlaceSmallerThanTheArea:
