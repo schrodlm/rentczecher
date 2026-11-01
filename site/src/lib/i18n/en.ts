@@ -132,7 +132,7 @@ export const en: Messages = {
 		macos: '.dmg installer for Apple Silicon',
 		linux: 'AppImage or .deb',
 		firstLaunchWarning: 'The app is not code-signed yet, so Windows and macOS warn you on first launch.',
-		whatToDo: 'What to do?',
+		installSteps: 'How to install it, step by step',
 		buildYourself: 'Prefer to build it yourself?',
 		readme: 'See the README'
 	},
@@ -220,18 +220,9 @@ export const en: Messages = {
 			{
 				question: 'Why do Windows and macOS warn me?',
 				answer: [
-					'The app is not code-signed yet. On Windows, choose ',
-					{ uiLabel: 'More info' },
-					', then ',
-					{ uiLabel: 'Run anyway' },
-					'. A signed Windows installer is on the way. ',
-					"On macOS, signing requires Apple's developer program, which costs €99 a year. I don't earn anything from the app, so I have no reason to spend that. You can still run the app, it just takes a little more work. Open ",
-					{ uiLabel: 'System Settings' },
-					' → ',
-					{ uiLabel: 'Privacy & Security' },
-					' and choose ',
-					{ uiLabel: 'Open Anyway' },
-					' next to rentczecher.'
+					'The app is not code-signed yet, so both systems say they do not know who made it. ',
+					{ text: 'The install steps', href: '/en/install/' },
+					' show how to get past the warning on Windows and on a Mac. You only do it once.'
 				]
 			},
 			{
@@ -278,6 +269,127 @@ export const en: Messages = {
 			'. Every such message gets a quick answer.'
 		],
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any real-estate portal.'
+	},
+	install: {
+		title: 'Installing on Windows and macOS',
+		intro:
+			"rentczecher isn't code-signed yet, so Windows and macOS warn you the first time you open it. Here is how to get past the warning. You only do it once.",
+		windowsHeading: 'Windows',
+		windowsSteps: [
+			{
+				text: [
+					'Download the installer. If Microsoft Edge holds it as not commonly downloaded, open the download’s ',
+					{ uiLabel: '⋯' },
+					' menu, choose ',
+					{ uiLabel: 'Keep' },
+					', then ',
+					{ uiLabel: 'Show more' },
+					' and ',
+					{ uiLabel: 'Keep anyway' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Open the installer. Windows shows a blue screen, ',
+					{ uiLabel: 'Windows protected your PC' },
+					'. Click ',
+					{ uiLabel: 'More info' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Check that the app is ',
+					{ uiLabel: 'rentczecher-windows-x64-setup.exe' },
+					' and click ',
+					{ uiLabel: 'Run anyway' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: ['Go through the installer as usual. The app then opens without a warning, every time.'],
+				screenshot: null
+			}
+		],
+		smartAppControlHeading: 'No Run anyway button?',
+		smartAppControl: [
+			'Then ',
+			{ uiLabel: 'Smart App Control' },
+			' is on, which blocks every app that is not signed, with no exception for one app. You can turn it off in ',
+			{ uiLabel: 'Windows Security' },
+			' → ',
+			{ uiLabel: 'App & browser control' },
+			' → ',
+			{ uiLabel: 'Smart App Control settings' },
+			'. On an older Windows 11 that has not installed the 2026 updates, it cannot be turned back on without reinstalling Windows, so only do that if you are sure.'
+		],
+		macosHeading: 'macOS',
+		macosSteps: [
+			{
+				text: [
+					'Download the installer, open it and drag ',
+					{ uiLabel: 'rentczecher' },
+					' into ',
+					{ uiLabel: 'Applications' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Open rentczecher from Applications. macOS says it could not verify the app is free of malware. Click ',
+					{ uiLabel: 'Done' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Open ',
+					{ uiLabel: 'System Settings' },
+					' → ',
+					{ uiLabel: 'Privacy & Security' },
+					' and scroll down to Security. Next to “rentczecher” was blocked, click ',
+					{ uiLabel: 'Open Anyway' },
+					'. The button stays there for about an hour after you tried to open the app.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Enter your password or use Touch ID, then click ',
+					{ uiLabel: 'Open Anyway' },
+					' once more. From now on the app opens normally.'
+				],
+				screenshot: null
+			}
+		],
+		olderMacos: [
+			'On macOS 14 Sonoma and older it is quicker. Control-click the app in Applications, choose ',
+			{ uiLabel: 'Open' },
+			', then ',
+			{ uiLabel: 'Open' },
+			' again.'
+		],
+		damagedHeading: 'macOS says the app is damaged?',
+		damaged: [
+			'The app is fine. macOS sometimes says that about apps from outside the App Store and then offers no ',
+			{ uiLabel: 'Open Anyway' },
+			'. Open ',
+			{ uiLabel: 'Terminal' },
+			', paste this line and press Enter. It removes the mark macOS gave the downloaded app, and the app then opens.'
+		],
+		damagedCommand: 'xattr -dr com.apple.quarantine /Applications/rentczecher.app',
+		whyHeading: 'Why the warning?',
+		why: [
+			'Windows and macOS trust an app when it is signed with a certificate that names its developer. rentczecher is not signed yet, so both systems say they do not know who made it. They say nothing about whether the app is safe.',
+			'A signed Windows installer is on the way. On macOS, signing needs Apple’s developer program, which costs €99 a year, and I earn nothing from the app. So on a Mac the warning stays for now.',
+			'Every line of the app is public on GitHub, and every installer is built there from that code.'
+		]
 	},
 	privacyPolicy: {
 		title: 'Privacy policy',

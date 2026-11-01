@@ -132,7 +132,7 @@ export const cs: Messages = {
 		macos: 'Instalátor .dmg pro Apple Silicon',
 		linux: 'AppImage nebo .deb',
 		firstLaunchWarning: 'Aplikace zatím není podepsaná, takže Windows i macOS při prvním spuštění varují.',
-		whatToDo: 'Co s tím?',
+		installSteps: 'Jak ji nainstalovat, krok za krokem',
 		buildYourself: 'Raději si to sestavíte sami?',
 		readme: 'Návod je v README'
 	},
@@ -220,18 +220,9 @@ export const cs: Messages = {
 			{
 				question: 'Proč mě Windows a macOS varují?',
 				answer: [
-					'Aplikace zatím není podepsaná. Ve Windows zvolte ',
-					{ uiLabel: 'Další informace' },
-					' a pak ',
-					{ uiLabel: 'Přesto spustit' },
-					'. Podepsaný instalátor pro Windows chystám. ',
-					'Na macOS je pro podepsání nutné zakoupit developerský program v ceně €99/rok. Za aplikaci nic nevydělávám, takže nemám důvod za to platit. Aplikaci je pořád možné spustit, i když je s tím trošku více práce. Otevřete ',
-					{ uiLabel: 'Nastavení systému' },
-					' → ',
-					{ uiLabel: 'Soukromí a zabezpečení' },
-					' a u rentczecher zvolte ',
-					{ uiLabel: 'Přesto otevřít' },
-					'.'
+					'Aplikace zatím není podepsaná, takže oba systémy hlásí, že nevědí, kdo ji vytvořil. ',
+					{ text: 'Postup instalace', href: '/install/' },
+					' ukazuje, jak varování obejít ve Windows i na Macu. Stačí to udělat jednou.'
 				]
 			},
 			{
@@ -278,6 +269,127 @@ export const cs: Messages = {
 			'. Každá taková zpráva dostane rychlou odpověď.'
 		],
 		notAffiliated: 'rentczecher není s žádným realitním portálem nijak spojený a žádný ho nepodporuje.'
+	},
+	install: {
+		title: 'Instalace ve Windows a na macOS',
+		intro:
+			'rentczecher zatím není podepsaný, takže vás Windows i macOS při prvním otevření varují. Tady je, jak varování obejít. Stačí to udělat jednou.',
+		windowsHeading: 'Windows',
+		windowsSteps: [
+			{
+				text: [
+					'Stáhněte instalátor. Pokud ho Microsoft Edge zadrží, protože se často nestahuje, otevřete u stahování nabídku ',
+					{ uiLabel: '⋯' },
+					', zvolte ',
+					{ uiLabel: 'Zachovat' },
+					', potom ',
+					{ uiLabel: 'Zobrazit další' },
+					' a ',
+					{ uiLabel: 'Přesto zachovat' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Otevřete instalátor. Windows ukáže modrou obrazovku ',
+					{ uiLabel: 'Systém Windows ochránil váš počítač' },
+					'. Klikněte na ',
+					{ uiLabel: 'Další informace' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Zkontrolujte, že jde o aplikaci ',
+					{ uiLabel: 'rentczecher-windows-x64-setup.exe' },
+					', a klikněte na ',
+					{ uiLabel: 'Přesto spustit' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: ['Projděte instalací jako obvykle. Aplikace se pak otevírá bez varování, pokaždé.'],
+				screenshot: null
+			}
+		],
+		smartAppControlHeading: 'Chybí tlačítko Přesto spustit?',
+		smartAppControl: [
+			'Pak je zapnuté ',
+			{ uiLabel: 'Inteligentní řízení aplikací' },
+			', které blokuje každou nepodepsanou aplikaci a výjimku pro jednu aplikaci nedovolí. Vypnout ho můžete v ',
+			{ uiLabel: 'Zabezpečení Windows' },
+			' → ',
+			{ uiLabel: 'Řízení aplikací a prohlížeče' },
+			' → ',
+			{ uiLabel: 'Nastavení Inteligentního řízení aplikací' },
+			'. Ve starších Windows 11 bez aktualizací z roku 2026 už ho pak nejde zapnout jinak než přeinstalováním Windows, takže to udělejte, jen pokud si jste jistí.'
+		],
+		macosHeading: 'macOS',
+		macosSteps: [
+			{
+				text: [
+					'Stáhněte instalátor, otevřete ho a přetáhněte ',
+					{ uiLabel: 'rentczecher' },
+					' do složky ',
+					{ uiLabel: 'Aplikace' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Otevřete rentczecher ze složky Aplikace. macOS oznámí, že nemohl ověřit, zda aplikace neobsahuje malware. Klikněte na ',
+					{ uiLabel: 'Hotovo' },
+					'.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Otevřete ',
+					{ uiLabel: 'Nastavení systému' },
+					' → ',
+					{ uiLabel: 'Soukromí a zabezpečení' },
+					' a sjeďte dolů k části Zabezpečení. U hlášky, že rentczecher byl zablokován, klikněte na ',
+					{ uiLabel: 'Přesto otevřít' },
+					'. Tlačítko tam zůstává asi hodinu od chvíle, kdy jste aplikaci zkusili otevřít.'
+				],
+				screenshot: null
+			},
+			{
+				text: [
+					'Zadejte heslo nebo použijte Touch ID a ještě jednou klikněte na ',
+					{ uiLabel: 'Přesto otevřít' },
+					'. Od té chvíle se aplikace otevírá normálně.'
+				],
+				screenshot: null
+			}
+		],
+		olderMacos: [
+			'Na macOS 14 Sonoma a starších je to rychlejší. Klikněte na aplikaci ve složce Aplikace se stisknutou klávesou Control, zvolte ',
+			{ uiLabel: 'Otevřít' },
+			' a pak ještě jednou ',
+			{ uiLabel: 'Otevřít' },
+			'.'
+		],
+		damagedHeading: 'macOS tvrdí, že je aplikace poškozená?',
+		damaged: [
+			'Aplikace je v pořádku. macOS to o aplikacích mimo App Store občas tvrdí a pak tlačítko ',
+			{ uiLabel: 'Přesto otevřít' },
+			' nenabídne. Otevřete ',
+			{ uiLabel: 'Terminál' },
+			', vložte tento řádek a stiskněte Enter. Odstraní značku, kterou macOS stažené aplikaci dal, a aplikace se pak otevře.'
+		],
+		damagedCommand: 'xattr -dr com.apple.quarantine /Applications/rentczecher.app',
+		whyHeading: 'Proč to varování?',
+		why: [
+			'Windows i macOS aplikaci věří, když je podepsaná certifikátem, který jmenuje jejího vývojáře. rentczecher zatím podepsaný není, takže oba systémy hlásí, že nevědí, kdo ho vytvořil. O tom, jestli je aplikace bezpečná, neříkají nic.',
+			'Podepsaný instalátor pro Windows chystám. Na macOS podepisování vyžaduje developerský program od Applu za €99 ročně a já na aplikaci nic nevydělávám. Na Macu tedy varování zatím zůstane.',
+			'Každý řádek aplikace je veřejně na GitHubu a každý instalátor se tam z tohoto kódu sestavuje.'
+		]
 	},
 	privacyPolicy: {
 		title: 'Ochrana soukromí',
