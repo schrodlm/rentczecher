@@ -239,6 +239,18 @@ class TestUpdatedFlats:
 
         assert store.updated_keeper_ids == [{"sreality:1"}]
 
+    def test_the_run_counts_the_updated_flats(self):
+        store = FakeRunStore()
+        store.seen = {"sreality:1"}
+        store.viewed = {"sreality:1"}
+        store.prices = {"sreality:1": 25000}
+        deps = _deps(store=store, scrapers={"sreality": _scraper([_listing("1", "sreality", price=20000)])})
+
+        result = run_profile(_profile(), deps)
+
+        assert result.counts.new == 0
+        assert result.counts.updated == 1
+
     def test_a_dry_run_persists_no_update(self):
         store = FakeRunStore()
         store.seen = {"sreality:1"}
