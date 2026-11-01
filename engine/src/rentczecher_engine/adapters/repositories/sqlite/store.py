@@ -115,12 +115,7 @@ class SqliteRunStore:
         try:
             now = self._now().isoformat()
             keeper_ids = outcome.final_keeper_ids()
-
-            members_by_keeper: dict[str, list[Listing]] = {}
-            for listing in outcome.survivors:
-                members_by_keeper[listing.id] = [listing]
-            for absorbed_id, keeper_id in keeper_ids.items():
-                members_by_keeper[keeper_id].append(located_by_id[absorbed_id])
+            members_by_keeper = outcome.members_by_keeper(located_by_id)
 
             property_by_keeper = {
                 keeper_id: self._property_for(members, now)
