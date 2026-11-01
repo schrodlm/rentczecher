@@ -143,15 +143,15 @@ class RunManager:
                 run_id=request.run_id, profile_id=request.profile.id,
                 status=result.status,
                 counts=RunCountsModel(
-                    total=result.counts.total, new=result.counts.new,
+                    total=result.counts.total, new=result.counts.new, updated=result.counts.updated,
                     price_drops=result.counts.price_drops, disappeared=result.counts.disappeared,
                 ),
             ).model_dump(),
         ))
-        if result.counts.new:
+        if result.counts.new or result.counts.updated:
             self._broker.publish(RunEvent(
                 kind="listings_arrived",
                 data=ListingsArrivedEvent(
                     run_id=request.run_id, profile_id=request.profile.id,
-                    new=result.counts.new).model_dump(),
+                    new=result.counts.new, updated=result.counts.updated).model_dump(),
             ))

@@ -71,12 +71,12 @@ class TestEventPayloads:
         on success, error filled on failure, the other explicitly null."""
         ok = RunFinishedEvent(
             run_id="r1", profile_id="matej", status="ok",
-            counts=RunCountsModel(total=2, new=1, price_drops=0, disappeared=0))
+            counts=RunCountsModel(total=2, new=1, updated=0, price_drops=0, disappeared=0))
         assert ok.model_dump() == {
             "run_id": "r1",
             "profile_id": "matej",
             "status": "ok",
-            "counts": {"total": 2, "new": 1, "price_drops": 0, "disappeared": 0},
+            "counts": {"total": 2, "new": 1, "updated": 0, "price_drops": 0, "disappeared": 0},
             "error": None,
         }
         failed = RunFinishedEvent(run_id="r1", profile_id="matej", status="failed", error="boom")

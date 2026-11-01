@@ -133,8 +133,8 @@ def _log_run_result(profile_id: str, result: ProfileRunResult) -> None:
         return
 
     counts = result.counts
-    log.info("Profile %s [%s]: %d listings, %d new, %d price drops, %d disappeared",
-             profile_id, result.status, counts.total, counts.new,
+    log.info("Profile %s [%s]: %d listings, %d new, %d updated, %d price drops, %d disappeared",
+             profile_id, result.status, counts.total, counts.new, counts.updated,
              counts.price_drops, counts.disappeared)
 
 

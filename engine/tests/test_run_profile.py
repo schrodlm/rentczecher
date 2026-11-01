@@ -141,7 +141,7 @@ class TestCountsAndHealth:
         result = run_profile(_profile(), deps)
 
         assert result.status == "ok"
-        assert result.counts == RunCounts(total=1, new=1, price_drops=0, disappeared=0)
+        assert result.counts == RunCounts(total=1, new=1, updated=0, price_drops=0, disappeared=0)
 
     def test_a_zero_results_scraper_is_status_ok(self):
         deps = _deps(scrapers={

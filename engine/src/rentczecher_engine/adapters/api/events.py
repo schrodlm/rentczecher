@@ -30,6 +30,7 @@ class RunProgressEvent(BaseModel):
 class RunCountsModel(BaseModel):
     total: int
     new: int
+    updated: int
     price_drops: int
     disappeared: int
 
@@ -43,9 +44,12 @@ class RunFinishedEvent(BaseModel):
 
 
 class ListingsArrivedEvent(BaseModel):
+    """A scan found new flats or changed viewed ones."""
+
     run_id: str
     profile_id: str
     new: int
+    updated: int
 
 
 class GalleryChangedEvent(BaseModel):
