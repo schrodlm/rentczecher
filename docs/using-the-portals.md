@@ -11,6 +11,7 @@ to their owners.
 | [Sreality.cz](https://www.sreality.cz) (Seznam.cz) | off, asks apps not to read it |
 | [Bezrealitky.cz](https://www.bezrealitky.cz) | off, asks apps not to read it |
 | [RE/MAX Czech](https://www.remax-czech.cz) | on |
+| [iDNES Reality](https://reality.idnes.cz) (MAFRA) | on |
 
 How each one is read, and its quirks, is in [portals/](portals/).
 
