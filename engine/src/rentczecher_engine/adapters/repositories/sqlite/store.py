@@ -118,7 +118,11 @@ class SqliteRunStore:
         increments for listings absent this run. Nothing commits if any step
         raises."""
         try:
-            now = self._now().isoformat()
+            scanned_at = self._now()
+            now = scanned_at.isoformat()
+            # Every posting the scan saves carries the scan's one time, so
+            # postings found together read as found together.
+            listings = SqliteListingRepository(self._conn, now=lambda: scanned_at)
             keeper_ids = outcome.final_keeper_ids()
             members_by_keeper = outcome.members_by_keeper(located_by_id)
 
@@ -130,13 +134,13 @@ class SqliteRunStore:
             for keeper_id, members in members_by_keeper.items():
                 self._record_location(property_by_keeper[keeper_id], members)
                 for listing in members:
-                    self._listings.upsert(
+                    listings.upsert(
                         profile_id, property_by_keeper[keeper_id], listing)
                     self._photos.record_gallery(listing.id, listing.photo_urls,
                                                on_advert_page=listing.gallery_on_advert_page)
 
             for keeper_id in updated_keeper_ids:
-                self._listings.mark_updated(profile_id, property_by_keeper[keeper_id])
+                listings.mark_updated(profile_id, property_by_keeper[keeper_id])
 
             for merge in outcome.merges:
                 self._properties.record_dedup(
