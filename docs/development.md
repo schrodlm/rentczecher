@@ -67,3 +67,24 @@ result. It takes about a minute and needs the portals reachable. Only a fully
 verified file replaces the shipped one.
 [engine/scripts/gazetteer/README.md](../engine/scripts/gazetteer/README.md) has
 the details.
+
+## Adding a portal
+
+A portal is first checked for what it asks of apps, in its terms and its
+robots.txt, and for whether it answers the app's own User-Agent, under the
+rules of [ADR 12](adr/0012-one-private-copy-per-person.md). Then these places
+learn its name:
+
+- its adapter in `engine/src/rentczecher_engine/adapters/scrapers/`,
+  registered in `ALL_SCRAPERS`, and in `ADVERT_GALLERY_PARSERS` when its
+  results show only one photo
+- the `Portal` type in `domain/profile.py` and a migration adding its row to
+  the `portals` table
+- its search area: a portal table in the gazetteer, harvested by the build,
+  unless it names places by their RÚIAN codes
+- `docs/api/openapi.json`, regenerated with
+  `uv run python scripts/export_openapi_schema.py` in `engine/`
+- the panel's `PORTALS` in `panel/src/lib/portals.ts`, with its icon and, for
+  a portal that asks apps not to read it, the link to its terms
+- a page in [portals/](portals/), the table in
+  [using-the-portals.md](using-the-portals.md), and the site's portal list
