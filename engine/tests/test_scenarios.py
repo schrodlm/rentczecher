@@ -96,6 +96,22 @@ def test_cross_portal_folds_the_same_flat_into_one_property(tmp_path):
     assert siblings == {"bezrealitky:2301": {"sreality"}, "remax:3301": {"idnes"}}
 
 
+def test_updated_flats_shows_each_kind_of_change_as_an_update(tmp_path):
+    """A price drop, a price rise, a second portal and a starred flat's new
+    price each update a viewed flat. An unchanged one stays plain viewed, and
+    the flat that arrived is new."""
+    store, profile_id = replayed("updated-flats", tmp_path)
+    updated = {card.listing_id: card.updated_at is not None for card in store.tracked_properties(profile_id)}
+    assert updated == {
+        "sreality:6101": True,
+        "bezrealitky:6102": True,
+        "remax:6103": True,
+        "sreality:6104": True,
+        "idnes:6105": False,
+        "remax:6107": False,
+    }
+
+
 def test_replaying_onto_an_existing_database_is_refused(tmp_path):
     """A second replay into the same folder fails rather than stacking a
     second story onto the first."""
