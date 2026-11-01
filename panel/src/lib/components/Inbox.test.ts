@@ -352,6 +352,27 @@ describe('Inbox updates', () => {
 		expect(prices('Už zobrazené')).toEqual(['25 000 Kč', '30 000 Kč']);
 	});
 
+	test('keeps showing what changed while the opened flat stays in Updated', async () => {
+		const posting: PostingPricesModel = {
+			listing_id: 'u',
+			source: 'sreality',
+			url: 'https://example.invalid/u',
+			changes: [
+				{ price: 27000, charges: null, first_seen_at: '2026-09-30T00:00:00Z', last_seen_at: '2026-10-07T00:00:00Z' },
+				{ price: 25000, charges: null, first_seen_at: UPDATED, last_seen_at: UPDATED }
+			]
+		};
+		const { getAllByRole, getByRole } = await renderWithTranslator(InboxHarness, {
+			listings: [trackedProperty('u', { price: 25000, first_seen_at: '2026-09-30T00:00:00Z', viewed_at: VIEWED, updated_at: UPDATED })],
+			preferences: PREFERENCES,
+			onview: vi.fn(),
+			onfavourite: vi.fn(),
+			loadPriceHistory: async () => [posting]
+		});
+		await fireEvent.click(getAllByRole('option')[0]);
+		await vi.waitFor(() => expect(getByRole('heading', { name: 'Změna od vašeho zobrazení' })).toBeInTheDocument());
+	});
+
 	test('keeps a favourite that changed among the favourites', async () => {
 		const { prices, queryByRole } = await renderUpdates([
 			trackedProperty('f', { price: 25000, viewed_at: VIEWED, favourited_at: VIEWED, updated_at: UPDATED })

@@ -1,4 +1,4 @@
-import { fireEvent } from '@testing-library/svelte';
+import { fireEvent, within } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
 import type { GalleryModel, TrackedPropertyModel, PostingPricesModel } from '$lib/api/client';
 import type { ScoringPreferences } from '$lib/scoring/score';
@@ -46,7 +46,8 @@ const FLAT_PRICES: PostingPricesModel[] = [
 async function renderDetail(
 	shown: TrackedPropertyModel = FLAT,
 	preferences: ScoringPreferences | null = PREFERENCES,
-	priceHistory: PostingPricesModel[] | null = FLAT_PRICES
+	priceHistory: PostingPricesModel[] | null = FLAT_PRICES,
+	changedSince: string | null = null
 ) {
 	const onfavourite = vi.fn();
 	const rendered = await renderWithTranslator(PropertyDetail, {
@@ -54,7 +55,7 @@ async function renderDetail(
 		listings: [FLAT, DEARER],
 		preferences,
 		priceHistory,
-		changedSince: null,
+		changedSince,
 		gallery: null,
 		nearby: quietNearby(),
 		onfavourite
@@ -224,6 +225,20 @@ describe('PropertyDetail', () => {
 		]);
 		expect(getByText('Nově také na iDNES Reality')).toHaveTextContent('28. 9. 2026');
 		expect(getByText('Na iDNES Reality zdraženo z 19 500 Kč na 19 900 Kč')).toHaveTextContent('30. 9. 2026');
+	});
+
+	test('heads the details with what changed since the flat was viewed, and marks it in the history', async () => {
+		const { getByRole } = await renderDetail(FLAT, PREFERENCES, FLAT_PRICES, '2026-09-20T08:00:00Z');
+		const banner = getByRole('heading', { name: 'Změna od vašeho zobrazení' }).closest('section');
+		expect(banner).toHaveTextContent('Zlevněno z 20 500 Kč na 18 900 Kč');
+		const historyRow = within(getByRole('heading', { name: 'Historie' }).closest('section') as HTMLElement)
+			.getByText('Zlevněno z 20 500 Kč na 18 900 Kč');
+		expect(historyRow).toHaveClass('property-detail__history--change');
+	});
+
+	test('shows no change banner for a flat not changed since it was viewed', async () => {
+		const { queryByRole } = await renderDetail();
+		expect(queryByRole('heading', { name: 'Změna od vašeho zobrazení' })).toBeNull();
 	});
 
 	test('names a rise in price as a rise', async () => {
