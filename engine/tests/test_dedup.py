@@ -656,6 +656,40 @@ class TestVeletrzniShapedMatch:
         assert len(result) == 1
 
 
+class TestTheFlatAgainstItsLocation:
+    """Two listings on one street at one point, alike in everything but what
+    each test changes on the second."""
+
+    @staticmethod
+    def _pair_on_one_street(on_both=None, **on_second):
+        shared = ParsedPlace(names=("Veletržní", "Praha"))
+        first = {"id": "sreality:1", "source": "sreality", "price": 20000, "size_m2": 50,
+                 "disposition_raw_text": "2+kk", "lat": 50.1005, "lon": 14.4270, "parsed_place": shared,
+                 **(on_both or {})}
+        second = {**first, "id": "bezrealitky:1", "source": "bezrealitky", **on_second}
+        return [_make_listing(**first), _make_listing(**second)]
+
+    def test_prices_thirty_percent_apart_still_merge(self):
+        pair = self._pair_on_one_street(price=14000)
+        assert len(_locate_and_dedup(pair)) == 1
+
+    def test_sizes_sixteen_square_metres_apart_still_merge(self):
+        pair = self._pair_on_one_street(size_m2=66)
+        assert len(_locate_and_dedup(pair)) == 1
+
+    def test_no_disposition_on_either_side_still_merges(self):
+        pair = self._pair_on_one_street(on_both={"disposition_raw_text": None})
+        assert len(_locate_and_dedup(pair)) == 1
+
+    def test_no_size_on_either_side_still_merges(self):
+        pair = self._pair_on_one_street(on_both={"size_m2": None})
+        assert len(_locate_and_dedup(pair)) == 1
+
+    def test_prices_ten_percent_and_sizes_six_square_metres_apart_merge(self):
+        pair = self._pair_on_one_street(price=18000, size_m2=56)
+        assert len(_locate_and_dedup(pair)) == 1
+
+
 class TestGeocellBoundaries:
     """Geocells block candidate lookups; they never decide a match - a
     close pair straddling a cell edge still merges."""
