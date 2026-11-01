@@ -3,6 +3,7 @@ import type { PostingPricesModel, TrackedPropertyModel } from '$lib/api/client';
 import { Translator } from '$lib/i18n/translator';
 import { trackedProperty } from '$lib/test-support/tracked-property';
 import {
+	changesSince,
 	factsOf,
 	historyOf,
 	isHighest,
@@ -193,6 +194,26 @@ describe('historyOf', () => {
 	test('lists no price change until the prices are known', () => {
 		expect(historyOf(trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z', price_drop_from: 25000 }), null)).toEqual([
 			{ kind: 'found', at: '2026-10-01T00:00:00Z' }
+		]);
+	});
+});
+
+describe('changesSince', () => {
+	test('keeps the new portals and new prices after the time, and nothing else', () => {
+		const changes = changesSince(
+			[
+				{ kind: 'priceChange', at: '2026-10-07T00:00:00Z', from: 18000, to: 19000, source: null },
+				{ kind: 'posted', at: '2026-10-06T00:00:00Z', source: 'idnes' },
+				{ kind: 'favourite', at: '2026-10-05T00:00:00Z' },
+				{ kind: 'priceChange', at: '2026-10-02T00:00:00Z', from: 20000, to: 18000, source: null },
+				{ kind: 'viewed', at: '2026-10-03T00:00:00Z' },
+				{ kind: 'found', at: '2026-10-01T00:00:00Z' }
+			],
+			'2026-10-03T00:00:00Z'
+		);
+		expect(changes).toEqual([
+			{ kind: 'priceChange', at: '2026-10-07T00:00:00Z', from: 18000, to: 19000, source: null },
+			{ kind: 'posted', at: '2026-10-06T00:00:00Z', source: 'idnes' }
 		]);
 	});
 });
