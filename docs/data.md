@@ -8,9 +8,10 @@ The year is that of the registry dump the shipped gazetteer was built from.
 
 Both are modified from the source. The gazetteer keeps only each place's name,
 RÚIAN code and centroid, and joins the places to the ids the portals search
-by. The map's outlines are not RÚIAN's boundaries but are traced from those
-centroids. The registry files each build used, and when it ran, are recorded in
-the gazetteer's `meta` table and at the top of `czech-map.json`. The source
+by, for the portals that do not search by RÚIAN code. The map's outlines are
+not RÚIAN's boundaries but are traced from those centroids. The registry
+files each build used, and when it ran, are recorded in the gazetteer's `meta`
+table and at the top of `czech-map.json`. The source
 dataset is the
 [RÚIAN exchange format](<https://cuzk.gov.cz/ruian/Poskytovani-udaju-ISUI-RUIAN-VDP/Vymenny-format-RUIAN-(VFR).aspx>),
 which ČÚZK publishes with its metadata.

@@ -47,7 +47,8 @@ tagging.
 Places come from the gazetteer, a SQLite file shipped with the engine
 (`engine/src/rentczecher_engine/adapters/geocoding/gazetteer.sqlite`). It holds
 every official Czech place from the RÚIAN address registry, keyed by its RÚIAN
-code, and the ids each portal searches those places by.
+code, and the ids the portals search those places by, for the portals that
+do not search by RÚIAN code.
 [places.md](places.md) describes the units, and [locating.md](locating.md) how
 a listing's location text becomes them.
 

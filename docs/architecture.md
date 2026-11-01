@@ -95,8 +95,8 @@ started it holds the secret, and a new launch gets a new one.
 1. The user presses **Run scan**. The panel posts the profile to `/v1/runs`,
    and the engine queues a run for it.
 2. For each portal the profile scans, the engine translates the profile's
-   search place into that portal's own ids, using the gazetteer, and reads the
-   result pages.
+   search place into that portal's own terms, using the gazetteer, and reads
+   the result pages.
 3. Listings that miss the criteria are dropped. The rest are located: their
    address text becomes official RÚIAN places.
 4. Listings of the same flat from different portals are matched, pairwise,
@@ -114,7 +114,7 @@ scores the listings when it shows them.
 |---|---|---|
 | Database: profiles, listings, properties, price history | the user's data folder, see [cli.md](cli.md#where-the-data-lives) | engine |
 | Photos: one file per stored photo | the same data folder, in `photos/` | engine |
-| Gazetteer: every Czech place and the portals' ids for them | inside the engine, read-only | built by a script, see [development.md](development.md#the-gazetteer) |
+| Gazetteer: every Czech place and the ids portals search them by | inside the engine, read-only | built by a script, see [development.md](development.md#the-gazetteer) |
 | User config: language and theme | the operating system's config folder | shell, for the panel |
 | Nearby kinds: which kinds of place each profile shows | the window's local storage | panel |
 | Profiles file: chosen profiles, to move them to another computer | wherever the user saves it | shell, for the panel |
