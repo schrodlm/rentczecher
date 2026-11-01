@@ -389,7 +389,7 @@ def _persist_listing(deps: ApiDeps, profile_id: str, resolved_location: Location
             url="https://example.com/1", resolved_location=resolved_location)
         store.persist_outcome(
             profile_id, DedupOutcome(survivors=[listing], merges=(), uncertain=()),
-            {}, current_ids={"sreality:1"})
+            {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
 
 
 def _tracked_property_id(client, profile_id: str) -> str:

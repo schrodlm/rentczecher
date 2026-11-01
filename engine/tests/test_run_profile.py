@@ -34,6 +34,9 @@ class FakeRunStore:
     def seen_ids(self, profile_id):
         return self.seen
 
+    def viewed_ids(self, profile_id):
+        return set()
+
     def latest_prices(self, profile_id):
         return self.prices
 
@@ -43,7 +46,7 @@ class FakeRunStore:
     def prune(self, profile_id):
         self.prune_calls.append(profile_id)
 
-    def persist_outcome(self, profile_id, outcome, located_by_id, current_ids):
+    def persist_outcome(self, profile_id, outcome, located_by_id, current_ids, updated_keeper_ids):
         self.persist_calls.append((profile_id, outcome, located_by_id, current_ids))
 
 

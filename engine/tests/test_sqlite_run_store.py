@@ -70,9 +70,9 @@ class TestPersistOutcomeCommitsTogether:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids=set())  # :1 absent this run
+                              {}, current_ids=set(), updated_keeper_ids=set())  # :1 absent this run
 
         row = conn.execute(
             "SELECT miss_count FROM listing_tracking WHERE listing_id = 'sreality:1'").fetchone()
@@ -82,7 +82,7 @@ class TestPersistOutcomeCommitsTogether:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         conn.close()
 
         reopened = connection.connect(tmp_path / "t.db")
@@ -100,7 +100,7 @@ class TestPersistOutcomeRecordsGalleries:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         listing = _listing(id="sreality:1", photo_urls=("https://img.example/a.jpg", "https://img.example/b.jpg"))
-        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"sreality:1"})
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         stmt = "SELECT position, source_url FROM listing_photos ORDER BY position"
         assert [tuple(row) for row in conn.execute(stmt)] == [
             (0, "https://img.example/a.jpg"), (1, "https://img.example/b.jpg")]
@@ -110,7 +110,7 @@ class TestPersistOutcomeRecordsGalleries:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         listing = _listing(id="remax:1", photo_urls=("https://img.example/a.jpg",), gallery_on_advert_page=True)
-        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"remax:1"})
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={"remax:1"}, updated_keeper_ids=set())
         stmt = "SELECT listing_id, read_at, attempts FROM advert_page_reads"
         assert [tuple(row) for row in conn.execute(stmt)] == [("remax:1", None, 0)]
 
@@ -119,7 +119,7 @@ class TestGalleryRequests:
     def _with_property(self, tmp_path):
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
-        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"})
+        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         property_id = conn.execute("SELECT property_id FROM listings").fetchone()[0]
         return store, conn, profile_id, property_id
 
@@ -142,7 +142,7 @@ class TestPrune:
     def test_deletes_the_properties_the_prune_leaves_untracked(self, tmp_path):
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
-        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"})
+        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")), {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         conn.execute("UPDATE listing_tracking SET last_seen_at = ?", ((BASE - timedelta(days=91)).isoformat(),))
         conn.commit()
         store.prune(profile_id)
@@ -155,7 +155,7 @@ class TestMarkViewed:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         conn.close()
 
@@ -173,7 +173,7 @@ class TestTrackedProperties:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         (card,) = store.tracked_properties(profile_id)
         assert card.listing_id == "sreality:1"
@@ -183,7 +183,7 @@ class TestTrackedProperties:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         store.mark_viewed(profile_id, _property_of(conn, "sreality:1"))
         assert store.tracked_properties(profile_id, only_new=True) == []
 
@@ -192,7 +192,7 @@ class TestTrackedProperties:
         profile_id = stored_profile(conn).id
         listing = _listing(resolved_location=replace(PRAHA, ulice=PRISTAVNI, cislo_popisne="1401",
                                                      cislo_orientacni="5a"))
-        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id})
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id}, updated_keeper_ids=set())
         (card,) = store.tracked_properties(profile_id)
         assert card.property_location == PropertyLocation(
             kraj_code=19,
@@ -210,7 +210,7 @@ class TestTrackedProperties:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         listing = _listing()
-        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id})
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id}, updated_keeper_ids=set())
         (card,) = store.tracked_properties(profile_id)
         assert card.property_location is None
 
@@ -220,7 +220,7 @@ class TestPersistOutcomeRollsBackOnFailure:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1")),
-                              {}, current_ids={"sreality:1"})
+                              {}, current_ids={"sreality:1"}, updated_keeper_ids=set())
         before = dict(conn.execute(
             "SELECT listing_id, miss_count FROM listing_tracking WHERE profile_id = ?",
             (profile_id,)))
@@ -234,7 +234,7 @@ class TestPersistOutcomeRollsBackOnFailure:
         with pytest.raises(RuntimeError):
             store.persist_outcome(
                 profile_id, _outcome(_listing(id="sreality:2")),
-                {}, current_ids=set())
+                {}, current_ids=set(), updated_keeper_ids=set())
 
         after = dict(conn.execute(
             "SELECT listing_id, miss_count FROM listing_tracking WHERE profile_id = ?",
@@ -249,25 +249,25 @@ class TestPropertyLocation:
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         listing = _listing(resolved_location=replace(PRAHA, ulice=PRISTAVNI))
-        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id})
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id}, updated_keeper_ids=set())
         assert _stored_ulice(conn, listing.id) == PRISTAVNI.code
 
     def test_a_coarser_posting_never_coarsens_the_stored_location(self, tmp_path):
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         detailed = _listing(resolved_location=replace(PRAHA, ulice=PRISTAVNI))
-        store.persist_outcome(profile_id, _outcome(detailed), {}, current_ids={detailed.id})
+        store.persist_outcome(profile_id, _outcome(detailed), {}, current_ids={detailed.id}, updated_keeper_ids=set())
         coarse = _listing(resolved_location=PRAHA)
-        store.persist_outcome(profile_id, _outcome(coarse), {}, current_ids={coarse.id})
+        store.persist_outcome(profile_id, _outcome(coarse), {}, current_ids={coarse.id}, updated_keeper_ids=set())
         assert _stored_ulice(conn, detailed.id) == PRISTAVNI.code
 
     def test_a_more_detailed_posting_refines_the_stored_location(self, tmp_path):
         store, conn = _store(tmp_path)
         profile_id = stored_profile(conn).id
         coarse = _listing(resolved_location=PRAHA)
-        store.persist_outcome(profile_id, _outcome(coarse), {}, current_ids={coarse.id})
+        store.persist_outcome(profile_id, _outcome(coarse), {}, current_ids={coarse.id}, updated_keeper_ids=set())
         detailed = _listing(resolved_location=replace(PRAHA, ulice=PRISTAVNI))
-        store.persist_outcome(profile_id, _outcome(detailed), {}, current_ids={detailed.id})
+        store.persist_outcome(profile_id, _outcome(detailed), {}, current_ids={detailed.id}, updated_keeper_ids=set())
         assert _stored_ulice(conn, detailed.id) == PRISTAVNI.code
 
     def test_a_merge_keeps_the_absorbed_more_detailed_location(self, tmp_path):
@@ -275,12 +275,12 @@ class TestPropertyLocation:
         profile_id = stored_profile(conn).id
         absorbed = _listing(id="bezrealitky:1", resolved_location=replace(PRAHA, ulice=PRISTAVNI))
         keeper = _listing(id="sreality:1", resolved_location=PRAHA)
-        store.persist_outcome(profile_id, _outcome(absorbed), {}, current_ids={absorbed.id})
-        store.persist_outcome(profile_id, _outcome(keeper), {}, current_ids={keeper.id})
+        store.persist_outcome(profile_id, _outcome(absorbed), {}, current_ids={absorbed.id}, updated_keeper_ids=set())
+        store.persist_outcome(profile_id, _outcome(keeper), {}, current_ids={keeper.id}, updated_keeper_ids=set())
         # The detailed posting is gone by the run that merges the two.
         gone = _listing(id="bezrealitky:1")
         merge = MergeDecision(keeper_id=keeper.id, absorbed_id=gone.id,
                               score=MatchScore(total=60.0, factors=(), band=MatchBand.MATCH))
         store.persist_outcome(profile_id, DedupOutcome(survivors=[keeper], merges=(merge,), uncertain=()),
-                              {gone.id: gone}, current_ids={keeper.id, gone.id})
+                              {gone.id: gone}, current_ids={keeper.id, gone.id}, updated_keeper_ids=set())
         assert _stored_ulice(conn, keeper.id) == PRISTAVNI.code

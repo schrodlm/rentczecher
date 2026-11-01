@@ -3,6 +3,7 @@
 Run: python3 -m pytest tests/test_diff.py -v
 """
 
+from rentczecher_engine.domain.dedup import DedupOutcome
 from rentczecher_engine.domain.listing import Listing
 from rentczecher_engine.services.diff import classify
 
@@ -16,10 +17,14 @@ def _make_listing(**kwargs) -> Listing:
     return Listing.build(**defaults)
 
 
+def _outcome(listings: list[Listing]) -> DedupOutcome:
+    return DedupOutcome(survivors=listings, merges=(), uncertain=())
+
+
 def test_every_unseen_listing_is_reported_new_and_nothing_else():
     listings = [_make_listing(id="a"), _make_listing(id="b")]
 
-    diff = classify(listings, seen_ids=set(), latest_prices={})
+    diff = classify(_outcome(listings), {}, seen_ids=set(), viewed_ids=set(), latest_prices={})
 
     assert [l.id for l in diff.new] == ["a", "b"]
     assert diff.price_drops == []
@@ -28,7 +33,7 @@ def test_every_unseen_listing_is_reported_new_and_nothing_else():
 def test_a_lower_price_than_last_seen_is_reported_as_a_drop_carrying_the_old_price():
     listing = _make_listing(id="a", price=16000)
 
-    diff = classify([listing], seen_ids={"a"}, latest_prices={"a": 18000})
+    diff = classify(_outcome([listing]), {}, seen_ids={"a"}, viewed_ids=set(), latest_prices={"a": 18000})
 
     assert diff.new == []
     assert len(diff.price_drops) == 1
@@ -41,7 +46,7 @@ def test_a_lower_price_than_last_seen_is_reported_as_a_drop_carrying_the_old_pri
 def test_a_listing_new_this_run_is_never_also_reported_as_a_drop():
     listing = _make_listing(id="a", price=16000)
 
-    diff = classify([listing], seen_ids=set(), latest_prices={"a": 18000})
+    diff = classify(_outcome([listing]), {}, seen_ids=set(), viewed_ids=set(), latest_prices={"a": 18000})
 
     assert [l.id for l in diff.new] == ["a"]
     assert diff.price_drops == []
@@ -50,7 +55,7 @@ def test_a_listing_new_this_run_is_never_also_reported_as_a_drop():
 def test_a_listing_with_no_recorded_price_is_never_reported_as_a_drop():
     listing = _make_listing(id="a", price=16000)
 
-    diff = classify([listing], seen_ids={"a"}, latest_prices={})
+    diff = classify(_outcome([listing]), {}, seen_ids={"a"}, viewed_ids=set(), latest_prices={})
 
     assert diff.new == []
     assert diff.price_drops == []

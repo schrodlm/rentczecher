@@ -35,6 +35,17 @@ class SqliteListingRepository(ListingRepository):
         stmt = "SELECT listing_id FROM listing_tracking WHERE profile_id = ?"
         return {row["listing_id"] for row in self._conn.execute(stmt, (profile_id,))}
 
+    def viewed_ids(self, profile_id: str) -> set[str]:
+        """Every listing on a property the profile has viewed, including
+        listings another profile's scans placed there."""
+        stmt = """
+            SELECT listings.id AS id
+            FROM listings
+            JOIN property_tracking ON property_tracking.property_id = listings.property_id
+            WHERE property_tracking.profile_id = ? AND property_tracking.viewed_at IS NOT NULL
+        """
+        return {row["id"] for row in self._conn.execute(stmt, (profile_id,))}
+
     def upsert(self, profile_id: str, property_id: str, listing: Listing) -> None:
         """Reconciles a scraped observation into storage without committing.
         The caller owns the transaction boundary."""
@@ -87,15 +98,24 @@ class SqliteListingRepository(ListingRepository):
         self._conn.execute(stmt, (profile_id, property_id, profile_id))
 
     def mark_viewed(self, profile_id: str, property_id: str) -> None:
-        """Records the property as viewed by the profile, without
-        committing. The caller owns the transaction boundary.
+        """Records the property as viewed by the profile and clears its
+        update, without committing. The caller owns the transaction boundary.
 
         Viewed is set once: an already-viewed property keeps its first
         viewed_at, since viewing it again is not a new event.
         """
         stmt = """
-            UPDATE property_tracking SET viewed_at = ?
-            WHERE profile_id = ? AND property_id = ? AND viewed_at IS NULL
+            UPDATE property_tracking SET viewed_at = coalesce(viewed_at, ?), updated_at = NULL
+            WHERE profile_id = ? AND property_id = ?
+        """
+        self._conn.execute(stmt, (self._now().isoformat(), profile_id, property_id))
+
+    def mark_updated(self, profile_id: str, property_id: str) -> None:
+        """Records that a scan found the property changed, without
+        committing."""
+        stmt = """
+            UPDATE property_tracking SET updated_at = ?
+            WHERE profile_id = ? AND property_id = ?
         """
         self._conn.execute(stmt, (self._now().isoformat(), profile_id, property_id))
 

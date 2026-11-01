@@ -58,6 +58,10 @@ class ListingRepository(ABC):
         ...
 
     @abstractmethod
+    def viewed_ids(self, profile_id: str) -> set[str]:
+        """Every listing on a property the profile has viewed."""
+
+    @abstractmethod
     def upsert(self, profile_id: str, property_id: str, listing: Listing) -> None:
         """Reconcile a scraped observation into storage: the thin listing row
         plus an appended price observation."""
@@ -100,7 +104,12 @@ class ListingRepository(ABC):
 
     @abstractmethod
     def mark_viewed(self, profile_id: str, property_id: str) -> None:
-        """Record the property as viewed by the profile, once."""
+        """Record the property as viewed by the profile, once, and clear its
+        update."""
+
+    @abstractmethod
+    def mark_updated(self, profile_id: str, property_id: str) -> None:
+        """Record that a scan found the viewed property changed."""
 
     @abstractmethod
     def mark_favourite(self, profile_id: str, property_id: str) -> None:
