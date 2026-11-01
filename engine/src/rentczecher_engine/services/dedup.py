@@ -2,12 +2,12 @@
 
 Each pair of listings is scored on independent evidence factors (GPS
 distance, a shared gazetteer-normalized place name, disposition, price,
-size). No factor can veto on its own - only the combined score, gated by
-an evidence floor, decides a match.
+size). The combined score, gated by an evidence floor, decides the band,
+and a match also needs the property itself to agree.
 """
 
 from collections.abc import Iterable
-from typing import Protocol
+from typing import Protocol, assert_never
 
 from rentczecher_engine.domain.dedup import (
     DedupOutcome,
@@ -20,6 +20,7 @@ from rentczecher_engine.domain.dedup import (
 )
 from rentczecher_engine.domain.geo import haversine_m
 from rentczecher_engine.domain.listing import Listing
+from rentczecher_engine.domain.profile import EstateType
 
 __all__ = [
     "DedupOutcome",
@@ -79,6 +80,10 @@ _SIZE_NEAR_BOUND = 2.0
 _SIZE_MID_BOUND = 6.0
 _SIZE_FAR_WEIGHT = 15.0
 _SIZE_FAR_SPAN = 10.0
+
+# Plots run to hundreds of square metres, so two agree within a share of the
+# larger, as close as two prices must.
+_PLOT_NEAR_BOUND = 0.10
 
 _DISPOSITION_AGREE = 15.0
 _DISPOSITION_DISAGREE = -35.0
@@ -171,11 +176,52 @@ def _size_factor(a: Listing, b: Listing) -> FactorResult:
     return -_SIZE_FAR_WEIGHT * fraction, True
 
 
-def _band(total: float, evidence_floor_met: bool) -> MatchBand:
+def _prices_agree(a: Listing, b: Listing) -> bool:
+    if not a.price or not b.price:
+        return False
+    return abs(a.price - b.price) / max(a.price, b.price) <= _PRICE_NEAR_BOUND
+
+
+def _sizes_agree(a: Listing, b: Listing) -> bool:
+    if not a.size_m2 or not b.size_m2:
+        return False
+    return abs(a.size_m2 - b.size_m2) <= _SIZE_MID_BOUND
+
+
+def _plots_agree(a: Listing, b: Listing) -> bool:
+    if not a.land_m2 or not b.land_m2:
+        return False
+    return abs(a.land_m2 - b.land_m2) / max(a.land_m2, b.land_m2) <= _PLOT_NEAR_BOUND
+
+
+def _property_agrees(a: Listing, b: Listing, estate_type: EstateType) -> bool:
+    """One building or street holds many alike properties, so closeness
+    alone never makes two listings one, and a missing value cannot confirm
+    it."""
+    if not _prices_agree(a, b):
+        return False
+    match estate_type:
+        case "flat":
+            return a.disposition is not None and a.disposition == b.disposition and _sizes_agree(a, b)
+        case "house" | "cottage":
+            # A house's disposition field may hold a building-type label
+            # instead, so it only counts when both sides give one.
+            if a.disposition is not None and b.disposition is not None and a.disposition != b.disposition:
+                return False
+            return _sizes_agree(a, b) or _plots_agree(a, b)
+        case "land":
+            return _plots_agree(a, b)
+        case _:
+            assert_never(estate_type)
+
+
+def _band(total: float, evidence_floor_met: bool, property_agrees: bool) -> MatchBand:
     if not evidence_floor_met:
         return MatchBand.NO_MATCH
     if total >= _MATCH_THRESHOLD:
-        return MatchBand.MATCH
+        # A pair that scores as a match but disagrees on the property is
+        # kept for audit, never merged.
+        return MatchBand.MATCH if property_agrees else MatchBand.UNCERTAIN
     if total >= _UNCERTAIN_THRESHOLD:
         return MatchBand.UNCERTAIN
     return MatchBand.NO_MATCH
@@ -184,13 +230,15 @@ def _band(total: float, evidence_floor_met: bool) -> MatchBand:
 def score_match(
     a: Listing,
     b: Listing,
+    estate_type: EstateType,
     shared_name_tier: str | None,
     streets_disagree: bool = False,
 ) -> MatchScore:
     """Score one pair of listings on independent evidence factors.
 
-    No factor vetoes: a match needs the combined total to clear a band
-    threshold, gated by an evidence floor (GPS or a shared place name).
+    A match needs the combined total to clear the match threshold, gated by
+    an evidence floor (GPS or a shared place name), and the property itself
+    to agree on what its estate type carries.
     """
     gps_contribution, gps_evidence = _gps_factor(a, b)
     name_contribution, name_evidence = _shared_name_factor(
@@ -209,7 +257,8 @@ def score_match(
     )
     total = sum(factor.contribution for factor in factors)
     evidence_floor_met = gps_evidence or name_evidence
-    return MatchScore(total=total, factors=factors, band=_band(total, evidence_floor_met))
+    band = _band(total, evidence_floor_met, _property_agrees(a, b, estate_type))
+    return MatchScore(total=total, factors=factors, band=band)
 
 
 def _listing_name_tiers(
@@ -253,7 +302,7 @@ def _streets_disagree(street_names_a: set[str], street_names_b: set[str]) -> boo
 
 
 def cross_source_dedup(
-    listings: list[Listing], gazetteer: NameTierLookup
+    listings: list[Listing], gazetteer: NameTierLookup, estate_type: EstateType
 ) -> DedupOutcome:
     """Detect same property listed on multiple sites.
 
@@ -291,7 +340,7 @@ def cross_source_dedup(
             shared_tier = _shared_tier(tier_maps[i], tier_maps[j])
             streets_disagree = _streets_disagree(street_name_sets[i], street_name_sets[j])
             score = score_match(
-                listings[i], listings[j], shared_tier, streets_disagree
+                listings[i], listings[j], estate_type, shared_tier, streets_disagree
             )
             if score.band is MatchBand.UNCERTAIN:
                 uncertain.append(UncertainPair(listings[i].id, listings[j].id, score))
