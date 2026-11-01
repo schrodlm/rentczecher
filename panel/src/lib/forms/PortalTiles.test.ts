@@ -18,6 +18,7 @@ describe('PortalTiles', () => {
 		const { getAllByRole, getByText } = await renderTiles([]);
 		expect(getAllByRole('button')).toHaveLength(4);
 		expect(getByText('remax-czech.cz')).toBeInTheDocument();
+		expect(getByText('reality.idnes.cz')).toBeInTheDocument();
 		expect(getAllByRole('button').every((button) => button.querySelector('img'))).toBe(true);
 	});
 
@@ -62,10 +63,13 @@ describe('PortalTiles', () => {
 		);
 	});
 
-	test('turns on a portal that does not ask straight away', async () => {
+	test.each([
+		['RE/MAX', 'remax'],
+		['iDNES Reality', 'idnes']
+	])('turns on %s, which does not ask, straight away', async (name, portal) => {
 		const { getByRole, queryByRole, picked } = await renderTiles([]);
-		await fireEvent.click(getByRole('button', { name: tile('RE/MAX') }));
-		expect(picked()).toEqual(['remax']);
+		await fireEvent.click(getByRole('button', { name: tile(name) }));
+		expect(picked()).toEqual([portal]);
 		expect(queryByRole('button', { name: 'Zapnout' })).toBeNull();
 	});
 
