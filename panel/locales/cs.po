@@ -79,6 +79,9 @@ msgstr "Změna"
 msgid "Also posted on {portal}"
 msgstr "Nově také na {portal}"
 
+msgid "Changed since you viewed it"
+msgstr "Změna od vašeho zobrazení"
+
 msgid "Price on {portal} dropped from {from} to {to}"
 msgstr "Na {portal} zlevněno z {from} na {to}"
 

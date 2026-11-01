@@ -136,6 +136,12 @@ export function historyOf(
 	return events.sort((a, b) => b.at.localeCompare(a.at));
 }
 
+/* The changes among a listing's events that happened after the given time:
+new portals and new prices. */
+export function changesSince(events: readonly PropertyEvent[], since: string): PropertyEvent[] {
+	return events.filter((event) => (event.kind === 'posted' || event.kind === 'priceChange') && event.at > since);
+}
+
 export function pricePerM2(listing: TrackedPropertyModel): number | null {
 	if (listing.price === null || listing.size_m2 === null || listing.size_m2 <= 0) return null;
 	return listing.price / listing.size_m2;

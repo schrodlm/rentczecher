@@ -4,6 +4,7 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { layoutName } from '$lib/layouts';
 	import {
+		changesSince,
 		factsOf,
 		historyOf,
 		isHighest,
@@ -44,6 +45,7 @@
 		priceHistory,
 		gallery,
 		nearby,
+		changedSince,
 		onfavourite
 	}: {
 		listing: TrackedPropertyModel;
@@ -52,6 +54,8 @@
 		priceHistory: PostingPricesModel[] | null;
 		gallery: GalleryModel | null;
 		nearby: NearbyStore;
+		// When the user viewed the listing, while it shows as changed since.
+		changedSince: string | null;
 		onfavourite: (favourite: boolean) => void;
 	} = $props();
 
@@ -64,6 +68,7 @@
 	const score = $derived(preferences === null ? null : scoreProperty(listing, preferences));
 	const parts = $derived(preferences === null ? [] : scoreParts(listing, preferences));
 	const history = $derived(historyOf(listing, priceHistory));
+	const changes = $derived(changedSince === null ? [] : changesSince(history, changedSince));
 	const layout = $derived(layoutOf(listing, t));
 	const facts = $derived(factsOf(listing, t));
 	const priceStanding = $derived(standingOf(listing, listings, (each) => each.price));
@@ -206,6 +211,17 @@
 		</div>
 	</header>
 
+	{#if changes.length > 0}
+		<section class="property-detail__changes">
+			<h3>{t.t('Changed since you viewed it')}</h3>
+			<ul>
+				{#each changes as change}
+					<li>{eventText(change)}</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
 	<div class="property-detail__panels">
 		{#if score !== null && parts.length > 0}
 			<section class="property-detail__panel property-detail__score">
@@ -311,7 +327,9 @@
 			<h3>{t.t('History')}</h3>
 			<ol class="property-detail__history">
 				{#each history as event}
-					<li><span>{day(event.at)}</span>{eventText(event)}</li>
+					<li class:property-detail__history--change={changes.includes(event)}>
+						<span>{day(event.at)}</span>{eventText(event)}
+					</li>
 				{/each}
 			</ol>
 		</section>
@@ -548,5 +566,30 @@
 	.property-detail__history span {
 		color: var(--color-bronze);
 		white-space: nowrap;
+	}
+
+	.property-detail__history--change {
+		font-weight: 700;
+	}
+
+	.property-detail__history--change span {
+		color: var(--color-amber);
+	}
+
+	.property-detail__changes {
+		padding: var(--space-3) var(--space-4);
+		border-left: 3px solid var(--color-amber);
+		border-radius: var(--radius-md);
+		background: var(--color-amber-tint);
+	}
+
+	.property-detail__changes h3 {
+		margin: 0 0 var(--space-1);
+		font-size: 0.9375rem;
+	}
+
+	.property-detail__changes ul {
+		margin: 0;
+		padding-left: var(--space-4);
 	}
 </style>

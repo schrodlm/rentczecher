@@ -14,9 +14,9 @@
 	import PropertyRow from './PropertyRow.svelte';
 	import SortMenu from './SortMenu.svelte';
 
-	/* Where a listing sits in the list: its section, and the date the section
-	orders it by. */
-	type Placement = { section: Section; date: string };
+	/* Where a listing sits in the list: its section, the date the section
+	orders it by, and when the user viewed it while it shows as changed since. */
+	type Placement = { section: Section; date: string; changedSince: string | null };
 
 	// A row has room for the distances of three kinds.
 	const ROW_NEARBY_KINDS = 3;
@@ -121,10 +121,11 @@
 	});
 
 	function placementOf(listing: TrackedPropertyModel): Placement {
-		if (listing.favourited_at !== null) return { section: 'favourite', date: listing.favourited_at };
-		if (listing.updated_at !== null) return { section: 'updated', date: listing.updated_at };
-		if (listing.viewed_at !== null) return { section: 'viewed', date: listing.viewed_at };
-		return { section: 'new', date: listing.first_seen_at };
+		const changedSince = listing.updated_at === null ? null : listing.viewed_at;
+		if (listing.favourited_at !== null) return { section: 'favourite', date: listing.favourited_at, changedSince };
+		if (listing.updated_at !== null) return { section: 'updated', date: listing.updated_at, changedSince };
+		if (listing.viewed_at !== null) return { section: 'viewed', date: listing.viewed_at, changedSince };
+		return { section: 'new', date: listing.first_seen_at, changedSince };
 	}
 
 	function scoreOf(listing: TrackedPropertyModel): number | null {
@@ -267,6 +268,7 @@
 					{priceHistory}
 					{gallery}
 					{nearby}
+					changedSince={placements.get(selected.id)?.changedSince ?? null}
 					onfavourite={(favourite) => onfavourite(selected.id, favourite)}
 				/>
 			{:else if listings.length === 0}
