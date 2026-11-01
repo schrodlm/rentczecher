@@ -161,7 +161,8 @@ class SqliteListingRepository(ListingRepository):
         )
 
     def latest_prices(self, profile_id: str) -> dict[str, int]:
-        """The most recent observed price per listing the profile tracks.
+        """The price per listing the profile tracks as the profile's own scans
+        last saw it, so another profile's later scan never hides a change.
 
         A listing with no price observation yet is absent from the result,
         so it can never register as a price drop.
@@ -176,6 +177,7 @@ class SqliteListingRepository(ListingRepository):
                 ON latest_price.id = (
                     SELECT id FROM price_observations
                     WHERE listing_id = listing_tracking.listing_id
+                        AND observed_at <= listing_tracking.last_seen_at
                     ORDER BY observed_at DESC, id DESC
                     LIMIT 1
                 )
