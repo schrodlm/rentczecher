@@ -48,7 +48,7 @@ export const en: Messages = {
 	portals: {
 		label: 'Supported portals',
 		heading: 'Portals',
-		defaults: 'RE/MAX is watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a profile, after seeing what their terms say about automated reading.',
+		defaults: 'RE/MAX and iDNES Reality are watched right after you install. Sreality and Bezrealitky you turn on yourself when you set up a profile, after seeing what their terms say about automated reading.',
 		more: '+ more soon',
 		notAffiliated: 'rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
 	},
@@ -198,7 +198,7 @@ export const en: Messages = {
 			{
 				question: 'Which portals does it watch?',
 				answer: [
-					'RE/MAX, Bezrealitky and Sreality. RE/MAX is on from the start. Sreality and Bezrealitky are off by default, and you turn them on yourself in a profile after seeing what the portal asks. More portals will follow, each one checked first for what it asks of apps. rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
+					'RE/MAX, iDNES Reality, Bezrealitky and Sreality. RE/MAX and iDNES Reality are on from the start. Sreality and Bezrealitky are off by default, and you turn them on yourself in a profile after seeing what the portal asks. More portals will follow, each one checked first for what it asks of apps. rentczecher is not affiliated with, endorsed by or connected to any of these portals.'
 				]
 			},
 			{

@@ -5,6 +5,7 @@
 
 	const PORTALS: Array<{ name: string; onByDefault: boolean }> = [
 		{ name: 'RE/MAX', onByDefault: true },
+		{ name: 'iDNES Reality', onByDefault: true },
 		{ name: 'Sreality.cz', onByDefault: false },
 		{ name: 'Bezrealitky.cz', onByDefault: false }
 	];
