@@ -116,6 +116,36 @@ def test_an_unknown_top_level_key_is_rejected():
         Scenario.from_text("typo", "profile: {}\nscan: []\n")
 
 
+def test_an_unknown_scan_key_is_rejected():
+    with pytest.raises(ValueError, match="unknown scan keys"):
+        Scenario.from_text("x", """
+profile: {name: P, search: {offer_type: rent, estate_type: flat, place: obvod Praha 7}}
+scans:
+  - {at: -1d, listings: [], starred: []}
+""")
+
+
+def test_views_and_stars_after_a_scan_land_before_the_next_scan(tmp_path):
+    """A flat viewed and one starred after a scan carry that scan's time, so
+    a later scan finds them already known."""
+    scenario = Scenario.from_text("between-scans", """
+profile: {name: P, search: {offer_type: rent, estate_type: flat, place: obvod Praha 7}}
+scans:
+  - at: -2d
+    listings: [{id: "sreality:1", price: 20000}, {id: "sreality:2", price: 21000}]
+    viewed: ["sreality:1"]
+    favourited: ["sreality:2"]
+  - at: -1h
+    listings: [{id: "sreality:1", price: 20000}, {id: "sreality:2", price: 21000}]
+""")
+    profile_id = scenario.replay_into(tmp_path, NOW)
+    store = SqliteRunStore(connection.connect(tmp_path / "data" / "rentczecher.db"))
+    cards = {card.listing_id: card for card in store.tracked_properties(profile_id)}
+    two_days_ago = (NOW - timedelta(days=2)).isoformat()
+    assert cards["sreality:1"].viewed_at == two_days_ago
+    assert cards["sreality:2"].favourited_at == two_days_ago
+
+
 def test_an_unknown_listing_field_fails_loudly(tmp_path):
     """A listing field the engine does not know stops the replay rather than
     being dropped."""
