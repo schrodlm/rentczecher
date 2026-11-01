@@ -44,6 +44,7 @@ function sampleFlat(
 		first_seen_at: '2026-09-01T08:00:00Z',
 		viewed_at: null,
 		favourited_at: null,
+		updated_at: null,
 		price,
 		price_drop_from: null,
 		sibling_sources: [],
