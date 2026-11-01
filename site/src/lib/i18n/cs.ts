@@ -48,7 +48,7 @@ export const cs: Messages = {
 	portals: {
 		label: 'Podporované portály',
 		heading: 'Portály',
-		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX. Sreality a Bezrealitky si zapnete sami při nastavení profilu, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
+		defaults: 'Hned po instalaci hlídá rentczecher RE/MAX a iDNES Reality. Sreality a Bezrealitky si zapnete sami při nastavení profilu, až uvidíte, co jejich podmínky říkají o automatickém čtení.',
 		more: '+ další brzy',
 		notAffiliated: 'rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
 	},
@@ -198,7 +198,7 @@ export const cs: Messages = {
 			{
 				question: 'Které portály hlídá?',
 				answer: [
-					'RE/MAX, Bezrealitky a Sreality. RE/MAX je zapnutý od začátku. Sreality a Bezrealitky jsou ve výchozím stavu vypnuté a zapnete si je sami v profilu, až uvidíte, co daný portál žádá. Další portály přibudou, u každého nejdřív prověřím, co od aplikací žádá. rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
+					'RE/MAX, iDNES Reality, Bezrealitky a Sreality. RE/MAX a iDNES Reality jsou zapnuté od začátku. Sreality a Bezrealitky jsou ve výchozím stavu vypnuté a zapnete si je sami v profilu, až uvidíte, co daný portál žádá. Další portály přibudou, u každého nejdřív prověřím, co od aplikací žádá. rentczecher není s žádným z těchto portálů nijak spojený a žádný z nich ho nepodporuje.'
 				]
 			},
 			{
