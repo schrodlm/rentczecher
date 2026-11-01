@@ -131,14 +131,25 @@
 		return '';
 	}
 
+	function portalName(source: string): string {
+		return shownPortal(source)?.name ?? source;
+	}
+
 	function eventText(event: PropertyEvent): string {
 		if (event.kind === 'found') return t.t('First found');
+		if (event.kind === 'posted') {
+			return t.t('Also posted on {portal}', { portal: portalName(event.source) });
+		}
 		if (event.kind === 'viewed') return t.t('You viewed it');
 		if (event.kind === 'favourite') return t.t('Added to favourites');
-		if (event.to < event.from) {
-			return t.t('Price dropped from {from} to {to}', { from: t.price(event.from), to: t.price(event.to) });
+		const prices = { from: t.price(event.from), to: t.price(event.to) };
+		if (event.source !== null) {
+			const portal = portalName(event.source);
+			if (event.to < event.from) return t.t('Price on {portal} dropped from {from} to {to}', { portal, ...prices });
+			return t.t('Price on {portal} rose from {from} to {to}', { portal, ...prices });
 		}
-		return t.t('Price rose from {from} to {to}', { from: t.price(event.from), to: t.price(event.to) });
+		if (event.to < event.from) return t.t('Price dropped from {from} to {to}', prices);
+		return t.t('Price rose from {from} to {to}', prices);
 	}
 
 	function day(iso: string): string {
@@ -188,7 +199,7 @@
 						rel="noopener noreferrer"
 						use:opensInBrowser
 					>
-						{t.t('also on {portal}', { portal: shownPortal(sibling.source)?.name ?? sibling.source })} ↗
+						{t.t('also on {portal}', { portal: portalName(sibling.source) })} ↗
 					</a>
 				{/each}
 			</div>
@@ -299,7 +310,7 @@
 		<section class="property-detail__panel">
 			<h3>{t.t('History')}</h3>
 			<ol class="property-detail__history">
-				{#each history as event (`${event.kind}:${event.at}`)}
+				{#each history as event}
 					<li><span>{day(event.at)}</span>{eventText(event)}</li>
 				{/each}
 			</ol>

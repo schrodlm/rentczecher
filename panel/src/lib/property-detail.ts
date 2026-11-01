@@ -98,25 +98,38 @@ export function percentFromMiddle(standing: Standing): number {
 /* Something that happened to a listing. */
 export type PropertyEvent =
 	| { kind: 'found'; at: string }
-	| { kind: 'priceChange'; at: string; from: number; to: number }
+	| { kind: 'posted'; at: string; source: string }
+	// source is null for the posting the listing is shown by.
+	| { kind: 'priceChange'; at: string; from: number; to: number; source: string | null }
 	| { kind: 'viewed'; at: string }
 	| { kind: 'favourite'; at: string };
 
-/* What happened to a listing, newest first. Its price changes come from its
-own posting's prices and are left out until those are known. */
+/* What happened to a listing, newest first. Each of its postings gives its
+price changes, and each portal that started posting it after it was first
+found gives that posting's first day. Both are left out until the prices are
+known. */
 export function historyOf(
 	listing: TrackedPropertyModel,
 	postings: readonly PostingPricesModel[] | null
 ): PropertyEvent[] {
 	const events: PropertyEvent[] = [{ kind: 'found', at: listing.first_seen_at }];
-	const ownChanges = postings?.find((posting) => posting.listing_id === listing.listing_id)?.changes ?? [];
-	for (let index = 1; index < ownChanges.length; index++) {
-		events.push({
-			kind: 'priceChange',
-			at: ownChanges[index].first_seen_at,
-			from: ownChanges[index - 1].price,
-			to: ownChanges[index].price
-		});
+	for (const posting of postings ?? []) {
+		const postedAt = posting.changes[0]?.first_seen_at;
+		if (postedAt !== undefined && postedAt > listing.first_seen_at) {
+			events.push({ kind: 'posted', at: postedAt, source: posting.source });
+		}
+	}
+	for (const posting of postings ?? []) {
+		const source = posting.listing_id === listing.listing_id ? null : posting.source;
+		for (let index = 1; index < posting.changes.length; index++) {
+			events.push({
+				kind: 'priceChange',
+				at: posting.changes[index].first_seen_at,
+				from: posting.changes[index - 1].price,
+				to: posting.changes[index].price,
+				source
+			});
+		}
 	}
 	if (listing.viewed_at !== null) events.push({ kind: 'viewed', at: listing.viewed_at });
 	if (listing.favourited_at !== null) events.push({ kind: 'favourite', at: listing.favourited_at });
