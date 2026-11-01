@@ -302,6 +302,65 @@ describe('Inbox sections', () => {
 	});
 });
 
+describe('Inbox updates', () => {
+	const VIEWED = '2026-10-01T00:00:00Z';
+	const UPDATED = '2026-10-08T00:00:00Z';
+
+	async function renderUpdates(listings = [
+		trackedProperty('n', { price: 20000 }),
+		trackedProperty('u', { price: 25000, viewed_at: VIEWED, updated_at: UPDATED }),
+		trackedProperty('v', { price: 30000, viewed_at: VIEWED })
+	]) {
+		const onview = vi.fn();
+		const rendered = await renderWithTranslator(InboxHarness, {
+			listings,
+			preferences: PREFERENCES,
+			onview,
+			onfavourite: vi.fn()
+		});
+		const prices = (name: string) =>
+			within(rendered.getByRole('group', { name }))
+				.getAllByRole('option')
+				.map((row) => row.querySelector('.property-row__price')?.textContent?.replace(/\s/g, ' '));
+		return { onview, prices, ...rendered };
+	}
+
+	test('shows a viewed flat that changed in its own section right after New', async () => {
+		const { getAllByRole, prices } = await renderUpdates();
+		expect(getAllByRole('group').map((group) => group.getAttribute('aria-label'))).toEqual([
+			'Nové',
+			'Aktualizované',
+			'Už zobrazené'
+		]);
+		expect(prices('Aktualizované')).toEqual(['25 000 Kč']);
+	});
+
+	test('views a changed flat again when it is picked, but not a flat already seen as it is', async () => {
+		const { getAllByRole, onview } = await renderUpdates();
+		await fireEvent.click(getAllByRole('option')[1]);
+		expect(onview).toHaveBeenCalledWith('u');
+		await fireEvent.click(getAllByRole('option')[2]);
+		expect(onview).toHaveBeenCalledTimes(1);
+	});
+
+	test('moves changed flats to Viewed with Mark all viewed, even with nothing new', async () => {
+		const { getByRole, prices } = await renderUpdates([
+			trackedProperty('u', { price: 25000, viewed_at: VIEWED, updated_at: UPDATED }),
+			trackedProperty('v', { price: 30000, viewed_at: VIEWED })
+		]);
+		await fireEvent.click(getByRole('button', { name: 'Označit vše jako zobrazené' }));
+		expect(prices('Už zobrazené')).toEqual(['25 000 Kč', '30 000 Kč']);
+	});
+
+	test('keeps a favourite that changed among the favourites', async () => {
+		const { prices, queryByRole } = await renderUpdates([
+			trackedProperty('f', { price: 25000, viewed_at: VIEWED, favourited_at: VIEWED, updated_at: UPDATED })
+		]);
+		expect(prices('Oblíbené')).toEqual(['25 000 Kč']);
+		expect(queryByRole('group', { name: 'Aktualizované' })).toBeNull();
+	});
+});
+
 describe('Inbox selection', () => {
 	async function renderSelecting(selectedId: string | null) {
 		return renderWithTranslator(InboxHarness, {
