@@ -35,19 +35,19 @@ def _make_listing(**kwargs) -> Listing:
     return Listing.build(**defaults)
 
 
-def _locate_and_dedup_outcome(listings, gazetteer=None):
+def _locate_and_dedup_outcome(listings, gazetteer=None, estate_type="flat"):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
-    return cross_source_dedup(locate_listings(listings, gazetteer, searched_in=None), gazetteer)
+    return cross_source_dedup(locate_listings(listings, gazetteer, searched_in=None), gazetteer, estate_type)
 
 
-def _locate_and_dedup(listings, gazetteer=None):
-    return _locate_and_dedup_outcome(listings, gazetteer).survivors
+def _locate_and_dedup(listings, gazetteer=None, estate_type="flat"):
+    return _locate_and_dedup_outcome(listings, gazetteer, estate_type).survivors
 
 
 def _score_pair(a, b, gazetteer=None):
     gazetteer = gazetteer if gazetteer is not None else Gazetteer()
     located_a, located_b = locate_listings([a, b], gazetteer, searched_in=None)
-    return score_match(located_a, located_b, None)
+    return score_match(located_a, located_b, "flat", None)
 
 
 def _factor(score, name):
@@ -193,7 +193,8 @@ class TestDedupThreeSources:
 
 
 class TestPriceGate:
-    """Price gate: falsy price never matches; ratio uses max() of the two, strict `>` at 0.10."""
+    """Price factor: a falsy price drops the factor, the ratio uses max() of the two, and a pair
+    more than 10% apart cannot match."""
 
     def test_zero_price_skips_the_price_factor_and_gps_alone_stays_uncertain(self):
         """A zero price on either side drops the price factor rather than
@@ -236,23 +237,24 @@ class TestPriceGate:
 
 
 class TestDispositionFactor:
-    """Disposition disagreement outweighs near-identical GPS: same-building units stay separate."""
+    """A missing or disagreeing disposition keeps a pair separate, however close the two lie:
+    same-building units stay separate."""
 
-    def test_both_none_gate_skipped(self):
+    def test_both_none_skips_the_factor_and_the_pair_stays_separate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        assert not _factor(_score_pair(l1, l2), "disposition").evidence
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
-    def test_one_none_gate_skipped(self):
+    def test_one_none_skips_the_factor_and_the_pair_stays_separate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text=None,
                            size_m2=50, lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, disposition_raw_text="3+1",
                            size_m2=50, lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        assert not _factor(_score_pair(l1, l2), "disposition").evidence
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
     def test_case_insensitive_match(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+KK",
@@ -274,23 +276,23 @@ class TestDispositionFactor:
 
 
 class TestSizeGate:
-    """Size gate: 0 is falsy and skips the gate (like the price gate does not); strict `>` at 5."""
+    """Size factor: a falsy size drops the factor, and a pair more than 6 m² apart cannot match."""
 
-    def test_zero_size_on_either_side_skips_gate(self):
+    def test_zero_size_on_either_side_skips_the_factor_and_the_pair_stays_separate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=0,
                            disposition_raw_text="2+kk", lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=999,
                            disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        assert not _factor(_score_pair(l1, l2), "size").evidence
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
-    def test_both_none_skips_gate(self):
+    def test_both_none_skips_the_factor_and_the_pair_stays_separate(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=None,
                            disposition_raw_text="2+kk", lat=50.10, lon=14.40)
         l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=None,
                            disposition_raw_text="2+kk", lat=50.1001, lon=14.4001)
-        result = _locate_and_dedup([l1, l2])
-        assert len(result) == 1
+        assert not _factor(_score_pair(l1, l2), "size").evidence
+        assert len(_locate_and_dedup([l1, l2])) == 2
 
     def test_diff_exactly_five_matches(self):
         l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=50,
@@ -313,10 +315,9 @@ class TestSizeGate:
 
 
 class TestGpsGate:
-    """GPS factor: <=100m is the ceiling (immediate accept on GPS alone with any positive
-    corroboration), >=1500m is the negative ceiling, and the (100, 1500) band is graded by
-    distance. Deltas below are derived with haversine_m and asserted precisely so the fixtures
-    prove the boundary they claim."""
+    """GPS factor: <=100m is the ceiling, >=1500m is the negative ceiling, and the (100, 1500)
+    band is graded by distance. Deltas below are derived with haversine_m and asserted precisely
+    so the fixtures prove the boundary they claim."""
 
     BASE_LAT = 50.1
     BASE_LON = 14.4
@@ -326,17 +327,17 @@ class TestGpsGate:
         # so the other listing's own GPS must be near THAT centroid (not just near the half-set
         # listing's dropped coordinate) for the fallback to read as a real match.
         shared_place = ParsedPlace(names=("Veletržní", "Praha 7"))
-        l1 = _make_listing(id="a:1", source="a", price=20000, lat=None, lon=14.4270,
-                           parsed_place=shared_place)
-        l2 = _make_listing(id="b:1", source="b", price=20000, lat=50.1015, lon=14.4298,
-                           parsed_place=shared_place)
+        l1 = _make_listing(id="a:1", source="a", price=20000, size_m2=50, disposition_raw_text="2+kk",
+                           lat=None, lon=14.4270, parsed_place=shared_place)
+        l2 = _make_listing(id="b:1", source="b", price=20000, size_m2=50, disposition_raw_text="2+kk",
+                           lat=50.1015, lon=14.4298, parsed_place=shared_place)
         result = _locate_and_dedup([l1, l2])
         assert len(result) == 1
 
-        l3 = _make_listing(id="a:2", source="a", price=20000, lat=50.1015, lon=None,
-                           parsed_place=shared_place)
-        l4 = _make_listing(id="b:2", source="b", price=20000, lat=50.1015, lon=14.4298,
-                           parsed_place=shared_place)
+        l3 = _make_listing(id="a:2", source="a", price=20000, size_m2=50, disposition_raw_text="2+kk",
+                           lat=50.1015, lon=None, parsed_place=shared_place)
+        l4 = _make_listing(id="b:2", source="b", price=20000, size_m2=50, disposition_raw_text="2+kk",
+                           lat=50.1015, lon=14.4298, parsed_place=shared_place)
         result2 = _locate_and_dedup([l3, l4])
         assert len(result2) == 1
 
@@ -540,15 +541,15 @@ class TestNoTransitiveGrouping:
         assert set(result[0].cross_source) == {"a", "c"}
 
     def test_direct_ac_match_merges_all_three_regardless_of_order(self):
-        # A closer-priced trio, ordered [A, B, C]. A-C is 11.11% apart in price (factor slightly
-        # negative), but GPS, disposition and size all agree, so A~C scores a direct match on its
+        # A closer-priced trio, ordered [A, B, C]. A-C is 8.26% apart in price, within the near
+        # bound, and GPS, disposition and size all agree, so A~C scores a direct match on its
         # own -- a straight pairwise match, not graph closure through B. A~B matches first (A
         # richer, so A keeps and B is removed); A is then compared to C directly and matches too.
         a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, photo_urls=("http://x",))
-        b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
+        b = _make_listing(id="b:1", source="b", price=20900, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
-        c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
+        c = _make_listing(id="c:1", source="c", price=21800, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = _locate_and_dedup([a, b, c])
@@ -564,9 +565,9 @@ class TestNoTransitiveGrouping:
         # displaced, so the final survivor A carries both B and C even though C never survives.
         a = _make_listing(id="a:1", source="a", price=20000, disposition_raw_text="2+kk", size_m2=50,
                           lat=50.10, lon=14.40, charges=1000, land_m2=10, photo_urls=("http://x",))
-        b = _make_listing(id="b:1", source="b", price=21500, disposition_raw_text="2+kk",
+        b = _make_listing(id="b:1", source="b", price=20900, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1005, lon=14.4005)
-        c = _make_listing(id="c:1", source="c", price=22500, disposition_raw_text="2+kk",
+        c = _make_listing(id="c:1", source="c", price=21800, disposition_raw_text="2+kk",
                           size_m2=50, lat=50.1010, lon=14.4010)
 
         result = _locate_and_dedup([c, b, a])
@@ -669,21 +670,21 @@ class TestTheFlatAgainstItsLocation:
         second = {**first, "id": "bezrealitky:1", "source": "bezrealitky", **on_second}
         return [_make_listing(**first), _make_listing(**second)]
 
-    def test_prices_thirty_percent_apart_still_merge(self):
+    def test_prices_thirty_percent_apart_stay_separate(self):
         pair = self._pair_on_one_street(price=14000)
-        assert len(_locate_and_dedup(pair)) == 1
+        assert len(_locate_and_dedup(pair)) == 2
 
-    def test_sizes_sixteen_square_metres_apart_still_merge(self):
+    def test_sizes_sixteen_square_metres_apart_stay_separate(self):
         pair = self._pair_on_one_street(size_m2=66)
-        assert len(_locate_and_dedup(pair)) == 1
+        assert len(_locate_and_dedup(pair)) == 2
 
-    def test_no_disposition_on_either_side_still_merges(self):
+    def test_no_disposition_on_either_side_stays_separate(self):
         pair = self._pair_on_one_street(on_both={"disposition_raw_text": None})
-        assert len(_locate_and_dedup(pair)) == 1
+        assert len(_locate_and_dedup(pair)) == 2
 
-    def test_no_size_on_either_side_still_merges(self):
+    def test_no_size_on_either_side_stays_separate(self):
         pair = self._pair_on_one_street(on_both={"size_m2": None})
-        assert len(_locate_and_dedup(pair)) == 1
+        assert len(_locate_and_dedup(pair)) == 2
 
     def test_prices_ten_percent_and_sizes_six_square_metres_apart_merge(self):
         pair = self._pair_on_one_street(price=18000, size_m2=56)

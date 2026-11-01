@@ -132,7 +132,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
         located = inside
 
     located_by_id = {listing.id: listing for listing in located}
-    outcome = cross_source_dedup(located, deps.gazetteer)
+    outcome = cross_source_dedup(located, deps.gazetteer, profile.criteria.estate_type)
 
     current_ids = {listing.id for listing in outcome.survivors} | {m.absorbed_id for m in outcome.merges}
     disappeared = deps.store.pending_disappeared(profile_id, current_ids)
