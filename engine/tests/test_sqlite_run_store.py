@@ -284,3 +284,15 @@ class TestPropertyLocation:
         store.persist_outcome(profile_id, DedupOutcome(survivors=[keeper], merges=(merge,), uncertain=()),
                               {gone.id: gone}, current_ids={keeper.id, gone.id}, updated_keeper_ids=set())
         assert _stored_ulice(conn, keeper.id) == PRISTAVNI.code
+
+
+class TestUpdatedFlats:
+    def test_persist_marks_the_property_of_each_updated_keeper(self, tmp_path):
+        store, conn = _store(tmp_path)
+        profile_id = stored_profile(conn).id
+        listing = _listing(id="sreality:1")
+        store.persist_outcome(profile_id, _outcome(listing), {}, current_ids={listing.id}, updated_keeper_ids=set())
+        conn.execute("UPDATE property_tracking SET viewed_at = ?", (BASE.isoformat(),))
+        store.persist_outcome(profile_id, _outcome(listing), {},
+                              current_ids={listing.id}, updated_keeper_ids={listing.id})
+        assert conn.execute("SELECT updated_at FROM property_tracking").fetchone()[0] == BASE.isoformat()
