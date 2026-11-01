@@ -54,6 +54,7 @@ async function renderDetail(
 		listings: [FLAT, DEARER],
 		preferences,
 		priceHistory,
+		changedSince: null,
 		gallery: null,
 		nearby: quietNearby(),
 		onfavourite
@@ -98,6 +99,7 @@ describe('PropertyDetail', () => {
 			listings: [FLAT, DEARER],
 			preferences: PREFERENCES,
 			priceHistory: FLAT_PRICES,
+			changedSince: null,
 			gallery,
 			nearby: quietNearby(),
 			onfavourite: vi.fn()
