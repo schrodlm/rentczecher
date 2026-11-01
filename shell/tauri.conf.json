@@ -1,7 +1,7 @@
 {
   "$schema": "../panel/node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "rentczecher",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "io.github.schrodlm.rentczecher",
   "build": {
     "frontendDist": "../panel/build",
