@@ -172,6 +172,24 @@ describe('historyOf', () => {
 		]);
 	});
 
+	test('dates when another portal started posting the flat after it was first found', () => {
+		const events = historyOf(trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z' }), [
+			OWN_PRICES,
+			{
+				listing_id: 'c',
+				source: 'idnes',
+				url: 'https://example.invalid/c',
+				changes: [{ price: 19500, charges: null, first_seen_at: '2026-10-06T00:00:00Z', last_seen_at: '2026-10-06T00:00:00Z' }]
+			}
+		]);
+		expect(events).toContainEqual({ kind: 'posted', at: '2026-10-06T00:00:00Z', source: 'idnes' });
+	});
+
+	test('does not count a posting found with the flat as posted later', () => {
+		const events = historyOf(trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z' }), [OWN_PRICES, OTHER_PRICES]);
+		expect(events.some((event) => event.kind === 'posted')).toBe(false);
+	});
+
 	test('lists no price change until the prices are known', () => {
 		expect(historyOf(trackedProperty('a', { first_seen_at: '2026-10-01T00:00:00Z', price_drop_from: 25000 }), null)).toEqual([
 			{ kind: 'found', at: '2026-10-01T00:00:00Z' }
