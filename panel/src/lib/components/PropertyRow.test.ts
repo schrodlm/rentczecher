@@ -79,4 +79,21 @@ describe('PropertyRow', () => {
 		expect(getByLabelText('Oblíbený')).toBeInTheDocument();
 		expect(getByRole('option')).not.toHaveTextContent('78');
 	});
+
+	test('marks a favourite that changed since it was last opened', async () => {
+		const { getByText } = await renderRow({
+			viewed_at: '2026-10-01T08:00:00Z',
+			favourited_at: '2026-10-01T08:00:00Z',
+			updated_at: '2026-10-09T08:00:00Z'
+		});
+		expect(getByText('Změna')).toBeInTheDocument();
+	});
+
+	test('leaves the mark off a favourite seen as it is', async () => {
+		const { queryByText } = await renderRow({
+			viewed_at: '2026-10-01T08:00:00Z',
+			favourited_at: '2026-10-01T08:00:00Z'
+		});
+		expect(queryByText('Změna')).toBeNull();
+	});
 });
