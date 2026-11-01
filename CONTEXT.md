@@ -142,13 +142,20 @@ _Avoid_: seen, found
 The user selected the tracked property in the GUI, opened it, marked it a
 favourite, or marked all viewed. A tracked property is viewed once any of its
 listings is, so a portal newly posting a viewed flat does not make it new
-again. Viewing is never undone.
+again, only updated. Viewing is never undone.
 _Avoid_: seen, read
 
 **New**:
 A tracked property observed but not yet viewed. What the GUI's inbox counts
 and what the watchdog exists to surface.
 _Avoid_: unseen, unread, fresh
+
+**Updated**:
+A viewed tracked property that a scan found changed since: a portal started
+posting it, or the price of one of its postings went up or down. Viewing it
+again, or marking all viewed, makes it plain viewed again. The GUI shows it
+apart from the new and viewed ones, and a favourite stays a favourite.
+_Avoid_: changed, modified, refreshed
 
 **Notified**:
 A notification channel delivered the tracked property. A channel is a client
@@ -257,7 +264,7 @@ _Avoid_: fixture (one scenario feeds many fixtures), seed, mock data
 
 **Event**:
 A fact the sidecar announces the moment it happens: a scan started, a portal
-finished, a scan finished, new listings arrived.
+finished, a scan finished, new or updated flats arrived.
 _Avoid_: notification (reserved for listing delivery), message
 
 **Broker**:
