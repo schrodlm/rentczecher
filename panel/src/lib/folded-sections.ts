@@ -1,8 +1,8 @@
 /* The inbox's sections, and which of them the user folded away, kept on
 this machine. */
-export type Section = 'new' | 'favourite' | 'viewed';
+export type Section = 'new' | 'updated' | 'favourite' | 'viewed';
 
-export const SECTIONS: readonly Section[] = ['new', 'favourite', 'viewed'];
+export const SECTIONS: readonly Section[] = ['new', 'updated', 'favourite', 'viewed'];
 const KEY = 'rentczecher.foldedSections';
 
 // The browser may refuse its storage, as in a private window, and then every

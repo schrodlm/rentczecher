@@ -3,7 +3,7 @@
 	import { getTranslatorContext } from '$lib/i18n/context';
 	import { kindName } from '$lib/nearby/kinds';
 	import type { KindDistance } from '$lib/nearby/nearby-store.svelte';
-	import { factsOf, placeOf } from '$lib/property-detail';
+	import { factsOf, isNewOrUpdated, placeOf } from '$lib/property-detail';
 	import PropertyPicture from './PropertyPicture.svelte';
 	import ScoreRing from './ScoreRing.svelte';
 
@@ -28,6 +28,7 @@
 	const t = getTranslatorContext();
 
 	const favourite = $derived(listing.favourited_at !== null);
+	const newOrUpdated = $derived(isNewOrUpdated(listing));
 	const facts = $derived(factsOf(listing, t));
 </script>
 
@@ -37,9 +38,9 @@ a row focuses the list and a screen reader follows the selection from there. -->
 <div
 	class="property-row"
 	class:property-row--selected={selected}
-	class:property-row--new={listing.viewed_at === null}
+	class:property-row--new-or-updated={newOrUpdated}
 	class:property-row--favourite={favourite}
-	class:property-row--viewed={listing.viewed_at !== null && !favourite}
+	class:property-row--viewed={!newOrUpdated && !favourite}
 	{id}
 	role="option"
 	aria-selected={selected}
@@ -85,7 +86,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		background: var(--color-card);
 	}
 
-	.property-row--new {
+	.property-row--new-or-updated {
 		border-left-color: var(--color-amber);
 	}
 
@@ -98,7 +99,7 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		background: var(--color-card);
 	}
 
-	.property-row--new.property-row--selected {
+	.property-row--new-or-updated.property-row--selected {
 		border-left-color: var(--color-amber);
 	}
 

@@ -4,6 +4,7 @@
 	import { foldedSections, keepFoldedSections, SECTIONS, type Section } from '$lib/folded-sections';
 	import type { NearbyStore } from '$lib/nearby/nearby-store.svelte';
 	import { getTranslatorContext } from '$lib/i18n/context';
+	import { isNewOrUpdated } from '$lib/property-detail';
 	import { activeFacets, noFilter, passes, type PropertyFilter } from '$lib/property-filter';
 	import { naturalOrder, SORT_FIELDS, sortProperties, type PropertyOrder } from '$lib/property-order';
 	import { scoreProperty, type ScoringPreferences } from '$lib/scoring/score';
@@ -77,7 +78,12 @@
 				scoreOf,
 				(listing) => placements.get(listing.id)?.date ?? ''
 			);
-		return { new: inSection('new'), favourite: inSection('favourite'), viewed: inSection('viewed') };
+		return {
+			new: inSection('new'),
+			updated: inSection('updated'),
+			favourite: inSection('favourite'),
+			viewed: inSection('viewed')
+		};
 	});
 	const ordered = $derived(
 		SECTIONS.flatMap((section) => (folded.includes(section) ? [] : sections[section]))
@@ -85,7 +91,7 @@
 	const selectedIndex = $derived(ordered.findIndex((listing) => listing.id === selectedId));
 	const selected = $derived(ordered[selectedIndex] ?? null);
 	const selectedRowId = $derived(selected === null ? null : rowId(selected));
-	const unviewed = $derived(sections.new.some((listing) => listing.viewed_at === null));
+	const newOrUpdated = $derived(shown.filter(isNewOrUpdated));
 
 	// A profile opens on its first listing, selected but not viewed, and a
 	// selected listing that leaves the profile or the filter's view gives way
@@ -116,6 +122,7 @@
 
 	function placementOf(listing: TrackedPropertyModel): Placement {
 		if (listing.favourited_at !== null) return { section: 'favourite', date: listing.favourited_at };
+		if (listing.updated_at !== null) return { section: 'updated', date: listing.updated_at };
 		if (listing.viewed_at !== null) return { section: 'viewed', date: listing.viewed_at };
 		return { section: 'new', date: listing.first_seen_at };
 	}
@@ -138,7 +145,7 @@
 	function select(listing: TrackedPropertyModel, openDetail: boolean): void {
 		selectedId = listing.id;
 		if (openDetail) detailOpen = true;
-		if (listing.viewed_at === null) onview(listing.id);
+		if (isNewOrUpdated(listing)) onview(listing.id);
 	}
 
 	function step(by: 1 | -1): void {
@@ -148,7 +155,7 @@
 
 	// Only what the filter shows, since only that was there to be seen.
 	function markShownViewed(): void {
-		onmarkallviewed(sections.new.filter((listing) => listing.viewed_at === null).map((listing) => listing.id));
+		onmarkallviewed(newOrUpdated.map((listing) => listing.id));
 	}
 
 	function backToList(): void {
@@ -208,7 +215,7 @@
 <div class="inbox" class:inbox--detail-open={detailOpen}>
 	<div class="inbox__list">
 		<div class="inbox__tools">
-			{#if unviewed}
+			{#if newOrUpdated.length > 0}
 				<button type="button" class="inbox__mark-all" onclick={markShownViewed}>{t.t('Mark all viewed')}</button>
 			{/if}
 			<FilterMenu bind:filter {listings} scored={preferences !== null} />
@@ -235,6 +242,9 @@
 				{@render section('new', t.t('New'), sections.new)}
 				{#if sections.new.length === 0 && !folded.includes('new')}
 					<p class="inbox__empty">{t.t('No new listings')}</p>
+				{/if}
+				{#if sections.updated.length > 0}
+					{@render section('updated', t.t('Updated'), sections.updated)}
 				{/if}
 				{#if sections.favourite.length > 0}
 					{@render section('favourite', t.t('Favourites'), sections.favourite)}

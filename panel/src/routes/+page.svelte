@@ -125,14 +125,14 @@
 		try {
 			await client.markViewed(selectedProfileId, propertyId);
 		} catch {
-			// A failed PATCH is not retried, the listing stays new until the
-			// next reload.
+			// A failed PATCH is not retried, the listing stays new or updated
+			// until the next reload.
 			return;
 		}
 		const marked = listings?.find((l) => l.id === propertyId);
-		if (marked && marked.viewed_at === null) {
-			marked.viewed_at = new Date().toISOString();
-		}
+		if (marked === undefined) return;
+		marked.viewed_at ??= new Date().toISOString();
+		marked.updated_at = null;
 	}
 
 	async function handleFavourite(propertyId: string, favourite: boolean): Promise<void> {
