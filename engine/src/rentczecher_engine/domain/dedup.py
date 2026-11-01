@@ -84,3 +84,11 @@ class DedupOutcome:
                 keeper_id = keeper_of[keeper_id]
             resolved[absorbed_id] = keeper_id
         return resolved
+
+    def members_by_keeper(self, located_by_id: dict[str, Listing]) -> dict[str, list[Listing]]:
+        """Each survivor's id to the postings of its flat, the survivor
+        first, then every listing it absorbed, found in located_by_id."""
+        members_by_keeper = {listing.id: [listing] for listing in self.survivors}
+        for absorbed_id, keeper_id in self.final_keeper_ids().items():
+            members_by_keeper[keeper_id].append(located_by_id[absorbed_id])
+        return members_by_keeper
