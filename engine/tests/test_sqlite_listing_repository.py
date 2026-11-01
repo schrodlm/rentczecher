@@ -406,6 +406,14 @@ class TestLatestPrices:
         repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:theirs", price=200))
         assert repo.latest_prices(PROFILE) == {"sreality:mine": 100}
 
+    def test_is_the_price_the_profiles_own_scans_last_saw(self, tmp_path):
+        repo, conn = _repo(tmp_path, now=_clock(BASE, BASE + timedelta(hours=1), BASE + timedelta(hours=2)))
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=100))
+        repo.upsert(OTHER_PROFILE, PROPERTY, _listing(id="sreality:1", price=90))
+        assert repo.latest_prices(PROFILE) == {"sreality:1": 100}
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1", price=90))
+        assert repo.latest_prices(PROFILE) == {"sreality:1": 90}
+
 
 class TestPropertyIdOf:
     def test_returns_the_listing_property(self, tmp_path):
