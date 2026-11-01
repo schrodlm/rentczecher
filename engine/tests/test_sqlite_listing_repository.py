@@ -525,6 +525,20 @@ class TestTrackedProperties:
         assert card.viewed_at == BASE.isoformat()
         assert card.favourited_at == BASE.isoformat()
 
+    def test_carries_when_a_scan_last_found_the_flat_changed(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        repo.mark_viewed(PROFILE, PROPERTY)
+        repo.mark_updated(PROFILE, PROPERTY)
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.updated_at == BASE.isoformat()
+
+    def test_never_updated_is_none(self, tmp_path):
+        repo, conn = _repo(tmp_path)
+        repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
+        (card,) = repo.tracked_properties(PROFILE)
+        assert card.updated_at is None
+
     def test_never_viewed_is_none(self, tmp_path):
         repo, conn = _repo(tmp_path)
         repo.upsert(PROFILE, PROPERTY, _listing(id="sreality:1"))
