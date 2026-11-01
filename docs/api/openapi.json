@@ -1385,6 +1385,17 @@
             ],
             "title": "Title"
           },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
           "url": {
             "title": "Url",
             "type": "string"
@@ -1418,6 +1429,7 @@
           "first_seen_at",
           "viewed_at",
           "favourited_at",
+          "updated_at",
           "price",
           "price_drop_from",
           "sibling_sources",

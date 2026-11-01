@@ -69,7 +69,9 @@ class TrackedProperty:
     profile's tracking of the property. index is the property's place in
     the order the profile found its flats. price_drop_from is the higher
     price that listing last dropped from, and sibling_sources are the
-    profile's other listings of the property."""
+    profile's other listings of the property. updated_at is when a scan last
+    found the viewed property changed, cleared once the profile opens it
+    again."""
 
     id: str
     index: int
@@ -87,6 +89,7 @@ class TrackedProperty:
     first_seen_at: str
     viewed_at: str | None
     favourited_at: str | None
+    updated_at: str | None
     price: int | None
     price_drop_from: int | None
     sibling_sources: tuple[SiblingSource, ...]

@@ -285,6 +285,7 @@ class TrackedPropertyModel(BaseModel):
     first_seen_at: str
     viewed_at: str | None
     favourited_at: str | None
+    updated_at: str | None
     price: int | None
     price_drop_from: int | None
     sibling_sources: list[SiblingSourceModel]
@@ -310,6 +311,7 @@ class TrackedPropertyModel(BaseModel):
             first_seen_at=tracked.first_seen_at,
             viewed_at=tracked.viewed_at,
             favourited_at=tracked.favourited_at,
+            updated_at=tracked.updated_at,
             price=tracked.price,
             price_drop_from=tracked.price_drop_from,
             sibling_sources=[
