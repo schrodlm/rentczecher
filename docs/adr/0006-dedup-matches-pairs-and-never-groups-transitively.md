@@ -1,6 +1,6 @@
 # 6. Dedup matches pairs and never groups them transitively
 
-Status: accepted (2026-07), revised 2026-08, recorded 2026-10-01
+Status: accepted (2026-07), revised 2026-08 and 2026-11, recorded 2026-10-01
 
 ## Context
 
@@ -25,6 +25,16 @@ score falls into one of three bands:
 - Uncertain: the pair stays separate and is recorded for audit.
 - Different: the pair stays separate.
 
+A pair scoring in the match band merges only when the property itself agrees
+as well, on what its estate type carries. The prices must be within 10% of
+each other. Flats must give the same disposition and sizes within 6 m².
+Houses and cottages must give sizes within 6 m² or plots within 10%, and
+dispositions only when both sides give one. Land must give plots within 10%.
+A value missing on either side cannot confirm agreement. A pair that scores
+as a match without agreeing is recorded as uncertain instead. Closeness alone
+used to carry a match: one street within 100 m outscored the match threshold,
+so two flats in one building merged even with prices 30% apart.
+
 Every merge is recorded with its score, so any merge can be explained after
 the fact.
 
@@ -41,6 +51,10 @@ chains that caused the original revert.
   listings.
 - A flat on three portals can survive as two listings when one of its pairs
   falls short of the match band.
+- Properties that a portal describes too thinly to compare, without a price,
+  or a flat without a size or disposition, are never merged.
+- Two alike flats in one building, with the same layout, size and price,
+  still merge. Only something like the photos could tell them apart.
 - The weights and band thresholds were calibrated against owner-labeled pairs
   of real listings. They change only with boundary tests pinning current
   outcomes first.
