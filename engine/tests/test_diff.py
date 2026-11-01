@@ -122,3 +122,27 @@ def test_a_viewed_flat_whose_posting_has_no_recorded_price_is_not_updated():
     diff = classify(_outcome([listing]), {}, seen_ids={"a"}, viewed_ids={"a"}, latest_prices={})
 
     assert diff.updated_keeper_ids == set()
+
+
+def test_a_portal_newly_posting_a_known_flat_does_not_make_it_new():
+    outcome, located = _merged(_make_listing(id="b", source="bezrealitky"), _make_listing(id="a"))
+
+    diff = classify(outcome, located, seen_ids={"a"}, viewed_ids=set(), latest_prices={"a": 20000})
+
+    assert diff.new == []
+
+
+def test_a_flat_on_two_portals_found_at_once_is_one_new_flat():
+    outcome, located = _merged(_make_listing(id="a"), _make_listing(id="b", source="bezrealitky"))
+
+    diff = classify(outcome, located, seen_ids=set(), viewed_ids=set(), latest_prices={})
+
+    assert [listing.id for listing in diff.new] == ["a"]
+
+
+def test_a_posting_landing_alone_on_a_viewed_flat_does_not_make_it_new():
+    listing = _make_listing(id="b", source="bezrealitky")
+
+    diff = classify(_outcome([listing]), {}, seen_ids=set(), viewed_ids={"b"}, latest_prices={})
+
+    assert diff.new == []
