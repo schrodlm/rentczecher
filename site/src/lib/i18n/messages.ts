@@ -17,6 +17,12 @@ export interface HowStep {
 	screenshotAlt: string;
 }
 
+// A screenshot is a file under static/install/, shown below its step.
+export interface InstallStep {
+	text: RichText;
+	screenshot: { file: string; alt: string } | null;
+}
+
 export interface RoadmapItem {
 	title: string;
 	body: string;
@@ -125,7 +131,7 @@ export interface Messages {
 		macos: string;
 		linux: string;
 		firstLaunchWarning: string;
-		whatToDo: string;
+		installSteps: string;
 		buildYourself: string;
 		readme: string;
 	};
@@ -167,6 +173,22 @@ export interface Messages {
 		contactHeading: string;
 		contact: RichText;
 		notAffiliated: string;
+	};
+	install: {
+		title: string;
+		intro: string;
+		windowsHeading: string;
+		windowsSteps: InstallStep[];
+		smartAppControlHeading: string;
+		smartAppControl: RichText;
+		macosHeading: string;
+		macosSteps: InstallStep[];
+		olderMacos: RichText;
+		damagedHeading: string;
+		damaged: RichText;
+		damagedCommand: string;
+		whyHeading: string;
+		why: string[];
 	};
 	privacyPolicy: {
 		title: string;

@@ -42,7 +42,7 @@
 	<HowItWorks {t} {lang} />
 	<PrivacyBand {t} />
 	<OpenSource {t} appVersion={data.appVersion} />
-	<Download {t} appVersion={data.appVersion} />
+	<Download {t} {lang} appVersion={data.appVersion} />
 	<Roadmap {t} />
 	<Devlog {t} {lang} entries={data.latestDevlog} />
 	<Faq {t} />

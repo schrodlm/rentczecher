@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { homePath, type Language } from '$lib/i18n';
 	import type { Messages } from '$lib/i18n/messages';
 	import {
 		LINUX_APPIMAGE_URL,
@@ -9,18 +10,22 @@
 		WINDOWS_INSTALLER_URL
 	} from '$lib/links';
 
-	let { t, appVersion }: { t: Messages; appVersion: string } = $props();
+	let { t, lang, appVersion }: { t: Messages; lang: Language; appVersion: string } = $props();
+
+	const installPath = $derived(`${homePath(lang)}install/`);
 
 	const platforms = $derived([
 		{
 			name: 'Windows',
 			detail: t.download.windows,
-			downloads: [{ label: t.download.button, href: WINDOWS_INSTALLER_URL }]
+			downloads: [{ label: t.download.button, href: WINDOWS_INSTALLER_URL }],
+			installSteps: `${installPath}#windows`
 		},
 		{
 			name: 'macOS',
 			detail: t.download.macos,
-			downloads: [{ label: t.download.button, href: MACOS_INSTALLER_URL }]
+			downloads: [{ label: t.download.button, href: MACOS_INSTALLER_URL }],
+			installSteps: `${installPath}#macos`
 		},
 		{
 			name: 'Linux',
@@ -28,7 +33,8 @@
 			downloads: [
 				{ label: 'AppImage', href: LINUX_APPIMAGE_URL },
 				{ label: '.deb', href: LINUX_DEB_URL }
-			]
+			],
+			installSteps: null
 		}
 	]);
 </script>
@@ -49,13 +55,16 @@
 						<a class="btn btn-amber" href={download.href}>{download.label}</a>
 					{/each}
 				</div>
+				{#if platform.installSteps !== null}
+					<a class="install-steps" href={platform.installSteps}>{t.download.installSteps}</a>
+				{/if}
 			</div>
 		{/each}
 	</div>
-	<div class="notes muted">
-		<p>{t.download.firstLaunchWarning} <a href="#faq">{t.download.whatToDo}</a></p>
-		<p>{t.download.buildYourself} <a href={REPO_URL}>{t.download.readme}</a></p>
-	</div>
+	<p class="warning">
+		{t.download.firstLaunchWarning} <a href={installPath}>{t.download.installSteps}</a>
+	</p>
+	<p class="notes muted">{t.download.buildYourself} <a href={REPO_URL}>{t.download.readme}</a></p>
 </section>
 
 <style>
@@ -104,10 +113,21 @@
 		align-self: flex-start;
 	}
 
+	.install-steps {
+		font-size: 15px;
+	}
+
+	.warning {
+		margin: 0;
+		padding: 14px 18px;
+		border: 1px solid var(--amber);
+		border-radius: 10px;
+		background: color-mix(in srgb, var(--amber) 10%, var(--surface));
+		font-size: 15px;
+	}
+
 	.notes {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
+		margin: 0;
 		font-size: 15px;
 	}
 </style>
