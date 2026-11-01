@@ -265,6 +265,7 @@ class SqliteListingRepository(ListingRepository):
                    property_tracking.profile_index AS profile_index,
                    property_tracking.viewed_at AS viewed_at,
                    property_tracking.favourited_at AS favourited_at,
+                   property_tracking.updated_at AS updated_at,
                    latest_price.price AS price,
                    previous_price.price AS previous_price
             FROM property_tracking
@@ -328,6 +329,7 @@ class SqliteListingRepository(ListingRepository):
             first_seen_at=min(listing["first_seen_at"] for listing in listings),
             viewed_at=row["viewed_at"],
             favourited_at=row["favourited_at"],
+            updated_at=row["updated_at"],
             price=row["price"],
             price_drop_from=price_drop_from,
             sibling_sources=siblings,
