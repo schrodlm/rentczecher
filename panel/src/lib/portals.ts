@@ -1,5 +1,6 @@
 import type { components } from '$lib/api/types.gen';
 import bezrealitkyLogo from '$lib/assets/portals/bezrealitky.svg';
+import idnesLogo from '$lib/assets/portals/idnes.svg';
 import remaxLogo from '$lib/assets/portals/remax.svg';
 import srealityLogo from '$lib/assets/portals/sreality.svg';
 
@@ -26,7 +27,8 @@ export const PORTALS: readonly PortalShown[] = [
 		logo: bezrealitkyLogo,
 		optInTerms: 'https://www.bezrealitky.cz/informace/smluvni-podminky'
 	},
-	{ portal: 'remax', name: 'RE/MAX', site: 'remax-czech.cz', logo: remaxLogo, optInTerms: null }
+	{ portal: 'remax', name: 'RE/MAX', site: 'remax-czech.cz', logo: remaxLogo, optInTerms: null },
+	{ portal: 'idnes', name: 'iDNES Reality', site: 'reality.idnes.cz', logo: idnesLogo, optInTerms: null }
 ];
 
 /* How the panel shows a listing's source, or undefined for a source it

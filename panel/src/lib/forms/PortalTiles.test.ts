@@ -16,7 +16,7 @@ const tile = (name: string) => new RegExp(`^${name.replace('/', '\\/')}`);
 describe('PortalTiles', () => {
 	test('offers every portal with its logo and site', async () => {
 		const { getAllByRole, getByText } = await renderTiles([]);
-		expect(getAllByRole('button')).toHaveLength(3);
+		expect(getAllByRole('button')).toHaveLength(4);
 		expect(getByText('remax-czech.cz')).toBeInTheDocument();
 		expect(getAllByRole('button').every((button) => button.querySelector('img'))).toBe(true);
 	});

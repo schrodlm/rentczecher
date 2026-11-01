@@ -23,9 +23,9 @@ describe('PropertyPicture', () => {
 
 	test('marks a portal it does not know by its initial', async () => {
 		const { container } = await renderWithTranslator(PropertyPicture, {
-			listing: trackedProperty('a', { source: 'idnes', main_photo: null })
+			listing: trackedProperty('a', { source: 'no-such-portal', main_photo: null })
 		});
-		expect(container.querySelector('.property-picture__portal')).toHaveTextContent('I');
+		expect(container.querySelector('.property-picture__portal')).toHaveTextContent('N');
 	});
 
 	test('falls back to the tile when the photo cannot be loaded', async () => {
