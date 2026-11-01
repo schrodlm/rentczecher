@@ -33,6 +33,9 @@ class RunStore(Protocol):
     def seen_ids(self, profile_id: str) -> set[str]:
         ...
 
+    def viewed_ids(self, profile_id: str) -> set[str]:
+        ...
+
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         ...
 
@@ -43,7 +46,8 @@ class RunStore(Protocol):
         ...
 
     def persist_outcome(self, profile_id: str, outcome: DedupOutcome,
-                        located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
+                        located_by_id: dict[str, Listing], current_ids: set[str],
+                        updated_keeper_ids: set[str]) -> None:
         ...
 
 
@@ -136,11 +140,13 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
 
     current_ids = {listing.id for listing in outcome.survivors} | {m.absorbed_id for m in outcome.merges}
     disappeared = deps.store.pending_disappeared(profile_id, current_ids)
-    diff = classify(outcome.survivors, deps.store.seen_ids(profile_id), deps.store.latest_prices(profile_id))
+    diff = classify(outcome, located_by_id, deps.store.seen_ids(profile_id),
+                    deps.store.viewed_ids(profile_id), deps.store.latest_prices(profile_id))
 
     if not dry_run:
         deps.store.persist_outcome(
-            profile_id, outcome, located_by_id, current_ids)
+            profile_id, outcome, located_by_id, current_ids,
+            updated_keeper_ids=diff.updated_keeper_ids)
         deps.store.prune(profile_id)
 
     finished_at = deps.clock()

@@ -32,6 +32,9 @@ class SqliteRunStore:
     def seen_ids(self, profile_id: str) -> set[str]:
         return self._listings.seen_ids(profile_id)
 
+    def viewed_ids(self, profile_id: str) -> set[str]:
+        return self._listings.viewed_ids(profile_id)
+
     def latest_prices(self, profile_id: str) -> dict[str, int]:
         return self._listings.latest_prices(profile_id)
 
@@ -105,11 +108,13 @@ class SqliteRunStore:
             self._conn.commit()
 
     def persist_outcome(self, profile_id: str, outcome: DedupOutcome,
-                        located_by_id: dict[str, Listing], current_ids: set[str]) -> None:
+                        located_by_id: dict[str, Listing], current_ids: set[str],
+                        updated_keeper_ids: set[str]) -> None:
         """Writes the run's facts in one transaction: one property per
         real-world unit, a listing row per portal posting
         (absorbed ones included, under their keeper's property), each new
-        listing's gallery, the dedup audit trail, and the miss-count
+        listing's gallery, the dedup audit trail, the update of each flat
+        whose keeper is in updated_keeper_ids, and the miss-count
         increments for listings absent this run. Nothing commits if any step
         raises."""
         try:
@@ -129,6 +134,9 @@ class SqliteRunStore:
                         profile_id, property_by_keeper[keeper_id], listing)
                     self._photos.record_gallery(listing.id, listing.photo_urls,
                                                on_advert_page=listing.gallery_on_advert_page)
+
+            for keeper_id in updated_keeper_ids:
+                self._listings.mark_updated(profile_id, property_by_keeper[keeper_id])
 
             for merge in outcome.merges:
                 self._properties.record_dedup(
