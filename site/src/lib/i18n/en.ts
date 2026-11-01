@@ -144,8 +144,8 @@ export const en: Messages = {
 			label: 'In progress',
 			items: [
 				{
-					title: 'The first release',
-					body: 'Installers for Windows, macOS and Linux, then a signed Windows installer so it opens without a warning.'
+					title: 'Watching in the background',
+					body: 'Checks run on a schedule with no window open. And if one fails, you hear about it.'
 				}
 			]
 		},
@@ -153,12 +153,12 @@ export const en: Messages = {
 			label: 'Next',
 			items: [
 				{
-					title: 'Watching in the background',
-					body: 'Checks run on a schedule with no window open. And if one fails, you hear about it.'
+					title: 'A signed Windows installer',
+					body: 'So Windows opens the app without a warning.'
 				},
 				{
-					title: 'Photos kept with the flats you star',
-					body: 'Listing photos show right in the app, and stay saved with the flats you star.'
+					title: 'Notifications',
+					body: 'A notice on your computer when something new turns up, and if you like, an email to your own inbox.'
 				}
 			]
 		},
@@ -166,12 +166,8 @@ export const en: Messages = {
 			label: 'Later',
 			items: [
 				{
-					title: 'Notifications',
-					body: 'A notice on your computer when something new turns up, and if you like, an email to your own inbox.'
-				},
-				{
 					title: 'More portals',
-					body: 'Each one checked first for what it asks of apps.'
+					body: 'Four so far. Each new one is checked first for what it asks of apps.'
 				},
 				{
 					title: 'On another computer',
