@@ -144,8 +144,8 @@ export const cs: Messages = {
 			label: 'Právě dělám',
 			items: [
 				{
-					title: 'První vydání',
-					body: 'Instalátory pro Windows, macOS a Linux. Potom podepsaný instalátor pro Windows, který se otevře bez varování.'
+					title: 'Hlídání na pozadí',
+					body: 'Kontroly poběží podle plánu i bez otevřeného okna. A když některá selže, dozvíte se to.'
 				}
 			]
 		},
@@ -153,12 +153,12 @@ export const cs: Messages = {
 			label: 'Brzy',
 			items: [
 				{
-					title: 'Hlídání na pozadí',
-					body: 'Kontroly poběží podle plánu i bez otevřeného okna. A když některá selže, dozvíte se to.'
+					title: 'Podepsaný instalátor pro Windows',
+					body: 'Aby ho Windows otevřely bez varování.'
 				},
 				{
-					title: 'Fotky u oblíbených bytů',
-					body: 'Fotky nabídek uvidíte přímo v aplikaci a u bytů s hvězdičkou zůstanou uložené.'
+					title: 'Upozornění',
+					body: 'Upozornění v počítači, když se objeví něco nového, a pokud chcete, i e-mail do vlastní schránky.'
 				}
 			]
 		},
@@ -166,12 +166,8 @@ export const cs: Messages = {
 			label: 'Později',
 			items: [
 				{
-					title: 'Upozornění',
-					body: 'Upozornění v počítači, když se objeví něco nového, a pokud chcete, i e-mail do vlastní schránky.'
-				},
-				{
 					title: 'Další realitní portály',
-					body: 'U každého nejdřív prověřím, co od aplikací žádá.'
+					body: 'Zatím čtyři. U každého dalšího nejdřív prověřím, co od aplikací žádá.'
 				},
 				{
 					title: 'Na jiném počítači',
