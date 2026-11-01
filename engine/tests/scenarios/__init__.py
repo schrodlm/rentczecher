@@ -2,7 +2,8 @@
 engine into a fresh data folder.
 
 A scenario file states what happened, never what the database looks like:
-the listings each scan saw, then what the user did. Replaying it runs the
+the listings each scan saw, what the user viewed or starred after a scan,
+then what the user viewed at the end. Replaying it runs the
 engine's own pipeline with faked scrapers and a controlled clock, so the
 resulting database is exactly what real scans would have left, and schema
 changes leave scenario files untouched.
@@ -60,6 +61,7 @@ _OFFSET = re.compile(r"^-(\d+)([dhm])$")
 _OFFSET_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
 
 
+
 def offset_from_now(text: str) -> timedelta:
     """'-3d', '-2h' or '-30m', how long before the replay's now an event
     happened. 'now' is zero."""
@@ -82,8 +84,13 @@ class ScenarioUserConfig:
 
 @dataclass(frozen=True, slots=True)
 class ScenarioScan:
+    """The listings one scan saw, and the listings the user viewed and
+    starred right after it, before the next scan."""
+
     at: timedelta
     listings: tuple[dict, ...]
+    viewed: tuple[str, ...]
+    favourited: tuple[str, ...]
 
 
 class ReplayClock:
@@ -145,10 +152,7 @@ class Scenario:
             unknown_profile = set(profile) - {"name", "search", "portals", "preferences"}
             if unknown_profile:
                 raise ValueError(f"scenario {name!r}: unknown profile keys {sorted(unknown_profile)}")
-        scans = tuple(
-            ScenarioScan(at=offset_from_now(scan["at"]), listings=tuple(scan.get("listings") or ()))
-            for scan in raw.get("scans", ())
-        )
+        scans = tuple(_scan(name, scan) for scan in raw.get("scans", ()))
         user_config = _user_config(name, raw.get("panel", {}))
         return cls(name, profile, scans, tuple(raw.get("viewed", ())), user_config)
 
@@ -167,7 +171,8 @@ class Scenario:
 
     def replay_into(self, home: Path, now: datetime) -> str | None:
         """Adds the scenario's profile, dated at its first scan, to a fresh
-        home/data/rentczecher.db, replays every scan, then every view, writes
+        home/data/rentczecher.db, replays every scan with the views and stars
+        after it, then every view at the end, writes
         the user config, and returns the profile's id, None without a profile.
         A home that already holds a database is refused, since replaying on
         top would stack two stories."""
@@ -217,11 +222,13 @@ class Scenario:
                 gazetteer=gazetteer,
             )
             run_profile(profile, deps)
+            for listing_id in scan.viewed:
+                store.mark_viewed(profile.id, _property_of(conn, listing_id))
+            for listing_id in scan.favourited:
+                store.mark_favourite(profile.id, _property_of(conn, listing_id))
         clock.current = now
         for listing_id in self.viewed:
-            (property_id,) = conn.execute(
-                "SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
-            store.mark_viewed(profile.id, property_id)
+            store.mark_viewed(profile.id, _property_of(conn, listing_id))
         return profile.id
 
     def _criteria(self, profile: dict, gazetteer: Gazetteer) -> Criteria:
@@ -283,6 +290,22 @@ class Scenario:
             for portal, listings in by_portal.items()
         }
 
+
+def _scan(name: str, scan: dict) -> ScenarioScan:
+    unknown = set(scan) - {"at", "listings", "viewed", "favourited"}
+    if unknown:
+        raise ValueError(f"scenario {name!r}: unknown scan keys {sorted(unknown)}")
+    return ScenarioScan(
+        at=offset_from_now(scan["at"]),
+        listings=tuple(scan.get("listings") or ()),
+        viewed=tuple(scan.get("viewed", ())),
+        favourited=tuple(scan.get("favourited", ())),
+    )
+
+
+def _property_of(conn: sqlite3.Connection, listing_id: str) -> str:
+    (property_id,) = conn.execute("SELECT property_id FROM listings WHERE id = ?", (listing_id,)).fetchone()
+    return property_id
 
 def _user_config(name: str, stated: dict | str) -> ScenarioUserConfig | None:
     """The user config a scenario states, the defaults where it states
