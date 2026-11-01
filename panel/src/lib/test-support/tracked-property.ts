@@ -18,6 +18,7 @@ export function trackedProperty(id: string, overrides: Partial<TrackedPropertyMo
 		first_seen_at: new Date().toISOString(),
 		viewed_at: null,
 		favourited_at: null,
+		updated_at: null,
 		price: 21000,
 		price_drop_from: null,
 		sibling_sources: [],
