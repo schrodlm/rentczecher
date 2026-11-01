@@ -76,6 +76,15 @@ msgstr "Aktualizované"
 msgid "Changed"
 msgstr "Změna"
 
+msgid "Also posted on {portal}"
+msgstr "Nově také na {portal}"
+
+msgid "Price on {portal} dropped from {from} to {to}"
+msgstr "Na {portal} zlevněno z {from} na {to}"
+
+msgid "Price on {portal} rose from {from} to {to}"
+msgstr "Na {portal} zdraženo z {from} na {to}"
+
 msgid "working"
 msgstr "v pořádku"
 
