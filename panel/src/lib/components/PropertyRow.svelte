@@ -62,7 +62,12 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		{/if}
 	</span>
 	{#if favourite}
-		<span class="property-row__star" aria-label={t.t('Favourite')}>★</span>
+		<span class="property-row__favourite">
+			<span class="property-row__star" aria-label={t.t('Favourite')}>★</span>
+			{#if listing.updated_at !== null}
+				<span class="property-row__changed">{t.t('Changed')}</span>
+			{/if}
+		</span>
 	{/if}
 	{#if score !== null}
 		<span class="property-row__score"><ScoreRing {score} coloured={false} /></span>
@@ -167,8 +172,20 @@ a row focuses the list and a screen reader follows the selection from there. -->
 		white-space: nowrap;
 	}
 
+	.property-row__favourite {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
 	.property-row__star {
 		color: var(--color-gold);
+	}
+
+	.property-row__changed {
+		color: var(--color-amber);
+		font-size: 0.75rem;
+		font-weight: 700;
 	}
 
 	.property-row__score {
