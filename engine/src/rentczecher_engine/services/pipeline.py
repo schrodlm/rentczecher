@@ -73,6 +73,7 @@ class PipelineDeps:
 class RunCounts:
     total: int
     new: int
+    updated: int
     price_drops: int
     disappeared: int
 
@@ -100,7 +101,7 @@ def _failed_result(profile_id: str, run_id: str, started_at: datetime, finished_
     return ProfileRunResult(
         profile_id=profile_id, run_id=run_id, started_at=started_at, finished_at=finished_at,
         status="failed", scraper_health=scraper_health,
-        counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
+        counts=RunCounts(total=0, new=0, updated=0, price_drops=0, disappeared=0),
         error=error,
     )
 
@@ -151,6 +152,7 @@ def run_profile(profile: Profile, deps: PipelineDeps, *, dry_run: bool = False,
 
     finished_at = deps.clock()
     counts = RunCounts(total=len(outcome.survivors), new=len(diff.new),
+                       updated=len(diff.updated_keeper_ids),
                        price_drops=len(diff.price_drops), disappeared=len(disappeared))
     return ProfileRunResult(
         profile_id=profile_id, run_id=run_id, started_at=started_at, finished_at=finished_at,

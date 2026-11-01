@@ -26,7 +26,7 @@ class TestResultTypesConstructAndAreFrozen:
             health.listing_count = 0
 
     def test_run_counts(self):
-        counts = RunCounts(total=10, new=3, price_drops=1, disappeared=2)
+        counts = RunCounts(total=10, new=3, updated=0, price_drops=1, disappeared=2)
         assert counts.total == 10
         with pytest.raises(dataclasses.FrozenInstanceError):
             counts.total = 0
@@ -41,7 +41,7 @@ class TestResultTypesConstructAndAreFrozen:
             finished_at=finished,
             status="ok",
             scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=5)},
-            counts=RunCounts(total=5, new=2, price_drops=0, disappeared=1),
+            counts=RunCounts(total=5, new=2, updated=0, price_drops=0, disappeared=1),
         )
         assert result.profile_id == "praha7-byty"
         assert result.scraper_health["sreality"].listing_count == 5

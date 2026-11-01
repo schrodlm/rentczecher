@@ -317,6 +317,7 @@
         "type": "object"
       },
       "ListingsArrivedEvent": {
+        "description": "A scan found new flats or changed viewed ones.",
         "properties": {
           "new": {
             "title": "New",
@@ -329,12 +330,17 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
           }
         },
         "required": [
           "run_id",
           "profile_id",
-          "new"
+          "new",
+          "updated"
         ],
         "title": "ListingsArrivedEvent",
         "type": "object"
@@ -1062,11 +1068,16 @@
           "total": {
             "title": "Total",
             "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
           }
         },
         "required": [
           "total",
           "new",
+          "updated",
           "price_drops",
           "disappeared"
         ],

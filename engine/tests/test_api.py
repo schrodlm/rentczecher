@@ -80,7 +80,7 @@ def _stub_run_profile(result: ProfileRunResult | None = None, *, error: Exceptio
         return result or ProfileRunResult(
             profile_id=profile.id, run_id="stub-run", started_at=BASE, finished_at=BASE,
             status="ok", scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=2)},
-            counts=RunCounts(total=2, new=2, price_drops=0, disappeared=0),
+            counts=RunCounts(total=2, new=2, updated=0, price_drops=0, disappeared=0),
         )
 
     run_profile.calls = calls
@@ -639,7 +639,7 @@ class TestTriggerRun:
             currently_running.clear()
             return ProfileRunResult(
                 profile_id=profile.id, run_id="r", started_at=BASE, finished_at=BASE,
-                status="ok", scraper_health={}, counts=RunCounts(total=0, new=0, price_drops=0, disappeared=0),
+                status="ok", scraper_health={}, counts=RunCounts(total=0, new=0, updated=0, price_drops=0, disappeared=0),
             )
 
         client = _client(tmp_path, run_profile=run_profile)

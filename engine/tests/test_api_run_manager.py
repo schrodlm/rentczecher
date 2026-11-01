@@ -20,7 +20,7 @@ def _result(new: int) -> ProfileRunResult:
         profile_id="matej", run_id="stub-run", started_at=BASE, finished_at=BASE,
         status="ok",
         scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=2)},
-        counts=RunCounts(total=2, new=new, price_drops=0, disappeared=0),
+        counts=RunCounts(total=2, new=new, updated=0, price_drops=0, disappeared=0),
     )
 
 
