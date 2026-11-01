@@ -8,6 +8,13 @@ export interface DevlogPost {
 // Newest first. Each post's text lives next to this file as <slug>.md.
 export const POSTS: DevlogPost[] = [
 	{
+		slug: 'changed-since-you-looked',
+		title: 'Changed since you looked',
+		date: '2026-11-01',
+		summary:
+			'A viewed flat that gets cheaper, dearer or posted on another portal moves into an Updated section with the change highlighted, and the matcher stops merging different flats on one street. This makes version 0.4.0.'
+	},
+	{
 		slug: 'a-fourth-portal-idnes-reality',
 		title: 'A fourth portal: iDNES Reality',
 		date: '2026-10-31',
