@@ -207,6 +207,23 @@ describe('PropertyDetail', () => {
 		expect(getByText('Poprvé nalezeno')).toBeInTheDocument();
 	});
 
+	test("names another portal that started posting the flat, and that portal's price changes", async () => {
+		const { getByText } = await renderDetail(FLAT, PREFERENCES, [
+			...FLAT_PRICES,
+			{
+				listing_id: 'idnes:1',
+				source: 'idnes',
+				url: 'https://reality.idnes.cz/1',
+				changes: [
+					{ price: 19500, charges: null, first_seen_at: '2026-09-28T08:00:00Z', last_seen_at: '2026-09-29T08:00:00Z' },
+					{ price: 19900, charges: null, first_seen_at: '2026-09-30T08:00:00Z', last_seen_at: '2026-10-01T08:00:00Z' }
+				]
+			}
+		]);
+		expect(getByText('Nově také na iDNES Reality')).toHaveTextContent('28. 9. 2026');
+		expect(getByText('Na iDNES Reality zdraženo z 19 500 Kč na 19 900 Kč')).toHaveTextContent('30. 9. 2026');
+	});
+
 	test('names a rise in price as a rise', async () => {
 		const risen: PostingPricesModel[] = [
 			{ ...FLAT_PRICES[0], changes: [...FLAT_PRICES[0].changes].reverse() }
