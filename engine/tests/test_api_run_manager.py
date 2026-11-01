@@ -15,12 +15,12 @@ BASE = datetime(2026, 9, 1, tzinfo=timezone.utc)
 MATEJ = profile(id="matej")
 
 
-def _result(new: int) -> ProfileRunResult:
+def _result(new: int, updated: int = 0) -> ProfileRunResult:
     return ProfileRunResult(
         profile_id="matej", run_id="stub-run", started_at=BASE, finished_at=BASE,
         status="ok",
         scraper_health={"sreality": ScraperHealth(status="ok", error=None, listing_count=2)},
-        counts=RunCounts(total=2, new=new, updated=0, price_drops=0, disappeared=0),
+        counts=RunCounts(total=2, new=new, updated=updated, price_drops=0, disappeared=0),
     )
 
 
@@ -102,6 +102,16 @@ class TestRunManager:
             assert collected[-1].kind == "run_finished"
             with pytest.raises(queue.Empty):
                 events.get(timeout=0.2)
+
+    def test_listings_arrived_announces_updated_flats_without_new_ones(self):
+        broker = EventBroker()
+        manager = _manager(broker, _stub_runner([_result(new=0, updated=2)]))
+        with broker.subscribe() as events:
+            manager.trigger(MATEJ)
+            collected = [events.get(timeout=2) for _ in range(4)]
+        assert collected[-1].kind == "listings_arrived"
+        assert collected[-1].data["new"] == 0
+        assert collected[-1].data["updated"] == 2
 
     def test_runs_execute_serially_in_trigger_order(self):
         """Two triggers close together yield two complete, non-interleaved
