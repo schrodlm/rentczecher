@@ -296,3 +296,16 @@ class TestUpdatedFlats:
         store.persist_outcome(profile_id, _outcome(listing), {},
                               current_ids={listing.id}, updated_keeper_ids={listing.id})
         assert conn.execute("SELECT updated_at FROM property_tracking").fetchone()[0] == BASE.isoformat()
+
+
+class TestOneScanOneTime:
+    def test_postings_saved_by_one_scan_carry_the_same_time(self, tmp_path):
+        ticks = iter(BASE + timedelta(microseconds=step) for step in range(100))
+        store, conn = _store(tmp_path, now=lambda: next(ticks))
+        profile_id = stored_profile(conn).id
+        store.persist_outcome(profile_id, _outcome(_listing(id="sreality:1"), _listing(id="remax:1")), {},
+                              current_ids={"sreality:1", "remax:1"}, updated_keeper_ids=set())
+        first_seen = {row[0] for row in conn.execute("SELECT first_seen_at FROM listing_tracking")}
+        observed = {row[0] for row in conn.execute("SELECT observed_at FROM price_observations")}
+        assert len(first_seen) == 1
+        assert observed == first_seen
