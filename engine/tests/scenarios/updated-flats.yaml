@@ -1,0 +1,33 @@
+# Five flats viewed three days ago, one of them starred. Since then one got
+# cheaper, one dearer twice, one got cheaper and is also posted on a second
+# portal, the starred one changed its price, and one stayed as it was. A new
+# flat arrived too.
+profile:
+  name: Praha 7 flats
+  search: {offer_type: rent, estate_type: flat, place: obvod Praha 7, max_price: 30000}
+scans:
+  - at: -3d
+    listings:
+      - {id: "sreality:6101", price: 22000, location_raw_text: "Letohradská, Praha 7", size_m2: 55, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:6102", price: 24000, location_raw_text: "Dělnická, Praha 7", size_m2: 70, disposition_raw_text: "3+kk"}
+      - {id: "remax:6103", price: 19000, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition_raw_text: "1+kk"}
+      - {id: "sreality:6104", price: 26000, location_raw_text: "Tusarova, Praha 7", size_m2: 80, disposition_raw_text: "3+1"}
+      - {id: "idnes:6105", price: 21000, location_raw_text: "Osadní, Praha 7", size_m2: 60, disposition_raw_text: "2+1"}
+    viewed: ["sreality:6101", "bezrealitky:6102", "remax:6103", "idnes:6105"]
+    favourited: ["sreality:6104"]
+  - at: -1d
+    listings:
+      - {id: "sreality:6101", price: 22000, location_raw_text: "Letohradská, Praha 7", size_m2: 55, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:6102", price: 25000, location_raw_text: "Dělnická, Praha 7", size_m2: 70, disposition_raw_text: "3+kk"}
+      - {id: "remax:6103", price: 19000, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition_raw_text: "1+kk"}
+      - {id: "sreality:6104", price: 26000, location_raw_text: "Tusarova, Praha 7", size_m2: 80, disposition_raw_text: "3+1"}
+      - {id: "idnes:6105", price: 21000, location_raw_text: "Osadní, Praha 7", size_m2: 60, disposition_raw_text: "2+1"}
+  - at: -1h
+    listings:
+      - {id: "sreality:6101", price: 20500, location_raw_text: "Letohradská, Praha 7", size_m2: 55, disposition_raw_text: "2+kk"}
+      - {id: "bezrealitky:6102", price: 25500, location_raw_text: "Dělnická, Praha 7", size_m2: 70, disposition_raw_text: "3+kk"}
+      - {id: "remax:6103", price: 18500, location_raw_text: "Jankovcova, Praha 7", size_m2: 40, disposition_raw_text: "1+kk"}
+      - {id: "idnes:6106", price: 19500, location_raw_text: "Jankovcova, Praha 7 - Holešovice", size_m2: 40, disposition_raw_text: "1+kk"}
+      - {id: "sreality:6104", price: 25000, location_raw_text: "Tusarova, Praha 7", size_m2: 80, disposition_raw_text: "3+1"}
+      - {id: "idnes:6105", price: 21000, location_raw_text: "Osadní, Praha 7", size_m2: 60, disposition_raw_text: "2+1"}
+      - {id: "remax:6107", price: 23000, location_raw_text: "Kamenická, Praha 7", size_m2: 58, disposition_raw_text: "2+kk"}
