@@ -59,7 +59,7 @@ A profile has three parts:
 - **Criteria** decide what shows up at all: rent or buy, the type of property,
   the place, the price and size ranges, the minimum land and the layouts you
   accept. A listing that misses one never appears.
-- **Portals** are the sites it asks. Most are on from the start. A portal that
+- **Portals** are the sites it asks. Some are on from the start. A portal that
   asks apps not to read it stays off until you turn it on.
 - **Preferences** decide the order. Say what matters, such as a price, a size,
   a layout or particular places, and how much each one counts. They rank what
